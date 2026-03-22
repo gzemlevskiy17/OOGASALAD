@@ -1,5 +1,5 @@
 # OOGA Team Contract
-### Team Name: Bad Piggies
+### Team Name: Good Piggies
 ### Georgiy Zemlevskiy, Michael Li, Paulina Vvedenskaya, Iurii Beliaev, Mason Wu, Xuye Chen, Emilio Garcia
 
 
