@@ -33,34 +33,34 @@ Georgiy Zemlevskiy, Michael Li, Paulina Vvedenskaya, Iurii Beliaev, Mason Wu, Xu
 	* Procedurally generate levels (if we have time for it).
 
 ### Sprint Progress Goals
-	* Plan
-		* plan project, design APIs, agree to standard file formats
-	* Sprint 1: working on a basic game with a basic car and two basic levels.
-		* Gameplay: 
-* Implement a basic physics system that ensures vehicle reacts realistically to obstacles:
-	*Gravity, collision, friction, and boundaries
-	* Interactions between vehicle components and terrain
-	* Vehicle Construction 
-* Define and implement relationships between blocks (attachment points, constraints and joints)
-Create a library of car building blocks such as frames, wheels, and structures
-* Implement the relationship of the blocks so that the car actually works
+* Plan
+	* plan project, design APIs, agree to standard file formats
+* Sprint 1: working on a basic game with a basic car and two basic levels.
+	* Gameplay: 
+		* Implement a basic physics system that ensures vehicle reacts realistically to obstacles:
+			* Gravity, collision, friction, and boundaries
+			* Interactions between vehicle components and terrain
+			* Vehicle Construction 
+		* Define and implement relationships between blocks (attachment points, constraints and joints)
+		* Create a library of car building blocks such as frames, wheels, and structures
+		* Implement the relationship of the blocks so that the car actually works
 
-		* Levels and Progression 
-			* Implement two basic levels
-* Support the transition between levels.
-* GUI 
-* start screen, gameplay, saving, and view window moving as the   car moves forward to keep the car in the middle of the screen
-		* Authoring Environment (initial start)
-* Start working on the authoring environment. Prioritize building a mechanism to generate level files.
-	*Define level schema/level reading API.
-	*generate and load levels programmatically 
-	* Sprint 2: Persistence, Profiles, Competitive Replay
-		* Gameplay
+	* Levels and Progression 
+		* Implement two basic levels
+		* Support the transition between levels.
+	* GUI 
+		* Start screen, gameplay, saving, and view window moving as the   car moves forward to keep the car in the middle of the screen
+	* Authoring Environment (initial start)
+		* Start working on the authoring environment. Prioritize building a mechanism to generate level files.
+		* Define level schema/level reading API.
+		* generate and load levels programmatically 
+* Sprint 2: Persistence, Profiles, Competitive Replay
+	* Gameplay:
 		* Player Profiles & Saving
-* Implement player profiles w/ name, pfp, and auth
-* Add saving systems to store player-specific vehicles and customization
-	* Load saved data reliably across sessions
-* Ghost racing 
+		* Implement player profiles w/ name, pfp, and auth
+		* Add saving systems to store player-specific vehicles and customization
+		* Load saved data reliably across sessions
+		* Ghost racing 
 			* Run recording to capture vehicle position, rotation, etc. over time
 			* Implement ghost playback w/ a translucent ghost vehicle
 			* Allow players to race against these ghosts
@@ -68,18 +68,18 @@ Create a library of car building blocks such as frames, wheels, and structures
 		* Expanded authoring environment
 			* improve authoring tools to edit terrain, obstacles, and goals
 			* Add additional car tools (engine, balloons, etc.)
-	* Sprint 3: 
-		* Gameplay
+* Sprint 3: 
+	* Gameplay
 		* Add high score
-			*potential metrics for efficiency/cost 
-			*integrate high scores into the u (ex. leaderboard)
+			* potential metrics for efficiency/cost 
+			* integrate high scores into the u (ex. leaderboard)
 		* Multiplayer experience 
 			* Synchronous racing to enable players to compete the way a ghost competes with the players 
 			* Data comparison page
 			* Handle networking concerns like data/latency
 		* Procedurally generate levels (if we have time).
 	* Authoring environment
-	* Complete: 
-		* Finish unimplemented features and test/debug 
-	* Demo
-		* create additional example data files and record a demo of the games chosen to show off your design's flexibility
+* Complete: 
+	* Finish unimplemented features and test/debug 
+* Demo
+	* create additional example data files and record a demo of the games chosen to show off your design's flexibility
