@@ -1,0 +1,14 @@
+{
+  "physics_config": {
+    "gravity": {
+      "x": 0.0,
+      "y": -9.81
+    },
+    "default_friction": 0.5,
+    "default_restitution": 0.3,
+    "time_step": 0.016,
+    "max_velocity": 50.0,
+    "collision_iterations": 8,
+    "position_correction_iterations": 3
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "level": {
+    "id": "bp_level1_flat_ground",
+    "name": "First Ride",
+    "game_type": "bad_piggies",
+    "description": "A gentle flat course to test your first vehicle.",
+    "author": "Good Piggies Team",
+    "version": "1.0",
+
+    "dimensions": {
+      "width": 60,
+      "height": 20
+    },
+
+    "start_position": {
+      "x": 5,
+      "y": 3
+    },
+
+    "terrain": [
+      {
+        "id": "ground_main",
+        "type": "ground",
+        "shape": "rectangle",
+        "position": { "x": 0, "y": 0 },
+        "size": { "width": 60, "height": 2 },
+        "properties": {
+          "friction": 0.6,
+          "restitution": 0.1,
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true
+        }
+      },
+      {
+        "id": "hill_1",
+        "type": "ramp",
+        "shape": "triangle",
+        "direction": "up",
+        "position": { "x": 25, "y": 2 },
+        "size": { "width": 8, "height": 3 },
+        "properties": {
+          "friction": 0.5,
+          "restitution": 0.1,
+          "texture": "assets/terrain/dirt.png",
+          "tile_texture": true
+        }
+      }
+    ],
+
+    "obstacles": [],
+
+    "collectibles": [
+      {
+        "id": "coin_1",
+        "type": "coin",
+        "position": { "x": 15, "y": 4 },
+        "value": 1,
+        "texture": "assets/collectibles/coin.png",
+        "render_mode": "sprite"
+      },
+      {
+        "id": "coin_2",
+        "type": "coin",
+        "position": { "x": 20, "y": 4 },
+        "value": 1,
+        "texture": "assets/collectibles/coin.png",
+        "render_mode": "sprite"
+      },
+      {
+        "id": "coin_3",
+        "type": "coin",
+        "position": { "x": 29, "y": 7 },
+        "value": 1,
+        "texture": "assets/collectibles/coin.png",
+        "render_mode": "sprite"
+      }
+    ],
+
+    "goals": [
+      {
+        "id": "finish_1",
+        "type": "finish_line",
+        "position": { "x": 55, "y": 2 },
+        "size": { "width": 2, "height": 5 },
+        "texture": "assets/goals/flag.png",
+        "render_mode": "sprite"
+      }
+    ],
+
+    "subjects": [
+      {
+        "id": "pig_main",
+        "type": "pig",
+        "health": 100,
+        "mass": 2.0,
+        "texture": "assets/subjects/pig_default.png"
+      }
+    ],
+
+    "physics_overrides": {},
+
+    "background": {
+      "texture": "assets/backgrounds/sunny_field.png",
+      "parallax_layers": [
+        { "texture": "assets/backgrounds/clouds.png", "speed_factor": 0.3 },
+        { "texture": "assets/backgrounds/hills_bg.png", "speed_factor": 0.6 }
+      ]
+    }
+  }
+}

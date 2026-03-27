@@ -1,0 +1,94 @@
+{
+  "vehicle": {
+    "id": "starter_cart",
+    "name": "Basic Cart",
+    "game_type": "bad_piggies",
+
+    "grid": {
+      "width": 3,
+      "height": 3
+    },
+
+    "components": [
+      {
+        "id": "frame_1",
+        "type": "frame",
+        "grid_position": { "col": 0, "row": 1 },
+        "properties": {
+          "mass": 3.0,
+          "durability": 100,
+          "texture": "assets/components/wood_frame.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "frame_2",
+        "type": "frame",
+        "grid_position": { "col": 1, "row": 1 },
+        "properties": {
+          "mass": 3.0,
+          "durability": 100,
+          "texture": "assets/components/wood_frame.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "pig_seat",
+        "type": "pig_slot",
+        "grid_position": { "col": 1, "row": 2 },
+        "properties": {
+          "subject_id": "pig_main",
+          "texture": "assets/components/pig_seat.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "wheel_left",
+        "type": "wheel",
+        "grid_position": { "col": 0, "row": 0 },
+        "properties": {
+          "radius": 0.5,
+          "mass": 1.0,
+          "friction": 0.8,
+          "max_torque": 20.0,
+          "texture": "assets/components/wood_wheel.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "wheel_right",
+        "type": "wheel",
+        "grid_position": { "col": 1, "row": 0 },
+        "properties": {
+          "radius": 0.5,
+          "mass": 1.0,
+          "friction": 0.8,
+          "max_torque": 20.0,
+          "texture": "assets/components/wood_wheel.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "engine_1",
+        "type": "engine",
+        "grid_position": { "col": 2, "row": 1 },
+        "properties": {
+          "thrust_force": 15.0,
+          "thrust_direction": { "x": 1, "y": 0 },
+          "fuel": -1,
+          "activation_key": "activate_engine",
+          "texture": "assets/components/engine_basic.png",
+          "render_mode": "sprite"
+        }
+      }
+    ],
+
+    "attachments": [
+      { "from": "frame_1", "to": "frame_2", "joint_type": "rigid" },
+      { "from": "frame_1", "to": "wheel_left", "joint_type": "revolute", "motor_enabled": true },
+      { "from": "frame_2", "to": "wheel_right", "joint_type": "revolute", "motor_enabled": true },
+      { "from": "frame_2", "to": "pig_seat", "joint_type": "rigid" },
+      { "from": "frame_2", "to": "engine_1", "joint_type": "rigid" }
+    ]
+  }
+}

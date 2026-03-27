@@ -1,0 +1,77 @@
+{
+  "game_config": {
+    "game_type": "jetpack_joyride",
+    "display_name": "Jetpack Joyride",
+    "description": "Hold to fly, release to fall. Dodge obstacles and collect coins in an endless lab.",
+
+    "build_mode": {
+      "enabled": false
+    },
+
+    "fixed_vehicle": "jetpack_joyride/vehicles/jetpack.json",
+
+    "camera": {
+      "mode": "auto_scroll",
+      "scroll_direction": { "x": 1, "y": 0 },
+      "scroll_speed": 10.0,
+      "scroll_acceleration": 0.05,
+      "zoom": 1.0
+    },
+
+    "input_mapping": {
+      "jetpack_thrust": ["SPACE", "MOUSE_LEFT"],
+      "restart_level": ["R"]
+    },
+
+    "win_condition": {
+      "type": "endless_survival",
+      "score_metric": "distance"
+    },
+
+    "loss_conditions": [
+      {
+        "type": "collision_with_obstacle",
+        "lethal": true,
+        "message": "Zapped!"
+      },
+      {
+        "type": "out_of_bounds",
+        "message": "Crashed into the floor!"
+      }
+    ],
+
+    "scoring": {
+      "base_score_on_completion": 0,
+      "distance_scoring": true,
+      "distance_points_per_unit": 10,
+      "coin_value": 50,
+      "star_thresholds": [500, 2000, 5000]
+    },
+
+    "physics_overrides": {
+      "gravity": { "x": 0.0, "y": -15.0 },
+      "default_friction": 0.0,
+      "default_restitution": 0.0
+    },
+
+    "gameplay_modifiers": {
+      "instant_death_on_obstacle": true,
+      "player_auto_moves": true,
+      "auto_move_speed": 10.0,
+      "jetpack_thrust_force": 22.0,
+      "thrust_while_held": true,
+      "ceiling_height": 12,
+      "floor_height": 1
+    },
+
+    "endless_mode": {
+      "enabled": true,
+      "segment_pool": "level_segments",
+      "difficulty_ramp": {
+        "speed_increase_per_100_units": 0.5,
+        "obstacle_density_increase_per_100_units": 0.1,
+        "max_speed": 20.0
+      }
+    }
+  }
+}

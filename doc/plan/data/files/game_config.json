@@ -1,0 +1,61 @@
+{
+  "game_config": {
+    "game_type": "bad_piggies",
+    "display_name": "Bad Piggies Classic",
+    "description": "Build a vehicle and transport the pig to the finish line.",
+
+    "build_mode": {
+      "enabled": true,
+      "grid_width": 5,
+      "grid_height": 5,
+      "available_components": [
+        "frame", "wheel", "engine", "balloon", "fan", "booster"
+      ],
+      "rules": {
+        "require_pig": true,
+        "require_at_least_one_drive": true,
+        "max_components": 15
+      }
+    },
+
+    "camera": {
+      "mode": "follow_player",
+      "zoom": 1.0,
+      "lead_ahead": 3.0
+    },
+
+    "input_mapping": {
+      "activate_engine": ["W", "UP"],
+      "activate_booster": ["SPACE"],
+      "activate_fan": ["F"],
+      "restart_level": ["R"]
+    },
+
+    "win_condition": {
+      "type": "reach_goal",
+      "pig_must_survive": true
+    },
+
+    "loss_conditions": [
+      {
+        "type": "pig_health_zero",
+        "message": "The pig didn't survive the trip!"
+      },
+      {
+        "type": "out_of_bounds",
+        "message": "The pig fell off the map!"
+      }
+    ],
+
+    "scoring": {
+      "base_score_on_completion": 1000,
+      "time_bonus": true,
+      "time_bonus_max": 500,
+      "time_bonus_threshold_seconds": 30,
+      "coin_value": 50,
+      "star_thresholds": [1000, 2000, 3000]
+    },
+
+    "physics_overrides": {}
+  }
+}

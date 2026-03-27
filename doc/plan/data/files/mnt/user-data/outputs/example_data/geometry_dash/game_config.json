@@ -1,0 +1,64 @@
+{
+  "game_config": {
+    "game_type": "geometry_dash",
+    "display_name": "Geometry Dash",
+    "description": "Tap to jump through an auto-scrolling obstacle course. One hit = death.",
+
+    "build_mode": {
+      "enabled": false
+    },
+
+    "fixed_vehicle": "geometry_dash/vehicles/cube.json",
+
+    "camera": {
+      "mode": "auto_scroll",
+      "scroll_direction": { "x": 1, "y": 0 },
+      "scroll_speed": 8.0,
+      "zoom": 1.2
+    },
+
+    "input_mapping": {
+      "jump": ["SPACE", "W", "UP", "MOUSE_LEFT"],
+      "restart_level": ["R"]
+    },
+
+    "win_condition": {
+      "type": "reach_goal",
+      "pig_must_survive": true
+    },
+
+    "loss_conditions": [
+      {
+        "type": "collision_with_obstacle",
+        "lethal": true,
+        "message": "You crashed!"
+      },
+      {
+        "type": "out_of_bounds",
+        "message": "You fell!"
+      }
+    ],
+
+    "scoring": {
+      "base_score_on_completion": 0,
+      "progress_percent_scoring": true,
+      "coin_value": 100,
+      "star_thresholds": [40, 70, 100],
+      "star_metric": "progress_percent"
+    },
+
+    "physics_overrides": {
+      "gravity": { "x": 0.0, "y": -25.0 },
+      "default_friction": 1.0,
+      "default_restitution": 0.0
+    },
+
+    "gameplay_modifiers": {
+      "instant_death_on_obstacle": true,
+      "player_auto_moves": true,
+      "auto_move_speed": 8.0,
+      "jump_force": 18.0,
+      "allow_mid_air_jump": false
+    }
+  }
+}

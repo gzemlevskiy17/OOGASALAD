@@ -1,0 +1,217 @@
+{
+  "level": {
+    "id": "jj_level1_endless_lab",
+    "name": "The Lab",
+    "game_type": "jetpack_joyride",
+    "description": "Fly through the endless laboratory. How far can you get?",
+    "author": "Good Piggies Team",
+    "version": "1.0",
+
+    "dimensions": {
+      "width": -1,
+      "height": 14
+    },
+
+    "start_position": {
+      "x": 3,
+      "y": 2
+    },
+
+    "terrain": [
+      {
+        "id": "floor",
+        "type": "ground",
+        "shape": "rectangle",
+        "position": { "x": 0, "y": 0 },
+        "size": { "width": -1, "height": 1 },
+        "properties": {
+          "friction": 0.3,
+          "restitution": 0.0,
+          "infinite": true,
+          "texture": "assets/terrain/lab_floor.png",
+          "tile_texture": true
+        }
+      },
+      {
+        "id": "ceiling",
+        "type": "ground",
+        "shape": "rectangle",
+        "position": { "x": 0, "y": 13 },
+        "size": { "width": -1, "height": 1 },
+        "properties": {
+          "friction": 0.0,
+          "restitution": 0.0,
+          "infinite": true,
+          "texture": "assets/terrain/lab_ceiling.png",
+          "tile_texture": true
+        }
+      }
+    ],
+
+    "level_segments": [
+      {
+        "segment_id": "seg_easy_zappers",
+        "difficulty": 1,
+        "length": 30,
+        "obstacles": [
+          {
+            "id": "zapper_h_1",
+            "type": "zapper",
+            "shape": "rectangle",
+            "position": { "x": 10, "y": 4 },
+            "size": { "width": 4, "height": 0.5 },
+            "properties": {
+              "lethal": true,
+              "orientation": "horizontal",
+              "animated": true,
+              "texture": "assets/obstacles/zapper_h.png"
+            }
+          },
+          {
+            "id": "zapper_h_2",
+            "type": "zapper",
+            "shape": "rectangle",
+            "position": { "x": 22, "y": 8 },
+            "size": { "width": 4, "height": 0.5 },
+            "properties": {
+              "lethal": true,
+              "orientation": "horizontal",
+              "animated": true,
+              "texture": "assets/obstacles/zapper_h.png"
+            }
+          }
+        ],
+        "collectibles": [
+          { "id": "coin_row_1", "type": "coin_row", "position": { "x": 5, "y": 6 }, "count": 5, "spacing": 1.5, "value": 1 },
+          { "id": "coin_row_2", "type": "coin_row", "position": { "x": 15, "y": 3 }, "count": 3, "spacing": 1.5, "value": 1 }
+        ]
+      },
+      {
+        "segment_id": "seg_vertical_zappers",
+        "difficulty": 2,
+        "length": 30,
+        "obstacles": [
+          {
+            "id": "zapper_v_1",
+            "type": "zapper",
+            "shape": "rectangle",
+            "position": { "x": 8, "y": 2 },
+            "size": { "width": 0.5, "height": 6 },
+            "properties": {
+              "lethal": true,
+              "orientation": "vertical",
+              "animated": true,
+              "texture": "assets/obstacles/zapper_v.png"
+            }
+          },
+          {
+            "id": "zapper_v_2",
+            "type": "zapper",
+            "shape": "rectangle",
+            "position": { "x": 18, "y": 5 },
+            "size": { "width": 0.5, "height": 7 },
+            "properties": {
+              "lethal": true,
+              "orientation": "vertical",
+              "animated": true,
+              "texture": "assets/obstacles/zapper_v.png"
+            }
+          },
+          {
+            "id": "missile_warning",
+            "type": "missile",
+            "shape": "rectangle",
+            "position": { "x": 25, "y": -1 },
+            "size": { "width": 3, "height": 1 },
+            "properties": {
+              "lethal": true,
+              "speed": 15.0,
+              "warning_time_seconds": 1.5,
+              "tracking": false,
+              "texture": "assets/obstacles/missile.png"
+            }
+          }
+        ],
+        "collectibles": [
+          { "id": "coin_arc_1", "type": "coin_arc", "position": { "x": 12, "y": 4 }, "count": 7, "arc_height": 4, "value": 1 }
+        ]
+      },
+      {
+        "segment_id": "seg_laser_grid",
+        "difficulty": 3,
+        "length": 35,
+        "obstacles": [
+          {
+            "id": "laser_1",
+            "type": "laser",
+            "shape": "line",
+            "position": { "x": 5, "y": 1 },
+            "size": { "width": 0, "height": 12 },
+            "properties": {
+              "lethal": true,
+              "on_duration_seconds": 2.0,
+              "off_duration_seconds": 1.5,
+              "start_on": true,
+              "texture": "assets/obstacles/laser_beam.png"
+            }
+          },
+          {
+            "id": "laser_2",
+            "type": "laser",
+            "shape": "line",
+            "position": { "x": 15, "y": 1 },
+            "size": { "width": 0, "height": 12 },
+            "properties": {
+              "lethal": true,
+              "on_duration_seconds": 2.0,
+              "off_duration_seconds": 1.5,
+              "start_on": false,
+              "texture": "assets/obstacles/laser_beam.png"
+            }
+          },
+          {
+            "id": "zapper_diagonal",
+            "type": "zapper",
+            "shape": "rectangle",
+            "position": { "x": 25, "y": 3 },
+            "size": { "width": 5, "height": 0.5 },
+            "properties": {
+              "lethal": true,
+              "rotation_degrees": 45,
+              "animated": true,
+              "texture": "assets/obstacles/zapper_h.png"
+            }
+          }
+        ],
+        "collectibles": [
+          { "id": "coin_row_3", "type": "coin_row", "position": { "x": 8, "y": 7 }, "count": 4, "spacing": 1.5, "value": 1 }
+        ]
+      }
+    ],
+
+    "obstacles": [],
+    "collectibles": [],
+
+    "goals": [],
+
+    "subjects": [
+      {
+        "id": "barry",
+        "type": "runner",
+        "health": 1,
+        "mass": 1.5,
+        "texture": "assets/subjects/barry.png"
+      }
+    ],
+
+    "physics_overrides": {},
+
+    "background": {
+      "texture": "assets/backgrounds/lab_wall.png",
+      "parallax_layers": [
+        { "texture": "assets/backgrounds/lab_pipes.png", "speed_factor": 0.7 },
+        { "texture": "assets/backgrounds/lab_windows.png", "speed_factor": 0.4 }
+      ]
+    }
+  }
+}

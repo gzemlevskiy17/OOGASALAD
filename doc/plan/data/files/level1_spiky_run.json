@@ -1,0 +1,207 @@
+{
+  "level": {
+    "id": "gd_level1_spiky_run",
+    "name": "Spiky Run",
+    "game_type": "geometry_dash",
+    "description": "Jump over spikes and gaps to the beat. Don't touch anything sharp.",
+    "author": "Good Piggies Team",
+    "version": "1.0",
+
+    "dimensions": {
+      "width": 200,
+      "height": 15
+    },
+
+    "start_position": {
+      "x": 3,
+      "y": 3
+    },
+
+    "terrain": [
+      {
+        "id": "floor_1",
+        "type": "ground",
+        "shape": "rectangle",
+        "position": { "x": 0, "y": 0 },
+        "size": { "width": 30, "height": 2 },
+        "properties": {
+          "friction": 1.0,
+          "restitution": 0.0,
+          "texture": "assets/terrain/gd_block.png",
+          "tile_texture": true
+        }
+      },
+      {
+        "id": "floor_2",
+        "type": "ground",
+        "shape": "rectangle",
+        "position": { "x": 35, "y": 0 },
+        "size": { "width": 25, "height": 2 },
+        "properties": {
+          "friction": 1.0,
+          "restitution": 0.0,
+          "texture": "assets/terrain/gd_block.png",
+          "tile_texture": true
+        }
+      },
+      {
+        "id": "platform_high",
+        "type": "ground",
+        "shape": "rectangle",
+        "position": { "x": 65, "y": 5 },
+        "size": { "width": 15, "height": 1 },
+        "properties": {
+          "friction": 1.0,
+          "restitution": 0.0,
+          "texture": "assets/terrain/gd_block_alt.png",
+          "tile_texture": true
+        }
+      },
+      {
+        "id": "floor_3",
+        "type": "ground",
+        "shape": "rectangle",
+        "position": { "x": 85, "y": 0 },
+        "size": { "width": 115, "height": 2 },
+        "properties": {
+          "friction": 1.0,
+          "restitution": 0.0,
+          "texture": "assets/terrain/gd_block.png",
+          "tile_texture": true
+        }
+      }
+    ],
+
+    "obstacles": [
+      {
+        "id": "spike_1",
+        "type": "spike",
+        "shape": "triangle",
+        "direction": "up",
+        "position": { "x": 15, "y": 2 },
+        "size": { "width": 1, "height": 1.5 },
+        "properties": {
+          "lethal": true,
+          "texture": "assets/obstacles/spike.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "spike_2",
+        "type": "spike",
+        "shape": "triangle",
+        "direction": "up",
+        "position": { "x": 16, "y": 2 },
+        "size": { "width": 1, "height": 1.5 },
+        "properties": {
+          "lethal": true,
+          "texture": "assets/obstacles/spike.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "spike_3",
+        "type": "spike",
+        "shape": "triangle",
+        "direction": "up",
+        "position": { "x": 25, "y": 2 },
+        "size": { "width": 1, "height": 1.5 },
+        "properties": {
+          "lethal": true,
+          "texture": "assets/obstacles/spike.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "wall_1",
+        "type": "wall",
+        "shape": "rectangle",
+        "position": { "x": 42, "y": 2 },
+        "size": { "width": 1, "height": 4 },
+        "properties": {
+          "lethal": true,
+          "texture": "assets/obstacles/gd_wall.png",
+          "tile_texture": true
+        }
+      },
+      {
+        "id": "spike_ceiling_1",
+        "type": "spike",
+        "shape": "triangle",
+        "direction": "down",
+        "position": { "x": 70, "y": 8 },
+        "size": { "width": 1, "height": 1.5 },
+        "properties": {
+          "lethal": true,
+          "texture": "assets/obstacles/spike.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "sawblade_1",
+        "type": "sawblade",
+        "shape": "circle",
+        "position": { "x": 100, "y": 4 },
+        "size": { "width": 2, "height": 2 },
+        "properties": {
+          "lethal": true,
+          "rotation_speed": 360,
+          "texture": "assets/obstacles/sawblade.png",
+          "render_mode": "sprite"
+        }
+      },
+      {
+        "id": "spike_row_final",
+        "type": "spike_row",
+        "shape": "triangle",
+        "direction": "up",
+        "position": { "x": 150, "y": 2 },
+        "size": { "width": 5, "height": 1.5 },
+        "properties": {
+          "lethal": true,
+          "count": 5,
+          "texture": "assets/obstacles/spike.png",
+          "render_mode": "sprite"
+        }
+      }
+    ],
+
+    "collectibles": [
+      { "id": "coin_1", "type": "coin", "position": { "x": 10, "y": 5 }, "value": 1, "texture": "assets/collectibles/coin.png", "render_mode": "sprite" },
+      { "id": "coin_2", "type": "coin", "position": { "x": 20, "y": 5 }, "value": 1, "texture": "assets/collectibles/coin.png", "render_mode": "sprite" },
+      { "id": "coin_3", "type": "coin", "position": { "x": 50, "y": 4 }, "value": 1, "texture": "assets/collectibles/coin.png", "render_mode": "sprite" },
+      { "id": "coin_4", "type": "coin", "position": { "x": 68, "y": 8 }, "value": 1, "texture": "assets/collectibles/coin.png", "render_mode": "sprite" },
+      { "id": "coin_5", "type": "coin", "position": { "x": 130, "y": 5 }, "value": 1, "texture": "assets/collectibles/coin.png", "render_mode": "sprite" }
+    ],
+
+    "goals": [
+      {
+        "id": "finish_1",
+        "type": "finish_line",
+        "position": { "x": 195, "y": 2 },
+        "size": { "width": 2, "height": 6 },
+        "texture": "assets/goals/gd_portal.png",
+        "render_mode": "sprite"
+      }
+    ],
+
+    "subjects": [
+      {
+        "id": "cube_player",
+        "type": "cube",
+        "health": 1,
+        "mass": 1.0,
+        "texture": "assets/subjects/gd_cube.png"
+      }
+    ],
+
+    "physics_overrides": {},
+
+    "background": {
+      "texture": "assets/backgrounds/gd_dark_blue.png",
+      "parallax_layers": [
+        { "texture": "assets/backgrounds/gd_grid.png", "speed_factor": 0.5 }
+      ]
+    }
+  }
+}

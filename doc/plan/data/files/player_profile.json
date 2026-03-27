@@ -1,0 +1,47 @@
+{
+  "player_profile": {
+    "id": "player_001",
+    "display_name": "PigRider42",
+    "avatar": "assets/avatars/pig_default.png",
+    "created_at": "2026-03-20T14:30:00Z",
+    "stats": {
+      "levels_completed": 5,
+      "total_play_time_seconds": 3420,
+      "total_coins_collected": 87
+    },
+    "high_scores": [
+      {
+        "game_type": "bad_piggies",
+        "level_id": "bp_level1_flat_ground",
+        "score": 2450,
+        "stars": 3,
+        "vehicle_id": "starter_cart",
+        "time_seconds": 12.4,
+        "date": "2026-03-25T10:15:00Z"
+      },
+      {
+        "game_type": "geometry_dash",
+        "level_id": "gd_level1_spiky_run",
+        "score": 1800,
+        "progress_percent": 78,
+        "attempts": 14,
+        "date": "2026-03-26T16:42:00Z"
+      }
+    ],
+    "saved_vehicles": [
+      {
+        "vehicle_id": "starter_cart",
+        "vehicle_file": "bad_piggies/vehicles/starter_cart.json"
+      }
+    ],
+    "ghost_runs": [
+      {
+        "level_id": "bp_level1_flat_ground",
+        "vehicle_id": "starter_cart",
+        "ghost_file": "ghosts/bp_level1_run_20260325.json",
+        "score": 2450,
+        "date": "2026-03-25T10:15:00Z"
+      }
+    ]
+  }
+}
