@@ -1,5 +1,5 @@
 /**
- * Defines the physical and structural backbone of the game simulation.
+ * Defines the physical and structural engine of the simulation
  *
  * OVERVIEW
  *
