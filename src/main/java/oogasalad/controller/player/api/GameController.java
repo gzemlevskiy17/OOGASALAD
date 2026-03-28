@@ -1,7 +1,7 @@
 package oogasalad.controller.player.api;
 
 /**
- * The heartbeat for the Playing environment.
+ * High-level controller of the game player environment.
  */
 public interface GameController {
   /**
