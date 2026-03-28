@@ -7,7 +7,7 @@
  * relationships, and the physics engine's execution. It exposes the following
  * interfaces and records to external actors (e.g., the Controller and View):
  *
- * 1. GameEngine: The physics orchestrator.
+ * 1. GameEngine: The physics logic.
  * - step(): Advances the entire simulation world by one temporal unit.
  *
  * 2. World: The global entity container.
