@@ -163,7 +163,7 @@ package oogasalad.controller.player;
     - GamePlayScreen      (reloads the level on re-entry)
 
   RestartAction doesn't reinitialize state itself — stopSimulation() tears
-  down the loop and navigateTo() delegates the reload to GamePlayScreen.
+  down the loop and switchScreen() delegates the reload to GamePlayScreen.
 
   SETUP (in GameControllerImpl.startSimulation())
 
@@ -180,7 +180,7 @@ package oogasalad.controller.player;
     @Override
     public void execute() {
         gameController.stopSimulation();
-        screenManager.navigateTo("GAMEPLAY", levelPath);
+        screenManager.switchScreen("GAMEPLAY", levelPath);
     }
 
   GameControllerImpl.stopSimulation()
@@ -191,7 +191,7 @@ package oogasalad.controller.player;
         world.clear();
     }
 
-  ScreenManagerImpl.navigateTo("GAMEPLAY", levelPath)
+  ScreenManagerImpl.switchScreen("GAMEPLAY", levelPath)
 
     AppScreen screen = registeredScreens.get("GAMEPLAY");
     screen.onEnter(levelPath);
@@ -231,7 +231,7 @@ package oogasalad.controller.player;
     private void handleWin() {
         stopSimulation();
         ScoreResult result = scoreCalculator.calculate(world, gameConfig);
-        screenManager.navigateTo("RESULT", result);
+        screenManager.switchScreen("RESULT", result);
     }
 
   ResultScreen.onEnter(Object payload)
@@ -263,7 +263,7 @@ package oogasalad.controller.player;
   GameControllerImpl.handleLoss()
 
     stopSimulation();
-    screenManager.navigateTo("RESULT", new ScoreResult(0, 0, elapsedMs, false));
+    screenManager.switchScreen("RESULT", new ScoreResult(0, 0, elapsedMs, false));
 
   ResultScreen.onEnter() — failure branch
 
@@ -290,7 +290,7 @@ package oogasalad.controller.player;
     screenManager.registerScreen("GAMEPLAY", new GamePlayScreen(screenManager, gameConfig));
     screenManager.registerScreen("RESULT",   new ResultScreen(screenManager));
     screenManager.registerScreen("EDITOR",   new AuthoringScreen(screenManager));
-    screenManager.navigateTo("MENU", null);
+    screenManager.switchScreen("MENU", null);
 
   ScreenManagerImpl
 
@@ -303,7 +303,7 @@ package oogasalad.controller.player;
     }
 
     @Override
-    public void navigateTo(String screenName, Object payload) {
+    public void switchScreen(String screenName, Object payload) {
         AppScreen next = registry.get(screenName);
         if (next == null) throw new IllegalArgumentException("Unknown screen: " + screenName);
         next.onEnter(payload);
