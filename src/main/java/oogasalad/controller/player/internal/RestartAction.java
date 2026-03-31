@@ -24,6 +24,15 @@ public class RestartAction implements Action {
 
   public RestartAction(GameController gameController, LevelLoader levelLoader,
       World world, GameConfig config, String levelPath) {
+    if (gameController == null) {
+      throw new IllegalArgumentException("gameController must not be null");
+    }
+    if (levelLoader == null) {
+      throw new IllegalArgumentException("levelLoader must not be null");
+    }
+    if (levelPath == null) {
+      throw new IllegalArgumentException("levelPath must not be null");
+    }
     this.gameController = gameController;
     this.levelLoader = levelLoader;
     this.world = world;

@@ -18,6 +18,9 @@ public class ScreenManagerImpl implements ScreenManager {
 
   @Override
   public void registerScreen(String name, AppScreen screen) {
+    if (screen == null) {
+      throw new NullPointerException("screen must not be null");
+    }
     registry.put(name, screen);
   }
 

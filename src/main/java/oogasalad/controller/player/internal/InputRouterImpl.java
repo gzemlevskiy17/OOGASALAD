@@ -25,13 +25,16 @@ public class InputRouterImpl implements InputRouter {
   @Override
   public void handleKeyPress(KeyCode key) {
     Action action = keyBindings.get(key);
-    action.execute();
+    if (action != null) {
+      action.execute();
+    }
   }
 
   @Override
   public void handleButtonPress(String buttonId) {
     Action action = buttonBindings.get(buttonId);
-    action.execute();
-
+    if (action != null) {
+      action.execute();
+    }
   }
 }

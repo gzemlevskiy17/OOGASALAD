@@ -10,6 +10,9 @@ public class PauseAction implements Action {
   private boolean paused = false;
 
   public PauseAction(GameController gameController) {
+    if (gameController == null) {
+      throw new IllegalArgumentException("gameController must not be null");
+    }
     this.gameController = gameController;
   }
 
