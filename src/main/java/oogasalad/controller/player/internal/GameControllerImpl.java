@@ -16,17 +16,19 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.view.core.api.Camera;
+import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderer;
 
 /**
  * Drives the gameplay simulation at 60 FPS using a JavaFX Timeline.
  *
- * Each frame: advances physics via GameEngine, redraws via Renderer,
- * then checks win/loss conditions. Also reads key bindings from GameConfig
- * and registers them with InputRouter when the simulation starts.
+ * Each frame: updates the camera position via CameraBehavior, advances physics
+ * via GameEngine, redraws via Renderer, then checks win/loss conditions.
+ * Reads key bindings from GameConfig and registers them with InputRouter on
+ * the first call to startSimulation().
  *
- * Assumes GameConfigImpl returns comma-separated key names for dot-path
- * lookups, e.g. getSetting("input_mapping.activate_engine") returns "W,UP".
+ * Assumes GameConfig returns comma-separated key names for dot-path lookups,
+ * e.g. getSetting("input_mapping.activate_engine") returns "W,UP".
  */
 public class GameControllerImpl implements GameController {
 
@@ -37,6 +39,7 @@ public class GameControllerImpl implements GameController {
   private final World world;
   private final Renderer renderer;
   private final Camera camera;
+  private final CameraBehavior cameraBehavior;
   private final WinConditionChecker winChecker;
   private final LossConditionChecker lossChecker;
   private final ScreenManager screenManager;
@@ -49,25 +52,34 @@ public class GameControllerImpl implements GameController {
   private final Timeline gameLoop;
 
   /**
+   * True after the first startSimulation() call; prevents re-registering
+   * key bindings on every pause/resume cycle.
+   */
+  private boolean initialized = false;
+
+  /**
    * Constructs the controller and builds the game loop (does not start it).
    *
-   * @param engine        advances physics each frame
-   * @param world         holds all GameObjects and Joints
-   * @param renderer      draws the current world state
-   * @param camera        defines the visible viewport
-   * @param winChecker    evaluated each frame to detect victory
-   * @param lossChecker   evaluated each frame to detect failure
-   * @param screenManager used to navigate to the result screen on game over
-   * @param inputRouter   receives key bindings loaded from config
-   * @param config        source of input_mapping and other game settings
+   * @param engine          advances physics each frame
+   * @param world           holds all GameObjects and Joints
+   * @param renderer        draws the current world state
+   * @param camera          defines the visible viewport
+   * @param cameraBehavior  updates the camera position each frame
+   * @param winChecker      evaluated each frame to detect victory
+   * @param lossChecker     evaluated each frame to detect failure
+   * @param screenManager   used to navigate to the result screen on game over
+   * @param inputRouter     receives key bindings loaded from config
+   * @param config          source of input_mapping and other game settings
    */
   public GameControllerImpl(GameEngine engine, World world, Renderer renderer, Camera camera,
-      WinConditionChecker winChecker, LossConditionChecker lossChecker,
-      ScreenManager screenManager, InputRouter inputRouter, GameConfig config) {
+      CameraBehavior cameraBehavior, WinConditionChecker winChecker,
+      LossConditionChecker lossChecker, ScreenManager screenManager,
+      InputRouter inputRouter, GameConfig config) {
     this.engine = engine;
     this.world = world;
     this.renderer = renderer;
     this.camera = camera;
+    this.cameraBehavior = cameraBehavior;
     this.winChecker = winChecker;
     this.lossChecker = lossChecker;
     this.screenManager = screenManager;
@@ -89,6 +101,32 @@ public class GameControllerImpl implements GameController {
   }
 
   /**
+   * Binds keys from GameConfig on first call, then starts or resumes the loop.
+   * Safe to call on both initial start and resume-after-pause.
+   */
+  @Override
+  public void startSimulation() {
+    if (!initialized) {
+      addActionsToInputMap();
+      initialized = true;
+    }
+    gameLoop.play();
+  }
+
+  /** Freezes the game loop without resetting it. Call startSimulation() to resume. */
+  @Override
+  public void pauseSimulation() {
+    gameLoop.pause();
+  }
+
+  /** Stops and resets the game loop. Used before restarting or leaving the screen. */
+  @Override
+  public void stopSimulation() {
+    gameLoop.stop();
+    initialized = false;
+  }
+
+  /**
    * Builds the 60-FPS JavaFX Timeline. Called once in the constructor.
    * Does not start the loop — call startSimulation() for that.
    */
@@ -100,34 +138,14 @@ public class GameControllerImpl implements GameController {
   }
 
   /**
-   * One frame of gameplay: advance physics, redraw, then check win/loss.
-   * Called automatically by the Timeline every 16.67ms.
+   * One frame of gameplay: update camera, advance physics, redraw, then check win/loss.
+   * Called automatically by the Timeline every ~16.67ms.
    */
   private void tick() {
+    cameraBehavior.update(camera);
     engine.step();
     renderer.render(camera, world.getObjects());
     checkWinLoss();
-  }
-
-  /**
-   * Binds keys from GameConfig to their registered Actions, then starts the loop.
-   */
-  @Override
-  public void startSimulation() {
-    addActionsToInputMap();
-    gameLoop.play();
-  }
-
-  /** Freezes the game loop w/o resetting it. Call startSimulation() to resume. */
-  @Override
-  public void pauseSimulation() {
-    gameLoop.pause();
-  }
-
-  /** Stops and resets the game loop. Used before restarting or leaving the screen. */
-  @Override
-  public void stopSimulation() {
-    gameLoop.stop();
   }
 
   /**
@@ -135,10 +153,7 @@ public class GameControllerImpl implements GameController {
    * Stops the simulation and navigates to the result screen if either is met.
    */
   private void checkWinLoss() {
-    if (winChecker.hasWon(world)) {
-      stopSimulation();
-      screenManager.switchScreen(RESULT_SCREEN, null);
-    } else if (lossChecker.hasLost(world)) {
+    if (winChecker.hasWon(world) || lossChecker.hasLost(world)) {
       stopSimulation();
       screenManager.switchScreen(RESULT_SCREEN, null);
     }
@@ -162,7 +177,7 @@ public class GameControllerImpl implements GameController {
           KeyCode code = KeyCode.valueOf(keyName.trim().toUpperCase());
           inputRouter.bind(code, action);
         } catch (IllegalArgumentException ignored) {
-
+          // unrecognised key name in config — skip silently
         }
       }
     }
