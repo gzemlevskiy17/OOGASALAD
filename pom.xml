@@ -44,6 +44,13 @@
             <version>21.0.2</version>
             <scope>test</scope>
         </dependency>
+        <!-- create test doubles (mocks) without writing fake classes by hand -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.14.2</version>
+            <scope>test</scope>
+        </dependency>
         <!-- use logging instead of println to report important information -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
