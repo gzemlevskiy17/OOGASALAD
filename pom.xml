@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.14.2</version>
+            <version>5.15.2</version>
             <scope>test</scope>
         </dependency>
         <!-- use logging instead of println to report important information -->
@@ -83,6 +83,7 @@
                     <argLine>
                         @{argLine}
                         -XX:+EnableDynamicAgentLoading
+                        -Dnet.bytebuddy.experimental=true
                         --add-exports javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
                         --add-exports javafx.graphics/com.sun.javafx.util=ALL-UNNAMED
                         --add-exports javafx.base/com.sun.javafx.logging=ALL-UNNAMED
