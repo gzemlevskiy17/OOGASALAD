@@ -10,4 +10,8 @@ public interface GameObject extends Renderable {
 
   /** @return A collection of shapes/bounds used for physical interaction. */
   Collection<Object> getHitboxes();
+
+  Pose getPose();
+  void addForce(Vector force);
+  Vector getForce();
 }
