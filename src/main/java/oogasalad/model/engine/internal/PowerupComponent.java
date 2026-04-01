@@ -8,12 +8,9 @@ public abstract class PowerupComponent extends GameComponent {
 
   public PowerupComponent(Pose pose, double mass, double friction) {
     super(pose, mass, friction);
+    setTrigger(true);
     this.triggerConditionSatisfied = true;
     setAffectedByGravity(false);
-  }
-
-  public boolean isTrigger() {
-    return true;
   }
 
   public boolean isTriggerConditionSatisfied() {

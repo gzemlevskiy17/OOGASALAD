@@ -1,5 +1,6 @@
 package oogasalad.model.engine.internal;
 
+import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 

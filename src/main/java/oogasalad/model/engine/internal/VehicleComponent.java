@@ -1,9 +1,10 @@
 package oogasalad.model.engine.internal;
 
+import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Pose;
 
 public abstract class VehicleComponent extends GameComponent {
-  private final double maxHp;
+  private double maxHp;
   private double currentHp;
 
   public VehicleComponent(Pose pose, double mass, double friction, double maxHp) {
@@ -14,6 +15,7 @@ public abstract class VehicleComponent extends GameComponent {
   }
 
   public double getMaxHp() {return maxHp;}
+  public void setMaxHp(double maxHp) {this.maxHp = maxHp;}
 
   public double getCurrentHp() {return currentHp;}
 
