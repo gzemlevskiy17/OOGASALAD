@@ -41,9 +41,9 @@ Implement a basic game player with working car and level editing environments.
    * Feature/Use Case 2: the views that display available terrain objects and the level canvas.
 
  * Emilio Garcia
-   * Feature/Use Case 1
+   * Feature/Use Case 1: Implement entering the authoring environment, including the authoring screen shell that displays instructions, tools, and the level list.
 
-   * Feature/Use Case 2
+   * Feature/Use Case 2: Implement the vehicle object selection view/component palette, showing the current available vehicle objects and the full object library for level setup.
 
  * LLM: Cody
    * Implement VehicleLoaderImpl (parses starter_cart.json, instantiates a GameObject for each component entry, and populates the World 

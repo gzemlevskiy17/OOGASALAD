@@ -160,3 +160,26 @@ User enters into their account
 Name - Users can configure their name
 Change Password - users can change their password
 Customizations - users can add and delete cars for certain levels manually
+
+### Vehicle object selection tab / component palette (Emilio)
+
+User clicks the Vehicle button in the authoring environment
+System shows the currently available vehicle objects and the full object
+library
+User selects which parts should be available to the player in that level
+System updates the level setup data to reflect the selected vehicle objects
+
+### Switch between authoring panels (Emilio)
+
+User selects a different authoring tab such as Terrain, Vehicle, or Goal
+System saves the current unsaved UI state for the active panel
+System switches to the selected panel without losing the current level data
+System displays the tools and controls relevant to that panel
+
+### Show authoring guidance and validation feedback (Emilio)
+
+User hovers over a tool or attempts an invalid authoring action
+System displays instructions, tool descriptions, or validation messages
+If required level elements are missing, system shows what still needs to be
+added
+System updates the guidance as the level becomes closer to runnable
