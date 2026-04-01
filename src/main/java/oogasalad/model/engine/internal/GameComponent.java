@@ -12,15 +12,19 @@ public abstract class GameComponent implements GameObject {
   private Pose pose;
   private Vector velocity;
   private double mass;
+  private double friction;
   private final List<Object> hitboxes;
   private Vector force;
+  private boolean active;
 
-  public GameComponent(Pose pose, double mass) {
-    this.pose = Objects.requireNonNull(pose);
+  public GameComponent(Pose pose, double mass, double friction) {
+    this.pose = Objects.requireNonNull(pose, EngineError.NULL_POSE.message());
     setMass(mass);
+    setFriction(friction);
     this.velocity = new Vector(0, 0);
     this.force = new Vector(0, 0);
     this.hitboxes = new ArrayList<>();
+    this.active = true;
   }
 
   @Override
@@ -29,7 +33,7 @@ public abstract class GameComponent implements GameObject {
   }
 
   public void setPosition(Pose position) {
-    this.pose = Objects.requireNonNull(position);
+    this.pose = Objects.requireNonNull(position, EngineError.NULL_POSE.message());
   }
 
   @Override
@@ -38,7 +42,7 @@ public abstract class GameComponent implements GameObject {
   }
 
   public void setVelocity(Vector velocity) {
-    this.velocity = Objects.requireNonNull(velocity);
+    this.velocity = Objects.requireNonNull(velocity, EngineError.NULL_VECTOR.message());
   }
 
   @Override
@@ -48,9 +52,21 @@ public abstract class GameComponent implements GameObject {
 
   public void setMass(double mass) {
     if (mass < 0) {
-      throw new IllegalArgumentException("mass must be non-negative");
+      throw new IllegalArgumentException(EngineError.MASS_MUST_BE_NON_NEGATIVE.message());
     }
     this.mass = mass;
+  }
+
+  @Override
+  public double getFriction() {
+    return friction;
+  }
+
+  public void setFriction(double friction) {
+    if (friction < 0) {
+      throw new IllegalArgumentException(EngineError.FRICTION_MUST_BE_NON_NEGATIVE.message());
+    }
+    this.friction = friction;
   }
 
   @Override
@@ -59,7 +75,7 @@ public abstract class GameComponent implements GameObject {
   }
 
   protected void addHitbox(Object hitbox) {
-    hitboxes.add(Objects.requireNonNull(hitbox));
+    hitboxes.add(Objects.requireNonNull(hitbox, EngineError.NULL_HITBOX.message()));
   }
 
   protected void removeHitbox(Object hitbox) {
@@ -77,7 +93,24 @@ public abstract class GameComponent implements GameObject {
 
   @Override
   public void addForce(Vector force) {
-    this.force = this.force.add(Objects.requireNonNull(force));
+    this.force = this.force.add(Objects.requireNonNull(force, EngineError.NULL_VECTOR.message()));
+  }
+
+  @Override
+  public boolean isActive() {
+    return active;
+  }
+
+  public void activate() {
+    active = true;
+  }
+
+  public void deactivate() {
+    active = false;
+  }
+
+  public void destroy() {
+    deactivate();
   }
 
   protected void resetForce() {
