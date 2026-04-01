@@ -6,6 +6,7 @@ public enum EngineError {
   NULL_HITBOX("hitbox must not be null"),
   MASS_MUST_BE_NON_NEGATIVE("mass must be non-negative"),
   FRICTION_MUST_BE_NON_NEGATIVE("friction must be non-negative"),
+  THRUST_FORCE_MUST_BE_NON_NEGATIVE("thrust force must be non-negative"),
   MAX_HP_MUST_BE_NON_NEGATIVE("maxHp must be non-negative"),
   CURRENT_HP_OUT_OF_RANGE("currentHp must be within [0, maxHp]"),
   DAMAGE_MUST_BE_NON_NEGATIVE("damage amount must be non-negative"),
