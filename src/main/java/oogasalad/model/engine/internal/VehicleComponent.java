@@ -15,7 +15,9 @@ public abstract class VehicleComponent extends GameComponent {
   }
 
   public double getMaxHp() {return maxHp;}
-  public void setMaxHp(double maxHp) {this.maxHp = maxHp;}
+  public void setMaxHp(double maxHp) {
+    if (maxHp < 0) {throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());}
+    this.maxHp = maxHp;}
 
   public double getCurrentHp() {return currentHp;}
 
