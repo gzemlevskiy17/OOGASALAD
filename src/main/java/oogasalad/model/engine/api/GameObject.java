@@ -9,6 +9,7 @@ public interface GameObject extends Renderable {
   double getFriction();
   Vector getVelocity();
   boolean isActive();
+  boolean isAffectedByGravity();
 
   /** @return A collection of shapes/bounds used for physical interaction. */
   Collection<Object> getHitboxes();

@@ -16,6 +16,7 @@ public abstract class GameComponent implements GameObject {
   private final List<Object> hitboxes;
   private Vector force;
   private boolean active;
+  private boolean affectedByGravity;
 
   public GameComponent(Pose pose, double mass, double friction) {
     this.pose = Objects.requireNonNull(pose, EngineError.NULL_POSE.message());
@@ -25,6 +26,7 @@ public abstract class GameComponent implements GameObject {
     this.force = new Vector(0, 0);
     this.hitboxes = new ArrayList<>();
     this.active = true;
+    this.affectedByGravity = true;
   }
 
   @Override
@@ -101,6 +103,11 @@ public abstract class GameComponent implements GameObject {
     return active;
   }
 
+  @Override
+  public boolean isAffectedByGravity() {
+    return affectedByGravity;
+  }
+
   public void activate() {
     active = true;
   }
@@ -111,6 +118,10 @@ public abstract class GameComponent implements GameObject {
 
   public void destroy() {
     deactivate();
+  }
+
+  public void setAffectedByGravity(boolean affectedByGravity) {
+    this.affectedByGravity = affectedByGravity;
   }
 
   protected void resetForce() {
