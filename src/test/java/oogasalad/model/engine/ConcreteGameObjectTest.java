@@ -1,4 +1,4 @@
-package oogasalad.model;
+package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -37,8 +37,10 @@ class ConcreteGameObjectTest {
     ObjectState state = new ObjectState(
         new Vector(7.0, 11.0),
         new Vector(-1.0, 4.0),
+        new Vector(0.5, -0.25),
         0.75,
-        new Vector(2.0, 0.0)
+        new Vector(2.0, 0.0),
+        new Vector(0.0, 1.0)
     );
 
     gameObject.setState(state);
@@ -51,7 +53,9 @@ class ConcreteGameObjectTest {
     gameObject.setState(new ObjectState(
         new Vector(12.5, -3.25),
         new Vector(0.0, 0.0),
+        new Vector(0.0, 0.0),
         1.5,
+        new Vector(0.0, 0.0),
         new Vector(0.0, 0.0)
     ));
 

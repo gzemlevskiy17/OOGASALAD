@@ -25,7 +25,9 @@ public abstract class GameComponent implements GameObject {
     this.state = new ObjectState(
         new Vector(initialPose.x(), initialPose.y()),
         new Vector(0, 0),
+        new Vector(0, 0),
         initialPose.rotation(),
+        new Vector(0, 0),
         new Vector(0, 0)
     );
     setMass(mass);
