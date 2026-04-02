@@ -33,6 +33,7 @@ import oogasalad.view.core.api.Renderer;
 public class GameControllerImpl implements GameController {
 
   private static final double FRAME_DURATION_MS = 1000.0 / 60.0;
+  private static final double FRAME_DURATION_SECONDS = 1.0 / 60.0;
   private static final String RESULT_SCREEN = "RESULT";
 
   private final GameEngine engine;
@@ -143,7 +144,7 @@ public class GameControllerImpl implements GameController {
    */
   private void tick() {
     cameraBehavior.update(camera);
-    engine.step();
+    engine.step(FRAME_DURATION_SECONDS);
     renderer.render(camera, world.getObjects());
     checkWinLoss();
   }
