@@ -1,6 +1,7 @@
 package oogasalad.model;
 
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 
 /**
@@ -95,6 +96,38 @@ public class ConcreteGameObject implements GameObject {
   @Override
   public void setRestitution(double restitution) {
     this.restitution = restitution;
+  }
+
+
+  //TODO: deal with new interface methods
+  @Override
+  public double getFriction() {
+    return 0;
+  }
+
+  @Override
+  public boolean isActive() {
+    return false;
+  }
+
+  @Override
+  public boolean isAffectedByGravity() {
+    return false;
+  }
+
+  @Override
+  public boolean isTrigger() {
+    return false;
+  }
+
+  @Override
+  public Pose getPose() {
+    return null;
+  }
+
+  @Override
+  public void addForce(Vector force) {
+
   }
 
   @Override

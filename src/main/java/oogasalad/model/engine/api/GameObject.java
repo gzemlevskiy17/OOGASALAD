@@ -38,5 +38,4 @@ public interface GameObject extends Renderable {
 
   Pose getPose();
   void addForce(Vector force);
-  Vector getForce();
 }
