@@ -8,6 +8,7 @@ import oogasalad.view.authoring.api.AuthoringScreen;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.core.api.GameMenuScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
+import oogasalad.view.player.internal.VehicleBuilderAppScreen;
 
 /**
  * Creates and collects application screens for registration with the ScreenManager.
@@ -18,7 +19,7 @@ public class ScreenFactory {
   public static final String AUTHORING_ENTRY_SCREEN_KEY = "AUTHORING_ENTRY";
   public static final String PLAYER_ENTRY_APP_SCREEN_KEY = "PLAYER_ENTRY";
   public static final String AUTHORING_SCREEN_KEY = "AUTHORING_SCREEN";
-  public static final String VEHICLE_BUILDING_SCREEN_KEY = "VEHICLE_BUILDING_SCREEN";
+  public static final String VEHICLE_BUILDER_SCREEN_KEY = "VEHICLE_BUILDER_SCREEN";
 
   private final ScreenManager screenManager;
 
@@ -37,7 +38,7 @@ public class ScreenFactory {
     screens.put(AUTHORING_ENTRY_SCREEN_KEY, new AuthoringEntryScreen(screenManager));
     screens.put(AUTHORING_SCREEN_KEY, new AuthoringScreen(screenManager));
     screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(screenManager));
-    screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new VehicleBuildingAppScreen(screenManager));
+    screens.put(VEHICLE_BUILDER_SCREEN_KEY, new VehicleBuilderAppScreen(screenManager));
 
 
     return screens;
