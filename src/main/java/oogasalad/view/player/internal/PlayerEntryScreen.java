@@ -31,38 +31,38 @@ public class PlayerEntryScreen extends AbstractAppScreen {
     Label title = new Label(s("title.text"));
     title.setFont(Font.font(d("title.font.size")));
 
-    Button forestWorldButton = new Button(s("world.button.1"));
+    Button forestWorldButton = new Button(configureForestWorldButtonText());
     configureWorldButton(forestWorldButton);
 
-    Button desertWorldButton = new Button(s("world.button.2"));
+    Button desertWorldButton = new Button(configureDesertWorldButtonText());
     configureWorldButton(desertWorldButton);
 
-    Button moonWorldButton = new Button(s("world.button.3"));
+    Button moonWorldButton = new Button(configureMoonWorldButtonText());
     configureWorldButton(moonWorldButton);
 
-    Button glacierWorldButton = new Button(s("world.button.4"));
+    Button glacierWorldButton = new Button(configureGlacierWorldButtonText());
     configureWorldButton(glacierWorldButton);
 
-    Button marsWorldButton = new Button(s("world.button.5"));
+    Button marsWorldButton = new Button(configureMarsWorldButtonText());
     configureWorldButton(marsWorldButton);
 
     HBox worldButtonRegion = new HBox(d("world.region.spacing"), forestWorldButton, desertWorldButton, moonWorldButton, glacierWorldButton, marsWorldButton);
     worldButtonRegion.setAlignment(Pos.CENTER);
     worldButtonRegion.setPadding(new Insets(d("world.region.padding")));
 
-    Button firstLevelButton = new Button(s("level.button.1"));
+    Button firstLevelButton = new Button(configureFirstLevelButtonText());
     configureLevelButton(firstLevelButton);
 
-    Button secondLevelButton = new Button(s("level.button.2"));
+    Button secondLevelButton = new Button(configureSecondLevelButtonText());
     configureLevelButton(secondLevelButton);
 
-    Button thirdLevelButton = new Button(s("level.button.3"));
+    Button thirdLevelButton = new Button(configureThirdLevelButtonText());
     configureLevelButton(thirdLevelButton);
 
-    Button fourthLevelButton = new Button(s("level.button.4"));
+    Button fourthLevelButton = new Button(configureFourthLevelButtonText());
     configureLevelButton(fourthLevelButton);
 
-    Button fifthLevelButton = new Button(s("level.button.5"));
+    Button fifthLevelButton = new Button(configureFifthLevelButtonText());
     configureLevelButton(fifthLevelButton);
 
     HBox levelButtonRegion = new HBox(d("level.region.spacing"), firstLevelButton, secondLevelButton, thirdLevelButton, fourthLevelButton, fifthLevelButton);
@@ -89,6 +89,46 @@ public class PlayerEntryScreen extends AbstractAppScreen {
     root.setBottom(wrapBottomLeft(backButton));
 
     return root;
+  }
+
+  private String configureForestWorldButtonText() {
+    return s("world.button.forest");
+  }
+
+  private String configureDesertWorldButtonText() {
+    return s("world.button.desert");
+  }
+
+  private String configureMoonWorldButtonText() {
+    return s("world.button.moon");
+  }
+
+  private String configureGlacierWorldButtonText() {
+    return s("world.button.glacier");
+  }
+
+  private String configureMarsWorldButtonText() {
+    return s("world.button.mars");
+  }
+
+  private String configureFirstLevelButtonText() {
+    return s("level.button.first");
+  }
+
+  private String configureSecondLevelButtonText() {
+    return s("level.button.second");
+  }
+
+  private String configureThirdLevelButtonText() {
+    return s("level.button.third");
+  }
+
+  private String configureFourthLevelButtonText() {
+    return s("level.button.fourth");
+  }
+
+  private String configureFifthLevelButtonText() {
+    return s("level.button.fifth");
   }
 
   private void configureText(Text commentText) {
