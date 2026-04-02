@@ -10,7 +10,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.authoring.api.PlacedObjectFactory;
@@ -31,7 +31,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
 
   private final Map<String, PaletteEntry> entries = new LinkedHashMap<>();
   private final List<Consumer<PlacedObjectFactory>> subscribers = new ArrayList<>();
-  private final VBox root = new VBox(8);
+  private final HBox root = new HBox(8);
 
   private String selectedName;
 

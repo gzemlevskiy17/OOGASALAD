@@ -72,7 +72,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
       if (col >= 0 && col < columns && row >= 0 && row < rows) {
         hoverCol = col;
         hoverRow = row;
-        drawCell(col, row, hoverFill);
+        drawHoverPreview(col, row);
         if (hoverMonitor != null) {
           hoverMonitor.onCellInteraction(col, row);
         }
@@ -126,15 +126,37 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     }
   }
 
+  private void drawHoverPreview(int col, int row) {
+    int spanCols = objectFactory.colSpan(cellSize);
+    int spanRows = objectFactory.rowSpan(cellSize);
+    PlacedObject sample = objectFactory.create(col, row, cellSize);
+    Color previewColor = Color.web(sample.getColor(), 0.5);
+
+    for (int r = row; r < row + spanRows; r++) {
+      for (int c = col; c < col + spanCols; c++) {
+        if (isWithinBounds(c, r) && !isOccupied(c, r)) {
+          drawCell(c, r, previewColor);
+        }
+      }
+    }
+  }
+
   private void clearHover() {
     if (hoverCol >= 0 && hoverRow >= 0) {
-      Color restore = defaultFill;
-      PlacedObject existing = placedObjects.get(new CellKey(hoverCol, hoverRow));
-      if (existing != null) {
-        restore = Color.web(existing.getColor());
+      int spanCols = objectFactory.colSpan(cellSize);
+      int spanRows = objectFactory.rowSpan(cellSize);
+
+      for (int r = hoverRow; r < hoverRow + spanRows; r++) {
+        for (int c = hoverCol; c < hoverCol + spanCols; c++) {
+          if (isWithinBounds(c, r)) {
+            PlacedObject existing = placedObjects.get(new CellKey(c, r));
+            Color restore = existing != null ? Color.web(existing.getColor()) : defaultFill;
+            drawCell(c, r, restore);
+            redrawGridLinesAround(c, r);
+          }
+        }
       }
-      drawCell(hoverCol, hoverRow, restore);
-      redrawGridLinesAround(hoverCol, hoverRow);
+
       hoverCol = -1;
       hoverRow = -1;
     }
