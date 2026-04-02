@@ -1,4 +1,4 @@
-package oogasalad.view.authoring.internal.PlacedObjectFactory;
+package oogasalad.view.authoring.internal;
 
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.view.authoring.api.PlacedObject;
@@ -11,11 +11,14 @@ public class DefaultPlacedObjectFactory implements PlacedObjectFactory {
 
   private final double widthPx;
   private final double heightPx;
+  private final String color;
   private final GameObject gameObject;
 
-  public DefaultPlacedObjectFactory(double widthPx, double heightPx, GameObject gameObject) {
+  public DefaultPlacedObjectFactory(double widthPx, double heightPx, String color,
+      GameObject gameObject) {
     this.widthPx = widthPx;
     this.heightPx = heightPx;
+    this.color = color;
     this.gameObject = gameObject;
   }
 
@@ -26,7 +29,7 @@ public class DefaultPlacedObjectFactory implements PlacedObjectFactory {
     return new PlacedObject(col, row,
         col * cellSize, row * cellSize,
         spanCols * cellSize, spanRows * cellSize,
-        gameObject);
+        color, gameObject);
   }
 
   @Override

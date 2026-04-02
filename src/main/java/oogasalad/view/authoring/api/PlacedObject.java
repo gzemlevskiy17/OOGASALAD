@@ -14,16 +14,18 @@ public class PlacedObject {
   private final double drawY;
   private final double width;
   private final double height;
+  private final String color;
   private final GameObject gameObject;
 
   public PlacedObject(int col, int row, double drawX, double drawY,
-      double width, double height, GameObject gameObject) {
+      double width, double height, String color, GameObject gameObject) {
     this.col = col;
     this.row = row;
     this.drawX = drawX;
     this.drawY = drawY;
     this.width = width;
     this.height = height;
+    this.color = color;
     this.gameObject = gameObject;
   }
 
@@ -49,6 +51,10 @@ public class PlacedObject {
 
   public double getHeight() {
     return height;
+  }
+
+  public String getColor() {
+    return color;
   }
 
   public GameObject getGameObject() {

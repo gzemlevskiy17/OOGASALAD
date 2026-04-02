@@ -13,7 +13,7 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.InputMonitor;
 import oogasalad.view.authoring.api.PlacedObject;
 import oogasalad.view.authoring.api.PlacedObjectFactory;
-import oogasalad.view.authoring.internal.PlacedObjectFactory.DefaultPlacedObjectFactory;
+import oogasalad.view.authoring.internal.DefaultPlacedObjectFactory;
 
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 
@@ -36,7 +36,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private InputMonitor clickMonitor;
 
   private PlacedObjectFactory objectFactory = new DefaultPlacedObjectFactory(cellSize, cellSize,
-      null);
+      "#000000", null);
 
   private int hoverCol = -1;
   private int hoverRow = -1;
@@ -128,7 +128,11 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private void clearHover() {
     if (hoverCol >= 0 && hoverRow >= 0) {
-      Color restore = isOccupied(hoverCol, hoverRow) ? hoverFill : defaultFill;
+      Color restore = defaultFill;
+      PlacedObject existing = placedObjects.get(new CellKey(hoverCol, hoverRow));
+      if (existing != null) {
+        restore = Color.web(existing.getColor());
+      }
       drawCell(hoverCol, hoverRow, restore);
       redrawGridLinesAround(hoverCol, hoverRow);
       hoverCol = -1;
@@ -231,11 +235,12 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     }
 
     PlacedObject block = objectFactory.create(col, row, cellSize);
+    Color blockColor = Color.web(block.getColor());
 
     for (int r = row; r < row + spanRows; r++) {
       for (int c = col; c < col + spanCols; c++) {
         placedObjects.put(new CellKey(c, r), block);
-        drawCell(c, r, hoverFill);
+        drawCell(c, r, blockColor);
       }
     }
 
