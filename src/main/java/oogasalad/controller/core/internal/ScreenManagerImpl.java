@@ -32,6 +32,7 @@ public class ScreenManagerImpl implements ScreenManager {
     if (screen == null) {
       throw new IllegalArgumentException("No screen registered under: " + screenName);
     }
+    screen.onEnter(payload);
     if (sharedScene == null) {
       sharedScene = new Scene(screen.getRoot());
       stage.setScene(sharedScene);
