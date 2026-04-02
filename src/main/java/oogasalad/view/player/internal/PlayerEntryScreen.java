@@ -9,6 +9,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.internal.AbstractAppScreen;
@@ -17,8 +18,11 @@ public class PlayerEntryScreen extends AbstractAppScreen {
 
   private static final double ROOT_PADDING = 24;
   private static final double TITLE_FONT_SIZE = 36;
+  private static final double COMMENT_FONT_SIZE = 12;
   private static final double ACTION_FONT_SIZE = 22;
-  private static final double TITLE_SECTION_SPACING = 28;
+  private static final double LEVEL_CHOICE_SECTION_SPACING = 28;
+  private static final double BAD_PIGGIES_CONTENT_SECTION_SPACING = 28;
+  private static final double MAIN_CONTENT_SECTION_SPACING = 28;
   private static final double WORLD_BUTTON_REGION_SPACING = 24;
   private static final double LEVEL_BUTTON_REGION_SPACING = 24;
   private static final double WORLD_BUTTON_REGION_PADDING = 32;
@@ -76,15 +80,30 @@ public class PlayerEntryScreen extends AbstractAppScreen {
     levelButtonRegion.setAlignment(Pos.CENTER);
     levelButtonRegion.setPadding(new Insets(LEVEL_BUTTON_REGION_PADDING));
 
-    VBox centerContent = new VBox(TITLE_SECTION_SPACING, title, worldButtonRegion, levelButtonRegion);
-    centerContent.setAlignment(Pos.TOP_CENTER);
-    root.setCenter(centerContent);
+    Text commentText = new Text("*The levels you can play are shown for each of the worlds when you click on the world");
+    configureText(commentText);
+
+    VBox levelChoiceContent = new VBox(LEVEL_CHOICE_SECTION_SPACING, title, worldButtonRegion, levelButtonRegion, commentText);
+    levelChoiceContent.setAlignment(Pos.TOP_CENTER);
+
+    Button startYourBadPiggiesButton = new Button("Start Your Bad Piggies");
+
+    VBox startBadPiggiesContent = new VBox(BAD_PIGGIES_CONTENT_SECTION_SPACING, startYourBadPiggiesButton);
+    startBadPiggiesContent.setAlignment(Pos.TOP_CENTER);
+
+    VBox mainContent = new VBox(MAIN_CONTENT_SECTION_SPACING, levelChoiceContent, startBadPiggiesContent);
+    mainContent.setAlignment(Pos.TOP_CENTER);
+    root.setCenter(mainContent);
 
     Button backButton = new Button("Back");
     backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
     root.setBottom(wrapBottomLeft(backButton));
 
     return root;
+  }
+
+  private void configureText(Text commentText) {
+    commentText.setFont(Font.font(COMMENT_FONT_SIZE));
   }
 
   private void configureWorldButton(Button button) {
