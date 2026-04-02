@@ -1,0 +1,82 @@
+.screen-root {
+  -fx-background-color: white;
+  -fx-border-color: #e67e22;
+  -fx-border-width: 2;
+}
+
+/* Placeholder for the game rendering area */
+.game-container {
+  -fx-background-color: transparent;
+}
+
+.hud-top {
+  -fx-padding: 20;
+}
+
+.hud-bottom {
+  -fx-padding: 30;
+}
+
+/* Button Styles */
+
+/* Small rectangular buttons (Pause, Reset) */
+.sys-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 3;
+  -fx-background-radius: 3;
+  -fx-min-width: 80;
+  -fx-min-height: 30;
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 14px;
+}
+
+/* Large square buttons (Tools) */
+.tool-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 5;
+  -fx-background-radius: 5;
+  -fx-min-width: 90;
+  -fx-min-height: 90;
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 14px;
+  -fx-alignment: center;
+}
+
+/* Top-right Back Button */
+.back-button {
+  -fx-background-color: #E0E0E0;
+  -fx-border-color: #707070;
+  -fx-border-width: 1;
+  -fx-border-radius: 3;
+  -fx-background-radius: 3;
+  -fx-padding: 5 15;
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 14px;
+
+  /* Pushes the button inwards so it doesn't touch the literal edge of the window */
+  -fx-translate-x: -20;
+  -fx-translate-y: 20;
+}
+
+/* Toggle effect */
+/* NOTE: The :selected pseudo-class is automatically applied by JavaFX for ToggleButton class */
+.tool-button:selected {
+  -fx-background-color: #007BFF;
+  -fx-text-fill: white;
+  -fx-border-color: #0056b3;
+}
+
+/* Hover effect for when it is already selected */
+.tool-button:selected:hover {
+  -fx-background-color: #0056b3;
+  -fx-cursor: hand;
+}
+
+/* hover effect */
+.sys-button:hover, .tool-button:hover, .back-button:hover{
+  -fx-background-color: #f0f0f0;
+}
