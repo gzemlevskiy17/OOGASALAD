@@ -34,6 +34,7 @@ public class AuthoringScreen implements AppScreen {
   private final StackPane canvasHost;
   private final ComponentPallete vehiclePalette;
   private final Pane levelPalettePlaceholder;
+  private final HBox paletteModeRow;
   private final StackPane bottomContentHost;
   private final Button levelModeButton;
   private final Button vehicleModeButton;
@@ -45,6 +46,7 @@ public class AuthoringScreen implements AppScreen {
     this.canvasHost = new StackPane(new AuthoringCanvasImpl().getVisualRoot());
     this.vehiclePalette = new VehicleComponentScrollPalette();
     this.levelPalettePlaceholder = new Pane();
+    this.paletteModeRow = buildPaletteModeRow();
     this.bottomContentHost = new StackPane();
     this.levelModeButton = createTabButton(AuthoringScreenConstants.LEVEL_BUTTON_TEXT);
     this.vehicleModeButton = createTabButton(AuthoringScreenConstants.VEHICLE_BUTTON_TEXT);
@@ -60,7 +62,7 @@ public class AuthoringScreen implements AppScreen {
 
     VBox bottomSections = new VBox(
         AuthoringScreenConstants.OUTER_SECTION_SPACING,
-        buildPaletteModeRow(),
+        paletteModeRow,
         buildBottomRegion());
 
     layout.setTop(topSections);
@@ -144,6 +146,10 @@ public class AuthoringScreen implements AppScreen {
   }
 
   private void refreshDisplayedMode() {
+    boolean isLevelMode = currentMode == AuthoringMode.LEVEL;
+    paletteModeRow.setVisible(isLevelMode);
+    paletteModeRow.setManaged(isLevelMode);
+
     bottomContentHost.getChildren().clear();
     if (currentMode == AuthoringMode.VEHICLE) {
       bottomContentHost.getChildren().add(vehiclePalette.getVisualRoot());
