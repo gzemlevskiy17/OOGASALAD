@@ -33,7 +33,7 @@ public class PlayerEntryScreen extends AbstractAppScreen {
     root.getStyleClass().add("screen-root");
 
     VBox mainContent = new VBox(d("main.content.spacing"));
-    mainContent.setAlignment(Pos.TOP_CENTER);
+    mainContent.setAlignment(Pos.CENTER);
 
     // Assembling the regions
     mainContent.getChildren().addAll(
