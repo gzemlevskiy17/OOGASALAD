@@ -1,7 +1,7 @@
 package oogasalad.model.engine.api;
 
-import oogasalad.model.ConvexPolygon;
-import oogasalad.model.ObjectState;
+import oogasalad.model.engine.ConvexPolygon;
+import oogasalad.model.engine.ObjectState;
 import oogasalad.view.core.api.Renderable; // Extends the view contract
 
 /**

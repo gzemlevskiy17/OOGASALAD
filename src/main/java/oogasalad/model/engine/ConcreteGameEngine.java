@@ -1,4 +1,4 @@
-package oogasalad.model;
+package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;

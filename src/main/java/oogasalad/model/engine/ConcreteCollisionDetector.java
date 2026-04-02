@@ -1,6 +1,5 @@
-package oogasalad.model;
+package oogasalad.model.engine;
 
-import java.util.List;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
@@ -30,9 +29,9 @@ import oogasalad.model.engine.api.Vector;
 public class ConcreteCollisionDetector implements CollisionDetector {
 
   //TODO: update javadoc once complete
+
   /**
    * Evaluates a single object pair for SAT overlap.
-   *
    *
    * @param objectA first object in the pair
    * @param objectB second object in the pair
@@ -72,8 +71,8 @@ public class ConcreteCollisionDetector implements CollisionDetector {
   }
 
   /**
-   * Tests overlap using only axes derived from {@code objectA} and tracks the smallest
-   * penetration vector across those axes.
+   * Tests overlap using only axes derived from {@code objectA} and tracks the smallest penetration
+   * vector across those axes.
    */
   private Collision penetrationDepthOnAxesOfA(GameObject objectA, GameObject objectB) {
     ConvexPolygon polygonA = objectA.getPolygon();

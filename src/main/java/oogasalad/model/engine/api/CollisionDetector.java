@@ -1,6 +1,6 @@
 package oogasalad.model.engine.api;
 
-import oogasalad.model.Collision;
+import oogasalad.model.engine.Collision;
 
 /**
  * Contract for narrow-phase collision checks between two game objects.
@@ -11,6 +11,7 @@ import oogasalad.model.Collision;
  * @author Georgiy Zemlevskiy
  */
 public interface CollisionDetector {
+
   /**
    * Evaluates collisions between two objects at their current state.
    *
