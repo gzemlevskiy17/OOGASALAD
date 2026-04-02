@@ -12,7 +12,7 @@ import oogasalad.model.engine.api.Pose;
  *
  * Collaborators: LevelLoaderImpl (creates instances from JSON),
  *                LevelSaverImpl (serializes back to JSON),
- *                AuthoringCanvasImpl (renders onto editor grid),
+ *                MichaelCanvas (renders onto editor grid),
  *                AuthoringControllerImpl (places on grid interaction).
  */
 public class TerrainBlock extends TerrainComponent {

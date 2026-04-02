@@ -30,13 +30,13 @@ import org.apache.logging.log4j.Logger;
  *                LevelLoaderImpl (populates world from file),
  *                LevelSaverImpl (persists world to file),
  *                ToolSelectorImpl (current editor tool),
- *                AuthoringCanvasImpl (refreshed after each model change).
+ *                MichaelCanvas (refreshed after each model change).
  */
 public class AuthoringControllerImpl implements AuthoringController {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
 
-  /** Pixels per grid unit — must match AuthoringCanvasImpl.CELL_SIZE. */
+  /** Pixels per grid unit — must match MichaelCanvas.CELL_SIZE. */
   public static final double CELL_SIZE = 40.0;
 
   private static final String DEFAULT_TERRAIN_TEXTURE = "assets/terrain/grass.png";

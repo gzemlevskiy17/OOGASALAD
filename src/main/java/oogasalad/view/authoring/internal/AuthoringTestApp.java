@@ -9,7 +9,7 @@ public class AuthoringTestApp extends Application {
 
   @Override
   public void start(Stage stage) {
-    AuthoringCanvasImpl canvas = new AuthoringCanvasImpl();
+    MichaelCanvas canvas = new MichaelCanvas();
     StackPane root = new StackPane(canvas.getVisualRoot());
     Scene scene = new Scene(root);
     stage.setTitle("Authoring Canvas Test");
