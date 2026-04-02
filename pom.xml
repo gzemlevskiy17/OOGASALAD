@@ -20,9 +20,9 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-          	<version>${project.test.junit.version}</version>
-	          <scope>test</scope>
-	      </dependency>
+            <version>${project.test.junit.version}</version>
+            <scope>test</scope>
+        </dependency>
         <!-- allow parameterized tests to more concisely check several values -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

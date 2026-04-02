@@ -3,7 +3,7 @@ package oogasalad.controller.core.internal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ class ScreenManagerImplTest extends DukeApplicationTest {
 
     interact(() -> screenManager.switchScreen("RESULT", null));
 
-    assertEquals(screen.getScene(), stage.getScene());
+    assertEquals(screen.getRoot(), stage.getScene().getRoot());
   }
 
   @Test
@@ -66,18 +66,18 @@ class ScreenManagerImplTest extends DukeApplicationTest {
     screenManager.registerScreen("GAMEPLAY", gameplayScreen);
 
     interact(() -> screenManager.switchScreen("MENU", null));
-    assertEquals(menuScreen.getScene(), stage.getScene());
+    assertEquals(menuScreen.getRoot(), stage.getScene().getRoot());
 
     interact(() -> screenManager.switchScreen("GAMEPLAY", null));
-    assertEquals(gameplayScreen.getScene(), stage.getScene());
+    assertEquals(gameplayScreen.getRoot(), stage.getScene().getRoot());
   }
 
   private static class FakeScreen implements AppScreen {
-    private final Scene scene = new Scene(new Pane(), 400, 300);
+    private final Parent root = new Pane();
 
     @Override
-    public Scene getScene() {
-      return scene;
+    public Parent getRoot() {
+      return root;
     }
   }
 }

@@ -1,159 +1,223 @@
 package oogasalad.view.authoring.internal;
 
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
 import javafx.scene.Node;
-import javafx.scene.image.Image;
-import javafx.scene.layout.Pane;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.ImagePattern;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
-import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import oogasalad.view.authoring.api.InputMonitor;
+import oogasalad.view.authoring.api.PlacedObject;
 
-/**
- * JavaFX grid canvas for the level editor.
- *
- * Rendering rules:
- *   TerrainBlock with tiled=true  → repeat texture across the block's bounds (tiled rendering).
- *   TerrainBlock with tiled=false → single scaled sprite, or fallback color if not found.
- *   Grid lines are always drawn on top of placed objects.
- *
- * CELL_SIZE must match AuthoringControllerImpl.CELL_SIZE so mouse-to-grid
- * coordinate math stays consistent between controller and view.
- *
- * Collaborators: AuthoringControllerImpl (calls refreshGrid after model changes,
- *                registers mouse handlers on getVisualRoot()),
- *                WorldImpl (source of objects to render).
- */
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 
-  private static final Logger LOG = LogManager.getLogger(AuthoringCanvasImpl.class);
+  private static final ResourceBundle PROPS =
+      ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas");
 
-  /** Pixels per grid unit — must match AuthoringControllerImpl.CELL_SIZE. */
-  public static final double CELL_SIZE = 40.0;
+  private final int columns = Integer.parseInt(PROPS.getString("columns"));
+  private final int rows = Integer.parseInt(PROPS.getString("rows"));
+  private final double cellSize = Double.parseDouble(PROPS.getString("cellSize"));
+  private final int gridLineSpacing = Integer.parseInt(PROPS.getString("gridLineSpacing"));
+  private final Color defaultFill = Color.web(PROPS.getString("defaultFill"));
+  private final Color hoverFill = Color.web(PROPS.getString("hoverFill"));
+  private final Color gridStroke = Color.web(PROPS.getString("gridStroke"));
+  private final double gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
 
-  private static final Color GRID_LINE_COLOR = Color.LIGHTGRAY;
-  private static final Color TERRAIN_FALLBACK_COLOR = Color.SADDLEBROWN;
-  private static final Color TERRAIN_STROKE_COLOR = Color.BLACK;
+  private final Canvas canvas;
+  private final Map<CellKey, PlacedObject> placedObjects;
 
-  private final Pane root;
-  private final World world;
-  private final int gridCols;
-  private final int gridRows;
+  private InputMonitor hoverMonitor;
+  private InputMonitor clickMonitor;
+
+  private int hoverCol = -1;
+  private int hoverRow = -1;
+  private int lastDragCol = -1;
+  private int lastDragRow = -1;
 
   /**
-   * @param world     the model whose objects are rendered onto the grid
-   * @param gridCols  number of columns (horizontal grid units)
-   * @param gridRows  number of rows (vertical grid units)
+   * Initializes the authoring canvas with a grid and mouse interaction for hover effects.
    */
-  public AuthoringCanvasImpl(World world, int gridCols, int gridRows) {
-    this.world = world;
-    this.gridCols = gridCols;
-    this.gridRows = gridRows;
-    this.root = new Pane();
-    root.setPrefSize(gridCols * CELL_SIZE, gridRows * CELL_SIZE);
-    refreshGrid();
+  public AuthoringCanvasImpl() {
+    this.placedObjects = new LinkedHashMap<>();
+    this.canvas = new Canvas(columns * cellSize, rows * cellSize);
+    drawGrid();
+    attachMouseHandlers();
+  }
+
+  public void setOnHover(InputMonitor monitor) {
+    this.hoverMonitor = monitor;
+  }
+
+  public void setOnClick(InputMonitor monitor) {
+    this.clickMonitor = monitor;
+  }
+
+  private void attachMouseHandlers() {
+    canvas.setOnMouseMoved(e -> {
+      int col = (int) (e.getX() / cellSize);
+      int row = (int) (e.getY() / cellSize);
+      if (col == hoverCol && row == hoverRow) {
+        return;
+      }
+      clearHover();
+      if (col >= 0 && col < columns && row >= 0 && row < rows) {
+        hoverCol = col;
+        hoverRow = row;
+        drawCell(col, row, hoverFill);
+        if (hoverMonitor != null) {
+          hoverMonitor.onCellInteraction(col, row);
+        }
+      }
+    });
+
+    canvas.setOnMousePressed(e -> {
+      int col = (int) (e.getX() / cellSize);
+      int row = (int) (e.getY() / cellSize);
+      lastDragCol = col;
+      lastDragRow = row;
+      fillSingleCell(col, row);
+    });
+
+    canvas.setOnMouseDragged(e -> {
+      int col = (int) (e.getX() / cellSize);
+      int row = (int) (e.getY() / cellSize);
+      fillLine(lastDragCol, lastDragRow, col, row);
+      lastDragCol = col;
+      lastDragRow = row;
+    });
+
+    canvas.setOnMouseExited(e -> clearHover());
+  }
+
+  private void fillSingleCell(int col, int row) {
+    if (!isWithinBounds(col, row) || isOccupied(col, row)) {
+      return;
+    }
+    placedObjects.put(new CellKey(col, row), createPlacedObject(col, row));
+    drawCell(col, row, hoverFill);
+    if (clickMonitor != null) {
+      clickMonitor.onCellInteraction(col, row);
+    }
+  }
+
+  private void fillLine(int x0, int y0, int x1, int y1) {
+    int dx = Math.abs(x1 - x0);
+    int dy = Math.abs(y1 - y0);
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+    while (true) {
+      fillSingleCell(x0, y0);
+      if (x0 == x1 && y0 == y1) {
+        break;
+      }
+      // Compute
+      int e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x0 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
+  }
+
+  private void clearHover() {
+    if (hoverCol >= 0 && hoverRow >= 0) {
+      Color restore = isOccupied(hoverCol, hoverRow) ? hoverFill : defaultFill;
+      drawCell(hoverCol, hoverRow, restore);
+      redrawGridLinesAround(hoverCol, hoverRow);
+      hoverCol = -1;
+      hoverRow = -1;
+    }
+  }
+
+  private boolean isWithinBounds(int col, int row) {
+    return col >= 0 && col < columns && row >= 0 && row < rows;
+  }
+
+  private boolean isOccupied(int col, int row) {
+    return placedObjects.containsKey(new CellKey(col, row));
+  }
+
+  private PlacedObject createPlacedObject(int col, int row) {
+    return new PlacedObject(col, row, col * cellSize, row * cellSize, cellSize, cellSize);
+  }
+
+  private void drawCell(int col, int row, Color color) {
+    GraphicsContext gc = canvas.getGraphicsContext2D();
+    gc.setFill(color);
+    gc.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+  }
+
+  private void redrawGridLinesAround(int col, int row) {
+    if (gridLineSpacing <= 0) {
+      return;
+    }
+    GraphicsContext gc = canvas.getGraphicsContext2D();
+    gc.setStroke(gridStroke);
+    gc.setLineWidth(gridStrokeWidth);
+    // Draw left line if it's a grid line
+    if (col % gridLineSpacing == 0) {
+      gc.strokeLine(col * cellSize, row * cellSize, col * cellSize, (row + 1) * cellSize);
+    }
+    // Draw right line if it's a grid line or the last column
+    if ((col + 1) % gridLineSpacing == 0 || col + 1 == columns) {
+      gc.strokeLine((col + 1) * cellSize, row * cellSize, (col + 1) * cellSize, (row + 1) * cellSize);
+    }
+    // Draw top line if it's a grid line
+    if (row % gridLineSpacing == 0) {
+      gc.strokeLine(col * cellSize, row * cellSize, (col + 1) * cellSize, row * cellSize);
+    }
+    // Draw bottom line if it's a grid line or the last row
+    if ((row + 1) % gridLineSpacing == 0 || row + 1 == rows) {
+      gc.strokeLine(col * cellSize, (row + 1) * cellSize, (col + 1) * cellSize, (row + 1) * cellSize);
+    }
+  }
+
+  private void drawGrid() {
+    GraphicsContext gc = canvas.getGraphicsContext2D();
+    gc.setFill(defaultFill);
+    gc.fillRect(0, 0, columns * cellSize, rows * cellSize);
+    if (gridLineSpacing <= 0) {
+      return;
+    }
+    gc.setStroke(gridStroke);
+    gc.setLineWidth(gridStrokeWidth);
+    for (int col = 0; col <= columns; col += gridLineSpacing) {
+      gc.strokeLine(col * cellSize, 0, col * cellSize, rows * cellSize);
+    }
+    for (int row = 0; row <= rows; row += gridLineSpacing) {
+      gc.strokeLine(0, row * cellSize, columns * cellSize, row * cellSize);
+    }
   }
 
   @Override
   public Node getVisualRoot() {
-    return root;
+    return canvas;
   }
 
-  /** Clears and redraws all terrain blocks and grid lines from the current World state. */
+  @Override
+  public Collection<PlacedObject> getPlacedObjects() {
+    return List.copyOf(placedObjects.values());
+  }
+
   @Override
   public void refreshGrid() {
-    root.getChildren().clear();
-    drawTerrainObjects();
-    drawGridLines();
+    placedObjects.clear();
+    hoverCol = -1;
+    hoverRow = -1;
+    lastDragCol = -1;
+    lastDragRow = -1;
+    drawGrid();
   }
 
-  private void drawTerrainObjects() {
-    for (GameObject obj : world.getObjects()) {
-      if (obj instanceof TerrainBlock tb) {
-        root.getChildren().add(buildTerrainRect(tb));
-      }
-    }
-  }
-
-  private Rectangle buildTerrainRect(TerrainBlock tb) {
-    double px = tb.getX() * CELL_SIZE;
-    double py = tb.getY() * CELL_SIZE;
-    double pw = tb.getWidth() * CELL_SIZE;
-    double ph = tb.getHeight() * CELL_SIZE;
-
-    Rectangle rect = new Rectangle(px, py, pw, ph);
-    rect.setStroke(TERRAIN_STROKE_COLOR);
-
-    if (tb.isTiled()) {
-      applyTiledTexture(rect, tb.getSprite());
-    } else {
-      applySprite(rect, tb.getSprite());
-    }
-
-    return rect;
-  }
-
-  /**
-   * Repeats the texture image in a tile pattern across the rectangle.
-   * Falls back to a solid color if the image file cannot be loaded.
-   */
-  private void applyTiledTexture(Rectangle rect, String spritePath) {
-    Image img = tryLoadImage(spritePath);
-    if (img != null) {
-      rect.setFill(new ImagePattern(img, 0, 0, CELL_SIZE, CELL_SIZE, false));
-    } else {
-      rect.setFill(TERRAIN_FALLBACK_COLOR);
-    }
-  }
-
-  /**
-   * Scales a single image to fill the rectangle.
-   * Falls back to a solid color if the image file cannot be loaded.
-   */
-  private void applySprite(Rectangle rect, String spritePath) {
-    Image img = tryLoadImage(spritePath);
-    if (img != null) {
-      double w = rect.getWidth();
-      double h = rect.getHeight();
-      rect.setFill(new ImagePattern(img, 0, 0, w, h, false));
-    } else {
-      rect.setFill(TERRAIN_FALLBACK_COLOR);
-    }
-  }
-
-  private Image tryLoadImage(String spritePath) {
-    try {
-      java.io.File file = new java.io.File(spritePath);
-      if (file.exists()) {
-        return new Image(file.toURI().toString());
-      }
-    } catch (Exception e) {
-      LOG.warn("Could not load sprite: {}", spritePath);
-    }
-    return null;
-  }
-
-  private void drawGridLines() {
-    double totalWidth = gridCols * CELL_SIZE;
-    double totalHeight = gridRows * CELL_SIZE;
-
-    for (int col = 0; col <= gridCols; col++) {
-      double x = col * CELL_SIZE;
-      Line line = new Line(x, 0, x, totalHeight);
-      line.setStroke(GRID_LINE_COLOR);
-      root.getChildren().add(line);
-    }
-
-    for (int row = 0; row <= gridRows; row++) {
-      double y = row * CELL_SIZE;
-      Line line = new Line(0, y, totalWidth, y);
-      line.setStroke(GRID_LINE_COLOR);
-      root.getChildren().add(line);
-    }
+  private record CellKey(int col, int row) {
   }
 }
