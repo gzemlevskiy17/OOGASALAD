@@ -65,7 +65,7 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     Button startButton = new Button(s("start.button.text"));
     startButton.getStyleClass().add("start-button");
     startButton.setOnAction(event -> {
-      screenManager.switchScreen(ScreenFactory.VEHICLE_BUILDER_SCREEN_KEY, null);
+      screenManager.switchScreen(ScreenFactory.VEHICLE_BUILDER_APP_SCREEN_KEY, null);
     });
 
     VBox container = new VBox(startButton);
