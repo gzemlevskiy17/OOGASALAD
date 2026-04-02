@@ -13,8 +13,6 @@ public final class GameMenuConstants {
   public static final String CREATE_BUTTON_TEXT = "Create";
   public static final String LOGIN_BUTTON_TEXT = "Login";
 
-  public static final double SCENE_WIDTH = 1000;
-  public static final double SCENE_HEIGHT = 700;
   public static final double ROOT_PADDING = 24;
   public static final double TITLE_FONT_SIZE = 42;
   public static final double BUTTON_SPACING = 18;

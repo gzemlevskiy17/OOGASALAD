@@ -1,9 +1,9 @@
 package oogasalad.view.core.api;
 
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 
-/** Contract for a visual state. Must provide a Scene. */
+/** Contract for a visual state. Must provide a root node for the shared Scene. */
 public interface AppScreen {
-  /** @return the JavaFX Scene associated with this screen. */
-  Scene getScene();
+  /** @return the root node representing this screen's UI. */
+  Parent getRoot();
 }

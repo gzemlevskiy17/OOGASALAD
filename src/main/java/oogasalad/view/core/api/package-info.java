@@ -10,7 +10,7 @@
  * The following interfaces are available for external actors:
  *
  * 1. AppScreen: The high-level visual state.
- * - getScene(): Returns the JavaFX Scene for display.
+ * - getRoot(): Returns the root node for display in the shared Scene.
  *
  * 2. Renderer: The drawing engine.
  * - render(Camera, Collection<Renderable>): Draws the visible subset of objects.

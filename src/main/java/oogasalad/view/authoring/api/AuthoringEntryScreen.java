@@ -2,7 +2,7 @@ package oogasalad.view.authoring.api;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -20,7 +20,7 @@ import oogasalad.view.constants.AuthoringEntryConstants;
  */
 public class AuthoringEntryScreen implements AppScreen {
 
-  private final Scene scene;
+  private final Parent root;
 
   public AuthoringEntryScreen(ScreenManager screenManager) {
     BorderPane root = new BorderPane();
@@ -49,13 +49,12 @@ public class AuthoringEntryScreen implements AppScreen {
     backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
     root.setBottom(wrapBottomLeft(backButton));
 
-    scene = new Scene(root, AuthoringEntryConstants.SCENE_WIDTH,
-        AuthoringEntryConstants.SCENE_HEIGHT);
+    this.root = root;
   }
 
   @Override
-  public Scene getScene() {
-    return scene;
+  public Parent getRoot() {
+    return root;
   }
 
   private void configureActionButton(Button button) {

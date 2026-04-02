@@ -10,8 +10,6 @@ public final class AuthoringEntryConstants {
   public static final String LOAD_EXISTING_LEVEL_BUTTON_TEXT = "Load and Edit on Existing Level";
   public static final String BACK_BUTTON_TEXT = "Back";
 
-  public static final double SCENE_WIDTH = 1000;
-  public static final double SCENE_HEIGHT = 700;
   public static final double ROOT_PADDING = 24;
   public static final double TITLE_FONT_SIZE = 36;
   public static final double ACTION_FONT_SIZE = 22;

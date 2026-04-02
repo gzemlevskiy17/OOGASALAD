@@ -33,8 +33,9 @@ public class Main extends Application {
         screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null);
 
         stage.setTitle("Good Piggies");
-        stage.setFullScreen(true);
         stage.show();
+        stage.setMaximized(true);
+
     }
 
     /**
