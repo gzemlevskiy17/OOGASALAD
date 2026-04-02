@@ -6,7 +6,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -21,6 +20,7 @@ public class GameMenuScreen implements AppScreen {
   private static final double TITLE_FONT_SIZE = 42;
   private static final double BUTTON_SPACING = 18;
   private static final double BUTTON_WIDTH = 180;
+  private static final double CORNER_BUTTON_SPACING = 10;
 
   private final Scene scene;
 
@@ -29,7 +29,9 @@ public class GameMenuScreen implements AppScreen {
     root.setPadding(new Insets(24));
 
     Button settingsButton = new Button("Settings");
-    root.setTop(wrapTopLeft(settingsButton));
+    Button helpButton = new Button("Help");
+    Button profileButton = new Button("Profile");
+    root.setTop(wrapTopLeft(settingsButton, helpButton, profileButton));
 
     Label title = new Label("Good Piggies");
     title.setFont(Font.font(TITLE_FONT_SIZE));
@@ -54,8 +56,8 @@ public class GameMenuScreen implements AppScreen {
     return scene;
   }
 
-  private HBox wrapTopLeft(Button button) {
-    HBox container = new HBox(button);
+  private VBox wrapTopLeft(Button... buttons) {
+    VBox container = new VBox(CORNER_BUTTON_SPACING, buttons);
     container.setAlignment(Pos.TOP_LEFT);
     return container;
   }
