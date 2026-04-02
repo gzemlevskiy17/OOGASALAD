@@ -31,6 +31,8 @@ public class AuthoringEntryScreen implements AppScreen {
 
     Button createNewLevelButton = new Button(AuthoringEntryConstants.CREATE_NEW_LEVEL_BUTTON_TEXT);
     configureActionButton(createNewLevelButton);
+    createNewLevelButton.setOnAction(
+        event -> screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY, null));
 
     Button loadExistingLevelButton = new Button(
         AuthoringEntryConstants.LOAD_EXISTING_LEVEL_BUTTON_TEXT);
