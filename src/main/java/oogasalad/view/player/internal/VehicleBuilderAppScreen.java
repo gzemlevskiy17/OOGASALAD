@@ -3,8 +3,8 @@ package oogasalad.view.player.internal;
 import java.util.ResourceBundle;
 import javafx.geometry.Pos;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
@@ -19,17 +19,40 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   @Override
   protected BorderPane createRoot() {
     BorderPane root = new BorderPane();
-    root.getStylesheets().add(
-        getClass().getResource("/oogasalad/view/player/vehicle-builder.css").toExternalForm()
-    );
+    root.getStylesheets().add(getClass().getResource("/oogasalad/view/player/vehicle-builder.css").toExternalForm());
+    root.getStyleClass().add("screen-root");
 
-    Text message = new Text("This is VehicleBuilderAppScreen");
-    root.getChildren().addAll(
-        message
-    );
+    // Create the grid and place it in the center of the screen
+    GridPane grid = createGridRegion();
+    root.setCenter(grid);
 
     return root;
-
   }
 
+  private GridPane createGridRegion() {
+    GridPane grid = new GridPane();
+    grid.getStyleClass().add("vehicle-grid");
+    grid.setAlignment(Pos.CENTER);
+
+    // Read grid dimensions from the properties file - later to be replaced by the passed values
+    int cols = (int) d("grid.columns");
+    int rows = (int) d("grid.rows");
+
+    // Populate the grid with empty cells initially
+    for (int row = 0; row < rows; row++) {
+      for (int col = 0; col < cols; col++) {
+        StackPane cell = new StackPane();
+        cell.getStyleClass().add("grid-cell");
+
+        // Add the cell to the grid at the specified column and row
+        grid.add(cell, col, row);
+      }
+    }
+
+    return grid;
+  }
+
+  private String s(String key) { return PROPS.getString(key); }
+
+  private double d(String key) { return Double.parseDouble(PROPS.getString(key)); }
 }
