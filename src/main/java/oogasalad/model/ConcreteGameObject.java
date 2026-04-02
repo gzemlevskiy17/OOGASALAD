@@ -3,6 +3,31 @@ package oogasalad.model;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
+/**
+ * Mutable concrete implementation of a physics/render game object.
+ *
+ * <p>Use this class to store per-object physical properties (mass, inertia, restitution, force)
+ * plus pose/velocity state and a collision polygon.
+ *
+ * <p><strong>Assumptions:</strong> Callers initialize state and polygon before using render or
+ * collision methods. Mass/inertia should be positive for dynamic bodies; non-positive values are
+ * treated as immovable by parts of the engine.
+ *
+ * <p><strong>Dependencies:</strong> Implements {@link GameObject} and uses {@link ObjectState},
+ * {@link ConvexPolygon}, and {@link Vector}.
+ *
+ * <p><strong>Example:</strong>
+ *
+ * <pre>{@code
+ * ConcreteGameObject body = new ConcreteGameObject();
+ * body.setMass(2.0);
+ * body.setMomentOfInertia(1.5);
+ * body.setRestitution(0.2);
+ * body.setState(new ObjectState(pos, vel, 0.0, new Vector(0, 0)));
+ * }</pre>
+ *
+ * @author Georgiy Zemlevskiy
+ */
 public class ConcreteGameObject implements GameObject {
 
   private double mass;

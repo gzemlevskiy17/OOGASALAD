@@ -5,14 +5,45 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 
-//TODO: delegate responsibility
+/**
+ * SAT-based narrow-phase collision detector implementation.
+ *
+ * <p>Use this class when you need to scan objects in a {@link World} and determine whether convex
+ * polygons are overlapping, including a minimum-penetration vector for later resolution.
+ *
+ * <p><strong>Assumptions:</strong> Polygons are convex and provide points in consistent winding
+ * order. Current implementation is incomplete: {@link #detectCollisions(World)} is a placeholder.
+ *
+ * <p><strong>Dependencies:</strong> Relies on {@link World}, {@link GameObject},
+ * {@link ConvexPolygon}, {@link Vector}, and the model {@link Collision} data container.
+ *
+ * <p><strong>Example:</strong>
+ *
+ * <pre>{@code
+ * CollisionDetector detector = new ConcreteCollisionDetector();
+ * detector.detectCollisions(world);
+ * }</pre>
+ *
+ * @author Georgiy Zemlevskiy
+ */
 public class ConcreteCollisionDetector implements CollisionDetector {
 
+  /**
+   * Runs collision detection for objects currently in the world.
+   *
+   * <p>Current behavior is intentionally empty while responsibility is being moved/refined.
+   *
+   * @param world world containing active game objects
+   * @throws NullPointerException if a future implementation dereferences a null {@code world}
+   */
   @Override
   public void detectCollisions(World world) {
-
+    //TODO: delegate responsibilities into another class
   }
 
+  /**
+   * Projects all polygon vertices onto the given axis and returns [min, max] interval values.
+   */
   private double[] projectPolygonAlongVector(ConvexPolygon polygon, Vector normal) {
     double[] projection = new double[2];
     projection[0] = Double.MAX_VALUE;
@@ -26,7 +57,10 @@ public class ConcreteCollisionDetector implements CollisionDetector {
     return projection;
   }
 
-
+  /**
+   * Performs SAT checks on both polygon axis sets and returns the first separating-axis failure or
+   * minimum-penetration collision.
+   */
   private Collision collisionDetected(GameObject objectA, GameObject objectB) {
     Collision collisionOnAxesOfA = penetrationDepthOnAxesOfA(objectA, objectB);
     if (collisionOnAxesOfA.isCollided()) {
@@ -35,6 +69,10 @@ public class ConcreteCollisionDetector implements CollisionDetector {
     return penetrationDepthOnAxesOfA(objectB, objectA);
   }
 
+  /**
+   * Tests overlap using only axes derived from {@code objectA} and tracks the smallest
+   * penetration vector across those axes.
+   */
   private Collision penetrationDepthOnAxesOfA(GameObject objectA, GameObject objectB) {
     ConvexPolygon polygonA = objectA.getPolygon();
     ConvexPolygon polygonB = objectB.getPolygon();

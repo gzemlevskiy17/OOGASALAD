@@ -7,17 +7,59 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 
+/**
+ * Main physics stepping implementation for the game world.
+ *
+ * <p>Use this class to advance object states over time and (when enabled) perform collision
+ * manifold generation and resolution.
+ *
+ * <p><strong>Assumptions:</strong> The world reference is non-null and objects expose valid
+ * physical state. Several internal methods are still placeholders or marked TODO, so behavior is
+ * currently partial.
+ *
+ * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link GameObject},
+ * {@link ObjectState}, {@link Collision}, and {@link Vector}.
+ *
+ * <p><strong>Example:</strong>
+ *
+ * <pre>{@code
+ * GameEngine engine = new ConcreteGameEngine(world);
+ * engine.step(1.0 / 60.0);
+ * }</pre>
+ *
+ * <p><Strong>Note:</Strong></p>
+ *
+ * <p>Collision resolution is heavily inspired by Tim Wheeler's blog:
+ * <a href="https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/">...</a></p>
+ *
+ * @author Georgiy Zemlevskiy
+ */
 public class ConcreteGameEngine implements GameEngine {
 
   private static final int MAX_CONTACT_POINTS = 2;
   private World world;
 
+  /**
+   * Creates an engine bound to a world container.
+   *
+   * @param world world that stores all active objects and joints
+   */
   public ConcreteGameEngine(World world) {
     this.world = world;
   }
 
   //TODO: implement collision detection for all world objects
   //TODO: implement application of forces
+
+  /**
+   * Advances one simulation step.
+   *
+   * <p>This method currently integrates object state and keeps hooks for joint constraints and
+   * collision resolution while those parts are being finalized.
+   *
+   * @param elapsedTime simulation delta time in seconds
+   * @throws NullPointerException if world/object state references are null
+   */
   @Override
   public void step(double elapsedTime) {
 //    for (Joint joint :  world.getJoints()) {
@@ -37,6 +79,10 @@ public class ConcreteGameEngine implements GameEngine {
 
   }
 
+  /**
+   * Builds up to two contact points by clipping the incident edge against the reference edge side
+   * planes and then filtering against the reference face plane.
+   */
   private Vector[] computeCollisionManifold(Collision collision, Vector refNormal) {
     Vector[] incidentEdge = collision.getIncidentEdge();
     Vector[] referenceEdge = collision.getReferenceEdge();
@@ -71,8 +117,13 @@ public class ConcreteGameEngine implements GameEngine {
     return finalManifold;
   }
 
-  //TODO: confirm direction of normals
+  /**
+   * Selects the incident edge whose normal is most anti-parallel to the penetration normal.
+   *
+   * <p>Assumes clockwise polygon point order and a repeated final point for edge iteration.
+   */
   private Vector[] incidentEdge(ConvexPolygon incidentPolygon, Vector penetrationNormal) {
+    //TODO: confirm direction of normals
     Vector[] incidentEdge = new Vector[2];
     double minimumDotProduct = Double.MAX_VALUE;
 
@@ -90,9 +141,14 @@ public class ConcreteGameEngine implements GameEngine {
     return incidentEdge;
   }
 
-  //TODO: potentially refactor into one clip from both sides, or to return a clipped line segment out of which a manifold is constructed
+  /**
+   * Clips a segment against a single half-space defined by
+   * {@code dot(planeNormal, p) >= planeOffset}.
+   */
   private List<Vector> clipToHalfSpace(Vector[] incidentEdge, Vector planeNormal,
       double planeOffset) {
+
+    //TODO: potentially refactor into one clip from both sides, or to return a clipped line segment out of which a manifold is constructed
     Vector incidentStart = incidentEdge[0];
     Vector incidentEnd = incidentEdge[1];
 
@@ -124,12 +180,17 @@ public class ConcreteGameEngine implements GameEngine {
     }
   }
 
-  //TODO: refactor
+  /**
+   * Applies impulse-based collision response at each manifold contact, updating linear and angular
+   * velocities in-place on both colliding object states.
+   */
   private void resolveImpulseAtContacts(
       Collision collision,
       Vector normal,
       Vector[] contactPoints,
       int contactCount) {
+
+    //TODO: refactor
     GameObject objectA = collision.getObjectA();
     GameObject objectB = collision.getObjectB();
     ObjectState stateA = objectA.getState();
@@ -160,8 +221,8 @@ public class ConcreteGameEngine implements GameEngine {
       Vector ra = contactPoint.subtract(stateA.getLinearPosition());
       Vector rb = contactPoint.subtract(stateB.getLinearPosition());
 
-      Vector combinedVelocityA = velocityA.add(ra.perpendicular().multiply(angVelocityA));
-      Vector combinedVelocityB = velocityB.add(rb.perpendicular().multiply(angVelocityB));
+      Vector combinedVelocityA = velocityA.add(ra.rotateLeft().multiply(angVelocityA));
+      Vector combinedVelocityB = velocityB.add(rb.rotateLeft().multiply(angVelocityB));
       Vector relativeVelocity = combinedVelocityB.subtract(combinedVelocityA);
 
       double contactVelocity = relativeVelocity.dot(normal);
@@ -195,13 +256,18 @@ public class ConcreteGameEngine implements GameEngine {
     stateB.setAngularVelocity(new Vector(angVelocityB, 0));
   }
 
+  //TODO: add formula to comment
 
-  //TODO: refactor
+  /**
+   * Moves objects out of overlap according to {formula}.
+   */
   private void applyPositionalCorrection(
       Collision collision,
       Vector normal,
       double[] depths,
       int contactCount) {
+
+    //TODO: refactor
     final double percent = 0.4;
     final double slop = 0.01;
 
