@@ -7,6 +7,7 @@ import oogasalad.view.authoring.api.AuthoringEntryScreen;
 import oogasalad.view.authoring.api.AuthoringScreen;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.core.api.GameMenuScreen;
+import oogasalad.view.player.internal.GamePlayAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
 
@@ -40,7 +41,7 @@ public class ScreenFactory {
     screens.put(AUTHORING_SCREEN_KEY, new AuthoringScreen(screenManager));
     screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(screenManager));
     screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(screenManager));
-    screens.put(GAMEPLAY_APP_SCREEN_KEY, new VehicleBuilderAppScreen(screenManager));
+    screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(screenManager));
 
 
     return screens;
