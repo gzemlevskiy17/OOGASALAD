@@ -7,8 +7,8 @@ import oogasalad.model.engine.api.Pose;
  * and placed by the authoring canvas.
  *
  * Static by design: mass = 0, not affected by gravity, never lethal by default.
- * Implements getX/getY/getRotation/getSprite from Renderable since GameComponent
- * does not yet provide those delegations.
+ * Implements getSprite for authoring/data serialization and relies on
+ * GameComponent for Renderable position delegation.
  *
  * Collaborators: LevelLoaderImpl (creates instances from JSON),
  *                LevelSaverImpl (serializes back to JSON),
@@ -33,7 +33,7 @@ public class TerrainBlock extends TerrainComponent {
    */
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction) {
-    super(new Pose(x, y, 0), 0, friction, false);
+    super(new Pose(x, y, 0), 0, friction);
     setAffectedByGravity(false);
     this.width = width;
     this.height = height;
@@ -42,33 +42,21 @@ public class TerrainBlock extends TerrainComponent {
   }
 
   @Override
-  public double getX() {
-    return getPose().x();
-  }
-
-  @Override
-  public double getY() {
-    return getPose().y();
-  }
-
-  @Override
-  public double getRotation() {
-    return getPose().rotation();
-  }
-
-  @Override
   public String getSprite() {
     return sprite;
   }
 
+  @Override
   public double getWidth() {
     return width;
   }
 
+  @Override
   public double getHeight() {
     return height;
   }
 
+  @Override
   public boolean isTiled() {
     return tiled;
   }
