@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.view.core.api.AppScreen;
 
@@ -27,17 +28,22 @@ public class ScreenManagerImpl implements ScreenManager {
   }
 
   @Override
-  public void switchScreen(String screenName, Object payload) {
+  public void switchScreen(String screenName) {
     AppScreen screen = registry.get(screenName);
     if (screen == null) {
       throw new IllegalArgumentException("No screen registered under: " + screenName);
     }
-    screen.onEnter(payload);
+    screen.onEnter();
     if (sharedScene == null) {
       sharedScene = new Scene(screen.getRoot());
       stage.setScene(sharedScene);
     } else {
       sharedScene.setRoot(screen.getRoot());
     }
+  }
+
+  @Override
+  public void onOutcome(Outcome outcome) {
+    switchScreen(outcome.screenKey);
   }
 }

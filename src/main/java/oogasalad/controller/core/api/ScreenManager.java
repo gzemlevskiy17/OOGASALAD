@@ -9,10 +9,15 @@ public interface ScreenManager {
   /**
    * Transitions to a new workflow.
    * @param screenName The key for the target screen.
-   * @param payload Optional data (e.g., Level path) to pass to the next mode.
    */
-  void switchScreen(String screenName, Object payload);
+  void switchScreen(String screenName);
 
   /** Registers a screen (e.g., "GAMEPLAY", "EDITOR"). */
   void registerScreen(String name, AppScreen screen);
+
+  /**
+   * Handles a terminal outcome from a controller and transitions to the appropriate screen.
+   * This is the single place where outcomes are mapped to screen names.
+   */
+  void onOutcome(Outcome outcome);
 }
