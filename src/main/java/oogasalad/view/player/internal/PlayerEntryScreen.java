@@ -19,8 +19,10 @@ public class PlayerEntryScreen extends AbstractAppScreen {
   private static final double TITLE_FONT_SIZE = 36;
   private static final double ACTION_FONT_SIZE = 22;
   private static final double TITLE_SECTION_SPACING = 28;
-  private static final double BUTTON_REGION_SPACING = 24;
-  private static final double BUTTON_REGION_PADDING = 32;
+  private static final double WORLD_BUTTON_REGION_SPACING = 24;
+  private static final double LEVEL_BUTTON_REGION_SPACING = 24;
+  private static final double WORLD_BUTTON_REGION_PADDING = 32;
+  private static final double LEVEL_BUTTON_REGION_PADDING = 32;
   private static final double ACTION_BUTTON_WIDTH = 300;
   private static final double ACTION_BUTTON_HEIGHT = 180;
 
@@ -33,20 +35,48 @@ public class PlayerEntryScreen extends AbstractAppScreen {
     BorderPane root = new BorderPane();
     root.setPadding(new Insets(ROOT_PADDING));
 
-    Label title = new Label("Build Your Piggies");
+    Label title = new Label("Quick start with our Good Piggies");
     title.setFont(Font.font(TITLE_FONT_SIZE));
 
-    Button createNewLevelButton = new Button("Create a New Level");
-    configureActionButton(createNewLevelButton);
+    Button forestWorldButton = new Button("World 1: Forest");
+    configureWorldButton(forestWorldButton);
 
-    Button loadExistingLevelButton = new Button("Load and Edit on Existing Level");
-    configureActionButton(loadExistingLevelButton);
+    Button desertWorldButton = new Button("World 2: Desert");
+    configureWorldButton(desertWorldButton);
 
-    HBox buttonRegion = new HBox(BUTTON_REGION_SPACING, createNewLevelButton, loadExistingLevelButton);
-    buttonRegion.setAlignment(Pos.CENTER);
-    buttonRegion.setPadding(new Insets(BUTTON_REGION_PADDING));
+    Button moonWorldButton = new Button("World 3: Moon");
+    configureWorldButton(moonWorldButton);
 
-    VBox centerContent = new VBox(TITLE_SECTION_SPACING, title, buttonRegion);
+    Button glacierWorldButton = new Button("World 4: Glacier");
+    configureWorldButton(glacierWorldButton);
+
+    Button marsWorldButton = new Button("World 5: Mars");
+    configureWorldButton(marsWorldButton);
+
+    HBox worldButtonRegion = new HBox(WORLD_BUTTON_REGION_SPACING, forestWorldButton, desertWorldButton, moonWorldButton, glacierWorldButton, marsWorldButton);
+    worldButtonRegion.setAlignment(Pos.CENTER);
+    worldButtonRegion.setPadding(new Insets(WORLD_BUTTON_REGION_PADDING));
+
+    Button firstLevelButton = new Button("Level 1: 54");
+    configureLevelButton(firstLevelButton);
+
+    Button secondLevelButton = new Button("Level 2: 38");
+    configureLevelButton(secondLevelButton);
+
+    Button thirdLevelButton = new Button("Level 3: 24");
+    configureLevelButton(thirdLevelButton);
+
+    Button fourthLevelButton = new Button("Level 4: 28");
+    configureLevelButton(fourthLevelButton);
+
+    Button fifthLevelButton = new Button("Level 5: 43");
+    configureLevelButton(fifthLevelButton);
+
+    HBox levelButtonRegion = new HBox(LEVEL_BUTTON_REGION_SPACING, firstLevelButton, secondLevelButton, thirdLevelButton, fourthLevelButton, fifthLevelButton);
+    levelButtonRegion.setAlignment(Pos.CENTER);
+    levelButtonRegion.setPadding(new Insets(LEVEL_BUTTON_REGION_PADDING));
+
+    VBox centerContent = new VBox(TITLE_SECTION_SPACING, title, worldButtonRegion, levelButtonRegion);
     centerContent.setAlignment(Pos.TOP_CENTER);
     root.setCenter(centerContent);
 
@@ -57,7 +87,13 @@ public class PlayerEntryScreen extends AbstractAppScreen {
     return root;
   }
 
-  private void configureActionButton(Button button) {
+  private void configureWorldButton(Button button) {
+    button.setFont(Font.font(ACTION_FONT_SIZE));
+    button.setPrefSize(ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
+    button.setWrapText(true);
+  }
+
+  private void configureLevelButton(Button button) {
     button.setFont(Font.font(ACTION_FONT_SIZE));
     button.setPrefSize(ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
     button.setWrapText(true);
