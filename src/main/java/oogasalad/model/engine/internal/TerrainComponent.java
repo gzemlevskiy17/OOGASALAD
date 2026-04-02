@@ -3,15 +3,15 @@ package oogasalad.model.engine.internal;
 import oogasalad.model.engine.api.Pose;
 
 public abstract class TerrainComponent extends GameComponent {
-  private boolean lethal;
-
-  public TerrainComponent(Pose pose, double mass, double friction, boolean lethal) {
+  public TerrainComponent(Pose pose, double mass, double friction) {
     super(pose, mass, friction);
-    this.lethal = lethal;
   }
 
-  public boolean isLethal() {
-    return lethal;
-  }
-  public void setLethal(boolean lethal) {this.lethal = lethal;}
+  public abstract double getWidth();
+
+  public abstract double getHeight();
+
+  public abstract String getSprite();
+
+  public abstract boolean isTiled();
 }

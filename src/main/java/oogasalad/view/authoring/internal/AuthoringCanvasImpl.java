@@ -12,6 +12,8 @@ import javafx.scene.paint.Color;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.InputMonitor;
 import oogasalad.view.authoring.api.PlacedObject;
+import oogasalad.view.authoring.api.PlacedObjectFactory;
+import oogasalad.view.authoring.internal.DefaultPlacedObjectFactory;
 
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 
@@ -32,6 +34,9 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private InputMonitor hoverMonitor;
   private InputMonitor clickMonitor;
+
+  private PlacedObjectFactory objectFactory = new DefaultPlacedObjectFactory(cellSize, cellSize,
+      "#000000", null);
 
   private int hoverCol = -1;
   private int hoverRow = -1;
@@ -67,7 +72,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
       if (col >= 0 && col < columns && row >= 0 && row < rows) {
         hoverCol = col;
         hoverRow = row;
-        drawCell(col, row, hoverFill);
+        drawHoverPreview(col, row);
         if (hoverMonitor != null) {
           hoverMonitor.onCellInteraction(col, row);
         }
@@ -94,14 +99,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   private void fillSingleCell(int col, int row) {
-    if (!isWithinBounds(col, row) || isOccupied(col, row)) {
-      return;
-    }
-    placedObjects.put(new CellKey(col, row), createPlacedObject(col, row));
-    drawCell(col, row, hoverFill);
-    if (clickMonitor != null) {
-      clickMonitor.onCellInteraction(col, row);
-    }
+    placeBlock(col, row);
   }
 
   private void fillLine(int x0, int y0, int x1, int y1) {
@@ -128,11 +126,37 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     }
   }
 
+  private void drawHoverPreview(int col, int row) {
+    int spanCols = objectFactory.colSpan(cellSize);
+    int spanRows = objectFactory.rowSpan(cellSize);
+    PlacedObject sample = objectFactory.create(col, row, cellSize);
+    Color previewColor = Color.web(sample.getColor(), 0.5);
+
+    for (int r = row; r < row + spanRows; r++) {
+      for (int c = col; c < col + spanCols; c++) {
+        if (isWithinBounds(c, r) && !isOccupied(c, r)) {
+          drawCell(c, r, previewColor);
+        }
+      }
+    }
+  }
+
   private void clearHover() {
     if (hoverCol >= 0 && hoverRow >= 0) {
-      Color restore = isOccupied(hoverCol, hoverRow) ? hoverFill : defaultFill;
-      drawCell(hoverCol, hoverRow, restore);
-      redrawGridLinesAround(hoverCol, hoverRow);
+      int spanCols = objectFactory.colSpan(cellSize);
+      int spanRows = objectFactory.rowSpan(cellSize);
+
+      for (int r = hoverRow; r < hoverRow + spanRows; r++) {
+        for (int c = hoverCol; c < hoverCol + spanCols; c++) {
+          if (isWithinBounds(c, r)) {
+            PlacedObject existing = placedObjects.get(new CellKey(c, r));
+            Color restore = existing != null ? Color.web(existing.getColor()) : defaultFill;
+            drawCell(c, r, restore);
+            redrawGridLinesAround(c, r);
+          }
+        }
+      }
+
       hoverCol = -1;
       hoverRow = -1;
     }
@@ -144,10 +168,6 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private boolean isOccupied(int col, int row) {
     return placedObjects.containsKey(new CellKey(col, row));
-  }
-
-  private PlacedObject createPlacedObject(int col, int row) {
-    return new PlacedObject(col, row, col * cellSize, row * cellSize, cellSize, cellSize);
   }
 
   private void drawCell(int col, int row, Color color) {
@@ -216,6 +236,39 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     lastDragCol = -1;
     lastDragRow = -1;
     drawGrid();
+  }
+
+  @Override
+  public void setPlacedObjectFactory(PlacedObjectFactory factory) {
+    this.objectFactory = factory;
+  }
+
+  @Override
+  public void placeBlock(int col, int row) {
+    int spanCols = objectFactory.colSpan(cellSize);
+    int spanRows = objectFactory.rowSpan(cellSize);
+
+    for (int r = row; r < row + spanRows; r++) {
+      for (int c = col; c < col + spanCols; c++) {
+        if (!isWithinBounds(c, r) || isOccupied(c, r)) {
+          return;
+        }
+      }
+    }
+
+    PlacedObject block = objectFactory.create(col, row, cellSize);
+    Color blockColor = Color.web(block.getColor());
+
+    for (int r = row; r < row + spanRows; r++) {
+      for (int c = col; c < col + spanCols; c++) {
+        placedObjects.put(new CellKey(c, r), block);
+        drawCell(c, r, blockColor);
+      }
+    }
+
+    if (clickMonitor != null) {
+      clickMonitor.onCellInteraction(col, row);
+    }
   }
 
   private record CellKey(int col, int row) {

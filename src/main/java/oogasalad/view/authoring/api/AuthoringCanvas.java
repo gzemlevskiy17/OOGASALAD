@@ -13,4 +13,12 @@ public interface AuthoringCanvas {
 
   /** Refreshes the visual state of the grid to reflect the current model. */
   void refreshGrid();
+
+  /** Swaps the factory used to create placed objects (called by the controller). */
+  void setPlacedObjectFactory(PlacedObjectFactory factory);
+
+  /**
+   * Places a block at the given cell, spanning multiple cells based on the current factory.
+   */
+  void placeBlock(int col, int row);
 }

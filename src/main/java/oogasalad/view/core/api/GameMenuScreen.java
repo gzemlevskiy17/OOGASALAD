@@ -36,7 +36,7 @@ public class GameMenuScreen implements AppScreen {
     playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
     playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
     playButton.setOnAction(event ->
-        screenManager.switchScreen(ScreenFactory.PLAYER_ENTRY_SCREEN_KEY, null));
+        screenManager.switchScreen(ScreenFactory.PLAYER_ENTRY_APP_SCREEN_KEY, null));
 
     Button createButton = new Button(GameMenuConstants.CREATE_BUTTON_TEXT);
     playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);

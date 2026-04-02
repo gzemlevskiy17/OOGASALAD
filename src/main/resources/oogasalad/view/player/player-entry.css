@@ -1,0 +1,101 @@
+.screen-root {
+  -fx-background-color: white;
+  -fx-border-color: #e67e22; /* Orange outer border */
+  -fx-border-width: 4;
+}
+
+/* The Grey containers for Levels and the Start button */
+.selection-region {
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-border-radius: 15;
+  -fx-background-radius: 15;
+  -fx-padding: 30;
+  -fx-max-width: 950;
+}
+
+.header-title {
+  -fx-font-size: 42px;
+  -fx-font-family: "Serif";
+}
+
+/* Button Styling */
+.button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-font-family: "Serif";
+}
+
+.world-button {
+  -fx-min-width: 150;
+  -fx-min-height: 110;
+  -fx-border-radius: 60;
+  -fx-background-radius: 60;
+  -fx-font-size: 18px;
+
+  -fx-transition: -fx-background-color 0.2s ease;
+}
+
+.level-button {
+  -fx-min-width: 80;
+  -fx-min-height: 90;
+  -fx-border-radius: 25;
+  -fx-background-radius: 25;
+}
+
+/* The Grey Fill State */
+.filled {
+  -fx-background-color: #D3D3D3;
+}
+
+.start-button {
+  -fx-min-width: 900;
+  -fx-min-height: 60;
+  -fx-font-size: 26px;
+  -fx-border-radius: 10;
+  -fx-background-radius: 10;
+}
+
+.back-button {
+  -fx-background-color: #E0E0E0;
+  -fx-padding: 5 15;
+  -fx-border-radius: 5;
+}
+
+.nav-region {
+  -fx-padding: 20;
+}
+
+/* Ensure the button transitions smoothly instead of snapping colors */
+.world-button {
+  -fx-min-width: 150;
+  -fx-min-height: 110;
+  -fx-border-radius: 60;
+  -fx-background-radius: 60;
+  -fx-font-size: 18px;
+
+  -fx-transition: -fx-background-color 0.2s ease;
+}
+
+/* Hover States for Specific Worlds */
+
+.world-forest:hover {
+  -fx-background-color: #A8E6CF; /* Green */
+}
+
+.world-desert:hover {
+  -fx-background-color: #FFD3B6; /* Yellow/Sand */
+}
+
+.world-moon:hover {
+  -fx-background-color: #D3D3D3; /* Lunar Grey */
+}
+
+.world-glacier:hover {
+  -fx-background-color: #C4FCE8; /* Ice Blue */
+}
+
+.world-mars:hover {
+  -fx-background-color: #FFAAA5; /* Dusty Red */
+}

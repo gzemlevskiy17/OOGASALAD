@@ -6,7 +6,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -14,6 +13,7 @@ import javafx.scene.layout.VBox;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.authoring.internal.AuthoringCanvasImpl;
+import oogasalad.view.authoring.internal.ComponentPaletteImpl;
 import oogasalad.view.authoring.internal.VehicleComponentScrollPalette;
 import oogasalad.view.constants.AuthoringScreenConstants;
 import oogasalad.view.core.api.AppScreen;
@@ -32,7 +32,7 @@ public class AuthoringScreen implements AppScreen {
   private final ScreenManager screenManager;
   private final StackPane canvasHost;
   private final ComponentPallete vehiclePalette;
-  private final Pane levelPalettePlaceholder;
+  private final ComponentPaletteImpl terrainPalette;
   private final HBox paletteModeRow;
   private final StackPane bottomContentHost;
   private final Button levelModeButton;
@@ -42,9 +42,11 @@ public class AuthoringScreen implements AppScreen {
 
   public AuthoringScreen(ScreenManager screenManager) {
     this.screenManager = screenManager;
-    this.canvasHost = new StackPane(new AuthoringCanvasImpl().getVisualRoot());
+    AuthoringCanvasImpl canvas = new AuthoringCanvasImpl();
+    this.canvasHost = new StackPane(canvas.getVisualRoot());
     this.vehiclePalette = new VehicleComponentScrollPalette();
-    this.levelPalettePlaceholder = new Pane();
+    this.terrainPalette = new ComponentPaletteImpl();
+    terrainPalette.subscribe(canvas::setPlacedObjectFactory);
     this.paletteModeRow = buildPaletteModeRow();
     this.bottomContentHost = new StackPane();
     this.levelModeButton = createTabButton(AuthoringScreenConstants.LEVEL_BUTTON_TEXT);
@@ -153,7 +155,7 @@ public class AuthoringScreen implements AppScreen {
     if (currentMode == AuthoringMode.VEHICLE) {
       bottomContentHost.getChildren().add(vehiclePalette.getVisualRoot());
     } else {
-      bottomContentHost.getChildren().add(levelPalettePlaceholder);
+      bottomContentHost.getChildren().add(terrainPalette.getVisualRoot());
     }
   }
 

@@ -1,32 +1,36 @@
 package oogasalad.model.engine.internal;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
+import oogasalad.model.ConvexPolygon;
+import oogasalad.model.ObjectState;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 
 public abstract class GameComponent implements GameObject {
-  private Pose pose;
-  private Vector velocity;
+  private ObjectState state;
   private double mass;
+  private double momentOfInertia;
+  private double restitution;
   private double friction;
-  private final List<Object> hitboxes;
+  private ConvexPolygon polygon;
   private Vector force;
   private boolean active;
   private boolean affectedByGravity;
   private boolean trigger;
 
   public GameComponent(Pose pose, double mass, double friction) {
-    this.pose = Objects.requireNonNull(pose, EngineError.NULL_POSE.message());
+    Pose initialPose = Objects.requireNonNull(pose, EngineError.NULL_POSE.message());
+    this.state = new ObjectState(
+        new Vector(initialPose.x(), initialPose.y()),
+        new Vector(0, 0),
+        initialPose.rotation(),
+        new Vector(0, 0)
+    );
     setMass(mass);
     setFriction(friction);
-    this.velocity = new Vector(0, 0);
     this.force = new Vector(0, 0);
-    this.hitboxes = new ArrayList<>();
     this.active = true;
     this.affectedByGravity = true;
     this.trigger = false;
@@ -34,20 +38,21 @@ public abstract class GameComponent implements GameObject {
 
   @Override
   public Pose getPose() {
-    return pose;
+    return new Pose(getX(), getY(), getRotation());
   }
 
   public void setPosition(Pose position) {
-    this.pose = Objects.requireNonNull(position, EngineError.NULL_POSE.message());
+    Pose newPose = Objects.requireNonNull(position, EngineError.NULL_POSE.message());
+    state.setLinearPosition(new Vector(newPose.x(), newPose.y()));
+    state.setAngularPosition(newPose.rotation());
   }
 
-  @Override
   public Vector getVelocity() {
-    return velocity;
+    return state.getLinearVelocity();
   }
 
   public void setVelocity(Vector velocity) {
-    this.velocity = Objects.requireNonNull(velocity, EngineError.NULL_VECTOR.message());
+    state.setLinearVelocity(Objects.requireNonNull(velocity, EngineError.NULL_VECTOR.message()));
   }
 
   @Override
@@ -75,30 +80,57 @@ public abstract class GameComponent implements GameObject {
   }
 
   @Override
-  public List<Object> getHitboxes() {
-    return Collections.unmodifiableList(hitboxes);
-  }
-
-  protected void addHitbox(Object hitbox) {
-    hitboxes.add(Objects.requireNonNull(hitbox, EngineError.NULL_HITBOX.message()));
-  }
-
-  protected void removeHitbox(Object hitbox) {
-    hitboxes.remove(hitbox);
-  }
-
-  protected void clearHitboxes() {
-    hitboxes.clear();
-  }
-
-  @Override
   public Vector getForce() {
     return force;
   }
 
   @Override
+  public void setForce(Vector force) {
+    this.force = Objects.requireNonNull(force, EngineError.NULL_VECTOR.message());
+  }
+
+  @Override
   public void addForce(Vector force) {
     this.force = this.force.add(Objects.requireNonNull(force, EngineError.NULL_VECTOR.message()));
+  }
+
+  @Override
+  public ConvexPolygon getPolygon() {
+    return polygon;
+  }
+
+  protected void setPolygon(ConvexPolygon polygon) {
+    this.polygon = polygon;
+  }
+
+  @Override
+  public ObjectState getState() {
+    return state;
+  }
+
+  @Override
+  public void setState(ObjectState state) {
+    this.state = Objects.requireNonNull(state);
+  }
+
+  @Override
+  public double getMomentOfInertia() {
+    return momentOfInertia;
+  }
+
+  @Override
+  public void setMomentOfInertia(double momentOfInertia) {
+    this.momentOfInertia = momentOfInertia;
+  }
+
+  @Override
+  public double getRestitution() {
+    return restitution;
+  }
+
+  @Override
+  public void setRestitution(double restitution) {
+    this.restitution = restitution;
   }
 
   @Override
@@ -134,6 +166,21 @@ public abstract class GameComponent implements GameObject {
 
   protected void setTrigger(boolean trigger) {
     this.trigger = trigger;
+  }
+
+  @Override
+  public double getX() {
+    return state.getLinearPosition().x();
+  }
+
+  @Override
+  public double getY() {
+    return state.getLinearPosition().y();
+  }
+
+  @Override
+  public double getRotation() {
+    return state.getAngularPosition();
   }
 
   protected void resetForce() {
