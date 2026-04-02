@@ -6,11 +6,13 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.authoring.internal.VehicleComponentScrollPalette;
 import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.constants.AuthoringScreenConstants;
@@ -21,11 +23,29 @@ import oogasalad.view.core.api.AppScreen;
  */
 public class AuthoringScreen implements AppScreen {
 
+  private enum AuthoringMode {
+    LEVEL,
+    VEHICLE
+  }
+
   private final Parent root;
+  private final ScreenManager screenManager;
   private final ComponentPallete vehiclePalette;
+  private final Pane levelPalettePlaceholder;
+  private final StackPane bottomContentHost;
+  private final Button levelModeButton;
+  private final Button vehicleModeButton;
+
+  private AuthoringMode currentMode;
 
   public AuthoringScreen(ScreenManager screenManager) {
+    this.screenManager = screenManager;
     this.vehiclePalette = new VehicleComponentScrollPalette();
+    this.levelPalettePlaceholder = new Pane();
+    this.bottomContentHost = new StackPane();
+    this.levelModeButton = createTabButton(AuthoringScreenConstants.LEVEL_BUTTON_TEXT);
+    this.vehicleModeButton = createTabButton(AuthoringScreenConstants.VEHICLE_BUTTON_TEXT);
+    this.currentMode = AuthoringMode.LEVEL;
 
     BorderPane layout = new BorderPane();
     layout.setPadding(new Insets(AuthoringScreenConstants.ROOT_PADDING));
@@ -44,6 +64,17 @@ public class AuthoringScreen implements AppScreen {
     layout.setBottom(bottomSections);
 
     this.root = layout;
+
+    levelModeButton.setOnAction(event -> {
+      currentMode = AuthoringMode.LEVEL;
+      refreshDisplayedMode();
+    });
+    vehicleModeButton.setOnAction(event -> {
+      currentMode = AuthoringMode.VEHICLE;
+      refreshDisplayedMode();
+    });
+
+    refreshDisplayedMode();
   }
 
   @Override
@@ -56,6 +87,8 @@ public class AuthoringScreen implements AppScreen {
         AuthoringScreenConstants.BACK_BUTTON_TEXT,
         AuthoringScreenConstants.BACK_BUTTON_WIDTH,
         AuthoringScreenConstants.BACK_BUTTON_HEIGHT);
+    backButton.setOnAction(
+        event -> this.screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY, null));
 
     Button saveButton = createSizedButton(
         AuthoringScreenConstants.SAVE_BUTTON_TEXT,
@@ -83,9 +116,7 @@ public class AuthoringScreen implements AppScreen {
   }
 
   private HBox buildScreenModeRow() {
-    HBox row = new HBox(
-        createTabButton(AuthoringScreenConstants.LEVEL_BUTTON_TEXT),
-        createTabButton(AuthoringScreenConstants.VEHICLE_BUTTON_TEXT));
+    HBox row = new HBox(levelModeButton, vehicleModeButton);
     row.setAlignment(Pos.CENTER_LEFT);
     return row;
   }
@@ -101,11 +132,20 @@ public class AuthoringScreen implements AppScreen {
   }
 
   private StackPane buildBottomRegion() {
-    StackPane region = new StackPane(vehiclePalette.getVisualRoot());
+    StackPane region = bottomContentHost;
     region.setPrefHeight(AuthoringScreenConstants.BOTTOM_REGION_HEIGHT);
     region.setMinHeight(AuthoringScreenConstants.BOTTOM_REGION_HEIGHT);
     region.setMinWidth(AuthoringScreenConstants.BOTTOM_REGION_MIN_WIDTH);
     return region;
+  }
+
+  private void refreshDisplayedMode() {
+    bottomContentHost.getChildren().clear();
+    if (currentMode == AuthoringMode.VEHICLE) {
+      bottomContentHost.getChildren().add(vehiclePalette.getVisualRoot());
+    } else {
+      bottomContentHost.getChildren().add(levelPalettePlaceholder);
+    }
   }
 
   private Button createTabButton(String text) {
