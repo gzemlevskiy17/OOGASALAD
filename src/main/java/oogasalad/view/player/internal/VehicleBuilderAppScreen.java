@@ -33,7 +33,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     // Assembling the regions
     mainContent.getChildren().addAll(
         createGridRegion(),
-        createComponentSection()
+        createComponentSection(),
+        createStartLevelRegion()
     );
 
     Node backButton = createBackButtonRegion();
@@ -42,6 +43,19 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     root.setBottom(backButton);
 
     return root;
+  }
+
+  private Node createStartLevelRegion() {
+    Button startButton = new Button(s("start.button.text"));
+    startButton.getStyleClass().add("start-button");
+    startButton.setOnAction(event -> {
+      screenManager.switchScreen(ScreenFactory.VEHICLE_BUILDER_SCREEN_KEY, null);
+    });
+
+    VBox container = new VBox(startButton);
+    container.getStyleClass().add("selection-region");
+    container.setAlignment(Pos.CENTER);
+    return container;
   }
 
   private VBox createComponentSection() {

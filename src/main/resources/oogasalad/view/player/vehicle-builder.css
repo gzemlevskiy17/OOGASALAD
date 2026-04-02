@@ -53,3 +53,20 @@
   -fx-font-family: "Serif";
   -fx-fill: #333333; /* Dark grey text */
 }
+
+.start-button {
+  -fx-min-width: 400;
+  -fx-min-height: 60;
+  -fx-font-size: 20px;
+  -fx-border-radius: 10;
+  -fx-background-radius: 10;
+}
+
+.selection-region {
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-border-radius: 15;
+  -fx-background-radius: 15;
+  -fx-padding: 30;
+  -fx-max-width: 950;
+}
