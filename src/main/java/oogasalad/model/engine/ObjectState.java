@@ -30,9 +30,11 @@ public class ObjectState {
 
   private Vector linearPosition;
   private Vector linearVelocity;
+  private Vector linearAcceleration;
 
   private double angularPosition;
   private Vector angularVelocity;
+  private Vector angularAcceleration;
 
   /**
    * Creates a state container.
@@ -42,12 +44,16 @@ public class ObjectState {
    * @param angularPosition current orientation angle
    * @param angularVelocity angular velocity representation
    */
-  public ObjectState(Vector linearPosition, Vector linearVelocity, double angularPosition,
-      Vector angularVelocity) {
+  public ObjectState(Vector linearPosition, Vector linearVelocity, Vector linearAcceleration,
+      double angularPosition,
+      Vector angularVelocity, Vector angularAcceleration) {
     this.linearPosition = linearPosition;
     this.linearVelocity = linearVelocity;
+    this.linearAcceleration = linearAcceleration;
+
     this.angularPosition = angularPosition;
     this.angularVelocity = angularVelocity;
+    this.angularAcceleration = angularAcceleration;
   }
 
   public Vector getLinearPosition() {
@@ -80,5 +86,21 @@ public class ObjectState {
 
   public void setAngularVelocity(Vector angularVelocity) {
     this.angularVelocity = angularVelocity;
+  }
+
+  public Vector getLinearAcceleration() {
+    return linearAcceleration;
+  }
+
+  public void setLinearAcceleration(Vector linearAcceleration) {
+    this.linearAcceleration = linearAcceleration;
+  }
+
+  public Vector getAngularAcceleration() {
+    return angularAcceleration;
+  }
+
+  public void setAngularAcceleration(Vector angularAcceleration) {
+    this.angularAcceleration = angularAcceleration;
   }
 }

@@ -31,8 +31,7 @@ import oogasalad.model.engine.api.World;
  * }</pre>
  *
  * <p><strong>Details:</strong> Collision resolution architecture is inspired by Tim Wheeler's
- * write-up on 2D collision detection/resolution:
- * <a
+ * write-up on 2D collision detection/resolution: <a
  * href="https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/">...</a></p>
  *
  * @author Georgiy Zemlevskiy
@@ -49,9 +48,9 @@ public class ConcreteGameEngine implements GameEngine {
    * <p><strong>Assumptions:</strong> All arguments are non-null and remain valid for the engine
    * lifetime.
    *
-   * @param world world that stores active simulation objects
+   * @param world             world that stores active simulation objects
    * @param collisionDetector pairwise detector used to build collision records
-   * @param collisionSolver solver used to resolve detected collisions
+   * @param collisionSolver   solver used to resolve detected collisions
    */
   public ConcreteGameEngine(World world, CollisionDetector collisionDetector,
       CollisionSolver collisionSolver) {
@@ -118,6 +117,30 @@ public class ConcreteGameEngine implements GameEngine {
 
   //TODO: implement
   private ObjectState integrateObjectState(ObjectState state, double elapsedTime) {
-    return state;
+    Vector newLinearVelocity = integrateVector(state.getLinearVelocity(),
+        state.getLinearAcceleration(), elapsedTime);
+    Vector newLinearPosition = integrateVector(state.getLinearPosition(), state.getLinearVelocity(),
+        elapsedTime);
+
+    //TODO: does integrateVector work for angular?
+    Vector newAngularVelocity = integrateVector(state.getAngularVelocity(),
+        state.getAngularVelocity(), elapsedTime);
+    double newAngularPosition = integrateScalar(state.getAngularPosition(),
+        state.getAngularVelocity().magnitude(), elapsedTime);
+
+    return new ObjectState(newLinearPosition, newLinearVelocity,
+        state.getLinearAcceleration(), newAngularPosition, newAngularVelocity,
+        state.getAngularAcceleration());
+  }
+
+  private Vector integrateVector(Vector previousVector, Vector integrand, double elapsedTime) {
+    double newX = integrateScalar(previousVector.x(), integrand.x(), elapsedTime);
+    double newY = integrateScalar(previousVector.y(), integrand.y(), elapsedTime);
+
+    return new Vector(newX, newY);
+  }
+
+  private double integrateScalar(double previousValue, double integrandValue, double elapsedTime) {
+    return previousValue + integrandValue * elapsedTime;
   }
 }
