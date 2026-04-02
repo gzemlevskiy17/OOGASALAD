@@ -65,8 +65,16 @@ public class AuthoringControllerImpl implements AuthoringController {
    */
   @Override
   public void handleGridInteraction(MouseEvent event) {
-    double gridX = Math.floor(event.getX() / CELL_SIZE);
-    double gridY = Math.floor(event.getY() / CELL_SIZE);
+    handleGridInteraction(event.getX(), event.getY());
+  }
+
+  /**
+   * Core grid interaction logic. Package-private so tests can invoke it
+   * directly without needing to construct a JavaFX MouseEvent.
+   */
+  void handleGridInteraction(double x, double y) {
+    double gridX = Math.floor(x / CELL_SIZE);
+    double gridY = Math.floor(y / CELL_SIZE);
 
     if (toolSelector.getActiveTool() == ToolType.DRAW) {
       placeTerrain(gridX, gridY);
