@@ -1,90 +1,89 @@
 package oogasalad.model;
 
-import java.util.Collection;
-import java.util.List;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
 public class ConcreteGameObject implements GameObject {
 
   private double mass;
-  private Vector position;
-  private Vector velocity;
+  private double momentOfInertia;
+  private double restitution;
+
+  //TODO: move to interface?
+  private ObjectState state;
+  private ConvexPolygon polygon;
+
   private Vector force;
+//  private Vector acceleration;
+//  private Vector
 
   @Override
   public double getMass() {
-    return 0;
-  }
-
-  @Override
-  public Vector getPosition() {
-    return null;
-  }
-
-  @Override
-  public Vector getVelocity() {
-    return null;
+    return mass;
   }
 
   @Override
   public Vector getForce() {
-    return null;
+    return force;
   }
 
   @Override
-  public void setMass() {
-
-  }
-
-  @Override
-  public void setPosition(Vector position) {
-
-  }
-
-  @Override
-  public void setVelocity(Vector velocity) {
-
+  public void setMass(double mass) {
+    this.mass = mass;
   }
 
   @Override
   public void setForce(Vector force) {
-
+    this.force = force;
   }
 
   @Override
-  public void updateVelocity(double elapsedTime) {
-    Vector changeInVelocity = force.normalize().multiply(force.magnitude() / mass);
-    velocity = velocity.add(changeInVelocity);
+  public ConvexPolygon getPolygon() {
+    return polygon;
   }
 
   @Override
-  public void move(double elapsedTime) {
-    position = position.add(velocity.multiply(elapsedTime));
+  public ObjectState getState() {
+    return state;
   }
 
   @Override
-  public Collection<Object> getHitboxes() {
-    return List.of();
+  public void setState(ObjectState state) {
+    this.state = state;
+  }
+
+  @Override
+  public double getMomentOfInertia() {
+    return momentOfInertia;
+  }
+
+  @Override
+  public void setMomentOfInertia(double momentOfInertia) {
+    this.momentOfInertia = momentOfInertia;
+  }
+
+  @Override
+  public double getRestitution() {
+    return restitution;
+  }
+
+  @Override
+  public void setRestitution(double restitution) {
+    this.restitution = restitution;
   }
 
   @Override
   public double getX() {
-    return position.x();
+    return state.getLinearPosition().x();
   }
 
   @Override
   public double getY() {
-    return position.y();
+    return state.getLinearPosition().y();
   }
 
   @Override
   public double getRotation() {
     return 0;
-  }
-
-  @Override
-  public String getSprite() {
-    return "";
   }
 }
