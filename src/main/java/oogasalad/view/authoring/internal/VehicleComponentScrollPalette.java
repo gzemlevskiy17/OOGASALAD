@@ -8,7 +8,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
 import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.constants.VehicleComponentPaletteConstants;
@@ -25,31 +24,26 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     componentGrid.setMaxWidth(Double.MAX_VALUE);
     componentGrid.setPadding(new Insets(VehicleComponentPaletteConstants.CONTENT_PADDING));
 
-    for (int i = 0; i < VehicleComponentPaletteConstants.COMPONENT_NAMES.length; i++) {
+    for (int i = 0; i < VehicleComponentPaletteConstants.COMPONENTS_PER_ROW; i++) {
       ColumnConstraints constraints = new ColumnConstraints();
       constraints.setPercentWidth(100.0 / VehicleComponentPaletteConstants.COMPONENTS_PER_ROW);
       constraints.setHgrow(Priority.ALWAYS);
       componentGrid.getColumnConstraints().add(constraints);
     }
 
-    RowConstraints rowConstraints = new RowConstraints();
-    rowConstraints.setPrefHeight(VehicleComponentPaletteConstants.CELL_PREF_HEIGHT);
-    rowConstraints.setVgrow(Priority.ALWAYS);
-    componentGrid.getRowConstraints().add(rowConstraints);
-
     for (int i = 0; i < VehicleComponentPaletteConstants.COMPONENT_NAMES.length; i++) {
-      int row = 0;
-      int column = i;
+      int row = i / VehicleComponentPaletteConstants.COMPONENTS_PER_ROW;
+      int column = i % VehicleComponentPaletteConstants.COMPONENTS_PER_ROW;
       componentGrid.add(createComponentCell(VehicleComponentPaletteConstants.COMPONENT_NAMES[i]),
           column, row);
     }
-    componentGrid.setGridLinesVisible(true);
 
     visualRoot = new ScrollPane(componentGrid);
+    componentGrid.setGridLinesVisible(true);
     visualRoot.setFitToWidth(true);
-    visualRoot.setFitToHeight(true);
-    visualRoot.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
-    visualRoot.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    visualRoot.setFitToHeight(false);
+    visualRoot.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    visualRoot.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
     visualRoot.setPrefHeight(VehicleComponentPaletteConstants.PALETTE_PREF_HEIGHT);
     visualRoot.setMinHeight(VehicleComponentPaletteConstants.PALETTE_PREF_HEIGHT);
     visualRoot.setMaxHeight(VehicleComponentPaletteConstants.PALETTE_PREF_HEIGHT);
