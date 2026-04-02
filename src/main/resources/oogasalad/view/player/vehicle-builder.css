@@ -1,0 +1,22 @@
+.screen-root {
+  -fx-background-color: white;
+  -fx-padding: 30;
+}
+
+/* Controls the spacing between the boxes */
+.vehicle-grid {
+  -fx-hgap: 15;
+  -fx-vgap: 15;
+  -fx-alignment: center;
+}
+
+/* Styles the individual empty boxes */
+.grid-cell {
+  -fx-min-width: 90;
+  -fx-min-height: 70;
+  -fx-background-color: white;
+  -fx-border-color: #888888; /* The grey border */
+  -fx-border-width: 4;
+  -fx-border-radius: 10;     /* Rounded outer corners */
+  -fx-background-radius: 10; /* Rounded inner background */
+}
