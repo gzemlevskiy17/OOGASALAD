@@ -13,6 +13,11 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
+/**
+ * Screen on which the player builds a vehicle
+ * @author Iurii Beliaev
+ */
+
 public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.VehicleBuilderAppScreen");

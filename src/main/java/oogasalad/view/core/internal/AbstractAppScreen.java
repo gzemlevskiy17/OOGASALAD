@@ -5,6 +5,12 @@ import javafx.scene.Scene;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.view.core.api.AppScreen;
 
+/**
+ * The abstract class which all AppScreens inherit from.
+ * Children of this class override createRoot()
+ * @author Iurii Beliaev
+ */
+
 public abstract class AbstractAppScreen implements AppScreen {
   private static final double SCENE_WIDTH = 1000;
   private static final double SCENE_HEIGHT = 700;
