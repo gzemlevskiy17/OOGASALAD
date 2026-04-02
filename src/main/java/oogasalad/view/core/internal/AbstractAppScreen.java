@@ -2,22 +2,34 @@ package oogasalad.view.core.internal;
 
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
+import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.view.core.api.AppScreen;
 
 public abstract class AbstractAppScreen implements AppScreen {
+  private static final double SCENE_WIDTH = 1000;
+  private static final double SCENE_HEIGHT = 700;
+
   private final Parent root;
   private Scene scene;
-  private final Stage stage;
+  protected final ScreenManager screenManager; // Not sure if this is the best practice
 
-  protected AbstractAppScreen(Stage stage) {
-    this.stage = stage;
+  protected AbstractAppScreen(ScreenManager screenManager) {
+    this.screenManager = screenManager;
     this.root = createRoot();
+    this.scene = createScene(getWidth(), getHeight());
+  }
+
+  private double getHeight() {
+    return SCENE_HEIGHT;
+  }
+
+  private double getWidth() {
+    return SCENE_WIDTH;
   }
 
   protected abstract Parent createRoot();
 
-  public Scene createScene(int width, int height) {
+  protected Scene createScene(double width, double height) {
     if (scene == null) {
       scene = new Scene(root, width, height);
     }
@@ -33,24 +45,6 @@ public abstract class AbstractAppScreen implements AppScreen {
    */
   public Scene getScene() {
     return scene;
-  }
-
-  /**
-   * Returns the JavaFX stage associated with this scene.
-   *
-   * @return the {@link Stage}
-   */
-  public Stage getStage() {
-    return this.stage;
-  }
-
-  /**
-   * Returns the root node of this scene.
-   *
-   * @return the root {@link Parent} node
-   */
-  public Parent getRoot() {
-    return root;
   }
 
 
