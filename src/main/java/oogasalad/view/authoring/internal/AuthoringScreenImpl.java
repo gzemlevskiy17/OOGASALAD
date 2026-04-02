@@ -2,6 +2,7 @@ package oogasalad.view.authoring.internal;
 
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -9,7 +10,6 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
-import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -28,7 +28,7 @@ public class AuthoringScreenImpl implements AppScreen {
 
   private final AuthoringCanvasImpl canvas;
   private final ComponentPaletteImpl palette;
-  private final Scene scene;
+  private final VBox root;
 
   public AuthoringScreenImpl() {
     canvas = new AuthoringCanvasImpl();
@@ -39,14 +39,13 @@ public class AuthoringScreenImpl implements AppScreen {
     Node canvasSection = wrapInSection(canvas.getVisualRoot());
     Node paletteSection = wrapInSection(palette.getVisualRoot());
 
-    VBox root = new VBox(GAP, canvasSection, paletteSection);
+    root = new VBox(GAP, canvasSection, paletteSection);
     root.setPadding(new Insets(GAP));
-    scene = new Scene(root);
   }
 
   @Override
-  public Scene getScene() {
-    return scene;
+  public Parent getRoot() {
+    return root;
   }
 
   public AuthoringCanvasImpl getCanvas() {

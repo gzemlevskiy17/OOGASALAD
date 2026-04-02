@@ -34,6 +34,8 @@ public class Main extends Application {
 
         stage.setTitle("Good Piggies");
         stage.show();
+        stage.setMaximized(true);
+
     }
 
     /**

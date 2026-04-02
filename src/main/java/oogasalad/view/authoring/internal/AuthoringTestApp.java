@@ -1,6 +1,7 @@
 package oogasalad.view.authoring.internal;
 
 import javafx.application.Application;
+import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class AuthoringTestApp extends Application {
@@ -9,7 +10,7 @@ public class AuthoringTestApp extends Application {
   public void start(Stage stage) {
     AuthoringScreenImpl screen = new AuthoringScreenImpl();
     stage.setTitle("Authoring Screen");
-    stage.setScene(screen.getScene());
+    stage.setScene(new Scene(screen.getRoot()));
     stage.show();
   }
 

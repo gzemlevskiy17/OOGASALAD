@@ -2,7 +2,7 @@ package oogasalad.view.core.api;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -18,7 +18,7 @@ import oogasalad.view.constants.GameMenuConstants;
  */
 public class GameMenuScreen implements AppScreen {
 
-  private final Scene scene;
+  private final Parent root;
 
   public GameMenuScreen(ScreenManager screenManager) {
     BorderPane root = new BorderPane();
@@ -33,6 +33,11 @@ public class GameMenuScreen implements AppScreen {
     title.setFont(Font.font(GameMenuConstants.TITLE_FONT_SIZE));
 
     Button playButton = new Button(GameMenuConstants.PLAY_BUTTON_TEXT);
+    playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
+    playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
+    playButton.setOnAction(event ->
+        screenManager.switchScreen(ScreenFactory.PLAYER_ENTRY_SCREEN_KEY, null));
+
     Button createButton = new Button(GameMenuConstants.CREATE_BUTTON_TEXT);
     playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
     createButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
@@ -46,12 +51,12 @@ public class GameMenuScreen implements AppScreen {
     Button loginButton = new Button(GameMenuConstants.LOGIN_BUTTON_TEXT);
     root.setBottom(wrapBottomLeft(loginButton));
 
-    scene = new Scene(root, GameMenuConstants.SCENE_WIDTH, GameMenuConstants.SCENE_HEIGHT);
+    this.root = root;
   }
 
   @Override
-  public Scene getScene() {
-    return scene;
+  public Parent getRoot() {
+    return root;
   }
 
   private VBox wrapTopLeft(Button... buttons) {
