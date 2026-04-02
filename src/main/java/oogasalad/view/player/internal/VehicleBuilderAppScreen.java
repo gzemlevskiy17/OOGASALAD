@@ -7,6 +7,8 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.internal.AbstractAppScreen;
@@ -25,12 +27,60 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     root.getStylesheets().add(getClass().getResource("/oogasalad/view/player/vehicle-builder.css").toExternalForm());
     root.getStyleClass().add("screen-root");
 
-    // Create the grid and place it in the center of the screen
-    GridPane grid = createGridRegion();
-    root.setCenter(grid);
-    root.setBottom(createBackButtonRegion());
+    VBox mainContent = new VBox(d("main.content.spacing"));
+    mainContent.setAlignment(Pos.CENTER);
+
+    // Assembling the regions
+    mainContent.getChildren().addAll(
+        createGridRegion(),
+        createComponentSection()
+    );
+
+    Node backButton = createBackButtonRegion();
+
+    root.setCenter(mainContent);
+    root.setBottom(backButton);
 
     return root;
+  }
+
+  private VBox createComponentSection() {
+    VBox container = new VBox(d("component.spacing"));
+    container.setAlignment(Pos.CENTER);
+
+    Text title = new Text(s("component.title.text"));
+    title.getStyleClass().add("component-title");
+
+    GridPane componentGrid = createComponentGrid();
+    componentGrid.getStyleClass().add("component-grid");
+    componentGrid.setAlignment(Pos.CENTER);
+
+    container.getChildren().addAll(title, componentGrid);
+
+    return container;
+  }
+
+  private GridPane createComponentGrid() {
+    GridPane componentGrid = new GridPane();
+    componentGrid.getStyleClass().add("component-grid");
+    componentGrid.setAlignment(Pos.CENTER);
+
+    // Read grid dimensions from the properties file - later to be replaced by the passed values
+    int cols = (int) d("componentGrid.columns");
+    int rows = (int) d("componentGrid.rows");
+
+    // Populate the grid with empty cells initially
+    for (int row = 0; row < rows; row++) {
+      for (int col = 0; col < cols; col++) {
+        StackPane componentCell = new StackPane();
+        componentCell.getStyleClass().add("component-cell");
+
+        // Add the cell to the grid at the specified column and row
+        componentGrid.add(componentCell, col, row);
+      }
+    }
+
+    return componentGrid;
   }
 
   private GridPane createGridRegion() {
