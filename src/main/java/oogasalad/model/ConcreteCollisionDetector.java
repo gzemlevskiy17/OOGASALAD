@@ -1,44 +1,46 @@
 package oogasalad.model;
 
+import java.util.List;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
-import oogasalad.model.engine.api.World;
 
 /**
  * SAT-based narrow-phase collision detector implementation.
  *
- * <p>Use this class when you need to scan objects in a {@link World} and determine whether convex
- * polygons are overlapping, including a minimum-penetration vector for later resolution.
+ * <p>Use this class to evaluate whether two convex polygon objects overlap and to derive
+ * penetration data for downstream resolution.
  *
  * <p><strong>Assumptions:</strong> Polygons are convex and provide points in consistent winding
- * order. Current implementation is incomplete: {@link #detectCollisions(World)} is a placeholder.
+ * order. Pair selection and world-wide iteration are intentionally out of scope for this class and
+ * belong to higher-level engine flow.
  *
- * <p><strong>Dependencies:</strong> Relies on {@link World}, {@link GameObject},
- * {@link ConvexPolygon}, {@link Vector}, and the model {@link Collision} data container.
+ * <p><strong>Dependencies:</strong> Relies on {@link GameObject}, {@link ConvexPolygon},
+ * {@link Vector}, and the model {@link Collision} data container.
  *
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
  * CollisionDetector detector = new ConcreteCollisionDetector();
- * detector.detectCollisions(world);
+ * detector.detectCollisions(objectA, objectB);
  * }</pre>
  *
  * @author Georgiy Zemlevskiy
  */
 public class ConcreteCollisionDetector implements CollisionDetector {
 
+  //TODO: update javadoc once complete
   /**
-   * Runs collision detection for objects currently in the world.
+   * Evaluates a single object pair for SAT overlap.
    *
-   * <p>Current behavior is intentionally empty while responsibility is being moved/refined.
    *
-   * @param world world containing active game objects
-   * @throws NullPointerException if a future implementation dereferences a null {@code world}
+   * @param objectA first object in the pair
+   * @param objectB second object in the pair
+   * @return pairwise collision records; currently {@code null} until implementation is completed
    */
   @Override
-  public void detectCollisions(World world) {
-    //TODO: delegate responsibilities into another class
+  public Collision detectCollision(GameObject objectA, GameObject objectB) {
+    return null;
   }
 
   /**
