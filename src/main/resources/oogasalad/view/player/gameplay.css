@@ -46,7 +46,23 @@
   -fx-alignment: center;
 }
 
+/* Top-right Back Button */
+.back-button {
+  -fx-background-color: #E0E0E0;
+  -fx-border-color: #707070;
+  -fx-border-width: 1;
+  -fx-border-radius: 3;
+  -fx-background-radius: 3;
+  -fx-padding: 5 15;
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 14px;
+
+  /* Pushes the button inwards so it doesn't touch the literal edge of the window */
+  -fx-translate-x: -20;
+  -fx-translate-y: 20;
+}
+
 /* hover effect */
-.sys-button:hover, .tool-button:hover {
+.sys-button:hover, .tool-button:hover, .back-button:hover{
   -fx-background-color: #f0f0f0;
 }

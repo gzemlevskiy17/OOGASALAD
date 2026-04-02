@@ -4,11 +4,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 public class GamePlayAppScreen extends AbstractAppScreen {
@@ -30,12 +32,23 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     HBox topControls = createTopControlsRegion();
     HBox bottomControls = createBottomControlsRegion();
 
+    Node backButton = createBackButtonRegion();
+
     StackPane.setAlignment(topControls, Pos.TOP_LEFT);
+    StackPane.setAlignment(backButton, Pos.TOP_RIGHT);
     StackPane.setAlignment(bottomControls, Pos.BOTTOM_CENTER);
 
-    root.getChildren().addAll(gameArea, topControls, bottomControls);
+    root.getChildren().addAll(gameArea, topControls, bottomControls, backButton);
 
     return root;
+  }
+
+  private Node createBackButtonRegion() {
+    Button backButton = new Button(s("back.button.text"));
+    backButton.getStyleClass().add("back-button");
+    backButton.setOnAction(e -> screenManager.switchScreen(ScreenFactory.VEHICLE_BUILDER_APP_SCREEN_KEY, null));
+
+    return backButton;
   }
 
   private Pane createGameAreaRegion() {
