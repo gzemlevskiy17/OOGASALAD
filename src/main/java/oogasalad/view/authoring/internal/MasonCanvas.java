@@ -13,7 +13,7 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.InputMonitor;
 import oogasalad.view.authoring.api.PlacedObject;
 
-public class AuthoringCanvasImpl implements AuthoringCanvas {
+public class MasonCanvas implements AuthoringCanvas {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas");
@@ -41,7 +41,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   /**
    * Initializes the authoring canvas with a grid and mouse interaction for hover effects.
    */
-  public AuthoringCanvasImpl() {
+  public MasonCanvas() {
     this.placedObjects = new LinkedHashMap<>();
     this.canvas = new Canvas(columns * cellSize, rows * cellSize);
     drawGrid();

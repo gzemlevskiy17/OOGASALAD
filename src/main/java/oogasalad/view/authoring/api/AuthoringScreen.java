@@ -15,7 +15,6 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.authoring.internal.AuthoringCanvasImpl;
 import oogasalad.view.authoring.internal.VehicleComponentScrollPalette;
-import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.constants.AuthoringScreenConstants;
 import oogasalad.view.core.api.AppScreen;
 
