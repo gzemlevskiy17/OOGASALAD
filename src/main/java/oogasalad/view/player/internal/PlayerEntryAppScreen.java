@@ -16,11 +16,11 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
-public class PlayerEntryScreen extends AbstractAppScreen {
+public class PlayerEntryAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.PlayerEntryScreen");
 
-  public PlayerEntryScreen(ScreenManager screenManager) {
+  public PlayerEntryAppScreen(ScreenManager screenManager) {
     super(screenManager);
   }
 
@@ -78,8 +78,7 @@ public class PlayerEntryScreen extends AbstractAppScreen {
     for (String world : getList("worlds")) {
       Button btn = new Button(s("world.button." + world));
       btn.getStyleClass().add("world-button");
-      // First world is selected
-      if (world.equals("forest")) btn.getStyleClass().add("filled");
+      btn.getStyleClass().add("world-" + world); // Hovering logic
       worldBox.getChildren().add(btn);
     }
     return worldBox;
