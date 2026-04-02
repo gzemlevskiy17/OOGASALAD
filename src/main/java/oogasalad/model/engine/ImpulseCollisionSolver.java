@@ -1,81 +1,55 @@
-package oogasalad.model;
+package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;
-import oogasalad.model.engine.api.GameEngine;
+import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
-import oogasalad.model.engine.api.World;
 
 /**
- * Main physics stepping implementation for the game world.
+ * Impulse-based collision response implementation for a single collision pair.
  *
- * <p>Use this class to advance object states over time and (when enabled) perform collision
- * manifold generation and resolution.
+ * <p>Use this solver when a collision has already been detected and you want physically motivated
+ * velocity updates (and optional overlap correction) driven by contact geometry and material
+ * properties.
  *
- * <p><strong>Assumptions:</strong> The world reference is non-null and objects expose valid
- * physical state. Several internal methods are still placeholders or marked TODO, so behavior is
- * currently partial.
+ * <p><strong>Assumptions:</strong> Incoming {@link Collision} objects reference valid objects and
+ * states, polygon winding is consistent with helper expectations, and mass/inertia values are
+ * non-negative. Degenerate geometry or missing manifold data can cause the solver to no-op.
  *
- * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link GameObject},
- * {@link ObjectState}, {@link Collision}, and {@link Vector}.
+ * <p><strong>Dependencies:</strong> Relies on {@link Collision}, {@link ObjectState},
+ * {@link ConvexPolygon}, {@link GameObject}, {@link Vector}, and the {@link CollisionSolver}
+ * interface contract.
  *
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
- * GameEngine engine = new ConcreteGameEngine(world);
- * engine.step(1.0 / 60.0);
+ * CollisionSolver solver = new ImpulseCollisionSolver();
+ * solver.solve(collision);
  * }</pre>
  *
- * <p><Strong>Note:</Strong></p>
- *
- * <p>Collision resolution is heavily inspired by Tim Wheeler's blog:
- * <a href="https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/">...</a></p>
+ * <p><strong>Details:</strong> This class resolves one pair at a time. Pair scheduling and
+ * iteration order are handled by the engine, not by this solver.
  *
  * @author Georgiy Zemlevskiy
  */
-public class ConcreteGameEngine implements GameEngine {
+public class ImpulseCollisionSolver implements CollisionSolver {
 
-  private static final int MAX_CONTACT_POINTS = 2;
-  private World world;
-
-  /**
-   * Creates an engine bound to a world container.
-   *
-   * @param world world that stores all active objects and joints
-   */
-  public ConcreteGameEngine(World world) {
-    this.world = world;
-  }
-
-  //TODO: implement collision detection for all world objects
-  //TODO: implement application of forces
+  public final static int MAX_CONTACT_POINTS = 2;
 
   /**
-   * Advances one simulation step.
+   * Resolves one collision using the impulse solver pipeline.
    *
-   * <p>This method currently integrates object state and keeps hooks for joint constraints and
-   * collision resolution while those parts are being finalized.
+   * <p>Use this method from engine collision orchestration after detection has produced per-pair
+   * collision data for the current step.
    *
-   * @param elapsedTime simulation delta time in seconds
-   * @throws NullPointerException if world/object state references are null
+   * <p><strong>Assumptions:</strong> {@code collision} is non-null and contains enough contact and
+   * normal information for response calculations.
+   *
+   * @param collision pairwise collision record to resolve
    */
   @Override
-  public void step(double elapsedTime) {
-//    for (Joint joint :  world.getJoints()) {
-//
-//    }
-
-    for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
-      ObjectState newState = integrateObjectState(gameObject.getState(), elapsedTime);
-      gameObject.setState(newState);
-    }
-
-//    solveCollisions();
-
-//    for (Constraint constraint : constraings) {
-//      enforceConstraint(constraint);
-//    }
+  public void solve(Collision collision) {
 
   }
 
@@ -303,10 +277,5 @@ public class ConcreteGameEngine implements GameEngine {
       return 0.0;
     }
     return 1.0 / value;
-  }
-
-  //TODO: implement
-  private ObjectState integrateObjectState(ObjectState state, double elapsedTime) {
-    return state;
   }
 }

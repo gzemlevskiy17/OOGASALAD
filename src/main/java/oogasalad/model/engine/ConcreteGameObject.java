@@ -1,4 +1,4 @@
-package oogasalad.model;
+package oogasalad.model.engine;
 
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Pose;

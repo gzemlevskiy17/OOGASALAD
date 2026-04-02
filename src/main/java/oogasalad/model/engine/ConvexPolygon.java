@@ -1,4 +1,4 @@
-package oogasalad.model;
+package oogasalad.model.engine;
 
 import java.util.List;
 import oogasalad.model.engine.api.Vector;
@@ -22,9 +22,9 @@ import oogasalad.model.engine.api.Vector;
  * }</pre>
  *
  * @author Georgiy Zemlevskiy
- * @author OOGASalad Team 03
  */
 public class ConvexPolygon {
+  //TODO: define as interface?
 
   private List<Vector> points;
 
