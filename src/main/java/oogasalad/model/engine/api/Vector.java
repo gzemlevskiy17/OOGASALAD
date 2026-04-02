@@ -9,7 +9,7 @@ package oogasalad.model.engine.api;
  * @param y
  * @author Georgiy Zemlevskiy
  */
-public record Vector(double x, double y) {
+public record Vector(double x, double y) implements Comparable<Vector> {
 
   public Vector multiply(double factor) {
     return new Vector(this.x() * factor, this.y() * factor);
@@ -25,5 +25,36 @@ public record Vector(double x, double y) {
 
   public Vector normalize() {
     return new Vector(this.x() / magnitude(), this.y() / magnitude());
+  }
+
+  public double dot(Vector other) {
+    return this.x() * other.x() + this.y() * other.y();
+  }
+
+  public Vector subtract(Vector other) {
+    return new Vector(this.x() - other.x(), this.y() - other.y());
+  }
+
+  //TODO: make more general method?
+  public Vector rotateRight() {
+    return new Vector(this.y(), -1 * this.x());
+  }
+
+  public Vector rotateLeft() {
+    return new Vector(-this.y(), this.x());
+  }
+
+  public Vector perpendicular() {
+    return new Vector(-this.y(), this.x());
+  }
+
+  public double cross(Vector other) {
+    return this.x() * other.y() - this.y() * other.x();
+  }
+
+
+  @Override
+  public int compareTo(Vector other) {
+    return Double.compare(this.magnitude(), other.magnitude());
   }
 }
