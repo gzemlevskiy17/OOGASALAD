@@ -33,6 +33,11 @@ public class GameMenuScreen implements AppScreen {
     title.setFont(Font.font(GameMenuConstants.TITLE_FONT_SIZE));
 
     Button playButton = new Button(GameMenuConstants.PLAY_BUTTON_TEXT);
+    playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
+    playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
+    playButton.setOnAction(event ->
+        screenManager.switchScreen(ScreenFactory.PLAYER_ENTRY_SCREEN_KEY, null));
+
     Button createButton = new Button(GameMenuConstants.CREATE_BUTTON_TEXT);
     playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
     createButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
