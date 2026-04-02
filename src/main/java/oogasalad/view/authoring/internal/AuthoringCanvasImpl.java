@@ -1,5 +1,9 @@
 package oogasalad.view.authoring.internal;
 
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
@@ -7,6 +11,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.InputMonitor;
+import oogasalad.view.authoring.api.PlacedObject;
 
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 
@@ -23,7 +28,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private final double gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
 
   private final Canvas canvas;
-  private final boolean[][] filled;
+  private final Map<CellKey, PlacedObject> placedObjects;
 
   private InputMonitor hoverMonitor;
   private InputMonitor clickMonitor;
@@ -37,7 +42,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
    * Initializes the authoring canvas with a grid and mouse interaction for hover effects.
    */
   public AuthoringCanvasImpl() {
-    this.filled = new boolean[rows][columns];
+    this.placedObjects = new LinkedHashMap<>();
     this.canvas = new Canvas(columns * cellSize, rows * cellSize);
     drawGrid();
     attachMouseHandlers();
@@ -89,13 +94,13 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   private void fillSingleCell(int col, int row) {
-    if (col >= 0 && col < columns && row >= 0 && row < rows && !filled[row][col]) {
-      filled[row][col] = true;
-      drawCell(col, row, hoverFill);
-      System.out.println("filled (" + col + ", " + row + ")");
-      if (clickMonitor != null) {
-        clickMonitor.onCellInteraction(col, row);
-      }
+    if (!isWithinBounds(col, row) || isOccupied(col, row)) {
+      return;
+    }
+    placedObjects.put(new CellKey(col, row), createPlacedObject(col, row));
+    drawCell(col, row, hoverFill);
+    if (clickMonitor != null) {
+      clickMonitor.onCellInteraction(col, row);
     }
   }
 
@@ -125,12 +130,24 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private void clearHover() {
     if (hoverCol >= 0 && hoverRow >= 0) {
-      Color restore = filled[hoverRow][hoverCol] ? hoverFill : defaultFill;
+      Color restore = isOccupied(hoverCol, hoverRow) ? hoverFill : defaultFill;
       drawCell(hoverCol, hoverRow, restore);
       redrawGridLinesAround(hoverCol, hoverRow);
       hoverCol = -1;
       hoverRow = -1;
     }
+  }
+
+  private boolean isWithinBounds(int col, int row) {
+    return col >= 0 && col < columns && row >= 0 && row < rows;
+  }
+
+  private boolean isOccupied(int col, int row) {
+    return placedObjects.containsKey(new CellKey(col, row));
+  }
+
+  private PlacedObject createPlacedObject(int col, int row) {
+    return new PlacedObject(col, row, col * cellSize, row * cellSize, cellSize, cellSize);
   }
 
   private void drawCell(int col, int row, Color color) {
@@ -187,12 +204,20 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   @Override
+  public Collection<PlacedObject> getPlacedObjects() {
+    return List.copyOf(placedObjects.values());
+  }
+
+  @Override
   public void refreshGrid() {
-    for (int row = 0; row < rows; row++) {
-      for (int col = 0; col < columns; col++) {
-        filled[row][col] = false;
-      }
-    }
+    placedObjects.clear();
+    hoverCol = -1;
+    hoverRow = -1;
+    lastDragCol = -1;
+    lastDragRow = -1;
     drawGrid();
+  }
+
+  private record CellKey(int col, int row) {
   }
 }
