@@ -62,6 +62,20 @@
   -fx-translate-y: 20;
 }
 
+/* Toggle effect */
+/* NOTE: The :selected pseudo-class is automatically applied by JavaFX for ToggleButton class */
+.tool-button:selected {
+  -fx-background-color: #007BFF;
+  -fx-text-fill: white;
+  -fx-border-color: #0056b3;
+}
+
+/* Hover effect for when it is already selected */
+.tool-button:selected:hover {
+  -fx-background-color: #0056b3;
+  -fx-cursor: hand;
+}
+
 /* hover effect */
 .sys-button:hover, .tool-button:hover, .back-button:hover{
   -fx-background-color: #f0f0f0;

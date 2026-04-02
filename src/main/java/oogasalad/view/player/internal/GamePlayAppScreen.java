@@ -6,6 +6,7 @@ import java.util.ResourceBundle;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -85,11 +86,14 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     container.setPickOnBounds(false);
 
     for (String tool : getList("tools")) {
-      Button toolBtn = new Button(s("tool." + tool));
+      ToggleButton toolBtn = new ToggleButton(s("tool." + tool));
       toolBtn.getStyleClass().add("tool-button");
 
-      //TODO: add toggle logic
-      toolBtn.setOnAction(e -> System.out.println("Selected tool: " + tool));
+      // You only need the listener if you want to update your game model.
+      toolBtn.setOnAction(e -> {
+        // TODO: Update GameController
+        System.out.println(tool + " is now " + (toolBtn.isSelected() ? "Active" : "Inactive"));
+      });
 
       container.getChildren().add(toolBtn);
     }
