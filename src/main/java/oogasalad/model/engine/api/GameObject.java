@@ -8,7 +8,6 @@ import oogasalad.view.core.api.Renderable; // Extends the view contract
  * Base entity for the simulation. Exposes physical properties.
  */
 public interface GameObject extends Renderable {
-
   //TODO: should these be returned immutably?
   double getMass();
 
@@ -32,4 +31,12 @@ public interface GameObject extends Renderable {
 
   void setRestitution(double restitution);
 
+  double getFriction();
+  boolean isActive();
+  boolean isAffectedByGravity();
+  boolean isTrigger();
+
+  Pose getPose();
+  void addForce(Vector force);
+  Vector getForce();
 }

@@ -11,7 +11,7 @@ public interface ScreenManager {
    * @param screenName The key for the target screen.
    * @param payload Optional data (e.g., Level path) to pass to the next mode.
    */
-  void navigateTo(String screenName, Object payload);
+  void switchScreen(String screenName, Object payload);
 
   /** Registers a screen (e.g., "GAMEPLAY", "EDITOR"). */
   void registerScreen(String name, AppScreen screen);
