@@ -4,6 +4,7 @@ import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.ObjectState;
 import oogasalad.view.core.api.Renderable; // Extends the view contract
 
+//TODO: complete comments
 /**
  * Base entity for the simulation. Exposes physical properties.
  */
