@@ -1,8 +1,8 @@
 package oogasalad.model.engine.internal;
 
 import java.util.Objects;
-import oogasalad.model.ConvexPolygon;
-import oogasalad.model.ObjectState;
+import oogasalad.model.engine.ConvexPolygon;
+import oogasalad.model.engine.ObjectState;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Pose;
