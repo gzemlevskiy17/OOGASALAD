@@ -10,6 +10,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.api.AppScreen;
 
 /**
@@ -30,7 +32,7 @@ public class AuthoringEntryScreen implements AppScreen {
 
   private final Scene scene;
 
-  public AuthoringEntryScreen() {
+  public AuthoringEntryScreen(ScreenManager screenManager) {
     BorderPane root = new BorderPane();
     root.setPadding(new Insets(ROOT_PADDING));
 
@@ -52,6 +54,7 @@ public class AuthoringEntryScreen implements AppScreen {
     root.setCenter(centerContent);
 
     Button backButton = new Button("Back");
+    backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
     root.setBottom(wrapBottomLeft(backButton));
 
     scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);

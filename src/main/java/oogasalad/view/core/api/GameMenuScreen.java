@@ -9,6 +9,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.constants.GameMenuConstants;
 
 /**
@@ -18,7 +20,7 @@ public class GameMenuScreen implements AppScreen {
 
   private final Scene scene;
 
-  public GameMenuScreen() {
+  public GameMenuScreen(ScreenManager screenManager) {
     BorderPane root = new BorderPane();
     root.setPadding(new Insets(GameMenuConstants.ROOT_PADDING));
 
@@ -34,6 +36,8 @@ public class GameMenuScreen implements AppScreen {
     Button createButton = new Button(GameMenuConstants.CREATE_BUTTON_TEXT);
     playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
     createButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
+    createButton.setOnAction(event ->
+        screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY, null));
 
     VBox centerContent = new VBox(GameMenuConstants.BUTTON_SPACING, title, playButton, createButton);
     centerContent.setAlignment(Pos.CENTER);

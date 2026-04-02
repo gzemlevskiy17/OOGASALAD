@@ -1,17 +1,17 @@
 package oogasalad;
 
+import java.util.Map;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.controller.core.internal.ScreenManagerImpl;
-import oogasalad.view.core.api.GameMenuScreen;
+import oogasalad.view.core.api.AppScreen;
 
 /**
  * Launches the Good Piggies application.
  */
 public class Main extends Application {
-
-    private static final String MENU_SCREEN_KEY = "MENU";
 
     /**
      * A method kept for compatibility with existing tests.
@@ -23,8 +23,14 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         ScreenManager screenManager = new ScreenManagerImpl(stage);
-        screenManager.registerScreen(MENU_SCREEN_KEY, new GameMenuScreen());
-        screenManager.switchScreen(MENU_SCREEN_KEY, null);
+        ScreenFactory screenFactory = new ScreenFactory(screenManager);
+        Map<String, AppScreen> screens = screenFactory.createScreens();
+
+        for (Map.Entry<String, AppScreen> screenEntry : screens.entrySet()) {
+            screenManager.registerScreen(screenEntry.getKey(), screenEntry.getValue());
+        }
+
+        screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null);
 
         stage.setTitle("Good Piggies");
         stage.show();
