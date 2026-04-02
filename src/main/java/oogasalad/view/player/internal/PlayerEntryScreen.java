@@ -1,8 +1,10 @@
 package oogasalad.view.player.internal;
 
+import java.util.List;
 import java.util.ResourceBundle;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -19,6 +21,9 @@ public class PlayerEntryScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.PlayerEntryScreen");
 
+  private static final List<String> WORLD_KEYS = List.of("forest", "desert", "moon", "glacier", "mars");
+  private static final List<String> LEVEL_KEYS = List.of("first", "second", "third", "fourth", "fifth");
+
   public PlayerEntryScreen(ScreenManager screenManager) {
     super(screenManager);
   }
@@ -28,176 +33,82 @@ public class PlayerEntryScreen extends AbstractAppScreen {
     BorderPane root = new BorderPane();
     root.setPadding(new Insets(d("root.padding")));
 
-    VBox levelChoiceContent = createLevelChoiceContentRegion();
+    VBox mainContent = new VBox(
+        d("main.content.spacing"),
+        createLevelChoiceRegion(),
+        createStartActionRegion()
+    );
+    mainContent.setAlignment(Pos.TOP_CENTER);
 
-    VBox startBadPiggiesContent = createStartBadPiggiesContentRegion();
-
-    displayMainContent(levelChoiceContent, startBadPiggiesContent, root);
-
-    createBackButton(root);
+    root.setCenter(mainContent);
+    root.setBottom(createNavigationRegion());
 
     return root;
   }
 
-  private void displayMainContent(VBox levelChoiceContent, VBox startBadPiggiesContent, BorderPane root) {
-    VBox mainContent = new VBox(d("main.content.spacing"), levelChoiceContent,
-        startBadPiggiesContent);
-    mainContent.setAlignment(Pos.TOP_CENTER);
-    root.setCenter(mainContent);
-  }
+  private VBox createLevelChoiceRegion() {
+    VBox container = new VBox(d("level.choice.spacing"));
+    container.setAlignment(Pos.TOP_CENTER);
 
-  private void createBackButton(BorderPane root) {
-    Button backButton = new Button(s("back.button.text"));
-    backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
-    root.setBottom(wrapBottomLeft(backButton));
-  }
-
-  private VBox createStartBadPiggiesContentRegion() {
-    Button startYourBadPiggiesButton = createYourBadPiggiesButtonRegion();
-
-    VBox startBadPiggiesContent = new VBox(d("bad.piggies.spacing"), startYourBadPiggiesButton);
-    startBadPiggiesContent.setAlignment(Pos.TOP_CENTER);
-    return startBadPiggiesContent;
-  }
-
-  private VBox createLevelChoiceContentRegion() {
-    Label title = createTitleRegion();
-
-    HBox worldButtonRegion = createWorldButtonRegion();
-
-    HBox levelButtonRegion = createLevelButtonRegion();
-
-    Text commentText = createCommentRegion();
-
-    VBox levelChoiceContent = new VBox(d("level.choice.spacing"), title, worldButtonRegion, levelButtonRegion, commentText);
-    levelChoiceContent.setAlignment(Pos.TOP_CENTER);
-    return levelChoiceContent;
-  }
-
-  private Button createYourBadPiggiesButtonRegion() {
-    Button startYourBadPiggiesButton = new Button(s("start.button.text"));
-    return startYourBadPiggiesButton;
-  }
-
-  private Label createTitleRegion() {
     Label title = new Label(s("title.text"));
     title.setFont(Font.font(d("title.font.size")));
-    return title;
-  }
 
-  private Text createCommentRegion() {
     Text commentText = new Text(s("comment.text"));
-    configureText(commentText);
-    return commentText;
-  }
-
-  private HBox createLevelButtonRegion() {
-    Button firstLevelButton = new Button(configureFirstLevelButtonText());
-    configureLevelButton(firstLevelButton);
-
-    Button secondLevelButton = new Button(configureSecondLevelButtonText());
-    configureLevelButton(secondLevelButton);
-
-    Button thirdLevelButton = new Button(configureThirdLevelButtonText());
-    configureLevelButton(thirdLevelButton);
-
-    Button fourthLevelButton = new Button(configureFourthLevelButtonText());
-    configureLevelButton(fourthLevelButton);
-
-    Button fifthLevelButton = new Button(configureFifthLevelButtonText());
-    configureLevelButton(fifthLevelButton);
-
-    HBox levelButtonRegion = new HBox(d("level.region.spacing"), firstLevelButton, secondLevelButton, thirdLevelButton, fourthLevelButton, fifthLevelButton);
-    levelButtonRegion.setAlignment(Pos.CENTER);
-    levelButtonRegion.setPadding(new Insets(d("level.region.padding")));
-    return levelButtonRegion;
-  }
-
-  private HBox createWorldButtonRegion() {
-    Button forestWorldButton = new Button(configureForestWorldButtonText());
-    configureWorldButton(forestWorldButton);
-
-    Button desertWorldButton = new Button(configureDesertWorldButtonText());
-    configureWorldButton(desertWorldButton);
-
-    Button moonWorldButton = new Button(configureMoonWorldButtonText());
-    configureWorldButton(moonWorldButton);
-
-    Button glacierWorldButton = new Button(configureGlacierWorldButtonText());
-    configureWorldButton(glacierWorldButton);
-
-    Button marsWorldButton = new Button(configureMarsWorldButtonText());
-    configureWorldButton(marsWorldButton);
-
-    HBox worldButtonRegion = new HBox(d("world.region.spacing"), forestWorldButton, desertWorldButton, moonWorldButton, glacierWorldButton, marsWorldButton);
-    worldButtonRegion.setAlignment(Pos.CENTER);
-    worldButtonRegion.setPadding(new Insets(d("world.region.padding")));
-    return worldButtonRegion;
-  }
-
-  private String configureForestWorldButtonText() {
-    return s("world.button.forest");
-  }
-
-  private String configureDesertWorldButtonText() {
-    return s("world.button.desert");
-  }
-
-  private String configureMoonWorldButtonText() {
-    return s("world.button.moon");
-  }
-
-  private String configureGlacierWorldButtonText() {
-    return s("world.button.glacier");
-  }
-
-  private String configureMarsWorldButtonText() {
-    return s("world.button.mars");
-  }
-
-  private String configureFirstLevelButtonText() {
-    return s("level.button.first");
-  }
-
-  private String configureSecondLevelButtonText() {
-    return s("level.button.second");
-  }
-
-  private String configureThirdLevelButtonText() {
-    return s("level.button.third");
-  }
-
-  private String configureFourthLevelButtonText() {
-    return s("level.button.fourth");
-  }
-
-  private String configureFifthLevelButtonText() {
-    return s("level.button.fifth");
-  }
-
-  private void configureText(Text commentText) {
     commentText.setFont(Font.font(d("comment.font.size")));
-  }
 
-  private void configureWorldButton(Button button) {
-    button.setFont(Font.font(d("action.font.size")));
-    button.setPrefSize(d("action.button.width"), d("action.button.height"));
-    button.setWrapText(true);
-  }
+    container.getChildren().addAll(
+        title,
+        createButtonRow(WORLD_KEYS, "world.button.", d("world.region.spacing"), d("world.region.padding")),
+        createButtonRow(LEVEL_KEYS, "level.button.", d("level.region.spacing"), d("level.region.padding")),
+        commentText
+    );
 
-  private void configureLevelButton(Button button) {
-    button.setFont(Font.font(d("action.font.size")));
-    button.setPrefSize(d("action.button.width"), d("action.button.height"));
-    button.setWrapText(true);
-  }
-
-  private StackPane wrapBottomLeft(Button button) {
-    StackPane container = new StackPane(button);
-    StackPane.setAlignment(button, Pos.BOTTOM_LEFT);
     return container;
   }
 
-  private String s(String key) { return PROPS.getString(key); }
+  private VBox createStartActionRegion() {
+    Button startButton = new Button(s("start.button.text"));
+    // Event handler for starting the game
 
+    VBox container = new VBox(d("bad.piggies.spacing"), startButton);
+    container.setAlignment(Pos.TOP_CENTER);
+    return container;
+  }
+
+  /**
+   * Dynamically creates an HBox of buttons based on property keys.
+   */
+  private HBox createButtonRow(List<String> subKeys, String prefix, double spacing, double padding) {
+    HBox row = new HBox(spacing);
+    row.setAlignment(Pos.CENTER);
+    row.setPadding(new Insets(padding));
+
+    for (String key : subKeys) {
+      Button btn = new Button(s(prefix + key));
+      configureActionButton(btn);
+      // In the future: btn.setOnAction(e -> handleSelection(key));
+      row.getChildren().add(btn);
+    }
+
+    return row;
+  }
+
+  private void configureActionButton(Button button) {
+    button.setFont(Font.font(d("action.font.size")));
+    button.setPrefSize(d("action.button.width"), d("action.button.height"));
+    button.setWrapText(true);
+  }
+
+  private Node createNavigationRegion() {
+    Button backButton = new Button(s("back.button.text"));
+    backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
+
+    StackPane container = new StackPane(backButton);
+    StackPane.setAlignment(backButton, Pos.BOTTOM_LEFT);
+    return container;
+  }
+
+  // Helper methods for property access
+  private String s(String key) { return PROPS.getString(key); }
   private double d(String key) { return Double.parseDouble(PROPS.getString(key)); }
 }
