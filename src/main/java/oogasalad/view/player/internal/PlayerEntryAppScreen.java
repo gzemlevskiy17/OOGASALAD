@@ -64,6 +64,9 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   private VBox createStartBadPiggiesContentRegion() {
     Button startButton = new Button(s("start.button.text"));
     startButton.getStyleClass().add("start-button");
+    startButton.setOnAction(event -> {
+      screenManager.switchScreen(ScreenFactory.VEHICLE_BUILDER_APP_SCREEN_KEY, null);
+    });
 
     VBox container = new VBox(startButton);
     container.getStyleClass().add("selection-region");

@@ -13,13 +13,6 @@ import oogasalad.view.core.api.AppScreen;
  */
 public class Main extends Application {
 
-    /**
-     * A method kept for compatibility with existing tests.
-     */
-    public double getVersion() {
-        return 0.001;
-    }
-
     @Override
     public void start(Stage stage) {
         ScreenManager screenManager = new ScreenManagerImpl(stage);
