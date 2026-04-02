@@ -1,5 +1,6 @@
 package oogasalad.model.engine;
 
+import java.util.Collections;
 import java.util.List;
 import oogasalad.model.engine.api.Vector;
 
@@ -33,6 +34,6 @@ public class ConvexPolygon {
   }
 
   public List<Vector> getPoints() { //in CW order
-    return points;
+    return Collections.unmodifiableList(points);
   }
 }
