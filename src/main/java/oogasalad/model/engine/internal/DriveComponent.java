@@ -60,9 +60,9 @@ public abstract class DriveComponent extends VehicleComponent {
 
   public Vector getDriveForce() {
     if (!isActive() || !driveEnabled) {
-      return Vector.ZERO;
+      return new Vector(0, 0);
     }
-    return thrustDirection.scale(thrustForce);
+    return thrustDirection.multiply(thrustForce);
   }
 
   @Override
