@@ -2,60 +2,75 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;
+import oogasalad.model.engine.api.CollisionDetector;
+import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 
 /**
- * Main physics stepping implementation for the game world.
+ * Main physics-step orchestrator for simulation updates in a world.
  *
- * <p>Use this class to advance object states over time and (when enabled) perform collision
- * manifold generation and resolution.
+ * <p>Use this class to coordinate per-frame simulation flow: detect collisions, resolve them via
+ * an injected solver, and then integrate object states.
  *
- * <p><strong>Assumptions:</strong> The world reference is non-null and objects expose valid
- * physical state. Several internal methods are still placeholders or marked TODO, so behavior is
- * currently partial.
+ * <p><strong>Assumptions:</strong> Constructor dependencies are non-null, world objects expose
+ * valid physical state, and injected detector/solver implementations obey their interface
+ * contracts. Invalid or partial state data may cause no-op updates or runtime exceptions.
  *
- * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link GameObject},
- * {@link ObjectState}, {@link Collision}, and {@link Vector}.
+ * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link CollisionDetector},
+ * {@link CollisionSolver}, {@link GameObject}, {@link ObjectState}, {@link Collision}, and
+ * {@link Vector}.
  *
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
- * GameEngine engine = new ConcreteGameEngine(world);
+ * GameEngine engine = new ConcreteGameEngine(world, detector, solver);
  * engine.step(1.0 / 60.0);
  * }</pre>
  *
- * <p><Strong>Note:</Strong></p>
- *
- * <p>Collision resolution is heavily inspired by Tim Wheeler's blog:
- * <a href="https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/">...</a></p>
+ * <p><strong>Details:</strong> Collision resolution architecture is inspired by Tim Wheeler's
+ * write-up on 2D collision detection/resolution:
+ * <a
+ * href="https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/">...</a></p>
  *
  * @author Georgiy Zemlevskiy
  */
 public class ConcreteGameEngine implements GameEngine {
 
-  private static final int MAX_CONTACT_POINTS = 2;
   private World world;
+  private CollisionDetector collisionDetector;
+  private CollisionSolver collisionSolver;
 
   /**
-   * Creates an engine bound to a world container.
+   * Creates an engine with explicit simulation dependencies.
    *
-   * @param world world that stores all active objects and joints
+   * <p><strong>Assumptions:</strong> All arguments are non-null and remain valid for the engine
+   * lifetime.
+   *
+   * @param world world that stores active simulation objects
+   * @param collisionDetector pairwise detector used to build collision records
+   * @param collisionSolver solver used to resolve detected collisions
    */
-  public ConcreteGameEngine(World world) {
+  public ConcreteGameEngine(World world, CollisionDetector collisionDetector,
+      CollisionSolver collisionSolver) {
     this.world = world;
+    this.collisionDetector = collisionDetector;
+    this.collisionSolver = collisionSolver;
   }
 
   //TODO: implement collision detection for all world objects
   //TODO: implement application of forces
 
   /**
-   * Advances one simulation step.
+   * Advances the simulation by one time step.
    *
-   * <p>This method currently integrates object state and keeps hooks for joint constraints and
-   * collision resolution while those parts are being finalized.
+   * <p>Use this method once per frame/tick to run collision handling and state integration in a
+   * consistent order.
+   *
+   * <p><strong>Assumptions:</strong> {@code elapsedTime} is non-negative and world object states
+   * are valid for integration.
    *
    * @param elapsedTime simulation delta time in seconds
    * @throws NullPointerException if world/object state references are null
@@ -66,12 +81,12 @@ public class ConcreteGameEngine implements GameEngine {
 //
 //    }
 
+    handleCollisions();
+
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
       ObjectState newState = integrateObjectState(gameObject.getState(), elapsedTime);
       gameObject.setState(newState);
     }
-
-//    solveCollisions();
 
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
@@ -79,230 +94,26 @@ public class ConcreteGameEngine implements GameEngine {
 
   }
 
-  /**
-   * Builds up to two contact points by clipping the incident edge against the reference edge side
-   * planes and then filtering against the reference face plane.
-   */
-  private Vector[] computeCollisionManifold(Collision collision, Vector refNormal) {
-    Vector[] incidentEdge = collision.getIncidentEdge();
-    Vector[] referenceEdge = collision.getReferenceEdge();
-    if (incidentEdge == null || referenceEdge == null) {
-      return new Vector[MAX_CONTACT_POINTS];
-    }
 
-    Vector referenceStart = referenceEdge[0];
-    Vector referenceEnd = referenceEdge[1];
-    Vector tangent = referenceEnd.subtract(referenceStart).normalize();
-    double leftOffset = tangent.dot(referenceStart);
-    double rightOffset = tangent.multiply(-1).dot(referenceEnd);
+  private void handleCollisions() {
+    List<Collision> collisions = getCollisions();
+    solveCollisions(collisions);
+  }
 
-    List<Vector> leftClip = clipToHalfSpace(incidentEdge, tangent, leftOffset);
-    if (leftClip.size() < 2) {
-      return new Vector[MAX_CONTACT_POINTS];
-    }
-
-    Vector[] leftClippedEdge = new Vector[]{leftClip.get(0), leftClip.get(1)};
-    List<Vector> sideClip = clipToHalfSpace(leftClippedEdge, tangent.multiply(-1), rightOffset);
-
-    Vector[] finalManifold = new Vector[MAX_CONTACT_POINTS];
-    int manifoldCount = 0;
-    double faceOffset = refNormal.dot(referenceStart);
-    for (Vector vector : sideClip) {
-      double separation = refNormal.dot(vector) - faceOffset;
-      if (separation <= 0 && manifoldCount < MAX_CONTACT_POINTS) {
-        finalManifold[manifoldCount++] = vector;
+  private List<Collision> getCollisions() {
+    List<Collision> collisions = new ArrayList<>();
+    for (GameObject objectA : world.getObjects()) {
+      for (GameObject objectB : world.getObjects()) {
+        collisions.add(collisionDetector.detectCollision(objectA, objectB));
       }
     }
-
-    return finalManifold;
+    return collisions;
   }
 
-  /**
-   * Selects the incident edge whose normal is most anti-parallel to the penetration normal.
-   *
-   * <p>Assumes clockwise polygon point order and a repeated final point for edge iteration.
-   */
-  private Vector[] incidentEdge(ConvexPolygon incidentPolygon, Vector penetrationNormal) {
-    //TODO: confirm direction of normals
-    Vector[] incidentEdge = new Vector[2];
-    double minimumDotProduct = Double.MAX_VALUE;
-
-    List<Vector> points = incidentPolygon.getPoints();
-    for (int i = 0; i < points.size() - 1; i++) {
-      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize().rotateLeft();
-      double dotWithIncident = penetrationNormal.dot(incidentNormal);
-      if (dotWithIncident < minimumDotProduct) {
-        minimumDotProduct = dotWithIncident;
-        incidentEdge[0] = points.get(i);
-        incidentEdge[1] = points.get(i + 1);
-      }
+  private void solveCollisions(List<Collision> collisions) {
+    for (Collision collision : collisions) {
+      collisionSolver.solve(collision);
     }
-
-    return incidentEdge;
-  }
-
-  /**
-   * Clips a segment against a single half-space defined by
-   * {@code dot(planeNormal, p) >= planeOffset}.
-   */
-  private List<Vector> clipToHalfSpace(Vector[] incidentEdge, Vector planeNormal,
-      double planeOffset) {
-
-    //TODO: potentially refactor into one clip from both sides, or to return a clipped line segment out of which a manifold is constructed
-    Vector incidentStart = incidentEdge[0];
-    Vector incidentEnd = incidentEdge[1];
-
-    List<Vector> result = new ArrayList<>();
-    double distanceFromIncidentStart = planeNormal.dot(incidentStart) - planeOffset;
-    double distanceFromIncidentEnd = planeNormal.dot(incidentEnd) - planeOffset;
-
-    if (distanceFromIncidentStart >= 0.0) {
-      addCandidatePointToManifold(result, incidentStart);
-    }
-    if (distanceFromIncidentEnd >= 0.0) {
-      addCandidatePointToManifold(result, incidentEnd);
-    }
-
-    if (distanceFromIncidentStart * distanceFromIncidentEnd < 0.0) {
-      double fractionOfIncidentEdge =
-          distanceFromIncidentStart / (distanceFromIncidentStart - distanceFromIncidentEnd);
-      Vector intersection = incidentStart.add(
-          incidentEnd.subtract(incidentStart).multiply(fractionOfIncidentEdge));
-      addCandidatePointToManifold(result, intersection);
-    }
-
-    return result;
-  }
-
-  private void addCandidatePointToManifold(List<Vector> points, Vector point) {
-    if (points.size() < MAX_CONTACT_POINTS) {
-      points.add(point);
-    }
-  }
-
-  /**
-   * Applies impulse-based collision response at each manifold contact, updating linear and angular
-   * velocities in-place on both colliding object states.
-   */
-  private void resolveImpulseAtContacts(
-      Collision collision,
-      Vector normal,
-      Vector[] contactPoints,
-      int contactCount) {
-
-    //TODO: refactor
-    GameObject objectA = collision.getObjectA();
-    GameObject objectB = collision.getObjectB();
-    ObjectState stateA = objectA.getState();
-    ObjectState stateB = objectB.getState();
-
-    Vector velocityA = stateA.getLinearVelocity();
-    Vector velocityB = stateB.getLinearVelocity();
-    double angVelocityA = stateA.getAngularVelocity().x();
-    double angVelocityB = stateB.getAngularVelocity().x();
-
-    double invMassA = inverseOrZero(objectA.getMass());
-    double invMassB = inverseOrZero(objectB.getMass());
-    double invInertiaA = inverseOrZero(objectA.getMomentOfInertia());
-    double invInertiaB = inverseOrZero(objectB.getMomentOfInertia());
-    double restitution = Math.min(objectA.getRestitution(), objectB.getRestitution());
-
-    int effectiveContactCount = Math.min(contactCount, contactPoints.length);
-    if (effectiveContactCount <= 0) {
-      return;
-    }
-
-    for (int i = 0; i < effectiveContactCount; i++) {
-      Vector contactPoint = contactPoints[i];
-      if (contactPoint == null) {
-        continue;
-      }
-
-      Vector ra = contactPoint.subtract(stateA.getLinearPosition());
-      Vector rb = contactPoint.subtract(stateB.getLinearPosition());
-
-      Vector combinedVelocityA = velocityA.add(ra.rotateLeft().multiply(angVelocityA));
-      Vector combinedVelocityB = velocityB.add(rb.rotateLeft().multiply(angVelocityB));
-      Vector relativeVelocity = combinedVelocityB.subtract(combinedVelocityA);
-
-      double contactVelocity = relativeVelocity.dot(normal);
-      if (contactVelocity > 0.0) {
-        continue;
-      }
-
-      double raCrossN = ra.cross(normal);
-      double rbCrossN = rb.cross(normal);
-      double denominator = invMassA + invMassB
-          + (raCrossN * raCrossN * invInertiaA)
-          + (rbCrossN * rbCrossN * invInertiaB);
-      if (denominator == 0.0) {
-        continue;
-      }
-
-      double impulseScalar = -(1.0 + restitution) * contactVelocity;
-      impulseScalar /= denominator * effectiveContactCount;
-      Vector impulse = normal.multiply(impulseScalar);
-
-      velocityA = velocityA.subtract(impulse.multiply(invMassA));
-      angVelocityA -= raCrossN * impulseScalar * invInertiaA;
-      velocityB = velocityB.add(impulse.multiply(invMassB));
-      angVelocityB += rbCrossN * impulseScalar * invInertiaB;
-    }
-
-    stateA.setLinearVelocity(velocityA);
-    stateB.setLinearVelocity(velocityB);
-
-    stateA.setAngularVelocity(new Vector(angVelocityA, 0));
-    stateB.setAngularVelocity(new Vector(angVelocityB, 0));
-  }
-
-  //TODO: add formula to comment
-
-  /**
-   * Moves objects out of overlap according to {formula}.
-   */
-  private void applyPositionalCorrection(
-      Collision collision,
-      Vector normal,
-      double[] depths,
-      int contactCount) {
-
-    //TODO: refactor
-    final double percent = 0.4;
-    final double slop = 0.01;
-
-    GameObject objectA = collision.getObjectA();
-    GameObject objectB = collision.getObjectB();
-    ObjectState stateA = objectA.getState();
-    ObjectState stateB = objectB.getState();
-
-    double invMassA = inverseOrZero(objectA.getMass());
-    double invMassB = inverseOrZero(objectB.getMass());
-    double inverseMassSum = invMassA + invMassB;
-    if (inverseMassSum == 0.0 || contactCount <= 0 || depths.length == 0) {
-      return;
-    }
-
-    int effectiveContactCount = Math.min(contactCount, depths.length);
-    double maxDepth = 0.0;
-    for (int i = 0; i < effectiveContactCount; i++) {
-      maxDepth = Math.max(maxDepth, depths[i]);
-    }
-
-    double correctionMagnitude = Math.max(maxDepth - slop, 0.0);
-    correctionMagnitude = (correctionMagnitude / inverseMassSum) * percent;
-    Vector correction = normal.multiply(correctionMagnitude);
-
-    stateA.setLinearPosition(stateA.getLinearPosition().subtract(correction.multiply(invMassA)));
-    stateB.setLinearPosition(stateB.getLinearPosition().add(correction.multiply(invMassB)));
-  }
-
-  //TODO: is this needed?
-  private double inverseOrZero(double value) {
-    if (value <= 0.0) {
-      return 0.0;
-    }
-    return 1.0 / value;
   }
 
   //TODO: implement
