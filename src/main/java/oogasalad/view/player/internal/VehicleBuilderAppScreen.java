@@ -2,10 +2,13 @@ package oogasalad.view.player.internal;
 
 import java.util.ResourceBundle;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 public class VehicleBuilderAppScreen extends AbstractAppScreen {
@@ -25,6 +28,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     // Create the grid and place it in the center of the screen
     GridPane grid = createGridRegion();
     root.setCenter(grid);
+    root.setBottom(createBackButtonRegion());
 
     return root;
   }
@@ -50,6 +54,17 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     }
 
     return grid;
+  }
+
+  private Node createBackButtonRegion() {
+    Button backButton = new Button(s("back.button.text"));
+    backButton.getStyleClass().add("back-button");
+    backButton.setOnAction(e -> screenManager.switchScreen(ScreenFactory.PLAYER_ENTRY_APP_SCREEN_KEY, null));
+
+    StackPane container = new StackPane(backButton);
+    StackPane.setAlignment(backButton, Pos.BOTTOM_LEFT);
+    container.getStyleClass().add("nav-region");
+    return container;
   }
 
   private String s(String key) { return PROPS.getString(key); }

@@ -20,3 +20,13 @@
   -fx-border-radius: 10;     /* Rounded outer corners */
   -fx-background-radius: 10; /* Rounded inner background */
 }
+
+.back-button {
+  -fx-background-color: #E0E0E0;
+  -fx-padding: 5 15;
+  -fx-border-radius: 5;
+}
+
+.nav-region {
+  -fx-padding: 20;
+}
