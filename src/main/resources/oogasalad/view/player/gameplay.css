@@ -1,4 +1,52 @@
 .screen-root {
   -fx-background-color: white;
+  -fx-border-color: #e67e22;
+  -fx-border-width: 2;
+}
+
+/* Placeholder for the game rendering area */
+.game-container {
+  -fx-background-color: transparent;
+}
+
+.hud-top {
+  -fx-padding: 20;
+}
+
+.hud-bottom {
   -fx-padding: 30;
+}
+
+/* Button Styles */
+
+/* Small rectangular buttons (Pause, Reset) */
+.sys-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 3;
+  -fx-background-radius: 3;
+  -fx-min-width: 80;
+  -fx-min-height: 30;
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 14px;
+}
+
+/* Large square buttons (Tools) */
+.tool-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 5;
+  -fx-background-radius: 5;
+  -fx-min-width: 90;
+  -fx-min-height: 90;
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 14px;
+  -fx-alignment: center;
+}
+
+/* hover effect */
+.sys-button:hover, .tool-button:hover {
+  -fx-background-color: #f0f0f0;
 }
