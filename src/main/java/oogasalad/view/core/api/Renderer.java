@@ -9,5 +9,5 @@ public interface Renderer {
    * @param camera The viewport determining visibility and offset.
    * @param objects The collection of objects to potentially draw.
    */
-  void render(Camera camera, Collection<Renderable> objects);
+  void render(Camera camera, Collection<? extends Renderable> objects);
 }

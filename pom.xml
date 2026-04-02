@@ -44,11 +44,24 @@
             <version>21.0.2</version>
             <scope>test</scope>
         </dependency>
+        <!-- create test doubles (mocks) without writing fake classes by hand -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.15.2</version>
+            <scope>test</scope>
+        </dependency>
         <!-- use logging instead of println to report important information -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.25.3</version>
+        </dependency>
+        <!-- JSON serialization/deserialization for level and config files -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.18.2</version>
         </dependency>
     </dependencies>
 
@@ -76,6 +89,7 @@
                     <argLine>
                         @{argLine}
                         -XX:+EnableDynamicAgentLoading
+                        -Dnet.bytebuddy.experimental=true
                         --add-exports javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
                         --add-exports javafx.graphics/com.sun.javafx.util=ALL-UNNAMED
                         --add-exports javafx.base/com.sun.javafx.logging=ALL-UNNAMED
