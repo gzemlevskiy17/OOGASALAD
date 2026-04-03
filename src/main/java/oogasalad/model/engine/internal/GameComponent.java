@@ -20,6 +20,14 @@ public abstract class GameComponent implements GameObject {
   private boolean affectedByGravity;
   private boolean trigger;
 
+  /**
+   *
+   * @param pose
+   * @param mass
+   * @param friction
+   * @author Xuye
+   * @author Georgiy Zemlevskiy
+   */
   public GameComponent(Pose pose, double mass, double friction) {
     Pose initialPose = Objects.requireNonNull(pose, EngineError.NULL_POSE.message());
     this.state = new ObjectState(
@@ -47,14 +55,6 @@ public abstract class GameComponent implements GameObject {
     Pose newPose = Objects.requireNonNull(position, EngineError.NULL_POSE.message());
     state.setLinearPosition(new Vector(newPose.x(), newPose.y()));
     state.setAngularPosition(newPose.rotation());
-  }
-
-  public Vector getVelocity() {
-    return state.getLinearVelocity();
-  }
-
-  public void setVelocity(Vector velocity) {
-    state.setLinearVelocity(Objects.requireNonNull(velocity, EngineError.NULL_VECTOR.message()));
   }
 
   @Override
