@@ -6,7 +6,7 @@ import oogasalad.model.engine.api.Pose;
 /**
  * @author Xuye
  */
-public abstract class VehicleComponent extends GameComponent {
+public abstract class VehicleComponent extends DynamicComponent {
   private double maxHp;
   private double currentHp;
 
