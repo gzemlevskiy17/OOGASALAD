@@ -83,8 +83,7 @@ public class GameEngineImpl implements GameEngine {
     handleCollisions();
 
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
-      ObjectState newState = integrateObjectState(gameObject.getState(), elapsedTime);
-      gameObject.setState(newState);
+      gameObject.getState().integrateObjectState(elapsedTime);
     }
 
 //    for (Constraint constraint : constraings) {
@@ -113,34 +112,5 @@ public class GameEngineImpl implements GameEngine {
     for (Collision collision : collisions) {
       collisionSolver.solve(collision);
     }
-  }
-
-  //TODO: implement
-  private ObjectState integrateObjectState(ObjectState state, double elapsedTime) {
-    Vector newLinearVelocity = integrateVector(state.getLinearVelocity(),
-        state.getLinearAcceleration(), elapsedTime);
-    Vector newLinearPosition = integrateVector(state.getLinearPosition(), state.getLinearVelocity(),
-        elapsedTime);
-
-    //TODO: does integrateVector work for angular?
-    Vector newAngularVelocity = integrateVector(state.getAngularVelocity(),
-        state.getAngularVelocity(), elapsedTime);
-    double newAngularPosition = integrateScalar(state.getAngularPosition(),
-        state.getAngularVelocity().magnitude(), elapsedTime);
-
-    return new ObjectState(newLinearPosition, newLinearVelocity,
-        state.getLinearAcceleration(), newAngularPosition, newAngularVelocity,
-        state.getAngularAcceleration());
-  }
-
-  private Vector integrateVector(Vector previousVector, Vector integrand, double elapsedTime) {
-    double newX = integrateScalar(previousVector.x(), integrand.x(), elapsedTime);
-    double newY = integrateScalar(previousVector.y(), integrand.y(), elapsedTime);
-
-    return new Vector(newX, newY);
-  }
-
-  private double integrateScalar(double previousValue, double integrandValue, double elapsedTime) {
-    return previousValue + integrandValue * elapsedTime;
   }
 }
