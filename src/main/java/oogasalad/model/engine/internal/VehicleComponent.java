@@ -3,6 +3,9 @@ package oogasalad.model.engine.internal;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Pose;
 
+/**
+ * @author Xuye
+ */
 public abstract class VehicleComponent extends GameComponent {
   private double maxHp;
   private double currentHp;
