@@ -20,14 +20,15 @@ import oogasalad.model.engine.api.Vector;
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
- * CollisionDetector detector = new ConcreteCollisionDetector();
+ * CollisionDetector detector = new CollisionDetectorImpl();
  * detector.detectCollisions(objectA, objectB);
  * }</pre>
  *
  * @author Georgiy Zemlevskiy
  */
-public class ConcreteCollisionDetector implements CollisionDetector {
-
+public class CollisionDetectorImpl implements CollisionDetector {
+  //TODO: test & refactor
+  //TODO: tie together
   //TODO: update javadoc once complete
 
   /**
@@ -41,6 +42,7 @@ public class ConcreteCollisionDetector implements CollisionDetector {
   public Collision detectCollision(GameObject objectA, GameObject objectB) {
     return null;
   }
+  //TODO: figure out how Collision will be returned if no collision was detected
 
   /**
    * Projects all polygon vertices onto the given axis and returns [min, max] interval values.
@@ -50,7 +52,7 @@ public class ConcreteCollisionDetector implements CollisionDetector {
     projection[0] = Double.MAX_VALUE;
     projection[1] = -Double.MAX_VALUE;
     for (Vector point : polygon.getPoints()) {
-      double direction = normal.dot(point); //TODO: confirm variable name
+      double direction = normal.dot(point); //TODO: confirm direction variable name
       projection[0] = Math.min(direction, projection[0]);
       projection[1] = Math.max(direction, projection[1]);
     }

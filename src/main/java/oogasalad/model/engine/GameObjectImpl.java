@@ -20,7 +20,7 @@ import oogasalad.model.engine.api.Vector;
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
- * ConcreteGameObject body = new ConcreteGameObject();
+ * GameObjectImpl body = new GameObjectImpl();
  * body.setMass(2.0);
  * body.setMomentOfInertia(1.5);
  * body.setRestitution(0.2);
@@ -29,7 +29,7 @@ import oogasalad.model.engine.api.Vector;
  *
  * @author Georgiy Zemlevskiy
  */
-public class ConcreteGameObject implements GameObject {
+public class GameObjectImpl implements GameObject {
 
   private double mass;
   private double momentOfInertia;
@@ -40,8 +40,6 @@ public class ConcreteGameObject implements GameObject {
   private ConvexPolygon polygon;
 
   private Vector force;
-//  private Vector acceleration;
-//  private Vector
 
   @Override
   public double getMass() {

@@ -26,7 +26,7 @@ import oogasalad.model.engine.api.World;
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
- * GameEngine engine = new ConcreteGameEngine(world, detector, solver);
+ * GameEngine engine = new GameEngineImpl(world, detector, solver);
  * engine.step(1.0 / 60.0);
  * }</pre>
  *
@@ -36,7 +36,7 @@ import oogasalad.model.engine.api.World;
  *
  * @author Georgiy Zemlevskiy
  */
-public class ConcreteGameEngine implements GameEngine {
+public class GameEngineImpl implements GameEngine {
 
   private World world;
   private CollisionDetector collisionDetector;
@@ -52,7 +52,7 @@ public class ConcreteGameEngine implements GameEngine {
    * @param collisionDetector pairwise detector used to build collision records
    * @param collisionSolver   solver used to resolve detected collisions
    */
-  public ConcreteGameEngine(World world, CollisionDetector collisionDetector,
+  public GameEngineImpl(World world, CollisionDetector collisionDetector,
       CollisionSolver collisionSolver) {
     this.world = world;
     this.collisionDetector = collisionDetector;
