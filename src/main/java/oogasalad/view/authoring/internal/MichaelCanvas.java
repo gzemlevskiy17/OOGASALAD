@@ -14,6 +14,7 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.PlacedObject;
+import oogasalad.view.authoring.api.PlacedObjectFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,6 +48,7 @@ public class MichaelCanvas implements AuthoringCanvas {
   private final World world;
   private final int gridCols;
   private final int gridRows;
+  private PlacedObjectFactory placedObjectFactory;
 
   public MichaelCanvas() {
     this(null, 30, 18);
@@ -61,6 +63,7 @@ public class MichaelCanvas implements AuthoringCanvas {
     this.world = world;
     this.gridCols = gridCols;
     this.gridRows = gridRows;
+    this.placedObjectFactory = new DefaultPlacedObjectFactory(CELL_SIZE, CELL_SIZE, "#8B4513", null);
     this.root = new Pane();
     root.setPrefSize(gridCols * CELL_SIZE, gridRows * CELL_SIZE);
     refreshGrid();
@@ -84,6 +87,31 @@ public class MichaelCanvas implements AuthoringCanvas {
   @Override
   public Collection<PlacedObject> getPlacedObjects() {
     return List.of();
+  }
+
+  @Override
+  public void setPlacedObjectFactory(PlacedObjectFactory factory) {
+    if (factory != null) {
+      this.placedObjectFactory = factory;
+    }
+  }
+
+  @Override
+  public void placeBlock(int col, int row) {
+    if (placedObjectFactory == null) {
+      return;
+    }
+    PlacedObject placedObject = placedObjectFactory.create(col, row, CELL_SIZE);
+    Rectangle preview = new Rectangle(
+        placedObject.getDrawX(),
+        placedObject.getDrawY(),
+        placedObject.getWidth(),
+        placedObject.getHeight()
+    );
+    preview.setFill(Color.web(placedObject.getColor()));
+    preview.setStroke(TERRAIN_STROKE_COLOR);
+    root.getChildren().add(preview);
+    drawGridLines();
   }
 
   private void drawTerrainObjects() {

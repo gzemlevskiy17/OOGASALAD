@@ -5,7 +5,7 @@ import oogasalad.model.engine.api.Pose;
 /**
  * @author Xuye
  */
-public abstract class TerrainComponent extends GameComponent {
+public abstract class TerrainComponent extends StaticComponent {
   public TerrainComponent(Pose pose, double mass, double friction) {
     super(pose, mass, friction);
   }
