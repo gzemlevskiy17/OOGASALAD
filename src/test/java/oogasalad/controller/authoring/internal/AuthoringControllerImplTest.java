@@ -130,7 +130,8 @@ class AuthoringControllerImplTest {
     boolean refreshCalled = false;
     @Override public javafx.scene.Node getVisualRoot() { return null; }
     @Override public void refreshGrid() { refreshCalled = true; }
-    @Override public Collection<oogasalad.view.authoring.api.PlacedObject> getPlacedObjects() { return List.of(); }
+    @Override public boolean isWithinBounds(int col, int row) { return true; }
+    @Override public double getCellSize() { return 40.0; }
     @Override public void setPlacedObjectFactory(PlacedObjectFactory factory) {}
     @Override public void placeBlock(int col, int row) {}
     @Override public void showHoverPreview(int col, int row) {}

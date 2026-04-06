@@ -31,14 +31,11 @@ import org.apache.logging.log4j.Logger;
  *                LevelLoaderImpl (populates world from file),
  *                LevelSaverImpl (persists world to file),
  *                ToolSelectorImpl (current editor tool),
- *                MichaelCanvas (refreshed after each model change).
+ *                AuthoringCanvasImpl (refreshed after each model change).
  */
 public class AuthoringControllerImpl implements AuthoringController {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
-
-  /** Pixels per grid unit — must match MichaelCanvas.CELL_SIZE. */
-  public static final double CELL_SIZE = 40.0;
 
   private static final String DEFAULT_TERRAIN_TEXTURE = "assets/terrain/grass.png";
   private static final double DEFAULT_TERRAIN_FRICTION = 0.6;
@@ -66,26 +63,33 @@ public class AuthoringControllerImpl implements AuthoringController {
   @Override
   public void initializeCanvasHandlers() {
     Node root = canvas.getVisualRoot();
+    double cellSize = canvas.getCellSize();
 
     root.setOnMouseMoved(e -> {
-      int col = (int) Math.floor(e.getX() / CELL_SIZE);
-      int row = (int) Math.floor(e.getY() / CELL_SIZE);
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
       canvas.showHoverPreview(col, row);
     });
 
     root.setOnMouseExited(e -> canvas.clearHoverPreview());
 
     root.setOnMousePressed(e -> {
-      int col = (int) Math.floor(e.getX() / CELL_SIZE);
-      int row = (int) Math.floor(e.getY() / CELL_SIZE);
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
+      if (!canvas.isWithinBounds(col, row)) {
+        return;
+      }
       lastDragCol = col;
       lastDragRow = row;
       handleCellInteraction(col, row);
     });
 
     root.setOnMouseDragged(e -> {
-      int col = (int) Math.floor(e.getX() / CELL_SIZE);
-      int row = (int) Math.floor(e.getY() / CELL_SIZE);
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
+      if (!canvas.isWithinBounds(col, row)) {
+        return;
+      }
       fillLine(lastDragCol, lastDragRow, col, row);
       lastDragCol = col;
       lastDragRow = row;
@@ -106,9 +110,12 @@ public class AuthoringControllerImpl implements AuthoringController {
    * directly without needing to construct a JavaFX MouseEvent.
    */
   void handleGridInteraction(double x, double y) {
-    int col = (int) Math.floor(x / CELL_SIZE);
-    int row = (int) Math.floor(y / CELL_SIZE);
-    handleCellInteraction(col, row);
+    double cellSize = canvas.getCellSize();
+    int col = (int) Math.floor(x / cellSize);
+    int row = (int) Math.floor(y / cellSize);
+    if (canvas.isWithinBounds(col, row)) {
+      handleCellInteraction(col, row);
+    }
   }
 
   /**

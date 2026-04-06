@@ -79,7 +79,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
         ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas")
             .getString("cellSize"));
     PlacedObjectFactory factory = new DefaultPlacedObjectFactory(
-        entry.cols() * cellSize, entry.rows() * cellSize, entry.color(), null);
+        entry.cols() * cellSize, entry.rows() * cellSize, entry.color());
 
     // Redraw all samplees to update selection highlight
     int i = 0;

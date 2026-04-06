@@ -1,4 +1,4 @@
-package oogasalad.view.authoring.api;
+package oogasalad.view.authoring.internal;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -18,11 +18,11 @@ import oogasalad.view.constants.AuthoringEntryConstants;
 /**
  * Entry screen for the authoring environment.
  */
-public class AuthoringEntryScreen implements AppScreen {
+public class AuthoringEntryScreenImpl implements AppScreen {
 
   private final Parent root;
 
-  public AuthoringEntryScreen(ScreenManager screenManager) {
+  public AuthoringEntryScreenImpl(ScreenManager screenManager) {
     BorderPane root = new BorderPane();
     root.setPadding(new Insets(AuthoringEntryConstants.ROOT_PADDING));
 

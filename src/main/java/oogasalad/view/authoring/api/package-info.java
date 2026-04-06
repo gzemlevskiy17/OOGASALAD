@@ -11,7 +11,6 @@
  *
  * 1. AuthoringCanvas: The visual grid workspace.
  * - getVisualRoot(): Returns the JavaFX Node representing the editable grid.
- * - getPlacedObjects(): Returns the occupied cells as read-only placement metadata.
  * - refreshGrid(): Forces a visual update of the blocks currently on the canvas.
  *
  * 2. ComponentPalette: The selection interface for editor parts.
