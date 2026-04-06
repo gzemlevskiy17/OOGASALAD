@@ -5,9 +5,8 @@ import oogasalad.controller.player.api.Action;
 /**
  * Toggles an engine/motor drive component on or off each time execute() is called.
  *
- * The DriveComponent should hold info ab this action and call isActive()
- * holds a reference to this action and calls isActive() inside getForce()
- * to decide whether to return a drive force or zero.
+ * A drive-capable component can hold a reference to this action and use {@link #isActive()} to
+ * decide whether to output thrust or zero force.
  */
 public class DriveAction implements Action {
 
