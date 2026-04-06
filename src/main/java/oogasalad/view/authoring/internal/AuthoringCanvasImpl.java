@@ -72,7 +72,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     this.defaultFill = Color.web(PROPS.getString("defaultFill"));
     this.gridStroke = Color.web(PROPS.getString("gridStroke"));
     this.gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
-    this.placedObjectFactory = new DefaultPlacedObjectFactory(cellSize, cellSize, "#8B4513");
+    this.placedObjectFactory = new DefaultPlacedObjectFactory(
+        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
     this.root = new Pane();
     double totalWidth = gridCols * cellSize;
     double totalHeight = gridRows * cellSize;

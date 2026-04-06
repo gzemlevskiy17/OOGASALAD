@@ -11,6 +11,8 @@ import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
+import oogasalad.view.authoring.api.PlacedObjectFactory;
+import oogasalad.view.authoring.internal.DefaultPlacedObjectFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,9 +39,6 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
 
-  private static final String DEFAULT_TERRAIN_TEXTURE = "assets/terrain/grass.png";
-  private static final double DEFAULT_TERRAIN_FRICTION = 0.6;
-
   private final World world;
   private final LevelLoader loader;
   private final LevelSaver saver;
@@ -47,6 +46,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
 
+  private PlacedObjectFactory placedObjectFactory;
   private int lastDragCol = -1;
   private int lastDragRow = -1;
 
@@ -58,6 +58,15 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.config = config;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
+    double cellSize = canvas.getCellSize();
+    this.placedObjectFactory = new DefaultPlacedObjectFactory(
+        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
+  }
+
+  public void setPlacedObjectFactory(PlacedObjectFactory factory) {
+    if (factory != null) {
+      this.placedObjectFactory = factory;
+    }
   }
 
   @Override
@@ -172,12 +181,17 @@ public class AuthoringControllerImpl implements AuthoringController {
     LOG.info("Loaded level from {}", fileName);
   }
 
-  private void placeTerrain(double gridX, double gridY) {
+  private void placeTerrain(int col, int row) {
+    double cellSize = canvas.getCellSize();
+    int spanCols = placedObjectFactory.colSpan(cellSize);
+    int spanRows = placedObjectFactory.rowSpan(cellSize);
     boolean cellOccupied = world.getObjects().stream()
-        .anyMatch(obj -> obj.getX() == gridX && obj.getY() == gridY);
+        .anyMatch(obj -> obj.getX() == (double) col && obj.getY() == (double) row);
     if (!cellOccupied) {
-      world.addObject(new TerrainBlock(gridX, gridY, 1, 1,
-          DEFAULT_TERRAIN_TEXTURE, true, DEFAULT_TERRAIN_FRICTION));
+      world.addObject(new TerrainBlock(col, row, spanCols, spanRows,
+          placedObjectFactory.getSprite(),
+          placedObjectFactory.isTiled(),
+          placedObjectFactory.getFriction()));
     }
   }
 }

@@ -23,6 +23,8 @@ public class ComponentPaletteImpl implements ComponentPallete {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.ComponentPalette");
+  private static final ResourceBundle TERRAIN_PROPS =
+      ResourceBundle.getBundle("oogasalad.view.authoring.TerrainBlock");
 
   private final double sampleSize = Double.parseDouble(PROPS.getString("sampleSize"));
   private final Color selectedStroke = Color.web(PROPS.getString("selectedStroke"));
@@ -59,7 +61,13 @@ public class ComponentPaletteImpl implements ComponentPallete {
       String color = PROPS.getString(name + ".color");
       int cols = Integer.parseInt(PROPS.getString(name + ".cols"));
       int rows = Integer.parseInt(PROPS.getString(name + ".rows"));
-      entries.put(name, new PaletteEntry(name, color, cols, rows));
+      String sprite = TERRAIN_PROPS.getString(name + ".sprite");
+      boolean tiled = Boolean.parseBoolean(TERRAIN_PROPS.getString(name + ".tiled"));
+      double friction = Double.parseDouble(TERRAIN_PROPS.getString(name + ".friction"));
+      int blockCols = Integer.parseInt(TERRAIN_PROPS.getString(name + ".blockCols"));
+      int blockRows = Integer.parseInt(TERRAIN_PROPS.getString(name + ".blockRows"));
+      entries.put(name, new PaletteEntry(name, color, cols, rows,
+          sprite, tiled, friction, blockCols, blockRows));
     }
   }
 
@@ -79,7 +87,8 @@ public class ComponentPaletteImpl implements ComponentPallete {
         ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas")
             .getString("cellSize"));
     PlacedObjectFactory factory = new DefaultPlacedObjectFactory(
-        entry.cols() * cellSize, entry.rows() * cellSize, entry.color());
+        entry.blockCols() * cellSize, entry.blockRows() * cellSize,
+        entry.color(), entry.sprite(), entry.tiled(), entry.friction());
 
     // Redraw all samplees to update selection highlight
     int i = 0;
@@ -105,6 +114,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
     }
   }
 
-  private record PaletteEntry(String name, String color, int cols, int rows) {
+  private record PaletteEntry(String name, String color, int cols, int rows,
+      String sprite, boolean tiled, double friction, int blockCols, int blockRows) {
   }
 }

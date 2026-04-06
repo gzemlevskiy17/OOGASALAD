@@ -14,4 +14,14 @@ public interface PlacedObjectFactory {
 
   /** @return the color hex string for this object type. */
   String getColor();
+
+  /** @return the texture/sprite path for this terrain type. */
+  String getSprite();
+
+  /** @return true if the texture should tile, false to stretch. */
+  boolean isTiled();
+
+  /** @return the friction coefficient for this terrain type. */
+  double getFriction();
+
 }

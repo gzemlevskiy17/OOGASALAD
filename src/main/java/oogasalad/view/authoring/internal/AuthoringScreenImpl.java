@@ -60,6 +60,7 @@ public class AuthoringScreenImpl implements AppScreen {
     this.vehiclePalette = new VehicleComponentScrollPalette();
     this.terrainPalette = new ComponentPaletteImpl();
     terrainPalette.subscribe(canvas::setPlacedObjectFactory);
+    terrainPalette.subscribe(controller::setPlacedObjectFactory);
     this.paletteModeRow = buildPaletteModeRow();
     this.bottomContentHost = new StackPane();
     this.levelModeButton = createTabButton(PROPS.getString("levelButtonText"));
