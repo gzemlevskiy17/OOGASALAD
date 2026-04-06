@@ -12,9 +12,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import oogasalad.data.api.LevelLoadException;
-import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.GameComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -124,12 +124,17 @@ class LevelLoaderImplTest {
   // --- Test doubles ---
 
   private static class FakeWorld implements World {
-    private final List<GameObject> objects = new ArrayList<>();
-    @Override public Collection<GameObject> getObjects() { return Collections.unmodifiableList(objects); }
+    private final List<GameComponent> components = new ArrayList<>();
+    @Override public Collection<GameComponent> getComponents() { return Collections.unmodifiableList(components); }
+    @Override public Collection<GameComponent> getAllComponents() { return Collections.unmodifiableList(components); }
+    @Override public Collection<GameComponent> getActiveComponents() { return Collections.unmodifiableList(components); }
     @Override public Collection<Joint> getJoints() { return List.of(); }
-    @Override public void addObject(GameObject o) { objects.add(o); }
+    @Override public void addComponent(GameComponent component) { components.add(component); }
+    @Override public void removeComponent(GameComponent component) { components.remove(component); }
+    @Override public void clear() { components.clear(); }
     @Override public void addJoint(Joint j) {}
-    int objectCount() { return objects.size(); }
+    @Override public void removeJoint(Joint j) {}
+    int objectCount() { return components.size(); }
   }
 
   private static class FakeGameConfig implements oogasalad.data.api.GameConfig {
