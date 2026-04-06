@@ -14,6 +14,11 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
+/**
+ * Screen for the main window of the gameplay
+ * @author Iurii Beliaev
+ */
+
 public class GamePlayAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
