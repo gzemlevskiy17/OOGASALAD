@@ -133,5 +133,7 @@ class AuthoringControllerImplTest {
     @Override public Collection<oogasalad.view.authoring.api.PlacedObject> getPlacedObjects() { return List.of(); }
     @Override public void setPlacedObjectFactory(PlacedObjectFactory factory) {}
     @Override public void placeBlock(int col, int row) {}
+    @Override public void showHoverPreview(int col, int row) {}
+    @Override public void clearHoverPreview() {}
   }
 }

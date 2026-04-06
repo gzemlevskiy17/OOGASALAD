@@ -1,5 +1,6 @@
 package oogasalad.view.authoring.api;
 
+@Deprecated
 @FunctionalInterface
 public interface InputMonitor {
 

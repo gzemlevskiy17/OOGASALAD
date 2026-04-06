@@ -15,6 +15,7 @@ import oogasalad.view.authoring.api.PlacedObject;
 import oogasalad.view.authoring.api.PlacedObjectFactory;
 import oogasalad.view.authoring.internal.DefaultPlacedObjectFactory;
 
+@Deprecated
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private static final ResourceBundle PROPS =
@@ -269,6 +270,16 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     if (clickMonitor != null) {
       clickMonitor.onCellInteraction(col, row);
     }
+  }
+
+  @Override
+  public void showHoverPreview(int col, int row) {
+    // no-op: deprecated implementation
+  }
+
+  @Override
+  public void clearHoverPreview() {
+    // no-op: deprecated implementation
   }
 
   private record CellKey(int col, int row) {

@@ -21,4 +21,14 @@ public interface AuthoringCanvas {
    * Places a block at the given cell, spanning multiple cells based on the current factory.
    */
   void placeBlock(int col, int row);
+
+  /**
+   * Shows a semi-transparent hover preview at the given grid cell using the current factory's span.
+   */
+  void showHoverPreview(int col, int row);
+
+  /**
+   * Removes any currently displayed hover preview.
+   */
+  void clearHoverPreview();
 }

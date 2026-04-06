@@ -1,5 +1,6 @@
 package oogasalad.controller.authoring.internal;
 
+import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.ToolSelector;
@@ -49,6 +50,9 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
 
+  private int lastDragCol = -1;
+  private int lastDragRow = -1;
+
   public AuthoringControllerImpl(World world, LevelLoader loader, LevelSaver saver,
       GameConfig config, ToolSelector toolSelector, AuthoringCanvas canvas) {
     this.world = world;
@@ -57,6 +61,35 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.config = config;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
+  }
+
+  @Override
+  public void initializeCanvasHandlers() {
+    Node root = canvas.getVisualRoot();
+
+    root.setOnMouseMoved(e -> {
+      int col = (int) Math.floor(e.getX() / CELL_SIZE);
+      int row = (int) Math.floor(e.getY() / CELL_SIZE);
+      canvas.showHoverPreview(col, row);
+    });
+
+    root.setOnMouseExited(e -> canvas.clearHoverPreview());
+
+    root.setOnMousePressed(e -> {
+      int col = (int) Math.floor(e.getX() / CELL_SIZE);
+      int row = (int) Math.floor(e.getY() / CELL_SIZE);
+      lastDragCol = col;
+      lastDragRow = row;
+      handleCellInteraction(col, row);
+    });
+
+    root.setOnMouseDragged(e -> {
+      int col = (int) Math.floor(e.getX() / CELL_SIZE);
+      int row = (int) Math.floor(e.getY() / CELL_SIZE);
+      fillLine(lastDragCol, lastDragRow, col, row);
+      lastDragCol = col;
+      lastDragRow = row;
+    });
   }
 
   /**
@@ -73,17 +106,49 @@ public class AuthoringControllerImpl implements AuthoringController {
    * directly without needing to construct a JavaFX MouseEvent.
    */
   void handleGridInteraction(double x, double y) {
-    double gridX = Math.floor(x / CELL_SIZE);
-    double gridY = Math.floor(y / CELL_SIZE);
+    int col = (int) Math.floor(x / CELL_SIZE);
+    int row = (int) Math.floor(y / CELL_SIZE);
+    handleCellInteraction(col, row);
+  }
 
+  /**
+   * Applies the active tool at the given grid cell. Package-private so tests
+   * can invoke it directly.
+   */
+  void handleCellInteraction(int col, int row) {
     if (toolSelector.getActiveTool() == ToolType.DRAW) {
-      placeTerrain(gridX, gridY);
+      placeTerrain(col, row);
     } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
       // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
       LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
     }
-
     canvas.refreshGrid();
+  }
+
+  /**
+   * Interpolates a line between two grid cells calling handleCellInteraction for each cell along the line.
+   */
+  private void fillLine(int x0, int y0, int x1, int y1) {
+    int dx = Math.abs(x1 - x0);
+    int dy = Math.abs(y1 - y0);
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+    while (true) {
+      handleCellInteraction(x0, y0);
+      if (x0 == x1 && y0 == y1) {
+        break;
+      }
+      int e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x0 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
   }
 
   @Override

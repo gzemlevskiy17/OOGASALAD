@@ -50,6 +50,10 @@ public class MichaelCanvas implements AuthoringCanvas {
   private final int gridRows;
   private PlacedObjectFactory placedObjectFactory;
 
+  private Rectangle hoverOverlay;
+  private int hoverCol = -1;
+  private int hoverRow = -1;
+
   public MichaelCanvas() {
     this(null, 30, 18);
   }
@@ -77,6 +81,7 @@ public class MichaelCanvas implements AuthoringCanvas {
   /** Clears and redraws all terrain blocks and grid lines from the current World state. */
   @Override
   public void refreshGrid() {
+    clearHoverPreview();
     root.getChildren().clear();
     if (world != null) {
       drawTerrainObjects();
@@ -112,6 +117,41 @@ public class MichaelCanvas implements AuthoringCanvas {
     preview.setStroke(TERRAIN_STROKE_COLOR);
     root.getChildren().add(preview);
     drawGridLines();
+  }
+
+  @Override
+  public void showHoverPreview(int col, int row) {
+    if (col == hoverCol && row == hoverRow) {
+      return;
+    }
+    clearHoverPreview();
+    if (col < 0 || col >= gridCols || row < 0 || row >= gridRows) {
+      return;
+    }
+
+    int spanCols = placedObjectFactory.colSpan(CELL_SIZE);
+    int spanRows = placedObjectFactory.rowSpan(CELL_SIZE);
+    PlacedObject sample = placedObjectFactory.create(col, row, CELL_SIZE);
+    Color previewColor = Color.web(sample.getColor(), 0.5);
+
+    hoverOverlay = new Rectangle(
+        col * CELL_SIZE, row * CELL_SIZE,
+        spanCols * CELL_SIZE, spanRows * CELL_SIZE);
+    hoverOverlay.setFill(previewColor);
+    hoverOverlay.setMouseTransparent(true);
+    root.getChildren().add(hoverOverlay);
+    hoverCol = col;
+    hoverRow = row;
+  }
+
+  @Override
+  public void clearHoverPreview() {
+    if (hoverOverlay != null) {
+      root.getChildren().remove(hoverOverlay);
+      hoverOverlay = null;
+      hoverCol = -1;
+      hoverRow = -1;
+    }
   }
 
   private void drawTerrainObjects() {
