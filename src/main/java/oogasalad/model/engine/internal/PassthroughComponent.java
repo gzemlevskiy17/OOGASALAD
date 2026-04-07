@@ -3,9 +3,9 @@ package oogasalad.model.engine.internal;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Pose;
 
-public abstract class PowerupComponent extends GameComponent {
+public abstract class PassthroughComponent extends GameComponent {
 
-  public PowerupComponent(Pose pose, double mass, double friction) {
+  public PassthroughComponent(Pose pose, double mass, double friction) {
     super(pose, mass, friction);
     setTrigger(true);
     setAffectedByGravity(false);
