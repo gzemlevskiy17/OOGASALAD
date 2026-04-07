@@ -191,7 +191,8 @@ public class AuthoringControllerImpl implements AuthoringController {
     world.addObject(new TerrainBlock(col, row, spanCols, spanRows,
         placedObjectFactory.getSprite(),
         placedObjectFactory.isTiled(),
-        placedObjectFactory.getFriction()));
+        placedObjectFactory.getFriction(),
+        placedObjectFactory.getColor()));
   }
 
   /**

@@ -190,40 +190,52 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     Rectangle rect = new Rectangle(px, py, pw, ph);
     rect.setStroke(TERRAIN_STROKE_COLOR);
 
+    Color fallback = parseColor(tb.getColor());
     if (tb.isTiled()) {
-      applyTiledTexture(rect, tb.getSprite());
+      applyTiledTexture(rect, tb.getSprite(), fallback);
     } else {
-      applySprite(rect, tb.getSprite());
+      applySprite(rect, tb.getSprite(), fallback);
     }
 
     return rect;
   }
 
+  private Color parseColor(String css) {
+    if (css == null || css.isBlank()) {
+      return TERRAIN_FALLBACK_COLOR;
+    }
+    try {
+      return Color.web(css);
+    } catch (IllegalArgumentException e) {
+      return TERRAIN_FALLBACK_COLOR;
+    }
+  }
+
   /**
    * Repeats the texture image in a tile pattern across the rectangle.
-   * Falls back to a solid color if the image file cannot be loaded.
+   * Falls back to the block's color if the image file cannot be loaded.
    */
-  private void applyTiledTexture(Rectangle rect, String spritePath) {
+  private void applyTiledTexture(Rectangle rect, String spritePath, Color fallback) {
     Image img = tryLoadImage(spritePath);
     if (img != null) {
       rect.setFill(new ImagePattern(img, 0, 0, cellSize, cellSize, false));
     } else {
-      rect.setFill(TERRAIN_FALLBACK_COLOR);
+      rect.setFill(fallback);
     }
   }
 
   /**
    * Scales a single image to fill the rectangle.
-   * Falls back to a solid color if the image file cannot be loaded.
+   * Falls back to the block's color if the image file cannot be loaded.
    */
-  private void applySprite(Rectangle rect, String spritePath) {
+  private void applySprite(Rectangle rect, String spritePath, Color fallback) {
     Image img = tryLoadImage(spritePath);
     if (img != null) {
       double w = rect.getWidth();
       double h = rect.getHeight();
       rect.setFill(new ImagePattern(img, 0, 0, w, h, false));
     } else {
-      rect.setFill(TERRAIN_FALLBACK_COLOR);
+      rect.setFill(fallback);
     }
   }
 
