@@ -114,6 +114,12 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   public void setPlacedObjectFactory(PlacedObjectFactory factory) {
     if (factory != null) {
       this.placedObjectFactory = factory;
+      if (hoverOverlay != null) {
+        int col = hoverCol;
+        int row = hoverRow;
+        clearHoverPreview();
+        showHoverPreview(col, row);
+      }
     }
   }
 

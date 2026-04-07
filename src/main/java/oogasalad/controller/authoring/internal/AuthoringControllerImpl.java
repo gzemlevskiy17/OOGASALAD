@@ -185,13 +185,34 @@ public class AuthoringControllerImpl implements AuthoringController {
     double cellSize = canvas.getCellSize();
     int spanCols = placedObjectFactory.colSpan(cellSize);
     int spanRows = placedObjectFactory.rowSpan(cellSize);
-    boolean cellOccupied = world.getObjects().stream()
-        .anyMatch(obj -> obj.getX() == (double) col && obj.getY() == (double) row);
-    if (!cellOccupied) {
-      world.addObject(new TerrainBlock(col, row, spanCols, spanRows,
-          placedObjectFactory.getSprite(),
-          placedObjectFactory.isTiled(),
-          placedObjectFactory.getFriction()));
+    if (overlapsExistingTerrain(col, row, spanCols, spanRows)) {
+      return;
     }
+    world.addObject(new TerrainBlock(col, row, spanCols, spanRows,
+        placedObjectFactory.getSprite(),
+        placedObjectFactory.isTiled(),
+        placedObjectFactory.getFriction()));
+  }
+
+  /**
+   * Returns true if the proposed block (anchored at col,row with the given span)
+   * intersects any existing TerrainBlock's bounding box in the world.
+   */
+  private boolean overlapsExistingTerrain(int col, int row, int spanCols, int spanRows) {
+    double newLeft = col;
+    double newTop = row;
+    double newRight = col + spanCols;
+    double newBottom = row + spanRows;
+    return world.getObjects().stream()
+        .filter(obj -> obj instanceof TerrainBlock)
+        .map(obj -> (TerrainBlock) obj)
+        .anyMatch(tb -> {
+          double oldLeft = tb.getX();
+          double oldTop = tb.getY();
+          double oldRight = tb.getX() + tb.getWidth();
+          double oldBottom = tb.getY() + tb.getHeight();
+          return newLeft < oldRight && newRight > oldLeft
+              && newTop < oldBottom && newBottom > oldTop;
+        });
   }
 }
