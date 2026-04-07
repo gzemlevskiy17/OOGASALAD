@@ -1,5 +1,6 @@
 package oogasalad.controller.authoring.internal;
 
+import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.ToolSelector;
@@ -10,6 +11,8 @@ import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
+import oogasalad.view.authoring.api.PlacedObjectFactory;
+import oogasalad.view.authoring.internal.DefaultPlacedObjectFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,17 +33,11 @@ import org.apache.logging.log4j.Logger;
  *                LevelLoaderImpl (populates world from file),
  *                LevelSaverImpl (persists world to file),
  *                ToolSelectorImpl (current editor tool),
- *                MichaelCanvas (refreshed after each model change).
+ *                AuthoringCanvasImpl (refreshed after each model change).
  */
 public class AuthoringControllerImpl implements AuthoringController {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
-
-  /** Pixels per grid unit — must match MichaelCanvas.CELL_SIZE. */
-  public static final double CELL_SIZE = 40.0;
-
-  private static final String DEFAULT_TERRAIN_TEXTURE = "assets/terrain/grass.png";
-  private static final double DEFAULT_TERRAIN_FRICTION = 0.6;
 
   private final World world;
   private final LevelLoader loader;
@@ -48,6 +45,10 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final GameConfig config;
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
+
+  private PlacedObjectFactory placedObjectFactory;
+  private int lastDragCol = -1;
+  private int lastDragRow = -1;
 
   public AuthoringControllerImpl(World world, LevelLoader loader, LevelSaver saver,
       GameConfig config, ToolSelector toolSelector, AuthoringCanvas canvas) {
@@ -57,6 +58,51 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.config = config;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
+    double cellSize = canvas.getCellSize();
+    this.placedObjectFactory = new DefaultPlacedObjectFactory(
+        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
+  }
+
+  public void setPlacedObjectFactory(PlacedObjectFactory factory) {
+    if (factory != null) {
+      this.placedObjectFactory = factory;
+    }
+  }
+
+  @Override
+  public void initializeCanvasHandlers() {
+    Node root = canvas.getVisualRoot();
+    double cellSize = canvas.getCellSize();
+
+    root.setOnMouseMoved(e -> {
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
+      canvas.showHoverPreview(col, row);
+    });
+
+    root.setOnMouseExited(e -> canvas.clearHoverPreview());
+
+    root.setOnMousePressed(e -> {
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
+      if (!canvas.isWithinBounds(col, row)) {
+        return;
+      }
+      lastDragCol = col;
+      lastDragRow = row;
+      handleCellInteraction(col, row);
+    });
+
+    root.setOnMouseDragged(e -> {
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
+      if (!canvas.isWithinBounds(col, row)) {
+        return;
+      }
+      fillLine(lastDragCol, lastDragRow, col, row);
+      lastDragCol = col;
+      lastDragRow = row;
+    });
   }
 
   /**
@@ -73,17 +119,52 @@ public class AuthoringControllerImpl implements AuthoringController {
    * directly without needing to construct a JavaFX MouseEvent.
    */
   void handleGridInteraction(double x, double y) {
-    double gridX = Math.floor(x / CELL_SIZE);
-    double gridY = Math.floor(y / CELL_SIZE);
+    double cellSize = canvas.getCellSize();
+    int col = (int) Math.floor(x / cellSize);
+    int row = (int) Math.floor(y / cellSize);
+    if (canvas.isWithinBounds(col, row)) {
+      handleCellInteraction(col, row);
+    }
+  }
 
+  /**
+   * Applies the active tool at the given grid cell. Package-private so tests
+   * can invoke it directly.
+   */
+  void handleCellInteraction(int col, int row) {
     if (toolSelector.getActiveTool() == ToolType.DRAW) {
-      placeTerrain(gridX, gridY);
+      placeTerrain(col, row);
     } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
       // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
       LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
     }
-
     canvas.refreshGrid();
+  }
+
+  /**
+   * Interpolates a line between two grid cells calling handleCellInteraction for each cell along the line.
+   */
+  private void fillLine(int x0, int y0, int x1, int y1) {
+    int dx = Math.abs(x1 - x0);
+    int dy = Math.abs(y1 - y0);
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+    while (true) {
+      handleCellInteraction(x0, y0);
+      if (x0 == x1 && y0 == y1) {
+        break;
+      }
+      int e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x0 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
   }
 
   @Override
@@ -100,12 +181,39 @@ public class AuthoringControllerImpl implements AuthoringController {
     LOG.info("Loaded level from {}", fileName);
   }
 
-  private void placeTerrain(double gridX, double gridY) {
-    boolean cellOccupied = world.getObjects().stream()
-        .anyMatch(obj -> obj.getX() == gridX && obj.getY() == gridY);
-    if (!cellOccupied) {
-      world.addObject(new TerrainBlock(gridX, gridY, 1, 1,
-          DEFAULT_TERRAIN_TEXTURE, true, DEFAULT_TERRAIN_FRICTION));
+  private void placeTerrain(int col, int row) {
+    double cellSize = canvas.getCellSize();
+    int spanCols = placedObjectFactory.colSpan(cellSize);
+    int spanRows = placedObjectFactory.rowSpan(cellSize);
+    if (overlapsExistingTerrain(col, row, spanCols, spanRows)) {
+      return;
     }
+    world.addObject(new TerrainBlock(col, row, spanCols, spanRows,
+        placedObjectFactory.getSprite(),
+        placedObjectFactory.isTiled(),
+        placedObjectFactory.getFriction(),
+        placedObjectFactory.getColor()));
+  }
+
+  /**
+   * Returns true if the proposed block (anchored at col,row with the given span)
+   * intersects any existing TerrainBlock's bounding box in the world.
+   */
+  private boolean overlapsExistingTerrain(int col, int row, int spanCols, int spanRows) {
+    double newLeft = col;
+    double newTop = row;
+    double newRight = col + spanCols;
+    double newBottom = row + spanRows;
+    return world.getObjects().stream()
+        .filter(obj -> obj instanceof TerrainBlock)
+        .map(obj -> (TerrainBlock) obj)
+        .anyMatch(tb -> {
+          double oldLeft = tb.getX();
+          double oldTop = tb.getY();
+          double oldRight = tb.getX() + tb.getWidth();
+          double oldBottom = tb.getY() + tb.getHeight();
+          return newLeft < oldRight && newRight > oldLeft
+              && newTop < oldBottom && newBottom > oldTop;
+        });
   }
 }
