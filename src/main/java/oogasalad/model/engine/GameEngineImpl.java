@@ -6,6 +6,7 @@ import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 
@@ -76,15 +77,14 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
-//    for (Joint joint :  world.getJoints()) {
-//
-//    }
+    applyJointConstraints();
 
     handleCollisions();
 
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
-      ObjectState newState = integrateObjectState(gameObject.getState(), elapsedTime);
+      ObjectState newState = integrateObjectState(gameObject, elapsedTime);
       gameObject.setState(newState);
+      gameObject.setForce(new Vector(0, 0));
     }
 
 //    for (Constraint constraint : constraings) {
@@ -99,6 +99,12 @@ public class GameEngineImpl implements GameEngine {
     solveCollisions(collisions);
   }
 
+  private void applyJointConstraints() {
+    for (Joint joint : world.getJoints()) {
+      joint.apply();
+    }
+  }
+
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
     for (GameObject objectA : world.getObjects()) {
@@ -111,25 +117,38 @@ public class GameEngineImpl implements GameEngine {
 
   private void solveCollisions(List<Collision> collisions) {
     for (Collision collision : collisions) {
-      collisionSolver.solve(collision);
+      if (collision != null) {
+        collisionSolver.solve(collision);
+      }
     }
   }
 
-  //TODO: implement
-  private ObjectState integrateObjectState(ObjectState state, double elapsedTime) {
+  private ObjectState integrateObjectState(GameObject gameObject, double elapsedTime) {
+    ObjectState state = gameObject.getState();
+    if (gameObject.getMass() <= 0.0) {
+      return new ObjectState(
+          state.getLinearPosition(),
+          new Vector(0, 0),
+          new Vector(0, 0),
+          state.getAngularPosition(),
+          new Vector(0, 0),
+          state.getAngularAcceleration()
+      );
+    }
+
+    Vector newLinearAcceleration = gameObject.getForce().multiply(1.0 / gameObject.getMass());
     Vector newLinearVelocity = integrateVector(state.getLinearVelocity(),
-        state.getLinearAcceleration(), elapsedTime);
-    Vector newLinearPosition = integrateVector(state.getLinearPosition(), state.getLinearVelocity(),
+        newLinearAcceleration, elapsedTime);
+    Vector newLinearPosition = integrateVector(state.getLinearPosition(), newLinearVelocity,
         elapsedTime);
 
-    //TODO: does integrateVector work for angular?
     Vector newAngularVelocity = integrateVector(state.getAngularVelocity(),
-        state.getAngularVelocity(), elapsedTime);
+        state.getAngularAcceleration(), elapsedTime);
     double newAngularPosition = integrateScalar(state.getAngularPosition(),
-        state.getAngularVelocity().magnitude(), elapsedTime);
+        newAngularVelocity.magnitude(), elapsedTime);
 
     return new ObjectState(newLinearPosition, newLinearVelocity,
-        state.getLinearAcceleration(), newAngularPosition, newAngularVelocity,
+        newLinearAcceleration, newAngularPosition, newAngularVelocity,
         state.getAngularAcceleration());
   }
 

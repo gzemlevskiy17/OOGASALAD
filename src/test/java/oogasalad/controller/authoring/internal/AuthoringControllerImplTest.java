@@ -15,6 +15,8 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
 import oogasalad.view.authoring.api.AuthoringCanvas;
+import oogasalad.view.authoring.api.PlacedObject;
+import oogasalad.view.authoring.api.PlacedObjectFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -123,6 +125,9 @@ class AuthoringControllerImplTest {
   private static class SpyCanvas implements AuthoringCanvas {
     boolean refreshCalled = false;
     @Override public javafx.scene.Node getVisualRoot() { return null; }
+    @Override public Collection<PlacedObject> getPlacedObjects() { return List.of(); }
     @Override public void refreshGrid() { refreshCalled = true; }
+    @Override public void setPlacedObjectFactory(PlacedObjectFactory factory) {}
+    @Override public void placeBlock(int col, int row) {}
   }
 }

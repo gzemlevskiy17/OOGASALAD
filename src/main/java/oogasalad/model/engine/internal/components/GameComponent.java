@@ -1,4 +1,4 @@
-package oogasalad.model.engine.internal;
+package oogasalad.model.engine.internal.components;
 
 import java.util.Objects;
 import oogasalad.model.engine.ConvexPolygon;

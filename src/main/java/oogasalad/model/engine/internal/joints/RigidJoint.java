@@ -1,0 +1,75 @@
+package oogasalad.model.engine.internal.joints;
+
+import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.internal.components.GameComponent;
+
+/**
+ * Force-based approximation of a rigid connection between two components.
+ *
+ * <p>Uses a much stiffer spring-damper response than {@link SpringJoint}, allowing the joint to
+ * stay close to its rest distance while still flowing through the engine's regular force pipeline.
+ */
+public class RigidJoint extends AbstractJoint {
+
+  private static final double DEFAULT_STIFFNESS = 400.0;
+  private static final double DEFAULT_DAMPING = 40.0;
+
+  private final double restDistance;
+  private final double stiffness;
+  private final double damping;
+
+  public RigidJoint(GameComponent objectA, GameComponent objectB) {
+    this(objectA, objectB, DEFAULT_STIFFNESS, DEFAULT_DAMPING);
+  }
+
+  public RigidJoint(GameComponent objectA, GameComponent objectB,
+      double stiffness, double damping) {
+    super(objectA, objectB);
+    if (stiffness < 0.0 || damping < 0.0) {
+      throw new IllegalArgumentException("Rigid joint stiffness and damping must be non-negative");
+    }
+    this.restDistance = getComponentB().getState().getLinearPosition()
+        .subtract(getComponentA().getState().getLinearPosition())
+        .magnitude();
+    this.stiffness = stiffness;
+    this.damping = damping;
+  }
+
+  public double getRestDistance() {return restDistance;}
+
+  public double getStiffness() {
+    return stiffness;
+  }
+
+  public double getDamping() {
+    return damping;
+  }
+
+  @Override
+  public void apply() {
+    GameComponent objectA = getComponentA();
+    GameComponent objectB = getComponentB();
+
+    Vector positionDelta = objectB.getState().getLinearPosition()
+        .subtract(objectA.getState().getLinearPosition());
+    double currentDistance = positionDelta.magnitude();
+    if (currentDistance == 0.0) {
+      return;
+    }
+
+    Vector direction = positionDelta.normalize();
+    double displacement = currentDistance - restDistance;
+    Vector relativeVelocity = objectB.getState().getLinearVelocity()
+        .subtract(objectA.getState().getLinearVelocity());
+    double dampingForceMagnitude = relativeVelocity.dot(direction) * damping;
+    double rigidForceMagnitude = (stiffness * displacement) + dampingForceMagnitude;
+    Vector rigidForce = direction.multiply(rigidForceMagnitude);
+
+    if (isDynamic(objectA)) {
+      objectA.addForce(rigidForce);
+    }
+    if (isDynamic(objectB)) {
+      objectB.addForce(rigidForce.multiply(-1));
+    }
+  }
+}

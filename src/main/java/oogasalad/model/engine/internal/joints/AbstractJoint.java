@@ -1,0 +1,80 @@
+package oogasalad.model.engine.internal.joints;
+
+import java.util.Objects;
+import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.internal.components.DynamicComponent;
+import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.PassthroughComponent;
+import oogasalad.model.engine.internal.components.StaticComponent;
+
+/**
+ * Shared base for concrete joint implementations.
+ *
+ * <p>Stores the two endpoint components and centralizes validation of the minimal joint rules used
+ * by the current engine: only dynamic-dynamic and dynamic-static pairs are supported.
+ */
+public abstract class AbstractJoint implements Joint {
+
+  private final GameComponent objectA;
+  private final GameComponent objectB;
+
+  protected AbstractJoint(GameComponent objectA, GameComponent objectB) {
+    this.objectA = Objects.requireNonNull(objectA);
+    this.objectB = Objects.requireNonNull(objectB);
+    validatePair(this.objectA, this.objectB);
+  }
+
+  @Override
+  public GameObject getObjectA() {
+    return objectA;
+  }
+
+  @Override
+  public GameObject getObjectB() {
+    return objectB;
+  }
+
+  protected GameComponent getComponentA() {
+    return objectA;
+  }
+
+  protected GameComponent getComponentB() {
+    return objectB;
+  }
+
+  protected boolean isDynamic(GameComponent component) {
+    return component instanceof DynamicComponent;
+  }
+
+  protected boolean isStatic(GameComponent component) {
+    return component instanceof StaticComponent;
+  }
+
+  protected boolean isPassthrough(GameComponent component) {
+    return component instanceof PassthroughComponent;
+  }
+
+  private void validatePair(GameComponent objectA, GameComponent objectB) {
+    if (isPassthrough(objectA) || isPassthrough(objectB)) {
+      throw new IllegalArgumentException("Passthrough components cannot participate in joints");
+    }
+
+    boolean objectAStatic = isStatic(objectA);
+    boolean objectBStatic = isStatic(objectB);
+    boolean objectADynamic = isDynamic(objectA);
+    boolean objectBDynamic = isDynamic(objectB);
+
+    if (objectAStatic && objectBStatic) {
+      throw new IllegalArgumentException("Static-static joints are not supported");
+    }
+
+    boolean supportedPair =
+        (objectADynamic && objectBDynamic)
+            || (objectADynamic && objectBStatic)
+            || (objectAStatic && objectBDynamic);
+    if (!supportedPair) {
+      throw new IllegalArgumentException("Joint pair must be dynamic-dynamic or dynamic-static");
+    }
+  }
+}

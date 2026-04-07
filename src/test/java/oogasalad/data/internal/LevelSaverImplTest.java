@@ -17,7 +17,7 @@ import oogasalad.data.api.LevelSaveException;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
