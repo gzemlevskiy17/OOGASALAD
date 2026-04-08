@@ -11,7 +11,7 @@ public interface AuthoringCanvas {
   void refreshGrid();
 
   /** Swaps the currently selected placeable (called by the controller/palette). */
-  void setSelectedPlaceable(Placeable placeable);
+  void setSelectedPlaceable(AuthoringPlaceable placeable);
 
   /** @return true if the given grid cell is within the canvas bounds. */
   boolean isWithinBounds(int col, int row);

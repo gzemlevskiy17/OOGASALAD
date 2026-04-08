@@ -10,9 +10,8 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
-import oogasalad.view.authoring.api.Placeable;
+import oogasalad.view.authoring.api.AuthoringPlaceable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,7 +49,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private final Pane root;
   private final World world;
-  private Placeable selectedPlaceable;
+  private AuthoringPlaceable selectedPlaceable;
 
   private Rectangle hoverOverlay;
   private int hoverCol = -1;
@@ -99,19 +98,19 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     return root;
   }
 
-  /** Clears and redraws all terrain blocks and grid lines from the current World state. */
+  /** Clears and redraws all authoring objects and grid lines from the current World state. */
   @Override
   public void refreshGrid() {
     clearHoverPreview();
     root.getChildren().clear();
     if (world != null) {
-      drawTerrainObjects();
+      drawObjects();
     }
     drawGridLines();
   }
 
   @Override
-  public void setSelectedPlaceable(Placeable placeable) {
+  public void setSelectedPlaceable(AuthoringPlaceable placeable) {
     if (placeable != null) {
       this.selectedPlaceable = placeable;
       if (hoverOverlay != null) {
@@ -173,28 +172,26 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     }
   }
 
-  private void drawTerrainObjects() {
+  private void drawObjects() {
     for (GameObject obj : world.getObjects()) {
-      if (obj instanceof TerrainBlock tb) {
-        root.getChildren().add(buildTerrainRect(tb));
-      }
+      root.getChildren().add(drawObject((AuthoringPlaceable) obj));
     }
   }
 
-  private Rectangle buildTerrainRect(TerrainBlock tb) {
-    double px = tb.getX() * cellSize;
-    double py = tb.getY() * cellSize;
-    double pw = tb.getWidth() * cellSize;
-    double ph = tb.getHeight() * cellSize;
+  private Rectangle drawObject(AuthoringPlaceable placeable) {
+    double px = placeable.getX() * cellSize;
+    double py = placeable.getY() * cellSize;
+    double pw = placeable.getWidth() * cellSize;
+    double ph = placeable.getHeight() * cellSize;
 
     Rectangle rect = new Rectangle(px, py, pw, ph);
     rect.setStroke(TERRAIN_STROKE_COLOR);
 
-    Color fallback = parseColor(tb.getColor());
-    if (tb.isTiled()) {
-      applyTiledTexture(rect, tb.getSprite(), fallback);
+    Color fallback = parseColor(placeable.getColor());
+    if (placeable.isTiled()) {
+      applyTiledTexture(rect, placeable.getSprite(), fallback);
     } else {
-      applySprite(rect, tb.getSprite(), fallback);
+      applySprite(rect, placeable.getSprite(), fallback);
     }
 
     return rect;

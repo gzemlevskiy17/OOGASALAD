@@ -12,8 +12,8 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import oogasalad.view.authoring.api.AuthoringPlaceable;
 import oogasalad.view.authoring.api.ComponentPallete;
-import oogasalad.view.authoring.api.Placeable;
 
 /**
  * Palette implementation that reads object definitions from properties and notifies subscribers
@@ -32,7 +32,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
       Double.parseDouble(PROPS.getString("selectedStrokeWidth"));
 
   private final Map<String, PaletteEntry> entries = new LinkedHashMap<>();
-  private final List<Consumer<Placeable>> subscribers = new ArrayList<>();
+  private final List<Consumer<AuthoringPlaceable>> subscribers = new ArrayList<>();
   private final HBox root = new HBox(8);
 
   private String selectedName;
@@ -46,7 +46,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
   /**
    * Registers a subscriber that is notified whenever the selected palette item changes.
    */
-  public void subscribe(Consumer<Placeable> listener) {
+  public void subscribe(Consumer<AuthoringPlaceable> listener) {
     subscribers.add(listener);
   }
 
@@ -86,7 +86,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
     double cellSize = Double.parseDouble(
         ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas")
             .getString("cellSize"));
-    Placeable placeable = new TerrainPlaceable(
+    AuthoringPlaceable placeable = new TerrainPlaceable(
         entry.blockCols() * cellSize, entry.blockRows() * cellSize,
         entry.color(), entry.sprite(), entry.tiled(), entry.friction());
 
@@ -97,7 +97,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
       drawSample(sample, e, e.name().equals(name));
     }
 
-    for (Consumer<Placeable> sub : subscribers) {
+    for (Consumer<AuthoringPlaceable> sub : subscribers) {
       sub.accept(placeable);
     }
   }

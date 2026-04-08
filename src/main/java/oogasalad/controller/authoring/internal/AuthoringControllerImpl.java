@@ -10,11 +10,10 @@ import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
-import oogasalad.model.engine.api.BoundedObject;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.view.authoring.api.AuthoringCanvas;
-import oogasalad.view.authoring.api.Placeable;
+import oogasalad.view.authoring.api.AuthoringPlaceable;
 import oogasalad.view.authoring.internal.TerrainPlaceable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,7 +51,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final AuthoringCanvas canvas;
   private final PlacementValidator placementValidator;
 
-  private Placeable selectedPlaceable;
+  private AuthoringPlaceable selectedPlaceable;
   private int lastDragCol = -1;
   private int lastDragRow = -1;
 
@@ -70,7 +69,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
   }
 
-  public void setSelectedPlaceable(Placeable placeable) {
+  public void setSelectedPlaceable(AuthoringPlaceable placeable) {
     if (placeable != null) {
       this.selectedPlaceable = placeable;
     }
@@ -157,11 +156,15 @@ public class AuthoringControllerImpl implements AuthoringController {
     int sx = x0 < x1 ? 1 : -1;
     int sy = y0 < y1 ? 1 : -1;
     int err = dx - dy;
+    boolean firstPoint = true;
     while (true) {
-      handleCellInteraction(x0, y0);
+      if (!firstPoint) {
+        handleCellInteraction(x0, y0);
+      }
       if (x0 == x1 && y0 == y1) {
         break;
       }
+      firstPoint = false;
       int e2 = 2 * err;
       if (e2 > -dy) {
         err -= dy;
@@ -190,15 +193,15 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   GameObject placeSelectedObject(int col, int row) {
     double cellSize = canvas.getCellSize();
-    BoundedObject placedObject = selectedPlaceable.createAt(col, row, cellSize);
+    AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
     if (placementValidator.overlapsExistingPlacement(
         placedObject,
-        world.getObjects().stream().map(BoundedObject.class::cast).toList())) {
+        world.getObjects().stream().map(AuthoringPlaceable.class::cast).toList())) {
       String message = MESSAGES.getString("placement.overlap");
       LOG.warn(message);
       throw new AuthoringPlacementException(message);
     }
-    world.addObject(placedObject);
-    return placedObject;
+    world.addObject((GameObject) placedObject);
+    return (GameObject) placedObject;
   }
 }

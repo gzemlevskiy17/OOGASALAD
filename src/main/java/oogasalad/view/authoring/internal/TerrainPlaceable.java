@@ -1,13 +1,12 @@
 package oogasalad.view.authoring.internal;
 
-import oogasalad.model.engine.api.BoundedObject;
 import oogasalad.model.engine.internal.TerrainBlock;
-import oogasalad.view.authoring.api.Placeable;
+import oogasalad.view.authoring.api.AuthoringPlaceable;
 
 /**
  * Terrain placeable definition used by the palette and canvas preview.
  */
-public class TerrainPlaceable implements Placeable {
+public class TerrainPlaceable implements AuthoringPlaceable {
 
   private final double widthPx;
   private final double heightPx;
@@ -37,6 +36,26 @@ public class TerrainPlaceable implements Placeable {
   }
 
   @Override
+  public double getX() {
+    return 0;
+  }
+
+  @Override
+  public double getY() {
+    return 0;
+  }
+
+  @Override
+  public double getWidth() {
+    return widthPx;
+  }
+
+  @Override
+  public double getHeight() {
+    return heightPx;
+  }
+
+  @Override
   public String getColor() {
     return color;
   }
@@ -57,7 +76,7 @@ public class TerrainPlaceable implements Placeable {
   }
 
   @Override
-  public BoundedObject createAt(int col, int row, double cellSize) {
+  public AuthoringPlaceable createAt(int col, int row, double cellSize) {
     return new TerrainBlock(
         col,
         row,
