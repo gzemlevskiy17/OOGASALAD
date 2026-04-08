@@ -15,7 +15,7 @@ import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.view.authoring.api.AuthoringCanvas;
-import oogasalad.view.authoring.api.PlacedObjectFactory;
+import oogasalad.view.authoring.api.AuthoringPlaceable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -130,8 +130,11 @@ class AuthoringControllerImplTest {
     boolean refreshCalled = false;
     @Override public javafx.scene.Node getVisualRoot() { return null; }
     @Override public void refreshGrid() { refreshCalled = true; }
-    @Override public Collection<oogasalad.view.authoring.api.PlacedObject> getPlacedObjects() { return List.of(); }
-    @Override public void setPlacedObjectFactory(PlacedObjectFactory factory) {}
+    @Override public boolean isWithinBounds(int col, int row) { return true; }
+    @Override public double getCellSize() { return 40.0; }
+    @Override public void setSelectedPlaceable(AuthoringPlaceable placeable) {}
     @Override public void placeBlock(int col, int row) {}
+    @Override public void showHoverPreview(int col, int row) {}
+    @Override public void clearHoverPreview() {}
   }
 }

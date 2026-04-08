@@ -1,15 +1,22 @@
 package oogasalad.controller.authoring.internal;
 
+import java.util.ResourceBundle;
+import java.util.function.Consumer;
+import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import oogasalad.controller.authoring.api.AuthoringController;
+import oogasalad.controller.authoring.api.AuthoringPlacementException;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
+import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
+import oogasalad.view.authoring.api.AuthoringPlaceable;
+import oogasalad.view.authoring.internal.TerrainPlaceable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,17 +37,13 @@ import org.apache.logging.log4j.Logger;
  *                LevelLoaderImpl (populates world from file),
  *                LevelSaverImpl (persists world to file),
  *                ToolSelectorImpl (current editor tool),
- *                MichaelCanvas (refreshed after each model change).
+ *                AuthoringCanvasImpl (refreshed after each model change).
  */
 public class AuthoringControllerImpl implements AuthoringController {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
-
-  /** Pixels per grid unit — must match MichaelCanvas.CELL_SIZE. */
-  public static final double CELL_SIZE = 40.0;
-
-  private static final String DEFAULT_TERRAIN_TEXTURE = "assets/terrain/grass.png";
-  private static final double DEFAULT_TERRAIN_FRICTION = 0.6;
+  private static final ResourceBundle MESSAGES =
+      ResourceBundle.getBundle("oogasalad.controller.authoring.AuthoringController");
 
   private final World world;
   private final LevelLoader loader;
@@ -48,6 +51,12 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final GameConfig config;
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
+  private final PlacementValidator placementValidator;
+
+  private AuthoringPlaceable selectedPlaceable;
+  private Consumer<String> placementErrorHandler = message -> { };
+  private int lastDragCol = -1;
+  private int lastDragRow = -1;
 
   public AuthoringControllerImpl(World world, LevelLoader loader, LevelSaver saver,
       GameConfig config, ToolSelector toolSelector, AuthoringCanvas canvas) {
@@ -57,6 +66,60 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.config = config;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
+    this.placementValidator = new PlacementValidator();
+    double cellSize = canvas.getCellSize();
+    this.selectedPlaceable = new TerrainPlaceable(
+        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
+  }
+
+  public void setSelectedPlaceable(AuthoringPlaceable placeable) {
+    if (placeable != null) {
+      this.selectedPlaceable = placeable;
+    }
+  }
+
+  public void setPlacementErrorHandler(Consumer<String> placementErrorHandler) {
+    if (placementErrorHandler != null) {
+      this.placementErrorHandler = placementErrorHandler;
+    }
+  }
+
+  @Override
+  public void initializeCanvasHandlers() {
+    Node root = canvas.getVisualRoot();
+    double cellSize = canvas.getCellSize();
+
+    root.setOnMouseMoved(e -> {
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
+      canvas.showHoverPreview(col, row);
+    });
+
+    root.setOnMouseExited(e -> canvas.clearHoverPreview());
+
+    root.setOnMousePressed(e -> {
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
+      if (!canvas.isWithinBounds(col, row)) {
+        return;
+      }
+      handleCellInteraction(col, row);
+      lastDragCol = col;
+      lastDragRow = row;
+    });
+
+    root.setOnMouseDragged(e -> {
+      int col = (int) Math.floor(e.getX() / cellSize);
+      int row = (int) Math.floor(e.getY() / cellSize);
+      if (!canvas.isWithinBounds(col, row)) {
+        return;
+      }
+      int spanCols = selectedPlaceable.colSpan(cellSize);
+      int spanRows = selectedPlaceable.rowSpan(cellSize);
+      int[] lastPlaced = fillLine(lastDragCol, lastDragRow, col, row, spanCols, spanRows);
+      lastDragCol = lastPlaced[0];
+      lastDragRow = lastPlaced[1];
+    });
   }
 
   /**
@@ -73,17 +136,67 @@ public class AuthoringControllerImpl implements AuthoringController {
    * directly without needing to construct a JavaFX MouseEvent.
    */
   void handleGridInteraction(double x, double y) {
-    double gridX = Math.floor(x / CELL_SIZE);
-    double gridY = Math.floor(y / CELL_SIZE);
-
-    if (toolSelector.getActiveTool() == ToolType.DRAW) {
-      placeTerrain(gridX, gridY);
-    } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
-      // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
-      LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
+    double cellSize = canvas.getCellSize();
+    int col = (int) Math.floor(x / cellSize);
+    int row = (int) Math.floor(y / cellSize);
+    if (canvas.isWithinBounds(col, row)) {
+      handleCellInteraction(col, row);
     }
+  }
 
+  /**
+   * Applies the active tool at the given grid cell. Package-private so tests
+   * can invoke it directly.
+   */
+  void handleCellInteraction(int col, int row) {
+    try {
+      if (toolSelector.getActiveTool() == ToolType.DRAW) {
+        placeSelectedObject(col, row);
+      } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
+        // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
+        LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
+      }
+    } catch (AuthoringPlacementException e) {
+      placementErrorHandler.accept(e.getMessage());
+    }
     canvas.refreshGrid();
+  }
+
+  /**
+   * Interpolates a line between two grid cells calling handleCellInteraction for each cell along the line.
+   */
+  private int[] fillLine(int x0, int y0, int x1, int y1, int spanCols, int spanRows) {
+    int dx = Math.abs(x1 - x0);
+    int dy = Math.abs(y1 - y0);
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+    int lastPlacedCol = x0;
+    int lastPlacedRow = y0;
+    boolean firstPoint = true;
+    while (true) {
+      boolean reachedNextPlacement =
+          Math.abs(x0 - lastPlacedCol) >= spanCols || Math.abs(y0 - lastPlacedRow) >= spanRows;
+      if (!firstPoint && reachedNextPlacement) {
+        handleCellInteraction(x0, y0);
+        lastPlacedCol = x0;
+        lastPlacedRow = y0;
+      }
+      if (x0 == x1 && y0 == y1) {
+        break;
+      }
+      firstPoint = false;
+      int e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x0 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
+    return new int[] {lastPlacedCol, lastPlacedRow};
   }
 
   @Override
@@ -100,12 +213,17 @@ public class AuthoringControllerImpl implements AuthoringController {
     LOG.info("Loaded level from {}", fileName);
   }
 
-  private void placeTerrain(double gridX, double gridY) {
-    boolean cellOccupied = world.getObjects().stream()
-        .anyMatch(obj -> obj.getX() == gridX && obj.getY() == gridY);
-    if (!cellOccupied) {
-      world.addObject(new TerrainBlock(gridX, gridY, 1, 1,
-          DEFAULT_TERRAIN_TEXTURE, true, DEFAULT_TERRAIN_FRICTION));
+  GameObject placeSelectedObject(int col, int row) {
+    double cellSize = canvas.getCellSize();
+    AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
+    if (placementValidator.overlapsExistingPlacement(
+        placedObject,
+        world.getObjects().stream().map(AuthoringPlaceable.class::cast).toList())) {
+      String message = MESSAGES.getString("placement.overlap");
+      LOG.warn(message);
+      throw new AuthoringPlacementException(message);
     }
+    world.addObject((GameObject) placedObject);
+    return (GameObject) placedObject;
   }
 }

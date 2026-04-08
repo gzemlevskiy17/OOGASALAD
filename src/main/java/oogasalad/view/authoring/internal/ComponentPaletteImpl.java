@@ -12,8 +12,8 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import oogasalad.view.authoring.api.AuthoringPlaceable;
 import oogasalad.view.authoring.api.ComponentPallete;
-import oogasalad.view.authoring.api.PlacedObjectFactory;
 
 /**
  * Palette implementation that reads object definitions from properties and notifies subscribers
@@ -23,6 +23,8 @@ public class ComponentPaletteImpl implements ComponentPallete {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.ComponentPalette");
+  private static final ResourceBundle TERRAIN_PROPS =
+      ResourceBundle.getBundle("oogasalad.view.authoring.TerrainBlock");
 
   private final double sampleSize = Double.parseDouble(PROPS.getString("sampleSize"));
   private final Color selectedStroke = Color.web(PROPS.getString("selectedStroke"));
@@ -30,7 +32,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
       Double.parseDouble(PROPS.getString("selectedStrokeWidth"));
 
   private final Map<String, PaletteEntry> entries = new LinkedHashMap<>();
-  private final List<Consumer<PlacedObjectFactory>> subscribers = new ArrayList<>();
+  private final List<Consumer<AuthoringPlaceable>> subscribers = new ArrayList<>();
   private final HBox root = new HBox(8);
 
   private String selectedName;
@@ -44,7 +46,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
   /**
    * Registers a subscriber that is notified whenever the selected palette item changes.
    */
-  public void subscribe(Consumer<PlacedObjectFactory> listener) {
+  public void subscribe(Consumer<AuthoringPlaceable> listener) {
     subscribers.add(listener);
   }
 
@@ -59,7 +61,13 @@ public class ComponentPaletteImpl implements ComponentPallete {
       String color = PROPS.getString(name + ".color");
       int cols = Integer.parseInt(PROPS.getString(name + ".cols"));
       int rows = Integer.parseInt(PROPS.getString(name + ".rows"));
-      entries.put(name, new PaletteEntry(name, color, cols, rows));
+      String sprite = TERRAIN_PROPS.getString(name + ".sprite");
+      boolean tiled = Boolean.parseBoolean(TERRAIN_PROPS.getString(name + ".tiled"));
+      double friction = Double.parseDouble(TERRAIN_PROPS.getString(name + ".friction"));
+      int blockCols = Integer.parseInt(TERRAIN_PROPS.getString(name + ".blockCols"));
+      int blockRows = Integer.parseInt(TERRAIN_PROPS.getString(name + ".blockRows"));
+      entries.put(name, new PaletteEntry(name, color, cols, rows,
+          sprite, tiled, friction, blockCols, blockRows));
     }
   }
 
@@ -78,8 +86,9 @@ public class ComponentPaletteImpl implements ComponentPallete {
     double cellSize = Double.parseDouble(
         ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas")
             .getString("cellSize"));
-    PlacedObjectFactory factory = new DefaultPlacedObjectFactory(
-        entry.cols() * cellSize, entry.rows() * cellSize, entry.color(), null);
+    AuthoringPlaceable placeable = new TerrainPlaceable(
+        entry.blockCols() * cellSize, entry.blockRows() * cellSize,
+        entry.color(), entry.sprite(), entry.tiled(), entry.friction());
 
     // Redraw all samplees to update selection highlight
     int i = 0;
@@ -88,8 +97,8 @@ public class ComponentPaletteImpl implements ComponentPallete {
       drawSample(sample, e, e.name().equals(name));
     }
 
-    for (Consumer<PlacedObjectFactory> sub : subscribers) {
-      sub.accept(factory);
+    for (Consumer<AuthoringPlaceable> sub : subscribers) {
+      sub.accept(placeable);
     }
   }
 
@@ -105,6 +114,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
     }
   }
 
-  private record PaletteEntry(String name, String color, int cols, int rows) {
+  private record PaletteEntry(String name, String color, int cols, int rows,
+      String sprite, boolean tiled, double friction, int blockCols, int blockRows) {
   }
 }
