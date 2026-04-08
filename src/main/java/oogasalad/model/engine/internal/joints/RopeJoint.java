@@ -13,7 +13,12 @@ public class RopeJoint extends AbstractJoint {
   private final double maxDistance;
 
   public RopeJoint(GameComponent objectA, GameComponent objectB, double maxDistance) {
-    super(objectA, objectB);
+    this(objectA, objectB, new Vector(0, 0), new Vector(0, 0), maxDistance);
+  }
+
+  public RopeJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
+      Vector localAnchorB, double maxDistance) {
+    super(objectA, objectB, localAnchorA, localAnchorB);
     if (maxDistance < getRestDistance()) {
       throw new IllegalArgumentException("Rope max distance cannot be less than initial distance");
     }
@@ -30,7 +35,7 @@ public class RopeJoint extends AbstractJoint {
     GameComponent objectB = getComponentB();
     Vector positionA = objectA.getState().getLinearPosition();
     Vector positionB = objectB.getState().getLinearPosition();
-    Vector delta = positionB.subtract(positionA);
+    Vector delta = getAnchorDelta();
     double currentDistance = delta.magnitude();
 
     if (currentDistance == 0.0 || currentDistance <= maxDistance) {return;}

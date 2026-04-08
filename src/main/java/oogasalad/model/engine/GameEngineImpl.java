@@ -77,7 +77,7 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
-    applyJointConstraints();
+    applyJointConstraints(elapsedTime);
 
     handleCollisions();
 
@@ -99,9 +99,9 @@ public class GameEngineImpl implements GameEngine {
     solveCollisions(collisions);
   }
 
-  private void applyJointConstraints() {
+  private void applyJointConstraints(double elapsedTime) {
     for (Joint joint : world.getJoints()) {
-      joint.apply();
+      joint.apply(elapsedTime);
     }
   }
 

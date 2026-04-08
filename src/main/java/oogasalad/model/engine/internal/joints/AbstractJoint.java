@@ -18,15 +18,24 @@ public abstract class AbstractJoint implements Joint {
 
   private final GameComponent objectA;
   private final GameComponent objectB;
+  private final oogasalad.model.engine.api.Vector localAnchorA;
+  private final oogasalad.model.engine.api.Vector localAnchorB;
   private final double restDistance;
 
   protected AbstractJoint(GameComponent objectA, GameComponent objectB) {
+    this(objectA, objectB, new oogasalad.model.engine.api.Vector(0, 0),
+        new oogasalad.model.engine.api.Vector(0, 0));
+  }
+
+  protected AbstractJoint(GameComponent objectA, GameComponent objectB,
+      oogasalad.model.engine.api.Vector localAnchorA,
+      oogasalad.model.engine.api.Vector localAnchorB) {
     this.objectA = Objects.requireNonNull(objectA);
     this.objectB = Objects.requireNonNull(objectB);
+    this.localAnchorA = Objects.requireNonNull(localAnchorA);
+    this.localAnchorB = Objects.requireNonNull(localAnchorB);
     validatePair(this.objectA, this.objectB);
-    this.restDistance = this.objectB.getState().getLinearPosition()
-        .subtract(this.objectA.getState().getLinearPosition())
-        .magnitude();
+    this.restDistance = getWorldAnchorB().subtract(getWorldAnchorA()).magnitude();
   }
 
   @Override
@@ -37,6 +46,28 @@ public abstract class AbstractJoint implements Joint {
   protected GameComponent getComponentA() {return objectA;}
 
   protected GameComponent getComponentB() {return objectB;}
+
+  public oogasalad.model.engine.api.Vector getLocalAnchorA() {
+    return localAnchorA;
+  }
+
+  public oogasalad.model.engine.api.Vector getLocalAnchorB() {
+    return localAnchorB;
+  }
+
+  public oogasalad.model.engine.api.Vector getWorldAnchorA() {
+    return objectA.getState().getLinearPosition().add(localAnchorA.rotate(objectA.getRotation()));
+  }
+
+  public oogasalad.model.engine.api.Vector getWorldAnchorB() {
+    return objectB.getState().getLinearPosition().add(localAnchorB.rotate(objectB.getRotation()));
+  }
+
+  protected oogasalad.model.engine.api.Vector getAnchorDelta() {
+    return getWorldAnchorB().subtract(getWorldAnchorA());
+  }
+
+  protected double getCurrentDistance() {return getAnchorDelta().magnitude();}
 
   protected boolean isDynamic(GameComponent component) {return component instanceof DynamicComponent;}
 
