@@ -3,6 +3,7 @@ package oogasalad.view.authoring.internal;
 import java.util.ResourceBundle;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
@@ -36,18 +37,33 @@ public class AuthoringScreenImpl implements AppScreen {
     VEHICLE
   }
 
+  private enum LevelPaletteMode {
+    TERRAIN,
+    PIGS,
+    LEVEL_ITEMS,
+    CUSTOM
+  }
+
   private final Parent root;
   private final ScreenManager screenManager;
   private final StackPane canvasHost;
   private final ComponentPallete vehiclePalette;
   private final ComponentPaletteImpl terrainPalette;
+  private final ComponentPaletteImpl pigsPalette;
+  private final ComponentPaletteImpl levelItemsPalette;
+  private final ComponentPaletteImpl customPalette;
   private final AuthoringAlertService alertService;
   private final HBox paletteModeRow;
   private final StackPane bottomContentHost;
   private final Button levelModeButton;
   private final Button vehicleModeButton;
+  private final Button terrainPaletteButton;
+  private final Button pigsPaletteButton;
+  private final Button levelItemsPaletteButton;
+  private final Button customPaletteButton;
 
   private AuthoringMode currentMode;
+  private LevelPaletteMode currentLevelPaletteMode;
 
   public AuthoringScreenImpl(ScreenManager screenManager) {
     this.screenManager = screenManager;
@@ -69,13 +85,27 @@ public class AuthoringScreenImpl implements AppScreen {
     this.canvasHost = new StackPane(canvasScrollPane);
     this.vehiclePalette = new VehicleComponentScrollPalette();
     this.terrainPalette = new ComponentPaletteImpl();
+    this.pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
+    this.levelItemsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.LevelItemsPalette");
+    this.customPalette = new ComponentPaletteImpl("oogasalad.view.authoring.CustomPalette");
     terrainPalette.subscribe(canvas::setSelectedPlaceable);
     terrainPalette.subscribe(controller::setSelectedPlaceable);
+    pigsPalette.subscribe(canvas::setSelectedPlaceable);
+    pigsPalette.subscribe(controller::setSelectedPlaceable);
+    levelItemsPalette.subscribe(canvas::setSelectedPlaceable);
+    levelItemsPalette.subscribe(controller::setSelectedPlaceable);
+    customPalette.subscribe(canvas::setSelectedPlaceable);
+    customPalette.subscribe(controller::setSelectedPlaceable);
+    this.terrainPaletteButton = createTabButton(s("terrainButtonText"));
+    this.pigsPaletteButton = createTabButton(s("pigsButtonText"));
+    this.levelItemsPaletteButton = createTabButton(s("levelItemsButtonText"));
+    this.customPaletteButton = createTabButton(s("customButtonText"));
     this.paletteModeRow = buildPaletteModeRow();
     this.bottomContentHost = new StackPane();
     this.levelModeButton = createTabButton(s("levelButtonText"));
     this.vehicleModeButton = createTabButton(s("vehicleButtonText"));
     this.currentMode = AuthoringMode.LEVEL;
+    this.currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
 
     BorderPane layout = new BorderPane();
     layout.getStylesheets().add(
@@ -109,6 +139,22 @@ public class AuthoringScreenImpl implements AppScreen {
     });
     vehicleModeButton.setOnAction(event -> {
       currentMode = AuthoringMode.VEHICLE;
+      refreshDisplayedMode();
+    });
+    terrainPaletteButton.setOnAction(event -> {
+      currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
+      refreshDisplayedMode();
+    });
+    pigsPaletteButton.setOnAction(event -> {
+      currentLevelPaletteMode = LevelPaletteMode.PIGS;
+      refreshDisplayedMode();
+    });
+    levelItemsPaletteButton.setOnAction(event -> {
+      currentLevelPaletteMode = LevelPaletteMode.LEVEL_ITEMS;
+      refreshDisplayedMode();
+    });
+    customPaletteButton.setOnAction(event -> {
+      currentLevelPaletteMode = LevelPaletteMode.CUSTOM;
       refreshDisplayedMode();
     });
 
@@ -160,10 +206,10 @@ public class AuthoringScreenImpl implements AppScreen {
 
   private HBox buildPaletteModeRow() {
     HBox row = new HBox(
-        createTabButton(s("generalButtonText")),
-        createTabButton(s("pigsButtonText")),
-        createTabButton(s("levelItemsButtonText")),
-        createTabButton(s("customButtonText")));
+        terrainPaletteButton,
+        pigsPaletteButton,
+        levelItemsPaletteButton,
+        customPaletteButton);
     row.setAlignment(Pos.CENTER_LEFT);
     row.getStyleClass().add("authoring-palette-mode-row");
     return row;
@@ -175,6 +221,7 @@ public class AuthoringScreenImpl implements AppScreen {
     region.setPrefHeight(bottomHeight);
     region.setMinHeight(bottomHeight);
     region.setMinWidth(d("bottomRegionMinWidth"));
+    region.setAlignment(Pos.TOP_LEFT);
     region.getStyleClass().add("authoring-bottom-region");
     return region;
   }
@@ -185,11 +232,19 @@ public class AuthoringScreenImpl implements AppScreen {
     paletteModeRow.setManaged(isLevelMode);
 
     bottomContentHost.getChildren().clear();
+    Node paletteNode;
     if (currentMode == AuthoringMode.VEHICLE) {
-      bottomContentHost.getChildren().add(vehiclePalette.getVisualRoot());
+      paletteNode = vehiclePalette.getVisualRoot();
     } else {
-      bottomContentHost.getChildren().add(terrainPalette.getVisualRoot());
+      paletteNode = switch (currentLevelPaletteMode) {
+        case TERRAIN -> terrainPalette.getVisualRoot();
+        case PIGS -> pigsPalette.getVisualRoot();
+        case LEVEL_ITEMS -> levelItemsPalette.getVisualRoot();
+        case CUSTOM -> customPalette.getVisualRoot();
+      };
     }
+    StackPane.setAlignment(paletteNode, Pos.TOP_LEFT);
+    bottomContentHost.getChildren().add(paletteNode);
   }
 
   private Button createTabButton(String text) {
