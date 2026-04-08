@@ -1,6 +1,7 @@
 package oogasalad.model.engine.internal.joints;
 
 import java.util.Objects;
+import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.internal.components.DynamicComponent;
@@ -30,10 +31,10 @@ public abstract class AbstractJoint implements Joint {
   protected AbstractJoint(GameComponent objectA, GameComponent objectB,
       oogasalad.model.engine.api.Vector localAnchorA,
       oogasalad.model.engine.api.Vector localAnchorB) {
-    this.objectA = Objects.requireNonNull(objectA);
-    this.objectB = Objects.requireNonNull(objectB);
-    this.localAnchorA = Objects.requireNonNull(localAnchorA);
-    this.localAnchorB = Objects.requireNonNull(localAnchorB);
+    this.objectA = Objects.requireNonNull(objectA, EngineError.NULL_GAME_COMPONENT.message());
+    this.objectB = Objects.requireNonNull(objectB, EngineError.NULL_GAME_COMPONENT.message());
+    this.localAnchorA = Objects.requireNonNull(localAnchorA, EngineError.NULL_VECTOR.message());
+    this.localAnchorB = Objects.requireNonNull(localAnchorB, EngineError.NULL_VECTOR.message());
     validatePair(this.objectA, this.objectB);
     this.restDistance = getWorldAnchorB().subtract(getWorldAnchorA()).magnitude();
   }
@@ -78,16 +79,24 @@ public abstract class AbstractJoint implements Joint {
   protected double getRestDistance() {return restDistance;}
 
   private void validatePair(GameComponent objectA, GameComponent objectB) {
-    if (isPassthrough(objectA) || isPassthrough(objectB)) {throw new IllegalArgumentException("Passthrough components cannot participate in joints");}
+    if (isPassthrough(objectA) || isPassthrough(objectB)) {
+      throw new IllegalArgumentException(EngineError.JOINT_UNSUPPORTED_PASSTHROUGH.message());
+    }
 
     boolean objectAStatic = isStatic(objectA);
     boolean objectBStatic = isStatic(objectB);
     boolean objectADynamic = isDynamic(objectA);
     boolean objectBDynamic = isDynamic(objectB);
 
-    if (objectAStatic && objectBStatic) {throw new IllegalArgumentException("Static-static joints are not supported");}
+    if (objectAStatic && objectBStatic) {
+      throw new IllegalArgumentException(EngineError.JOINT_UNSUPPORTED_STATIC_STATIC.message());
+    }
 
-    boolean supportedPair = (objectADynamic && objectBDynamic) || (objectADynamic && objectBStatic) || (objectAStatic && objectBDynamic);
-    if (!supportedPair) {throw new IllegalArgumentException("Joint pair must be dynamic-dynamic or dynamic-static");}
+    boolean supportedPair = (objectADynamic && objectBDynamic)
+        || (objectADynamic && objectBStatic)
+        || (objectAStatic && objectBDynamic);
+    if (!supportedPair) {
+      throw new IllegalArgumentException(EngineError.JOINT_UNSUPPORTED_PAIR.message());
+    }
   }
 }

@@ -112,7 +112,7 @@ public abstract class GameComponent implements GameObject {
 
   @Override
   public void setState(ObjectState state) {
-    this.state = Objects.requireNonNull(state);
+    this.state = Objects.requireNonNull(state, EngineError.NULL_OBJECT_STATE.message());
   }
 
   @Override

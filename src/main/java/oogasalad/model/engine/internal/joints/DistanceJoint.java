@@ -1,5 +1,6 @@
 package oogasalad.model.engine.internal.joints;
 
+import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.GameComponent;
 
@@ -31,12 +32,12 @@ public class DistanceJoint extends AbstractJoint {
       double damping) {
     super(objectA, objectB, localAnchorA, localAnchorB);
     if (stiffness < 0.0 || damping < 0.0) {
-      throw new IllegalArgumentException("Distance joint stiffness and damping must be non-negative");
+      throw new IllegalArgumentException(EngineError.JOINT_DISTANCE_PARAMS_NON_NEGATIVE.message());
     }
     double resolvedMin = minDistance < 0.0 ? getRestDistance() : minDistance;
     double resolvedMax = maxDistance < 0.0 ? getRestDistance() : maxDistance;
     if (resolvedMin > resolvedMax) {
-      throw new IllegalArgumentException("Distance joint minDistance cannot exceed maxDistance");
+      throw new IllegalArgumentException(EngineError.JOINT_DISTANCE_RANGE_INVALID.message());
     }
     this.minDistance = resolvedMin;
     this.maxDistance = resolvedMax;

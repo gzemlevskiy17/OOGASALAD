@@ -1,5 +1,6 @@
 package oogasalad.model.engine.internal.joints;
 
+import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.GameComponent;
 
@@ -20,7 +21,7 @@ public class RopeJoint extends AbstractJoint {
       Vector localAnchorB, double maxDistance) {
     super(objectA, objectB, localAnchorA, localAnchorB);
     if (maxDistance < getRestDistance()) {
-      throw new IllegalArgumentException("Rope max distance cannot be less than initial distance");
+      throw new IllegalArgumentException(EngineError.ROPE_JOINT_MAX_DISTANCE_TOO_SMALL.message());
     }
     this.maxDistance = maxDistance;
   }
