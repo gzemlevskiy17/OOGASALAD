@@ -10,6 +10,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
@@ -32,15 +33,23 @@ public class ComponentPaletteImpl implements ComponentPallete {
 
   private final Map<String, PaletteEntry> entries = new LinkedHashMap<>();
   private final List<Consumer<AuthoringPlaceable>> subscribers = new ArrayList<>();
-  private final HBox root = new HBox(d("rootSpacing"));
+  private final HBox paletteContent = new HBox();
+  private final ScrollPane root = new ScrollPane();
 
   private String selectedName;
 
   public ComponentPaletteImpl() {
-    root.setPadding(new Insets(d("rootPadding")));
-    root.getStyleClass().add("authoring-level-palette");
+    paletteContent.setPadding(new Insets(d("rootPadding")));
+    paletteContent.getStyleClass().add("authoring-level-palette");
     loadEntries();
     buildSamples();
+    root.setContent(paletteContent);
+    root.setFitToHeight(true);
+    root.setFitToWidth(false);
+    root.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    root.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    root.setPannable(true);
+    root.getStyleClass().add("authoring-level-palette-scroll");
   }
 
   /**
@@ -77,7 +86,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
       sample.getStyleClass().add("authoring-palette-sample");
       drawSample(sample, entry, false);
       sample.setOnMouseClicked(e -> select(entry.name(), sample));
-      root.getChildren().add(sample);
+      paletteContent.getChildren().add(sample);
     }
   }
 
@@ -94,7 +103,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
     // Redraw all samplees to update selection highlight
     int i = 0;
     for (PaletteEntry e : entries.values()) {
-      Canvas sample = (Canvas) root.getChildren().get(i++);
+      Canvas sample = (Canvas) paletteContent.getChildren().get(i++);
       drawSample(sample, e, e.name().equals(name));
     }
 

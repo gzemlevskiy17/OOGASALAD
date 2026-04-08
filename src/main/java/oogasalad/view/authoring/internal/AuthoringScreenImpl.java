@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -60,7 +61,12 @@ public class AuthoringScreenImpl implements AppScreen {
     controller.setPlacementErrorHandler(
         message -> alertService.showWarning(s("placementWarningTitle"), message));
     controller.initializeCanvasHandlers();
-    this.canvasHost = new StackPane(canvas.getVisualRoot());
+    ScrollPane canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
+    canvasScrollPane.setFitToWidth(false);
+    canvasScrollPane.setFitToHeight(false);
+    canvasScrollPane.setPannable(true);
+    canvasScrollPane.getStyleClass().add("authoring-canvas-scroll");
+    this.canvasHost = new StackPane(canvasScrollPane);
     this.vehiclePalette = new VehicleComponentScrollPalette();
     this.terrainPalette = new ComponentPaletteImpl();
     terrainPalette.subscribe(canvas::setSelectedPlaceable);
@@ -90,6 +96,7 @@ public class AuthoringScreenImpl implements AppScreen {
     bottomSections.getStyleClass().add("authoring-bottom-sections");
 
     canvasHost.getStyleClass().add("authoring-canvas-host");
+    VBox.setVgrow(canvasHost, Priority.ALWAYS);
     layout.setTop(topSections);
     layout.setCenter(canvasHost);
     layout.setBottom(bottomSections);

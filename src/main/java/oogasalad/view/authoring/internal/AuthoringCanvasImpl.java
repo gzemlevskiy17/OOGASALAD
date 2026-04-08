@@ -78,8 +78,6 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     double totalWidth = gridCols * cellSize;
     double totalHeight = gridRows * cellSize;
     root.setPrefSize(totalWidth, totalHeight);
-    root.setMaxSize(totalWidth, totalHeight);
-    root.setMinSize(totalWidth, totalHeight);
     root.setStyle("-fx-background-color: " + PROPS.getString("defaultFill") + ";");
     refreshGrid();
   }

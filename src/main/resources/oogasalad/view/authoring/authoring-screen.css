@@ -6,7 +6,7 @@
 
 .authoring-top-sections,
 .authoring-bottom-sections {
-  -fx-padding: 6 10 6 10;
+  -fx-padding: 4 8 4 8;
 }
 
 .authoring-top-bar,
@@ -17,6 +17,16 @@
 
 .authoring-canvas-host {
   -fx-padding: 14;
+}
+
+.authoring-canvas-scroll {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-padding: 0;
+}
+
+.authoring-canvas-scroll > .viewport {
+  -fx-background-color: white;
 }
 
 .authoring-canvas {
@@ -31,7 +41,7 @@
   -fx-border-width: 3;
   -fx-border-radius: 15;
   -fx-background-radius: 15;
-  -fx-padding: 8;
+  -fx-padding: 4;
 }
 
 .authoring-button {
@@ -68,6 +78,16 @@
 
 .authoring-level-palette {
   -fx-alignment: center-left;
+}
+
+.authoring-level-palette-scroll {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-padding: 0;
+}
+
+.authoring-level-palette-scroll > .viewport {
+  -fx-background-color: white;
 }
 
 .authoring-vehicle-palette {
