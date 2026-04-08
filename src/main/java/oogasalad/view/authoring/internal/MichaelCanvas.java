@@ -11,7 +11,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.PlacedObject;
 import oogasalad.view.authoring.api.PlacedObjectFactory;

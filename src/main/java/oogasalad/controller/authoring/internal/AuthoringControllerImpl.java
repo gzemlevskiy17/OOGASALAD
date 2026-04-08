@@ -8,7 +8,7 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

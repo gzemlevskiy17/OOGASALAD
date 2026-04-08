@@ -51,6 +51,21 @@ public record Vector(double x, double y) implements Comparable<Vector> {
     return new Vector(this.x() - other.x(), this.y() - other.y());
   }
 
+  /**
+   * Rotates this vector by an arbitrary angle in radians.
+   *
+   * @param radians counterclockwise rotation angle
+   * @return rotated vector
+   */
+  public Vector rotate(double radians) {
+    double cosine = Math.cos(radians);
+    double sine = Math.sin(radians);
+    return new Vector(
+        (this.x() * cosine) - (this.y() * sine),
+        (this.x() * sine) + (this.y() * cosine)
+    );
+  }
+
   //TODO: make more general method for rotations?
   /**
    * Rotates this vector by -90 degrees (clockwise).
