@@ -10,9 +10,9 @@ import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
+import oogasalad.model.engine.api.BoundedObject;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.Placeable;
 import oogasalad.view.authoring.internal.TerrainPlaceable;
@@ -50,6 +50,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final GameConfig config;
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
+  private final PlacementValidator placementValidator;
 
   private Placeable selectedPlaceable;
   private int lastDragCol = -1;
@@ -63,6 +64,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.config = config;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
+    this.placementValidator = new PlacementValidator();
     double cellSize = canvas.getCellSize();
     this.selectedPlaceable = new TerrainPlaceable(
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
@@ -188,37 +190,15 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   GameObject placeSelectedObject(int col, int row) {
     double cellSize = canvas.getCellSize();
-    int spanCols = selectedPlaceable.colSpan(cellSize);
-    int spanRows = selectedPlaceable.rowSpan(cellSize);
-    if (overlapsExistingTerrain(col, row, spanCols, spanRows)) {
+    BoundedObject placedObject = selectedPlaceable.createAt(col, row, cellSize);
+    if (placementValidator.overlapsExistingPlacement(
+        placedObject,
+        world.getObjects().stream().map(BoundedObject.class::cast).toList())) {
       String message = MESSAGES.getString("placement.overlap");
       LOG.warn(message);
       throw new AuthoringPlacementException(message);
     }
-    GameObject placedObject = selectedPlaceable.createAt(col, row, cellSize);
     world.addObject(placedObject);
     return placedObject;
-  }
-
-  /**
-   * Returns true if the proposed block (anchored at col,row with the given span)
-   * intersects any existing TerrainBlock's bounding box in the world.
-   */
-  private boolean overlapsExistingTerrain(int col, int row, int spanCols, int spanRows) {
-    double newLeft = col;
-    double newTop = row;
-    double newRight = col + spanCols;
-    double newBottom = row + spanRows;
-    return world.getObjects().stream()
-        .filter(obj -> obj instanceof TerrainBlock)
-        .map(obj -> (TerrainBlock) obj)
-        .anyMatch(tb -> {
-          double oldLeft = tb.getX();
-          double oldTop = tb.getY();
-          double oldRight = tb.getX() + tb.getWidth();
-          double oldBottom = tb.getY() + tb.getHeight();
-          return newLeft < oldRight && newRight > oldLeft
-              && newTop < oldBottom && newBottom > oldTop;
-        });
   }
 }

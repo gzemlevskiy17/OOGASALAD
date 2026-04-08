@@ -1,6 +1,6 @@
 package oogasalad.view.authoring.api;
 
-import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.BoundedObject;
 
 /**
  * Represents an object definition currently selected in the authoring palette.
@@ -35,6 +35,6 @@ public interface Placeable {
    * @param cellSize size of one grid cell in pixels
    * @return the model object to add to the World
    */
-  GameObject createAt(int col, int row, double cellSize);
+  BoundedObject createAt(int col, int row, double cellSize);
 
 }

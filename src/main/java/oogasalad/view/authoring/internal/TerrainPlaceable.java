@@ -1,6 +1,6 @@
 package oogasalad.view.authoring.internal;
 
-import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.BoundedObject;
 import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.Placeable;
 
@@ -57,7 +57,7 @@ public class TerrainPlaceable implements Placeable {
   }
 
   @Override
-  public GameObject createAt(int col, int row, double cellSize) {
+  public BoundedObject createAt(int col, int row, double cellSize) {
     return new TerrainBlock(
         col,
         row,
