@@ -1,6 +1,7 @@
 package oogasalad.controller.authoring.internal;
 
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import oogasalad.controller.authoring.api.AuthoringController;
@@ -52,6 +53,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final PlacementValidator placementValidator;
 
   private AuthoringPlaceable selectedPlaceable;
+  private Consumer<String> placementErrorHandler = message -> { };
   private int lastDragCol = -1;
   private int lastDragRow = -1;
 
@@ -75,6 +77,12 @@ public class AuthoringControllerImpl implements AuthoringController {
     }
   }
 
+  public void setPlacementErrorHandler(Consumer<String> placementErrorHandler) {
+    if (placementErrorHandler != null) {
+      this.placementErrorHandler = placementErrorHandler;
+    }
+  }
+
   @Override
   public void initializeCanvasHandlers() {
     Node root = canvas.getVisualRoot();
@@ -94,9 +102,9 @@ public class AuthoringControllerImpl implements AuthoringController {
       if (!canvas.isWithinBounds(col, row)) {
         return;
       }
+      handleCellInteraction(col, row);
       lastDragCol = col;
       lastDragRow = row;
-      handleCellInteraction(col, row);
     });
 
     root.setOnMouseDragged(e -> {
@@ -105,9 +113,11 @@ public class AuthoringControllerImpl implements AuthoringController {
       if (!canvas.isWithinBounds(col, row)) {
         return;
       }
-      fillLine(lastDragCol, lastDragRow, col, row);
-      lastDragCol = col;
-      lastDragRow = row;
+      int spanCols = selectedPlaceable.colSpan(cellSize);
+      int spanRows = selectedPlaceable.rowSpan(cellSize);
+      int[] lastPlaced = fillLine(lastDragCol, lastDragRow, col, row, spanCols, spanRows);
+      lastDragCol = lastPlaced[0];
+      lastDragRow = lastPlaced[1];
     });
   }
 
@@ -138,11 +148,15 @@ public class AuthoringControllerImpl implements AuthoringController {
    * can invoke it directly.
    */
   void handleCellInteraction(int col, int row) {
-    if (toolSelector.getActiveTool() == ToolType.DRAW) {
-      placeSelectedObject(col, row);
-    } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
-      // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
-      LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
+    try {
+      if (toolSelector.getActiveTool() == ToolType.DRAW) {
+        placeSelectedObject(col, row);
+      } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
+        // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
+        LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
+      }
+    } catch (AuthoringPlacementException e) {
+      placementErrorHandler.accept(e.getMessage());
     }
     canvas.refreshGrid();
   }
@@ -150,16 +164,22 @@ public class AuthoringControllerImpl implements AuthoringController {
   /**
    * Interpolates a line between two grid cells calling handleCellInteraction for each cell along the line.
    */
-  private void fillLine(int x0, int y0, int x1, int y1) {
+  private int[] fillLine(int x0, int y0, int x1, int y1, int spanCols, int spanRows) {
     int dx = Math.abs(x1 - x0);
     int dy = Math.abs(y1 - y0);
     int sx = x0 < x1 ? 1 : -1;
     int sy = y0 < y1 ? 1 : -1;
     int err = dx - dy;
+    int lastPlacedCol = x0;
+    int lastPlacedRow = y0;
     boolean firstPoint = true;
     while (true) {
-      if (!firstPoint) {
+      boolean reachedNextPlacement =
+          Math.abs(x0 - lastPlacedCol) >= spanCols || Math.abs(y0 - lastPlacedRow) >= spanRows;
+      if (!firstPoint && reachedNextPlacement) {
         handleCellInteraction(x0, y0);
+        lastPlacedCol = x0;
+        lastPlacedRow = y0;
       }
       if (x0 == x1 && y0 == y1) {
         break;
@@ -175,6 +195,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         y0 += sy;
       }
     }
+    return new int[] {lastPlacedCol, lastPlacedRow};
   }
 
   @Override

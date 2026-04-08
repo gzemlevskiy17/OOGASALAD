@@ -40,6 +40,7 @@ public class AuthoringScreenImpl implements AppScreen {
   private final StackPane canvasHost;
   private final ComponentPallete vehiclePalette;
   private final ComponentPaletteImpl terrainPalette;
+  private final AuthoringAlertService alertService;
   private final HBox paletteModeRow;
   private final StackPane bottomContentHost;
   private final Button levelModeButton;
@@ -55,6 +56,9 @@ public class AuthoringScreenImpl implements AppScreen {
     AuthoringControllerImpl controller = new AuthoringControllerImpl(
         world, new LevelLoaderImpl(), new LevelSaverImpl(),
         null, new ToolSelectorImpl(), canvas);
+    this.alertService = new AuthoringAlertService();
+    controller.setPlacementErrorHandler(
+        message -> alertService.showWarning("Placement Warning", message));
     controller.initializeCanvasHandlers();
     this.canvasHost = new StackPane(canvas.getVisualRoot());
     this.vehiclePalette = new VehicleComponentScrollPalette();
