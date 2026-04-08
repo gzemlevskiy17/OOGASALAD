@@ -8,11 +8,12 @@ import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
+import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
-import oogasalad.view.authoring.api.PlacedObjectFactory;
-import oogasalad.view.authoring.internal.DefaultPlacedObjectFactory;
+import oogasalad.view.authoring.api.Placeable;
+import oogasalad.view.authoring.internal.TerrainPlaceable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,7 +47,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
 
-  private PlacedObjectFactory placedObjectFactory;
+  private Placeable selectedPlaceable;
   private int lastDragCol = -1;
   private int lastDragRow = -1;
 
@@ -59,13 +60,13 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.toolSelector = toolSelector;
     this.canvas = canvas;
     double cellSize = canvas.getCellSize();
-    this.placedObjectFactory = new DefaultPlacedObjectFactory(
+    this.selectedPlaceable = new TerrainPlaceable(
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
   }
 
-  public void setPlacedObjectFactory(PlacedObjectFactory factory) {
-    if (factory != null) {
-      this.placedObjectFactory = factory;
+  public void setSelectedPlaceable(Placeable placeable) {
+    if (placeable != null) {
+      this.selectedPlaceable = placeable;
     }
   }
 
@@ -133,7 +134,7 @@ public class AuthoringControllerImpl implements AuthoringController {
    */
   void handleCellInteraction(int col, int row) {
     if (toolSelector.getActiveTool() == ToolType.DRAW) {
-      placeTerrain(col, row);
+      placeSelectedObject(col, row);
     } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
       // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
       LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
@@ -181,18 +182,15 @@ public class AuthoringControllerImpl implements AuthoringController {
     LOG.info("Loaded level from {}", fileName);
   }
 
-  private void placeTerrain(int col, int row) {
+  private void placeSelectedObject(int col, int row) {
     double cellSize = canvas.getCellSize();
-    int spanCols = placedObjectFactory.colSpan(cellSize);
-    int spanRows = placedObjectFactory.rowSpan(cellSize);
+    int spanCols = selectedPlaceable.colSpan(cellSize);
+    int spanRows = selectedPlaceable.rowSpan(cellSize);
     if (overlapsExistingTerrain(col, row, spanCols, spanRows)) {
       return;
     }
-    world.addObject(new TerrainBlock(col, row, spanCols, spanRows,
-        placedObjectFactory.getSprite(),
-        placedObjectFactory.isTiled(),
-        placedObjectFactory.getFriction(),
-        placedObjectFactory.getColor()));
+    GameObject placedObject = selectedPlaceable.createAt(col, row, cellSize);
+    world.addObject(placedObject);
   }
 
   /**

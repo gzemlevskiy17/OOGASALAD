@@ -12,7 +12,7 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
-import oogasalad.view.authoring.api.PlacedObjectFactory;
+import oogasalad.view.authoring.api.Placeable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,7 +50,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private final Pane root;
   private final World world;
-  private PlacedObjectFactory placedObjectFactory;
+  private Placeable selectedPlaceable;
 
   private Rectangle hoverOverlay;
   private int hoverCol = -1;
@@ -72,7 +72,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     this.defaultFill = Color.web(PROPS.getString("defaultFill"));
     this.gridStroke = Color.web(PROPS.getString("gridStroke"));
     this.gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
-    this.placedObjectFactory = new DefaultPlacedObjectFactory(
+    this.selectedPlaceable = new TerrainPlaceable(
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
     this.root = new Pane();
     double totalWidth = gridCols * cellSize;
@@ -111,9 +111,9 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   @Override
-  public void setPlacedObjectFactory(PlacedObjectFactory factory) {
-    if (factory != null) {
-      this.placedObjectFactory = factory;
+  public void setSelectedPlaceable(Placeable placeable) {
+    if (placeable != null) {
+      this.selectedPlaceable = placeable;
       if (hoverOverlay != null) {
         int col = hoverCol;
         int row = hoverRow;
@@ -125,15 +125,15 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   @Override
   public void placeBlock(int col, int row) {
-    if (placedObjectFactory == null || !isWithinBounds(col, row)) {
+    if (selectedPlaceable == null || !isWithinBounds(col, row)) {
       return;
     }
-    int spanCols = placedObjectFactory.colSpan(cellSize);
-    int spanRows = placedObjectFactory.rowSpan(cellSize);
+    int spanCols = selectedPlaceable.colSpan(cellSize);
+    int spanRows = selectedPlaceable.rowSpan(cellSize);
     Rectangle rect = new Rectangle(
         col * cellSize, row * cellSize,
         spanCols * cellSize, spanRows * cellSize);
-    rect.setFill(Color.web(placedObjectFactory.getColor()));
+    rect.setFill(Color.web(selectedPlaceable.getColor()));
     rect.setStroke(TERRAIN_STROKE_COLOR);
     root.getChildren().add(rect);
     drawGridLines();
@@ -149,9 +149,9 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
       return;
     }
 
-    int spanCols = placedObjectFactory.colSpan(cellSize);
-    int spanRows = placedObjectFactory.rowSpan(cellSize);
-    Color previewColor = Color.web(placedObjectFactory.getColor(), 0.5);
+    int spanCols = selectedPlaceable.colSpan(cellSize);
+    int spanRows = selectedPlaceable.rowSpan(cellSize);
+    Color previewColor = Color.web(selectedPlaceable.getColor(), 0.5);
 
     hoverOverlay = new Rectangle(
         col * cellSize, row * cellSize,

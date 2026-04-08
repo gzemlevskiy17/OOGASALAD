@@ -1,11 +1,13 @@
 package oogasalad.view.authoring.internal;
 
-import oogasalad.view.authoring.api.PlacedObjectFactory;
+import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.internal.TerrainBlock;
+import oogasalad.view.authoring.api.Placeable;
 
 /**
- * Default factory that provides span, color, and terrain metadata for a particular object type.
+ * Terrain placeable definition used by the palette and canvas preview.
  */
-public class DefaultPlacedObjectFactory implements PlacedObjectFactory {
+public class TerrainPlaceable implements Placeable {
 
   private final double widthPx;
   private final double heightPx;
@@ -14,7 +16,7 @@ public class DefaultPlacedObjectFactory implements PlacedObjectFactory {
   private final boolean tiled;
   private final double friction;
 
-  public DefaultPlacedObjectFactory(double widthPx, double heightPx, String color,
+  public TerrainPlaceable(double widthPx, double heightPx, String color,
       String sprite, boolean tiled, double friction) {
     this.widthPx = widthPx;
     this.heightPx = heightPx;
@@ -52,5 +54,18 @@ public class DefaultPlacedObjectFactory implements PlacedObjectFactory {
   @Override
   public double getFriction() {
     return friction;
+  }
+
+  @Override
+  public GameObject createAt(int col, int row, double cellSize) {
+    return new TerrainBlock(
+        col,
+        row,
+        colSpan(cellSize),
+        rowSpan(cellSize),
+        sprite,
+        tiled,
+        friction,
+        color);
   }
 }

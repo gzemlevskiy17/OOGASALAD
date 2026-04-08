@@ -10,8 +10,8 @@ public interface AuthoringCanvas {
   /** Refreshes the visual state of the grid to reflect the current model. */
   void refreshGrid();
 
-  /** Swaps the factory used to create placed objects (called by the controller). */
-  void setPlacedObjectFactory(PlacedObjectFactory factory);
+  /** Swaps the currently selected placeable (called by the controller/palette). */
+  void setSelectedPlaceable(Placeable placeable);
 
   /** @return true if the given grid cell is within the canvas bounds. */
   boolean isWithinBounds(int col, int row);

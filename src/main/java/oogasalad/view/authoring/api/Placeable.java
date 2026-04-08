@@ -1,10 +1,13 @@
 package oogasalad.view.authoring.api;
 
+import oogasalad.model.engine.api.GameObject;
+
 /**
- * Provides the span and color of the object type currently selected in the palette.
- * The controller swaps in a different factory whenever the user selects a new object kind.
+ * Represents an object definition currently selected in the authoring palette.
+ * Implementations provide preview metadata and know how to instantiate their
+ * backend representation when placed on the canvas.
  */
-public interface PlacedObjectFactory {
+public interface Placeable {
 
   /** @return number of columns this object spans, given the cell size. */
   int colSpan(double cellSize);
@@ -23,5 +26,15 @@ public interface PlacedObjectFactory {
 
   /** @return the friction coefficient for this terrain type. */
   double getFriction();
+
+  /**
+   * Creates the backend object anchored at the given grid cell.
+   *
+   * @param col selected grid column
+   * @param row selected grid row
+   * @param cellSize size of one grid cell in pixels
+   * @return the model object to add to the World
+   */
+  GameObject createAt(int col, int row, double cellSize);
 
 }

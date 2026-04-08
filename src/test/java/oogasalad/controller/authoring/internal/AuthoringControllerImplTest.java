@@ -15,7 +15,7 @@ import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.GameComponent;
 import oogasalad.view.authoring.api.AuthoringCanvas;
-import oogasalad.view.authoring.api.PlacedObjectFactory;
+import oogasalad.view.authoring.api.Placeable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -132,7 +132,7 @@ class AuthoringControllerImplTest {
     @Override public void refreshGrid() { refreshCalled = true; }
     @Override public boolean isWithinBounds(int col, int row) { return true; }
     @Override public double getCellSize() { return 40.0; }
-    @Override public void setPlacedObjectFactory(PlacedObjectFactory factory) {}
+    @Override public void setSelectedPlaceable(Placeable placeable) {}
     @Override public void placeBlock(int col, int row) {}
     @Override public void showHoverPreview(int col, int row) {}
     @Override public void clearHoverPreview() {}
