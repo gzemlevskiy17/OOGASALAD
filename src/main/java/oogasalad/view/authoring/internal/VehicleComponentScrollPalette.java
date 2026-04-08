@@ -56,6 +56,7 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     visualRoot.setPrefHeight(paletteHeight);
     visualRoot.setMinHeight(paletteHeight);
     visualRoot.setMaxHeight(paletteHeight);
+    visualRoot.getStyleClass().add("authoring-vehicle-palette");
   }
 
   @Override

@@ -74,6 +74,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     this.selectedPlaceable = new TerrainPlaceable(
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
     this.root = new Pane();
+    root.getStyleClass().add("authoring-canvas");
     double totalWidth = gridCols * cellSize;
     double totalHeight = gridRows * cellSize;
     root.setPrefSize(totalWidth, totalHeight);

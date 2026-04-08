@@ -27,10 +27,14 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
   public AuthoringEntryScreenImpl(ScreenManager screenManager) {
     BorderPane root = new BorderPane();
+    root.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
+    root.getStyleClass().add("screen-root");
     root.setPadding(new Insets(d("rootPadding")));
 
     Label title = new Label(s("titleText"));
     title.setFont(Font.font(d("titleFontSize")));
+    title.getStyleClass().add("authoring-entry-title");
 
     Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
@@ -45,13 +49,16 @@ public class AuthoringEntryScreenImpl implements AppScreen {
         createNewLevelButton, loadExistingLevelButton);
     buttonRegion.setAlignment(Pos.CENTER);
     buttonRegion.setPadding(new Insets(d("buttonRegionPadding")));
+    buttonRegion.getStyleClass().add("authoring-entry-button-row");
 
     VBox centerContent = new VBox(
         d("titleSectionSpacing"), title, buttonRegion);
     centerContent.setAlignment(Pos.TOP_CENTER);
+    centerContent.getStyleClass().add("authoring-entry-center");
     root.setCenter(centerContent);
 
     Button backButton = new Button(s("backButtonText"));
+    backButton.getStyleClass().add("authoring-entry-back");
     backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
     root.setBottom(wrapBottomLeft(backButton));
 
@@ -69,11 +76,13 @@ public class AuthoringEntryScreenImpl implements AppScreen {
         d("actionButtonWidth"),
         d("actionButtonHeight"));
     button.setWrapText(true);
+    button.getStyleClass().add("authoring-entry-action");
   }
 
   private StackPane wrapBottomLeft(Button button) {
     StackPane container = new StackPane(button);
     StackPane.setAlignment(button, Pos.BOTTOM_LEFT);
+    container.getStyleClass().add("authoring-entry-nav");
     return container;
   }
 

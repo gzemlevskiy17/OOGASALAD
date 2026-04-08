@@ -38,6 +38,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
 
   public ComponentPaletteImpl() {
     root.setPadding(new Insets(d("rootPadding")));
+    root.getStyleClass().add("authoring-level-palette");
     loadEntries();
     buildSamples();
   }
@@ -73,6 +74,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
   private void buildSamples() {
     for (PaletteEntry entry : entries.values()) {
       Canvas sample = new Canvas(sampleSize, sampleSize);
+      sample.getStyleClass().add("authoring-palette-sample");
       drawSample(sample, entry, false);
       sample.setOnMouseClicked(e -> select(entry.name(), sample));
       root.getChildren().add(sample);

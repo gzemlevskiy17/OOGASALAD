@@ -72,18 +72,24 @@ public class AuthoringScreenImpl implements AppScreen {
     this.currentMode = AuthoringMode.LEVEL;
 
     BorderPane layout = new BorderPane();
+    layout.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/authoring/authoring-screen.css").toExternalForm());
+    layout.getStyleClass().add("screen-root");
     layout.setPadding(new Insets(d("rootPadding")));
 
     VBox topSections = new VBox(
         d("outerSectionSpacing"),
         buildTopBar(),
         buildScreenModeRow());
+    topSections.getStyleClass().add("authoring-top-sections");
 
     VBox bottomSections = new VBox(
         d("outerSectionSpacing"),
         paletteModeRow,
         buildBottomRegion());
+    bottomSections.getStyleClass().add("authoring-bottom-sections");
 
+    canvasHost.getStyleClass().add("authoring-canvas-host");
     layout.setTop(topSections);
     layout.setCenter(canvasHost);
     layout.setBottom(bottomSections);
@@ -112,6 +118,7 @@ public class AuthoringScreenImpl implements AppScreen {
         s("backButtonText"),
         d("backButtonWidth"),
         d("backButtonHeight"));
+    backButton.getStyleClass().add("authoring-back-button");
     backButton.setOnAction(
         event -> this.screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY, null));
 
@@ -120,6 +127,9 @@ public class AuthoringScreenImpl implements AppScreen {
     Button saveButton = createSizedButton(s("saveButtonText"), actionWidth, actionHeight);
     Button runButton = createSizedButton(s("runButtonText"), actionWidth, actionHeight);
     Button loadButton = createSizedButton(s("loadButtonText"), actionWidth, actionHeight);
+    saveButton.getStyleClass().add("authoring-action-button");
+    runButton.getStyleClass().add("authoring-action-button");
+    loadButton.getStyleClass().add("authoring-action-button");
 
     HBox rightButtons = new HBox(
         d("topBarSpacing"), saveButton, runButton, loadButton);
@@ -130,12 +140,14 @@ public class AuthoringScreenImpl implements AppScreen {
 
     HBox topBar = new HBox(backButton, spacer, rightButtons);
     topBar.setAlignment(Pos.CENTER_LEFT);
+    topBar.getStyleClass().add("authoring-top-bar");
     return topBar;
   }
 
   private HBox buildScreenModeRow() {
     HBox row = new HBox(levelModeButton, vehicleModeButton);
     row.setAlignment(Pos.CENTER_LEFT);
+    row.getStyleClass().add("authoring-screen-mode-row");
     return row;
   }
 
@@ -146,6 +158,7 @@ public class AuthoringScreenImpl implements AppScreen {
         createTabButton(s("levelItemsButtonText")),
         createTabButton(s("customButtonText")));
     row.setAlignment(Pos.CENTER_LEFT);
+    row.getStyleClass().add("authoring-palette-mode-row");
     return row;
   }
 
@@ -155,6 +168,7 @@ public class AuthoringScreenImpl implements AppScreen {
     region.setPrefHeight(bottomHeight);
     region.setMinHeight(bottomHeight);
     region.setMinWidth(d("bottomRegionMinWidth"));
+    region.getStyleClass().add("authoring-bottom-region");
     return region;
   }
 
@@ -172,16 +186,19 @@ public class AuthoringScreenImpl implements AppScreen {
   }
 
   private Button createTabButton(String text) {
-    return createSizedButton(
+    Button button = createSizedButton(
         text,
         d("smallTabButtonWidth"),
         d("smallTabButtonHeight"));
+    button.getStyleClass().add("authoring-palette-button");
+    return button;
   }
 
   private Button createSizedButton(String text, double width, double height) {
     Button button = new Button(text);
     button.setPrefWidth(width);
     button.setPrefHeight(height);
+    button.getStyleClass().add("authoring-button");
     return button;
   }
 
