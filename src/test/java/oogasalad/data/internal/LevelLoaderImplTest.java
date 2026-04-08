@@ -14,7 +14,7 @@ import java.util.List;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.GameComponent;
+import oogasalad.model.engine.internal.components.GameComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
