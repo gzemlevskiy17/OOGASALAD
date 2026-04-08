@@ -27,31 +27,31 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
   public AuthoringEntryScreenImpl(ScreenManager screenManager) {
     BorderPane root = new BorderPane();
-    root.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
+    root.setPadding(new Insets(d("rootPadding")));
 
-    Label title = new Label(PROPS.getString("titleText"));
-    title.setFont(Font.font(Double.parseDouble(PROPS.getString("titleFontSize"))));
+    Label title = new Label(s("titleText"));
+    title.setFont(Font.font(d("titleFontSize")));
 
-    Button createNewLevelButton = new Button(PROPS.getString("createNewLevelButtonText"));
+    Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
     createNewLevelButton.setOnAction(
         event -> screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY, null));
 
-    Button loadExistingLevelButton = new Button(PROPS.getString("loadExistingLevelButtonText"));
+    Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
 
     HBox buttonRegion = new HBox(
-        Double.parseDouble(PROPS.getString("buttonRegionSpacing")),
+        d("buttonRegionSpacing"),
         createNewLevelButton, loadExistingLevelButton);
     buttonRegion.setAlignment(Pos.CENTER);
-    buttonRegion.setPadding(new Insets(Double.parseDouble(PROPS.getString("buttonRegionPadding"))));
+    buttonRegion.setPadding(new Insets(d("buttonRegionPadding")));
 
     VBox centerContent = new VBox(
-        Double.parseDouble(PROPS.getString("titleSectionSpacing")), title, buttonRegion);
+        d("titleSectionSpacing"), title, buttonRegion);
     centerContent.setAlignment(Pos.TOP_CENTER);
     root.setCenter(centerContent);
 
-    Button backButton = new Button(PROPS.getString("backButtonText"));
+    Button backButton = new Button(s("backButtonText"));
     backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
     root.setBottom(wrapBottomLeft(backButton));
 
@@ -64,10 +64,10 @@ public class AuthoringEntryScreenImpl implements AppScreen {
   }
 
   private void configureActionButton(Button button) {
-    button.setFont(Font.font(Double.parseDouble(PROPS.getString("actionFontSize"))));
+    button.setFont(Font.font(d("actionFontSize")));
     button.setPrefSize(
-        Double.parseDouble(PROPS.getString("actionButtonWidth")),
-        Double.parseDouble(PROPS.getString("actionButtonHeight")));
+        d("actionButtonWidth"),
+        d("actionButtonHeight"));
     button.setWrapText(true);
   }
 
@@ -75,5 +75,13 @@ public class AuthoringEntryScreenImpl implements AppScreen {
     StackPane container = new StackPane(button);
     StackPane.setAlignment(button, Pos.BOTTOM_LEFT);
     return container;
+  }
+
+  private String s(String key) {
+    return PROPS.getString(key);
+  }
+
+  private double d(String key) {
+    return Double.parseDouble(PROPS.getString(key));
   }
 }

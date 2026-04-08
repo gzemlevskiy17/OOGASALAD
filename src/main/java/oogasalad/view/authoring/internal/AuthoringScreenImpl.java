@@ -58,7 +58,7 @@ public class AuthoringScreenImpl implements AppScreen {
         null, new ToolSelectorImpl(), canvas);
     this.alertService = new AuthoringAlertService();
     controller.setPlacementErrorHandler(
-        message -> alertService.showWarning("Placement Warning", message));
+        message -> alertService.showWarning(s("placementWarningTitle"), message));
     controller.initializeCanvasHandlers();
     this.canvasHost = new StackPane(canvas.getVisualRoot());
     this.vehiclePalette = new VehicleComponentScrollPalette();
@@ -67,20 +67,20 @@ public class AuthoringScreenImpl implements AppScreen {
     terrainPalette.subscribe(controller::setSelectedPlaceable);
     this.paletteModeRow = buildPaletteModeRow();
     this.bottomContentHost = new StackPane();
-    this.levelModeButton = createTabButton(PROPS.getString("levelButtonText"));
-    this.vehicleModeButton = createTabButton(PROPS.getString("vehicleButtonText"));
+    this.levelModeButton = createTabButton(s("levelButtonText"));
+    this.vehicleModeButton = createTabButton(s("vehicleButtonText"));
     this.currentMode = AuthoringMode.LEVEL;
 
     BorderPane layout = new BorderPane();
-    layout.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
+    layout.setPadding(new Insets(d("rootPadding")));
 
     VBox topSections = new VBox(
-        Double.parseDouble(PROPS.getString("outerSectionSpacing")),
+        d("outerSectionSpacing"),
         buildTopBar(),
         buildScreenModeRow());
 
     VBox bottomSections = new VBox(
-        Double.parseDouble(PROPS.getString("outerSectionSpacing")),
+        d("outerSectionSpacing"),
         paletteModeRow,
         buildBottomRegion());
 
@@ -109,20 +109,20 @@ public class AuthoringScreenImpl implements AppScreen {
 
   private HBox buildTopBar() {
     Button backButton = createSizedButton(
-        PROPS.getString("backButtonText"),
-        Double.parseDouble(PROPS.getString("backButtonWidth")),
-        Double.parseDouble(PROPS.getString("backButtonHeight")));
+        s("backButtonText"),
+        d("backButtonWidth"),
+        d("backButtonHeight"));
     backButton.setOnAction(
         event -> this.screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY, null));
 
-    double actionWidth = Double.parseDouble(PROPS.getString("topActionButtonWidth"));
-    double actionHeight = Double.parseDouble(PROPS.getString("topActionButtonHeight"));
-    Button saveButton = createSizedButton(PROPS.getString("saveButtonText"), actionWidth, actionHeight);
-    Button runButton = createSizedButton(PROPS.getString("runButtonText"), actionWidth, actionHeight);
-    Button loadButton = createSizedButton(PROPS.getString("loadButtonText"), actionWidth, actionHeight);
+    double actionWidth = d("topActionButtonWidth");
+    double actionHeight = d("topActionButtonHeight");
+    Button saveButton = createSizedButton(s("saveButtonText"), actionWidth, actionHeight);
+    Button runButton = createSizedButton(s("runButtonText"), actionWidth, actionHeight);
+    Button loadButton = createSizedButton(s("loadButtonText"), actionWidth, actionHeight);
 
     HBox rightButtons = new HBox(
-        Double.parseDouble(PROPS.getString("topBarSpacing")), saveButton, runButton, loadButton);
+        d("topBarSpacing"), saveButton, runButton, loadButton);
     rightButtons.setAlignment(Pos.CENTER_RIGHT);
 
     Region spacer = new Region();
@@ -141,20 +141,20 @@ public class AuthoringScreenImpl implements AppScreen {
 
   private HBox buildPaletteModeRow() {
     HBox row = new HBox(
-        createTabButton(PROPS.getString("generalButtonText")),
-        createTabButton(PROPS.getString("pigsButtonText")),
-        createTabButton(PROPS.getString("levelItemsButtonText")),
-        createTabButton(PROPS.getString("customButtonText")));
+        createTabButton(s("generalButtonText")),
+        createTabButton(s("pigsButtonText")),
+        createTabButton(s("levelItemsButtonText")),
+        createTabButton(s("customButtonText")));
     row.setAlignment(Pos.CENTER_LEFT);
     return row;
   }
 
   private StackPane buildBottomRegion() {
     StackPane region = bottomContentHost;
-    double bottomHeight = Double.parseDouble(PROPS.getString("bottomRegionHeight"));
+    double bottomHeight = d("bottomRegionHeight");
     region.setPrefHeight(bottomHeight);
     region.setMinHeight(bottomHeight);
-    region.setMinWidth(Double.parseDouble(PROPS.getString("bottomRegionMinWidth")));
+    region.setMinWidth(d("bottomRegionMinWidth"));
     return region;
   }
 
@@ -174,8 +174,8 @@ public class AuthoringScreenImpl implements AppScreen {
   private Button createTabButton(String text) {
     return createSizedButton(
         text,
-        Double.parseDouble(PROPS.getString("smallTabButtonWidth")),
-        Double.parseDouble(PROPS.getString("smallTabButtonHeight")));
+        d("smallTabButtonWidth"),
+        d("smallTabButtonHeight"));
   }
 
   private Button createSizedButton(String text, double width, double height) {
@@ -183,5 +183,13 @@ public class AuthoringScreenImpl implements AppScreen {
     button.setPrefWidth(width);
     button.setPrefHeight(height);
     return button;
+  }
+
+  private String s(String key) {
+    return PROPS.getString(key);
+  }
+
+  private double d(String key) {
+    return Double.parseDouble(PROPS.getString(key));
   }
 }

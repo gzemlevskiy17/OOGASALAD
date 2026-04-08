@@ -26,19 +26,18 @@ public class ComponentPaletteImpl implements ComponentPallete {
   private static final ResourceBundle TERRAIN_PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.TerrainBlock");
 
-  private final double sampleSize = Double.parseDouble(PROPS.getString("sampleSize"));
-  private final Color selectedStroke = Color.web(PROPS.getString("selectedStroke"));
-  private final double selectedStrokeWidth =
-      Double.parseDouble(PROPS.getString("selectedStrokeWidth"));
+  private final double sampleSize = d("sampleSize");
+  private final Color selectedStroke = Color.web(s("selectedStroke"));
+  private final double selectedStrokeWidth = d("selectedStrokeWidth");
 
   private final Map<String, PaletteEntry> entries = new LinkedHashMap<>();
   private final List<Consumer<AuthoringPlaceable>> subscribers = new ArrayList<>();
-  private final HBox root = new HBox(8);
+  private final HBox root = new HBox(d("rootSpacing"));
 
   private String selectedName;
 
   public ComponentPaletteImpl() {
-    root.setPadding(new Insets(8));
+    root.setPadding(new Insets(d("rootPadding")));
     loadEntries();
     buildSamples();
   }
@@ -106,15 +105,31 @@ public class ComponentPaletteImpl implements ComponentPallete {
     GraphicsContext gc = sample.getGraphicsContext2D();
     gc.clearRect(0, 0, sampleSize, sampleSize);
     gc.setFill(Color.web(entry.color()));
-    gc.fillRect(2, 2, sampleSize - 4, sampleSize - 4);
+    gc.fillRect(
+        d("sampleFillInset"),
+        d("sampleFillInset"),
+        sampleSize - d("sampleFillInsetDouble"),
+        sampleSize - d("sampleFillInsetDouble"));
     if (selected) {
       gc.setStroke(selectedStroke);
       gc.setLineWidth(selectedStrokeWidth);
-      gc.strokeRect(1, 1, sampleSize - 2, sampleSize - 2);
+      gc.strokeRect(
+          d("sampleBorderInset"),
+          d("sampleBorderInset"),
+          sampleSize - d("sampleBorderInsetDouble"),
+          sampleSize - d("sampleBorderInsetDouble"));
     }
   }
 
   private record PaletteEntry(String name, String color, int cols, int rows,
       String sprite, boolean tiled, double friction, int blockCols, int blockRows) {
+  }
+
+  private String s(String key) {
+    return PROPS.getString(key);
+  }
+
+  private double d(String key) {
+    return Double.parseDouble(PROPS.getString(key));
   }
 }
