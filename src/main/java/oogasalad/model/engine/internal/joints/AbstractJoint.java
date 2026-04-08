@@ -18,63 +18,45 @@ public abstract class AbstractJoint implements Joint {
 
   private final GameComponent objectA;
   private final GameComponent objectB;
+  private final double restDistance;
 
   protected AbstractJoint(GameComponent objectA, GameComponent objectB) {
     this.objectA = Objects.requireNonNull(objectA);
     this.objectB = Objects.requireNonNull(objectB);
     validatePair(this.objectA, this.objectB);
+    this.restDistance = this.objectB.getState().getLinearPosition()
+        .subtract(this.objectA.getState().getLinearPosition())
+        .magnitude();
   }
 
   @Override
-  public GameObject getObjectA() {
-    return objectA;
-  }
-
+  public GameObject getObjectA() {return objectA;}
   @Override
-  public GameObject getObjectB() {
-    return objectB;
-  }
+  public GameObject getObjectB() {return objectB;}
 
-  protected GameComponent getComponentA() {
-    return objectA;
-  }
+  protected GameComponent getComponentA() {return objectA;}
 
-  protected GameComponent getComponentB() {
-    return objectB;
-  }
+  protected GameComponent getComponentB() {return objectB;}
 
-  protected boolean isDynamic(GameComponent component) {
-    return component instanceof DynamicComponent;
-  }
+  protected boolean isDynamic(GameComponent component) {return component instanceof DynamicComponent;}
 
-  protected boolean isStatic(GameComponent component) {
-    return component instanceof StaticComponent;
-  }
+  protected boolean isStatic(GameComponent component) {return component instanceof StaticComponent;}
 
-  protected boolean isPassthrough(GameComponent component) {
-    return component instanceof PassthroughComponent;
-  }
+  protected boolean isPassthrough(GameComponent component) {return component instanceof PassthroughComponent;}
+
+  protected double getRestDistance() {return restDistance;}
 
   private void validatePair(GameComponent objectA, GameComponent objectB) {
-    if (isPassthrough(objectA) || isPassthrough(objectB)) {
-      throw new IllegalArgumentException("Passthrough components cannot participate in joints");
-    }
+    if (isPassthrough(objectA) || isPassthrough(objectB)) {throw new IllegalArgumentException("Passthrough components cannot participate in joints");}
 
     boolean objectAStatic = isStatic(objectA);
     boolean objectBStatic = isStatic(objectB);
     boolean objectADynamic = isDynamic(objectA);
     boolean objectBDynamic = isDynamic(objectB);
 
-    if (objectAStatic && objectBStatic) {
-      throw new IllegalArgumentException("Static-static joints are not supported");
-    }
+    if (objectAStatic && objectBStatic) {throw new IllegalArgumentException("Static-static joints are not supported");}
 
-    boolean supportedPair =
-        (objectADynamic && objectBDynamic)
-            || (objectADynamic && objectBStatic)
-            || (objectAStatic && objectBDynamic);
-    if (!supportedPair) {
-      throw new IllegalArgumentException("Joint pair must be dynamic-dynamic or dynamic-static");
-    }
+    boolean supportedPair = (objectADynamic && objectBDynamic) || (objectADynamic && objectBStatic) || (objectAStatic && objectBDynamic);
+    if (!supportedPair) {throw new IllegalArgumentException("Joint pair must be dynamic-dynamic or dynamic-static");}
   }
 }
