@@ -1,8 +1,10 @@
 package oogasalad.controller.authoring.internal;
 
+import java.util.ResourceBundle;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import oogasalad.controller.authoring.api.AuthoringController;
+import oogasalad.controller.authoring.api.AuthoringPlacementException;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
@@ -39,6 +41,8 @@ import org.apache.logging.log4j.Logger;
 public class AuthoringControllerImpl implements AuthoringController {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
+  private static final ResourceBundle MESSAGES =
+      ResourceBundle.getBundle("oogasalad.controller.authoring.AuthoringController");
 
   private final World world;
   private final LevelLoader loader;
@@ -182,15 +186,18 @@ public class AuthoringControllerImpl implements AuthoringController {
     LOG.info("Loaded level from {}", fileName);
   }
 
-  private void placeSelectedObject(int col, int row) {
+  GameObject placeSelectedObject(int col, int row) {
     double cellSize = canvas.getCellSize();
     int spanCols = selectedPlaceable.colSpan(cellSize);
     int spanRows = selectedPlaceable.rowSpan(cellSize);
     if (overlapsExistingTerrain(col, row, spanCols, spanRows)) {
-      return;
+      String message = MESSAGES.getString("placement.overlap");
+      LOG.warn(message);
+      throw new AuthoringPlacementException(message);
     }
     GameObject placedObject = selectedPlaceable.createAt(col, row, cellSize);
     world.addObject(placedObject);
+    return placedObject;
   }
 
   /**
