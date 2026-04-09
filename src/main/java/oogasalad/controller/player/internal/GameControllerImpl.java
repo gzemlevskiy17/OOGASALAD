@@ -80,7 +80,6 @@ public class GameControllerImpl implements GameController {
     this.world = world;
     this.renderer = renderer;
     this.camera = camera;
-    this.cameraBehavior = cameraBehavior;
     this.winChecker = winChecker;
     this.lossChecker = lossChecker;
     this.inputRouter = inputRouter;
