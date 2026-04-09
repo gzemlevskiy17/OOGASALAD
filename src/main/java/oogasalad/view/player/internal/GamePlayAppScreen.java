@@ -13,13 +13,14 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.player.api.GameplayView;
 
 /**
  * Screen for the main window of the gameplay
  * @author Iurii Beliaev
  */
 
-public class GamePlayAppScreen extends AbstractAppScreen {
+public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
