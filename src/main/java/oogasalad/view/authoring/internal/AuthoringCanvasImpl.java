@@ -1,6 +1,7 @@
 package oogasalad.view.authoring.internal;
 
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
@@ -50,6 +51,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private final Pane root;
   private final World world;
   private AuthoringPlaceable selectedPlaceable;
+  private Consumer<AuthoringPlaceable> onObjectSelected = obj -> {};
 
   private Rectangle hoverOverlay;
   private int hoverCol = -1;
@@ -162,6 +164,13 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   @Override
+  public void setOnObjectSelected(Consumer<AuthoringPlaceable> handler) {
+    if (handler != null) {
+      this.onObjectSelected = handler;
+    }
+  }
+
+  @Override
   public void clearHoverPreview() {
     if (hoverOverlay != null) {
       root.getChildren().remove(hoverOverlay);
@@ -192,6 +201,11 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     } else {
       applySprite(rect, placeable.getSprite(), fallback);
     }
+
+    rect.setOnMousePressed(e -> {
+      e.consume(); // prevent canvas placement handler from firing
+      onObjectSelected.accept(placeable);
+    });
 
     return rect;
   }

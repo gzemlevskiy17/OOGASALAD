@@ -67,6 +67,10 @@ public class AuthoringControllerImpl implements AuthoringController {
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
   }
 
+  public void setActiveTool(ToolSelector.ToolType type) {
+    toolSelector.setActiveTool(type);
+  }
+
   public void setSelectedPlaceable(AuthoringPlaceable placeable) {
     if (placeable != null) {
       this.selectedPlaceable = placeable;
