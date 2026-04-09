@@ -90,6 +90,38 @@ class AuthoringControllerImplTest {
     assertTrue(canvas.refreshCalled);
   }
 
+  @Test
+  void loadLevel_clearsExistingObjects() {
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+    assertEquals(1, world.objectCount());
+
+    controller.loadLevel("input.json");
+
+    assertEquals(0, world.objectCount());
+  }
+
+  @Test
+  void setActiveTool_switchesToErase_removesPlacedObject() {
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+    assertEquals(1, world.objectCount());
+
+    toolSelector.setActiveTool(ToolType.ERASE);
+    controller.handleGridInteraction(20.0, 20.0);
+
+    assertEquals(0, world.objectCount());
+  }
+
+  @Test
+  void setActiveTool_switchesToolType() {
+    controller.setActiveTool(ToolType.ERASE);
+    assertEquals(ToolType.ERASE, toolSelector.getActiveTool());
+
+    controller.setActiveTool(ToolType.DRAW);
+    assertEquals(ToolType.DRAW, toolSelector.getActiveTool());
+  }
+
   // --- Test doubles ---
 
   private static class FakeWorld implements World {
