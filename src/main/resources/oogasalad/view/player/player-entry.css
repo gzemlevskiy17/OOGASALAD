@@ -55,6 +55,12 @@
   -fx-opacity: 0.95; /* keep text readable while disabled */
 }
 
+/* Keep selected level at hover color even after click */
+.level-button.level-selected,
+.level-button.level-selected:hover {
+  -fx-background-color: #D1FFBD;
+}
+
 /* The Grey Fill State */
 .filled {
   -fx-background-color: #D3D3D3;
@@ -123,4 +129,26 @@
 .world-mars:hover {
   -fx-background-color: #FFAAA5; /* Dusty Red */
   -fx-cursor: hand;
+}
+
+/* Keep selected world at its world-specific hover color */
+.world-button.world-selected.world-forest,
+.world-button.world-selected.world-forest:hover {
+  -fx-background-color: #A8E6CF;
+}
+.world-button.world-selected.world-desert,
+.world-button.world-selected.world-desert:hover {
+  -fx-background-color: #FFD3B6;
+}
+.world-button.world-selected.world-moon,
+.world-button.world-selected.world-moon:hover {
+  -fx-background-color: #D3D3D3;
+}
+.world-button.world-selected.world-glacier,
+.world-button.world-selected.world-glacier:hover {
+  -fx-background-color: #C4FCE8;
+}
+.world-button.world-selected.world-mars,
+.world-button.world-selected.world-mars:hover {
+  -fx-background-color: #FFAAA5;
 }

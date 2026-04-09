@@ -29,6 +29,9 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     super(screenManager);
   }
 
+  private Button selectedWorldButton;
+  private Button selectedLevelButton;
+
   @Override
   protected BorderPane createRoot() {
     BorderPane root = new BorderPane();
@@ -88,8 +91,18 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
       btn.getStyleClass().add("world-button");
       btn.getStyleClass().add("world-" + world); // Hovering logic
       worldBox.getChildren().add(btn);
+
+      btn.setOnAction(e -> selectWorld(btn));
     }
     return worldBox;
+  }
+
+  private void selectWorld(Button btn) {
+    if (selectedWorldButton != null) {
+      selectedWorldButton.getStyleClass().remove("world-selected");
+    }
+    selectedWorldButton = btn;
+    selectedWorldButton.getStyleClass().add("world-selected");
   }
 
   private HBox createLevelButtonRegion() {
@@ -108,9 +121,22 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
         btn.setDisable(true);
       };
 
+      // Allow level selection only for the open buttons
+      if (!lockedLevels.contains(level)) {
+        btn.setOnAction(e -> SelectLevel(btn));
+      }
+
       levelBox.getChildren().add(btn);
     }
     return levelBox;
+  }
+
+  private void SelectLevel(Button btn) {
+    if (selectedLevelButton != null) {
+      selectedLevelButton.getStyleClass().remove("level-selected");
+    }
+    selectedLevelButton = btn;
+    selectedLevelButton.getStyleClass().add("level-selected");
   }
 
   private Label createTitleRegion() {
