@@ -29,17 +29,21 @@ public class AuthoringEntryScreenImpl implements AppScreen {
   public AuthoringEntryScreenImpl(ScreenManager screenManager) {
     this.fileChooserService = new FileChooserService();
     BorderPane root = new BorderPane();
-    root.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
+    root.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
+    root.getStyleClass().add("screen-root");
+    root.setPadding(new Insets(d("rootPadding")));
 
-    Label title = new Label(PROPS.getString("titleText"));
-    title.setFont(Font.font(Double.parseDouble(PROPS.getString("titleFontSize"))));
+    Label title = new Label(s("titleText"));
+    title.setFont(Font.font(d("titleFontSize")));
+    title.getStyleClass().add("authoring-entry-title");
 
-    Button createNewLevelButton = new Button(PROPS.getString("createNewLevelButtonText"));
+    Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
     createNewLevelButton.setOnAction(
         event -> screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY, null));
 
-    Button loadExistingLevelButton = new Button(PROPS.getString("loadExistingLevelButtonText"));
+    Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
     loadExistingLevelButton.setOnAction(event ->
         fileChooserService.chooseLoadFile(loadExistingLevelButton.getScene().getWindow())
@@ -47,17 +51,20 @@ public class AuthoringEntryScreenImpl implements AppScreen {
                 ScreenFactory.AUTHORING_SCREEN_KEY, file.getAbsolutePath())));
 
     HBox buttonRegion = new HBox(
-        Double.parseDouble(PROPS.getString("buttonRegionSpacing")),
+        d("buttonRegionSpacing"),
         createNewLevelButton, loadExistingLevelButton);
     buttonRegion.setAlignment(Pos.CENTER);
-    buttonRegion.setPadding(new Insets(Double.parseDouble(PROPS.getString("buttonRegionPadding"))));
+    buttonRegion.setPadding(new Insets(d("buttonRegionPadding")));
+    buttonRegion.getStyleClass().add("authoring-entry-button-row");
 
     VBox centerContent = new VBox(
-        Double.parseDouble(PROPS.getString("titleSectionSpacing")), title, buttonRegion);
+        d("titleSectionSpacing"), title, buttonRegion);
     centerContent.setAlignment(Pos.TOP_CENTER);
+    centerContent.getStyleClass().add("authoring-entry-center");
     root.setCenter(centerContent);
 
-    Button backButton = new Button(PROPS.getString("backButtonText"));
+    Button backButton = new Button(s("backButtonText"));
+    backButton.getStyleClass().add("authoring-entry-back");
     backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
     root.setBottom(wrapBottomLeft(backButton));
 
@@ -70,16 +77,26 @@ public class AuthoringEntryScreenImpl implements AppScreen {
   }
 
   private void configureActionButton(Button button) {
-    button.setFont(Font.font(Double.parseDouble(PROPS.getString("actionFontSize"))));
+    button.setFont(Font.font(d("actionFontSize")));
     button.setPrefSize(
-        Double.parseDouble(PROPS.getString("actionButtonWidth")),
-        Double.parseDouble(PROPS.getString("actionButtonHeight")));
+        d("actionButtonWidth"),
+        d("actionButtonHeight"));
     button.setWrapText(true);
+    button.getStyleClass().add("authoring-entry-action");
   }
 
   private StackPane wrapBottomLeft(Button button) {
     StackPane container = new StackPane(button);
     StackPane.setAlignment(button, Pos.BOTTOM_LEFT);
+    container.getStyleClass().add("authoring-entry-nav");
     return container;
+  }
+
+  private String s(String key) {
+    return PROPS.getString(key);
+  }
+
+  private double d(String key) {
+    return Double.parseDouble(PROPS.getString(key));
   }
 }

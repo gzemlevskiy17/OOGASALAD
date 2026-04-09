@@ -1,0 +1,100 @@
+.screen-root {
+  -fx-background-color: white;
+  -fx-border-color: #e67e22;
+  -fx-border-width: 4;
+}
+
+.authoring-top-sections,
+.authoring-bottom-sections {
+  -fx-padding: 4 8 4 8;
+}
+
+.authoring-top-bar,
+.authoring-screen-mode-row,
+.authoring-palette-mode-row {
+  -fx-alignment: center-left;
+}
+
+.authoring-canvas-host {
+  -fx-padding: 14;
+}
+
+.authoring-canvas-scroll {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-padding: 0;
+}
+
+.authoring-canvas-scroll > .viewport {
+  -fx-background-color: white;
+}
+
+.authoring-canvas {
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-border-radius: 12;
+  -fx-background-radius: 12;
+}
+
+.authoring-bottom-region {
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-border-radius: 15;
+  -fx-background-radius: 15;
+  -fx-padding: 4;
+}
+
+.authoring-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-border-radius: 10;
+  -fx-background-radius: 10;
+  -fx-font-family: "Serif";
+  -fx-font-size: 15px;
+  -fx-text-fill: #333333;
+}
+
+.authoring-button:hover {
+  -fx-background-color: #f7f7f7;
+  -fx-cursor: hand;
+}
+
+.authoring-back-button {
+  -fx-background-color: #E0E0E0;
+}
+
+.authoring-mode-button {
+  -fx-font-size: 16px;
+}
+
+.authoring-palette-button {
+  -fx-font-size: 14px;
+}
+
+.authoring-action-button {
+  -fx-font-size: 15px;
+}
+
+.authoring-level-palette {
+  -fx-alignment: center-left;
+}
+
+.authoring-level-palette-scroll {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-padding: 0;
+}
+
+.authoring-level-palette-scroll > .viewport {
+  -fx-background-color: white;
+}
+
+.authoring-vehicle-palette {
+  -fx-background-color: white;
+  -fx-border-color: transparent;
+}
+
+.authoring-palette-sample {
+  -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 4, 0.1, 0, 1);
+}
