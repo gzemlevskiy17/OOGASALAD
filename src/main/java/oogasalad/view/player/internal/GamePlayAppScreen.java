@@ -23,8 +23,32 @@ public class GamePlayAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
+  private Pane gameLayer;
+  private Runnable onPause = () -> { };
+  private Runnable onReset = () -> { };
+
   public GamePlayAppScreen(Consumer<Outcome> onOutcome) {
     super(onOutcome);
+  }
+
+  public Pane getGameLayer() {
+    return gameLayer;
+  }
+
+  public void setOnPause(Runnable onPause) {
+    if (onPause == null) {
+      this.onPause = () -> { };
+    } else {
+      this.onPause = onPause;
+    }
+  }
+
+  public void setOnReset(Runnable onReset) {
+    if (onReset == null) {
+      this.onReset = () -> { };
+    } else {
+      this.onReset = onReset;
+    }
   }
 
   @Override
