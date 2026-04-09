@@ -190,6 +190,11 @@ public class AuthoringScreenImpl implements AppScreen {
     return root;
   }
 
+  @Override
+  public void onEnter() {
+    resetForNewLevel();
+  }
+
   /** Clears all placed objects and resets the canvas for a fresh level. */
   public void resetForNewLevel() {
     world.clear();
@@ -203,8 +208,16 @@ public class AuthoringScreenImpl implements AppScreen {
         d("backButtonWidth"),
         d("backButtonHeight"));
     backButton.getStyleClass().add("authoring-back-button");
-    backButton.setOnAction(
-        event -> onOutcome.accept(Outcome.BACK_TO_AUTHORING_ENTRY));
+    backButton.setOnAction(event -> {
+      if (!world.getObjects().isEmpty()) {
+        boolean confirmed = alertService.showConfirmation(
+            s("leaveWarningTitle"), s("leaveWarningMessage"));
+        if (!confirmed) {
+          return;
+        }
+      }
+      onOutcome.accept(Outcome.BACK_TO_AUTHORING_ENTRY);
+    });
 
     double actionWidth = d("topActionButtonWidth");
     double actionHeight = d("topActionButtonHeight");

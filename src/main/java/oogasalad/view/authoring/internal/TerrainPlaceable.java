@@ -1,6 +1,6 @@
 package oogasalad.view.authoring.internal;
 
-import oogasalad.model.engine.internal.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 
 /**
