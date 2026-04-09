@@ -1,63 +1,39 @@
 .screen-root {
   -fx-background-color: white;
-  -fx-padding: 30;
-}
-
-/* Controls the spacing between the boxes on the vehicle grid */
-.vehicle-grid {
-  -fx-hgap: 15;
-  -fx-vgap: 15;
-  -fx-alignment: center;
-}
-
-/* Controls the spacing between the boxes in the component grid */
-.component-grid {
-  -fx-hgap: 15;
-  -fx-vgap: 15;
-  -fx-alignment: center;
-}
-
-/* Styles the individual empty grid boxes */
-.grid-cell {
-  -fx-min-width: 90;
-  -fx-min-height: 70;
-  -fx-background-color: white;
-  -fx-border-color: #888888; /* The grey border */
+  -fx-border-color: #e67e22;   /* match player-entry outer border */
   -fx-border-width: 4;
-  -fx-border-radius: 10;     /* Rounded outer corners */
-  -fx-background-radius: 10; /* Rounded inner background */
+  -fx-padding: 24;
 }
 
+/* Shared button baseline like player-entry */
+.button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-font-family: "Serif";
+}
+
+/* Main vehicle build grid */
+.vehicle-grid {
+  -fx-hgap: 4;
+  -fx-vgap: 4;
+  -fx-alignment: center;
+}
+
+/* Component palette grid: make rectangles closer together */
+.component-grid {
+  -fx-hgap: 6;   /* was 15 */
+  -fx-vgap: 6;   /* was 15 */
+  -fx-alignment: center;
+}
+
+.grid-cell,
 .component-cell {
   -fx-min-width: 90;
   -fx-min-height: 70;
   -fx-background-color: white;
-  -fx-border-color: #888888; /* The grey border */
-  -fx-border-width: 4;
-  -fx-border-radius: 10;     /* Rounded outer corners */
-  -fx-background-radius: 10; /* Rounded inner background */
-}
-
-.back-button {
-  -fx-background-color: #E0E0E0;
-  -fx-padding: 5 15;
-  -fx-border-radius: 5;
-}
-
-.nav-region {
-  -fx-padding: 20;
-}
-
-.component-title {
-  -fx-font-size: 24px;
-  -fx-font-family: "Serif";
-  -fx-fill: #333333; /* Dark grey text */
-}
-
-.start-button {
-  -fx-min-width: 400;
-  -fx-min-height: 60;
-  -fx-font-size: 20px;
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
 }
@@ -69,4 +45,37 @@
   -fx-background-radius: 15;
   -fx-padding: 30;
   -fx-max-width: 950;
+}
+
+.component-title {
+  -fx-font-size: 28px;
+  -fx-font-family: "Serif";
+  -fx-fill: #333333;
+}
+
+.start-button {
+  -fx-min-width: 900;  /* align with player-entry feel */
+  -fx-min-height: 60;
+  -fx-font-size: 26px;
+  -fx-border-radius: 10;
+  -fx-background-radius: 10;
+}
+
+.start-button:hover {
+  -fx-background-color: #f7f7f7;
+  -fx-cursor: hand;
+}
+
+.back-button {
+  -fx-background-color: #E0E0E0;
+  -fx-padding: 5 15;
+  -fx-border-radius: 5;
+}
+
+.back-button:hover {
+  -fx-cursor: hand;
+}
+
+.nav-region {
+  -fx-padding: 20;
 }
