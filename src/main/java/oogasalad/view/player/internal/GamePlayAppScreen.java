@@ -95,9 +95,11 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     container.setPickOnBounds(false);
 
     Button pauseBtn = new Button(s("button.pause"));
+    pauseBtn.setOnAction(e -> onPause.run());
     pauseBtn.getStyleClass().add("sys-button");
 
     Button resetBtn = new Button(s("button.reset"));
+    resetBtn.setOnAction(e -> onReset.run());
     resetBtn.getStyleClass().add("sys-button");
 
     container.getChildren().addAll(pauseBtn, resetBtn);
