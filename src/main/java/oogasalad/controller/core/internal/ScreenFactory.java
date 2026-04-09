@@ -7,6 +7,8 @@ import oogasalad.controller.accounts.api.AuthController;
 import oogasalad.controller.accounts.internal.AuthControllerImpl;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
+import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.model.auth.api.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.view.accounts.internal.CreateAccountScreen;
@@ -17,7 +19,6 @@ import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.core.api.GameMenuScreen;
-import oogasalad.view.player.internal.GamePlayAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
 
@@ -72,7 +73,8 @@ public class ScreenFactory {
     screens.put(AUTHORING_SCREEN_KEY, new AuthoringScreenImpl(this::guardedOutcome));
     screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(this::guardedOutcome));
     screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(this::guardedOutcome));
-    screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(this::guardedOutcome));
+    screens.put(GAMEPLAY_APP_SCREEN_KEY,
+        new GamePlayScreenCoordinator(this::guardedOutcome, new GameplaySessionFactoryImpl()));
 
     // Auth screens — each wraps the action consumer to bind its own error display before
     // delegating to the controller, so handleAuthError reaches the right screen.
