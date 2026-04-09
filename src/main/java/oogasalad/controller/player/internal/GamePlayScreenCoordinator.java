@@ -19,7 +19,7 @@ public class GamePlayScreenCoordinator implements AppScreen {
   public GamePlayScreenCoordinator(Consumer<Outcome> onOutcome, GameplaySessionFactory sessionFactory) {
     this.onOutcome = onOutcome;
     this.sessionFactory = sessionFactory;
-    this.view = new GamePlayAppScreen(this::handleOutcome);
+    this.view = new GamePlayAppScreen(this::handleOutcome); // In the future could be replaced with the GamePlayView abstraction@
 
     view.setOnPause(() -> {
       if (session != null) session.pause();
