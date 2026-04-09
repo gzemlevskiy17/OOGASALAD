@@ -3,8 +3,8 @@ package oogasalad.controller.core.api;
 /** Represents any terminal event from a screen or controller that requires navigation. */
 public enum Outcome {
   // Game results
-  GAME_WON("RESULT"),
-  GAME_LOST("RESULT"),
+  GAME_WON("WIN_SCREEN"),
+  GAME_LOST("LOSE_SCREEN"),
 
   // going forwards
   OPEN_PLAYER_ENTRY("PLAYER_ENTRY"),

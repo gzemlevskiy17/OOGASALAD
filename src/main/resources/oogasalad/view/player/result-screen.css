@@ -1,0 +1,36 @@
+.screen-root {
+  -fx-background-color: white;
+  -fx-border-color: #e67e22;
+  -fx-border-width: 2;
+}
+
+.result-card {
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 12;
+  -fx-background-radius: 12;
+  -fx-padding: 40;
+  -fx-max-width: 1000;
+  -fx-min-height: 260;
+}
+
+.result-title {
+  -fx-font-family: "Serif";
+  -fx-font-size: 52px;
+}
+
+.result-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 6;
+  -fx-background-radius: 6;
+  -fx-min-width: 120;
+  -fx-min-height: 72;
+  -fx-font-family: "SansSerif";
+}
+
+.result-button:hover {
+  -fx-background-color: #f2f2f2;
+  -fx-cursor: hand;
+}
