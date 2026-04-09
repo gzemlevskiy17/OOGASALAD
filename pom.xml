@@ -63,6 +63,12 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.18.2</version>
         </dependency>
+      <!-- SQLite JDBC driver for local user profile storage -->
+      <dependency>
+        <artifactId>sqlite-jdbc</artifactId>
+        <groupId>org.xerial</groupId>
+        <version>3.47.1.0</version>
+      </dependency>
     </dependencies>
 
     <build>

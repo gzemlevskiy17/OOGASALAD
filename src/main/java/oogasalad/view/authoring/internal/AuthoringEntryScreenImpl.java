@@ -12,8 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.api.AppScreen;
 
 /**
@@ -25,11 +24,8 @@ public class AuthoringEntryScreenImpl implements AppScreen {
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringEntry");
 
   private final Parent root;
-  private final FileChooserService fileChooserService;
 
-  public AuthoringEntryScreenImpl(ScreenManager screenManager, Consumer<String> levelLoader,
-      Runnable onCreateNewLevel) {
-    this.fileChooserService = new FileChooserService();
+  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome) {
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
@@ -42,19 +38,11 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
     Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
-    createNewLevelButton.setOnAction(event -> {
-      onCreateNewLevel.run();
-      screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY);
-    });
+    createNewLevelButton.setOnAction(
+        event -> onOutcome.accept(Outcome.OPEN_AUTHORING));
 
     Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
-    loadExistingLevelButton.setOnAction(event ->
-        fileChooserService.chooseLoadFile(loadExistingLevelButton.getScene().getWindow())
-            .ifPresent(file -> {
-              levelLoader.accept(file.getAbsolutePath());
-              screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY);
-            }));
 
     HBox buttonRegion = new HBox(
         d("buttonRegionSpacing"),
@@ -71,7 +59,7 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
     Button backButton = new Button(s("backButtonText"));
     backButton.getStyleClass().add("authoring-entry-back");
-    backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY));
+    backButton.setOnAction(event -> onOutcome.accept(Outcome.BACK_TO_MENU));
     root.setBottom(wrapBottomLeft(backButton));
 
     this.root = root;
