@@ -58,6 +58,8 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     root.getStyleClass().add("screen-root");
 
     gameLayer = createGameAreaRegion();
+    gameLayer.prefWidthProperty().bind(root.widthProperty());
+    gameLayer.prefHeightProperty().bind(root.heightProperty());
 
     HBox topControls = createTopControlsRegion();
     HBox bottomControls = createBottomControlsRegion();

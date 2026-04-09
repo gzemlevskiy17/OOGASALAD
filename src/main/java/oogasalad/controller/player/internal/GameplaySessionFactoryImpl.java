@@ -28,6 +28,11 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
 
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
+  // Constants for a demonstration
+  private static final double BALL_RADIUS = 12.0;
+  private static final double WORLD_WIDTH = 2600.0;
+  private static final double WORLD_HEIGHT = 1600.0;
+
   @Override
   public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome) {
     World world = buildWorldForCurrentLevel();
@@ -49,10 +54,18 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     CameraBehavior behavior = new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight, 0, 0, 0.2);
     camera.setBehavior(behavior);
 
-    // Bigger circles so you can actually see them
     Renderer renderer = new RendererImpl(screen.getGameLayer(), r -> {
-      Circle c = new Circle(12);
-      c.setFill(Color.DODGERBLUE);
+      Circle c = new Circle(BALL_RADIUS);
+      if (r == player) {
+        c.setRadius(BALL_RADIUS + 3);
+        c.setFill(Color.ORANGE); // followed ball
+      } else if (r instanceof GameObject go) {
+        Vector v = go.getState().getLinearVelocity();
+        boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
+        c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY); // moving vs idle
+      } else {
+        c.setFill(Color.DODGERBLUE);
+      }
       return c;
     });
 
@@ -67,11 +80,19 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private World buildWorldForCurrentLevel() {
     World world = new WorldImpl();
 
-    world.addComponent(createMovingCircle(200, 200,  80,  50)); // "player" camera follows this one
-    world.addComponent(createMovingCircle(400, 300, -60,  70));
-    world.addComponent(createMovingCircle(700, 450,  90, -80));
-    world.addComponent(createMovingCircle(900, 250, -75, -65));
+    // Followed "player" ball (first object is used by resolveControlledPlayer)
+    world.addComponent(createMovingCircle(350, 300, 180, 120));
 
+    // Other moving balls
+    world.addComponent(createMovingCircle(900, 500, -140, 100));
+    world.addComponent(createMovingCircle(1500, 900, 160, -130));
+    world.addComponent(createMovingCircle(2100, 400, -120, -90));
+
+    // Idle balls (v=0) so camera motion is obvious
+    world.addComponent(createMovingCircle(200, 1200, 0, 0));
+    world.addComponent(createMovingCircle(1200, 200, 0, 0));
+    world.addComponent(createMovingCircle(2400, 1300, 0, 0));
+    world.addComponent(createMovingCircle(2500, 300, 0, 0));
     return world;
   }
 
@@ -83,25 +104,24 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private GameEngine buildEngine(World world) {
-    final double minX = 20, maxX = 1260;
-    final double minY = 20, maxY = 700;
+    final double minX = BALL_RADIUS;
+    final double maxX = WORLD_WIDTH - BALL_RADIUS;
+    final double minY = BALL_RADIUS;
+    final double maxY = WORLD_HEIGHT - BALL_RADIUS;
 
     return elapsedTime -> {
       for (GameObject obj : world.getObjects()) {
         obj.getState().integrateObjectState(elapsedTime);
-
         double x = obj.getState().getLinearPosition().x();
         double y = obj.getState().getLinearPosition().y();
         double vx = obj.getState().getLinearVelocity().x();
         double vy = obj.getState().getLinearVelocity().y();
-
         if (x < minX || x > maxX) vx = -vx;
         if (y < minY || y > maxY) vy = -vy;
-
-        double clampedX = Math.max(minX, Math.min(maxX, x));
-        double clampedY = Math.max(minY, Math.min(maxY, y));
-
-        obj.getState().setLinearPosition(new Vector(clampedX, clampedY));
+        obj.getState().setLinearPosition(new Vector(
+            Math.max(minX, Math.min(maxX, x)),
+            Math.max(minY, Math.min(maxY, y))
+        ));
         obj.getState().setLinearVelocity(new Vector(vx, vy));
       }
     };
