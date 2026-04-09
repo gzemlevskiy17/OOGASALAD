@@ -95,6 +95,11 @@ public class GameEngineImpl implements GameEngine {
 
   private void handleCollisions() {
     List<Collision> collisions = getCollisions();
+
+//    Map<String, String> solverMap = {
+//        {}
+//    }
+
     solveCollisions(collisions);
   }
 
