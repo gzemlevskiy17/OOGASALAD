@@ -1,9 +1,15 @@
 package oogasalad.view.core.api;
 
-/** Logic for how the camera should move. */
+/**
+ * Strategy interface that updates camera state each frame.
+ *
+ * @author Iurii Beliaev
+ */
 public interface CameraBehavior {
-  /** * Updates the camera's position/zoom based on its internal logic.
-   * @param camera The camera to be moved.
+  /**
+   * Updates the supplied camera according to implementation-specific behavior.
+   *
+   * @param camera camera instance to mutate
    */
   void update(Camera camera);
 }

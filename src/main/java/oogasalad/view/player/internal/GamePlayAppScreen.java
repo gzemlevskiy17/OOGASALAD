@@ -13,18 +13,43 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.player.api.GameplayView;
 
 /**
  * Screen for the main window of the gameplay
  * @author Iurii Beliaev
  */
 
-public class GamePlayAppScreen extends AbstractAppScreen {
+public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
+  private Pane gameLayer;
+  private Runnable onPause = () -> { };
+  private Runnable onReset = () -> { };
+
   public GamePlayAppScreen(Consumer<Outcome> onOutcome) {
     super(onOutcome);
+  }
+
+  public Pane getGameLayer() {
+    return gameLayer;
+  }
+
+  public void setOnPause(Runnable onPause) {
+    if (onPause == null) {
+      this.onPause = () -> { };
+    } else {
+      this.onPause = onPause;
+    }
+  }
+
+  public void setOnReset(Runnable onReset) {
+    if (onReset == null) {
+      this.onReset = () -> { };
+    } else {
+      this.onReset = onReset;
+    }
   }
 
   @Override
@@ -33,7 +58,9 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     root.getStylesheets().add(getClass().getResource("/oogasalad/view/player/gameplay.css").toExternalForm());
     root.getStyleClass().add("screen-root");
 
-    Pane gameArea = createGameAreaRegion();
+    gameLayer = createGameAreaRegion();
+    gameLayer.prefWidthProperty().bind(root.widthProperty());
+    gameLayer.prefHeightProperty().bind(root.heightProperty());
 
     HBox topControls = createTopControlsRegion();
     HBox bottomControls = createBottomControlsRegion();
@@ -44,7 +71,7 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     StackPane.setAlignment(backButton, Pos.TOP_RIGHT);
     StackPane.setAlignment(bottomControls, Pos.BOTTOM_CENTER);
 
-    root.getChildren().addAll(gameArea, topControls, bottomControls, backButton);
+    root.getChildren().addAll(gameLayer, topControls, bottomControls, backButton);
 
     return root;
   }
@@ -71,12 +98,22 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     container.setPickOnBounds(false);
 
     Button pauseBtn = new Button(s("button.pause"));
+    pauseBtn.setOnAction(e -> onPause.run());
     pauseBtn.getStyleClass().add("sys-button");
 
     Button resetBtn = new Button(s("button.reset"));
+    resetBtn.setOnAction(e -> onReset.run());
     resetBtn.getStyleClass().add("sys-button");
 
-    container.getChildren().addAll(pauseBtn, resetBtn);
+    Button tempWinBtn = new Button(s("button.debug.win"));
+    tempWinBtn.getStyleClass().add("sys-button");
+    tempWinBtn.setOnAction(event -> onOutcome.accept(Outcome.GAME_WON));
+
+    Button tempLoseBtn = new Button(s("button.debug.lose"));
+    tempLoseBtn.getStyleClass().add("sys-button");
+    tempLoseBtn.setOnAction(event -> onOutcome.accept(Outcome.GAME_LOST));
+
+    container.getChildren().addAll(pauseBtn, resetBtn, tempWinBtn, tempLoseBtn);
     return container;
   }
 
@@ -93,7 +130,6 @@ public class GamePlayAppScreen extends AbstractAppScreen {
 
       toolBtn.setOnAction(e -> {
         // TODO: Update GameController
-        System.out.println(tool + " is now " + (toolBtn.isSelected() ? "Active" : "Inactive"));
       });
 
       container.getChildren().add(toolBtn);
