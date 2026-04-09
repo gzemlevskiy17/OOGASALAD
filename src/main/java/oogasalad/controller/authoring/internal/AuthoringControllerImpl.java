@@ -8,7 +8,7 @@ import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.AuthoringPlacementException;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
-import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
@@ -43,7 +43,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final World world;
   private final LevelLoader loader;
   private final LevelSaver saver;
-  private final GameConfig config;
+  private final LevelAttributes levelAttributes;
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
   private final PlacementValidator placementValidator;
@@ -54,11 +54,11 @@ public class AuthoringControllerImpl implements AuthoringController {
   private int lastDragRow = -1;
 
   public AuthoringControllerImpl(World world, LevelLoader loader, LevelSaver saver,
-      GameConfig config, ToolSelector toolSelector, AuthoringCanvas canvas) {
+      LevelAttributes levelAttributes, ToolSelector toolSelector, AuthoringCanvas canvas) {
     this.world = world;
     this.loader = loader;
     this.saver = saver;
-    this.config = config;
+    this.levelAttributes = levelAttributes;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
     this.placementValidator = new PlacementValidator();
@@ -212,7 +212,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   @Override
   public void loadLevel(String fileName) {
     world.clear();
-    loader.loadLevel(fileName, world, config);
+    loader.loadLevel(fileName, world, null);
     canvas.refreshGrid();
     LOG.info("Loaded level from {}", fileName);
   }
