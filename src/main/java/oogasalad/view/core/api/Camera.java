@@ -7,7 +7,9 @@ public interface Camera {
 
   double getX();
   double getY();
-  void setPosition(double x, double y);
+
+  void setX(double x);
+  void setY(double y);
 
   /** @param behavior The logic that will control this camera's movement. */
   void setBehavior(CameraBehavior behavior);
