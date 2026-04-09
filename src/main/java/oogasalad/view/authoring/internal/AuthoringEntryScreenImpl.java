@@ -1,6 +1,7 @@
 package oogasalad.view.authoring.internal;
 
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -24,8 +25,10 @@ public class AuthoringEntryScreenImpl implements AppScreen {
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringEntry");
 
   private final Parent root;
+  private final FileChooserService fileChooserService;
 
-  public AuthoringEntryScreenImpl(ScreenManager screenManager) {
+  public AuthoringEntryScreenImpl(ScreenManager screenManager, Consumer<String> levelLoader) {
+    this.fileChooserService = new FileChooserService();
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
@@ -43,6 +46,12 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
     Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
+    loadExistingLevelButton.setOnAction(event ->
+        fileChooserService.chooseLoadFile(loadExistingLevelButton.getScene().getWindow())
+            .ifPresent(file -> {
+              levelLoader.accept(file.getAbsolutePath());
+              screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY);
+            }));
 
     HBox buttonRegion = new HBox(
         d("buttonRegionSpacing"),

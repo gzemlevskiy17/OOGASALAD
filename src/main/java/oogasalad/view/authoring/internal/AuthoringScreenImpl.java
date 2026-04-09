@@ -13,10 +13,13 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Window;
 import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.data.api.LevelLoadException;
+import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
@@ -46,6 +49,7 @@ public class AuthoringScreenImpl implements AppScreen {
 
   private final Parent root;
   private final ScreenManager screenManager;
+  private final AuthoringControllerImpl controller;
   private final StackPane canvasHost;
   private final ComponentPallete vehiclePalette;
   private final ComponentPaletteImpl terrainPalette;
@@ -53,6 +57,7 @@ public class AuthoringScreenImpl implements AppScreen {
   private final ComponentPaletteImpl levelItemsPalette;
   private final ComponentPaletteImpl customPalette;
   private final AuthoringAlertService alertService;
+  private final FileChooserService fileChooserService;
   private final HBox paletteModeRow;
   private final StackPane bottomContentHost;
   private final Button levelModeButton;
@@ -70,10 +75,11 @@ public class AuthoringScreenImpl implements AppScreen {
     // TODO: replace with existing or shared World instance
     World world = new WorldImpl();
     AuthoringCanvasImpl canvas = new AuthoringCanvasImpl(world);
-    AuthoringControllerImpl controller = new AuthoringControllerImpl(
+    this.controller = new AuthoringControllerImpl(
         world, new LevelLoaderImpl(), new LevelSaverImpl(),
         null, new ToolSelectorImpl(), canvas);
     this.alertService = new AuthoringAlertService();
+    this.fileChooserService = new FileChooserService();
     controller.setPlacementErrorHandler(
         message -> alertService.showWarning(s("placementWarningTitle"), message));
     controller.initializeCanvasHandlers();
@@ -184,6 +190,9 @@ public class AuthoringScreenImpl implements AppScreen {
     runButton.getStyleClass().add("authoring-action-button");
     loadButton.getStyleClass().add("authoring-action-button");
 
+    saveButton.setOnAction(event -> handleSave(saveButton.getScene().getWindow()));
+    loadButton.setOnAction(event -> handleLoad(loadButton.getScene().getWindow()));
+
     HBox rightButtons = new HBox(
         d("topBarSpacing"), saveButton, runButton, loadButton);
     rightButtons.setAlignment(Pos.CENTER_RIGHT);
@@ -245,6 +254,29 @@ public class AuthoringScreenImpl implements AppScreen {
     }
     StackPane.setAlignment(paletteNode, Pos.TOP_LEFT);
     bottomContentHost.getChildren().add(paletteNode);
+  }
+
+  private void handleSave(Window owner) {
+    fileChooserService.chooseSaveFile(owner).ifPresent(file -> {
+      try {
+        controller.saveLevel(file.getAbsolutePath());
+      } catch (LevelSaveException e) {
+        alertService.showError(PROPS.getString("saveErrorTitle"), e.getMessage());
+      }
+    });
+  }
+
+  private void handleLoad(Window owner) {
+    fileChooserService.chooseLoadFile(owner)
+        .ifPresent(file -> loadLevelFromPath(file.getAbsolutePath()));
+  }
+
+  public void loadLevelFromPath(String path) {
+    try {
+      controller.loadLevel(path);
+    } catch (LevelLoadException e) {
+      alertService.showError(PROPS.getString("loadErrorTitle"), e.getMessage());
+    }
   }
 
   private Button createTabButton(String text) {

@@ -31,7 +31,7 @@ class ScreenManagerImplTest extends DukeApplicationTest {
   @Test
   void switchScreen_unknownName_throwsIllegalArgumentException() {
     assertThrows(IllegalArgumentException.class,
-        () -> screenManager.switchScreen("GAMEPLAY", null));
+        () -> screenManager.switchScreen("GAMEPLAY"));
   }
 
   @Test
@@ -39,7 +39,7 @@ class ScreenManagerImplTest extends DukeApplicationTest {
     screenManager.registerScreen("MENU", new FakeScreen());
 
     assertThrows(IllegalArgumentException.class,
-        () -> screenManager.switchScreen("GAMEPLAY", null));
+        () -> screenManager.switchScreen("GAMEPLAY"));
   }
 
   @Test
@@ -53,7 +53,7 @@ class ScreenManagerImplTest extends DukeApplicationTest {
     FakeScreen screen = new FakeScreen();
     screenManager.registerScreen("RESULT", screen);
 
-    interact(() -> screenManager.switchScreen("RESULT", null));
+    interact(() -> screenManager.switchScreen("RESULT"));
 
     assertEquals(screen.getRoot(), stage.getScene().getRoot());
   }
@@ -65,10 +65,10 @@ class ScreenManagerImplTest extends DukeApplicationTest {
     screenManager.registerScreen("MENU",     menuScreen);
     screenManager.registerScreen("GAMEPLAY", gameplayScreen);
 
-    interact(() -> screenManager.switchScreen("MENU", null));
+    interact(() -> screenManager.switchScreen("MENU"));
     assertEquals(menuScreen.getRoot(), stage.getScene().getRoot());
 
-    interact(() -> screenManager.switchScreen("GAMEPLAY", null));
+    interact(() -> screenManager.switchScreen("GAMEPLAY"));
     assertEquals(gameplayScreen.getRoot(), stage.getScene().getRoot());
   }
 

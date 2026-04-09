@@ -36,9 +36,11 @@ public class ScreenFactory {
    */
   public Map<String, AppScreen> createScreens() {
     Map<String, AppScreen> screens = new HashMap<>();
+    AuthoringScreenImpl authoringScreen = new AuthoringScreenImpl(screenManager);
     screens.put(MENU_SCREEN_KEY, new GameMenuScreen(screenManager::onOutcome));
-    screens.put(AUTHORING_ENTRY_SCREEN_KEY, new AuthoringEntryScreenImpl(screenManager));
-    screens.put(AUTHORING_SCREEN_KEY, new AuthoringScreenImpl(screenManager));
+    screens.put(AUTHORING_ENTRY_SCREEN_KEY,
+        new AuthoringEntryScreenImpl(screenManager, authoringScreen::loadLevelFromPath));
+    screens.put(AUTHORING_SCREEN_KEY, authoringScreen);
     screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(screenManager::onOutcome));
     screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(screenManager::onOutcome));
     screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(screenManager::onOutcome));

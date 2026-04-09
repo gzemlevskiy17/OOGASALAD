@@ -25,12 +25,8 @@ import org.apache.logging.log4j.Logger;
  *
  * Grid interaction rules:
  *   DRAW  → snap mouse position to grid cell, place a 1x1 TerrainBlock there.
- *   ERASE → requires World.removeObject() which is not yet on the World interface.
- *           Flagged as TODO — pending discussion with World owner (Xuye).
- *
- * NOTE: loadLevel() currently appends to the existing World rather than clearing
- * it first. A World.clear() method is needed for proper reload behavior.
- * Flagged as TODO — pending discussion with World owner (Xuye).
+ *   ERASE → snap mouse position to grid cell, remove any placed object whose
+ *           bounds contain that cell.
  *
  * Collaborators: World (model state via interface only),
  *                LevelLoaderImpl (populates world from file),
@@ -152,13 +148,22 @@ public class AuthoringControllerImpl implements AuthoringController {
       if (toolSelector.getActiveTool() == ToolType.DRAW) {
         placeSelectedObject(col, row);
       } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
-        // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
-        LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
+        eraseAt(col, row);
       }
     } catch (AuthoringPlacementException e) {
       placementErrorHandler.accept(e.getMessage());
     }
     canvas.refreshGrid();
+  }
+
+  private void eraseAt(int col, int row) {
+    world.getObjects().stream()
+        .filter(AuthoringPlaceable.class::isInstance)
+        .map(AuthoringPlaceable.class::cast)
+        .filter(p -> col >= p.left() && col < p.right()
+            && row >= p.top() && row < p.bottom())
+        .findFirst()
+        .ifPresent(p -> world.removeObject((GameObject) p));
   }
 
   /**
@@ -206,7 +211,7 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   @Override
   public void loadLevel(String fileName) {
-    // TODO: world should be cleared before loading — requires World.clear() from Xuye.
+    world.clear();
     loader.loadLevel(fileName, world, null);
     canvas.refreshGrid();
     LOG.info("Loaded level from {}", fileName);
