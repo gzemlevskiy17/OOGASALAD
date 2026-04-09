@@ -76,16 +76,17 @@ public class CollisionDetectorImpl implements CollisionDetector {
   }
 
   /**
-   * Detects collisions using the SAT along the edges of {@code objectA} and tracks the smallest
+   * Detects collisions using the SAT along the edges of {@code referencePolygon} and tracks the smallest
    * penetration vector across those edges.
    */
-  private Optional<Collision> penetrationDepthOnAxesOfA(GameObject objectA, GameObject objectB) {
-    ConvexPolygon polygonA = objectA.getPolygon();
-    ConvexPolygon polygonB = objectB.getPolygon();
+  private Optional<Collision> penetrationDepthOnAxesOfA(GameObject referencePolygon,
+      GameObject incidentPolygon) {
+    ConvexPolygon polygonA = referencePolygon.getPolygon();
+    ConvexPolygon polygonB = incidentPolygon.getPolygon();
 
-    Collision collision = new Collision(objectA, objectB);
+    Collision collision = new Collision(referencePolygon, incidentPolygon);
     double minPenetrationDepth = Double.MAX_VALUE;
-    Vector penetrationNormal = null;
+    Vector penetration = null;
     Vector[] minReferenceEdge = new Vector[2];
     for (int i = 0; i < polygonA.getPoints().size() - 1; i++) { // Looping over edges clockwise
       Vector point1 = polygonA.getPoints().get(i);
@@ -104,15 +105,15 @@ public class CollisionDetectorImpl implements CollisionDetector {
           Math.min(projectionA[1], projectionB[1]) - Math.max(projectionA[0],
               projectionB[0]);
       if (currentPenetrationDepth < minPenetrationDepth) {
-        penetrationNormal = normal.multiply(currentPenetrationDepth);
+        penetration = normal.multiply(currentPenetrationDepth);
         minPenetrationDepth = currentPenetrationDepth;
         minReferenceEdge[0] = point1;
         minReferenceEdge[1] = point2;
       }
     }
-    collision.setPenetration(penetrationNormal);
+    collision.setPenetration(penetration);
     collision.setReferenceEdge(minReferenceEdge);
-    collision.setIncidentEdge(findIncidentEdge(polygonA, penetrationNormal));
+    collision.setIncidentEdge(findIncidentEdge(polygonB, penetration));
     return Optional.of(collision);
   }
 

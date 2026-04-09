@@ -28,8 +28,8 @@ import oogasalad.model.engine.api.Vector;
  */
 public class Collision {
 
-  private GameObject objectA;
-  private GameObject objectB;
+  private GameObject referenceObject;
+  private GameObject incidentObject;
   private Vector penetration;
   private Vector[] referenceEdge;
   private Vector[] incidentEdge;
@@ -37,28 +37,29 @@ public class Collision {
   /**
    * Creates a collision record for two objects.
    *
-   * @param objectA first colliding object
-   * @param objectB second colliding object
-   * @param penetration penetration vector (direction and magnitude); often zero when no overlap
+   * @param referenceObject first colliding object
+   * @param incidentObject  second colliding object
+   * @param penetration     penetration vector (direction and magnitude); often zero when no
+   *                        overlap
    */
-  public Collision(GameObject objectA, GameObject objectB, Vector penetration) {
-    this.objectA = objectA;
-    this.objectB = objectB;
+  public Collision(GameObject referenceObject, GameObject incidentObject, Vector penetration) {
+    this.referenceObject = referenceObject;
+    this.incidentObject = incidentObject;
     this.penetration = penetration;
   }
 
-  public Collision(GameObject objectA, GameObject objectB) {
-    this.objectA = objectA;
-    this.objectB = objectB;
+  public Collision(GameObject referenceObject, GameObject incidentObject) {
+    this.referenceObject = referenceObject;
+    this.incidentObject = incidentObject;
   }
 
   //TODO: rename to incident & reference objects?
-  public GameObject getObjectA() {
-    return objectA;
+  public GameObject getReferenceObject() {
+    return referenceObject;
   }
 
-  public GameObject getObjectB() {
-    return objectB;
+  public GameObject getIncidentObject() {
+    return incidentObject;
   }
 
   public Vector getPenetration() {
