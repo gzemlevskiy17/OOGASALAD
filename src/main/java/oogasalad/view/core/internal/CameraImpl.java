@@ -4,6 +4,12 @@ import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
 
+/**
+ * Default camera implementation that stores viewport position/size, performs simple visibility
+ * culling, and delegates motion updates to an optional {@link CameraBehavior}.
+ *
+ * @author Iurii Beliaev
+ */
 public class CameraImpl implements Camera {
 
   private double x; // viewport left in world coordinates
