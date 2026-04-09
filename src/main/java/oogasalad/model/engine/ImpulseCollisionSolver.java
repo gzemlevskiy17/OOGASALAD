@@ -35,8 +35,6 @@ import oogasalad.model.engine.api.Vector;
  */
 public class ImpulseCollisionSolver implements CollisionSolver {
 
-  public final static int MAX_CONTACT_POINTS = 2; //TODO: put in properties file
-
   /**
    * Resolves one collision using the impulse solver pipeline.
    *
@@ -50,7 +48,9 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    */
   @Override
   public void solve(Collision collision) {
-
+    List<Vector> collisionManifold = computeCollisionManifold(collision);
+//    resolveImpulseAtContacts(collision, , collisionManifold);
+    applyPositionalCorrection(collision);
   }
 
   /**
@@ -147,8 +147,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       List<Vector> collisionManifold) {
 
     //TODO: refactor
-    GameObject objectA = collision.getObjectA();
-    GameObject objectB = collision.getObjectB();
+    GameObject objectA = collision.getReferenceObject();
+    GameObject objectB = collision.getIncidentObject();
     ObjectState stateA = objectA.getState();
     ObjectState stateB = objectB.getState();
 
@@ -202,52 +202,34 @@ public class ImpulseCollisionSolver implements CollisionSolver {
     stateB.setAngularVelocity(new Vector(angVelocityB, 0));
   }
 
-  //TODO: add formula to comment
-
   /**
-   * Moves objects out of overlap according to {formula}.
+   * Moves objects out of overlap.
+   * <p>
+   * Move incident polygon by the vector d/2 * (m_A/(m_A + m_B)) * B. Move reference polygon by the
+   * vector -d/2 * (m_B/(m_A + m_B)) * B. B is a number between 0 and 1. In one step, the collision
+   * is thus not fully resolved, but only partly. This method will be called multiple times so that
+   * the resolution is visually smooth.
    */
-  private void applyPositionalCorrection(
-      Collision collision,
-      Vector normal,
-      double[] depths,
-      int contactCount) {
+  private void applyPositionalCorrection(Collision collision) {
+    double correctionFraction = 0.4; //TODO: put into properties file
 
-    //TODO: refactor
-    final double percent = 0.4;
-    final double slop = 0.01;
+    GameObject referenceObject = collision.getReferenceObject();
+    GameObject incidentObject = collision.getIncidentObject();
+    ObjectState referenceObjectState = referenceObject.getState();
+    ObjectState incidentObjectState = incidentObject.getState();
 
-    GameObject objectA = collision.getObjectA();
-    GameObject objectB = collision.getObjectB();
-    ObjectState stateA = objectA.getState();
-    ObjectState stateB = objectB.getState();
+    double massSum = incidentObject.getMass() + referenceObject.getMass();
 
-    double invMassA = 1 / objectA.getMass();
-    double invMassB = 1 / objectB.getMass();
-    double inverseMassSum = invMassA + invMassB;
-    if (inverseMassSum == 0.0 || contactCount <= 0 || depths.length == 0) {
-      return;
-    }
+    Vector penetration = collision.getPenetration();
+    double correctionMagnitude = (penetration.magnitude() / (2 * massSum)) * correctionFraction;
+    Vector correction = penetration.normalize().multiply(correctionMagnitude);
 
-    int effectiveContactCount = Math.min(contactCount, depths.length);
-    double maxDepth = 0.0;
-    for (int i = 0; i < effectiveContactCount; i++) {
-      maxDepth = Math.max(maxDepth, depths[i]);
-    }
+    Vector newReferenceObjectState = referenceObjectState.getLinearPosition()
+        .subtract(correction.multiply(referenceObject.getMass()));
+    referenceObjectState.setLinearPosition(newReferenceObjectState);
 
-    double correctionMagnitude = Math.max(maxDepth - slop, 0.0);
-    correctionMagnitude = (correctionMagnitude / inverseMassSum) * percent;
-    Vector correction = normal.multiply(correctionMagnitude);
-
-    stateA.setLinearPosition(stateA.getLinearPosition().subtract(correction.multiply(invMassA)));
-    stateB.setLinearPosition(stateB.getLinearPosition().add(correction.multiply(invMassB)));
+    Vector newIncidentObjectState = incidentObjectState.getLinearPosition()
+        .add(correction.multiply(incidentObject.getMass()));
+    incidentObjectState.setLinearPosition(newIncidentObjectState);
   }
-
-  //TODO: is this needed?
-//  private double inverseOrZero(double value) {
-//    if (value <= 0.0) {
-//      return 0.0;
-//    }
-//    return 1.0 / value;
-//  }
 }
