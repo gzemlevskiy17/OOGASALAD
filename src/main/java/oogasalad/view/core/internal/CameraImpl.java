@@ -1,3 +1,5 @@
+package oogasalad.view.core.internal;
+
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
