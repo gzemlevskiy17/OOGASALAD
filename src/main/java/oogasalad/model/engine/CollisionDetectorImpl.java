@@ -1,5 +1,6 @@
 package oogasalad.model.engine;
 
+import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
@@ -36,11 +37,12 @@ public class CollisionDetectorImpl implements CollisionDetector {
    *
    * @param objectA first object in the pair
    * @param objectB second object in the pair
-   * @return pairwise collision records; currently {@code null} until implementation is completed
+   * @return an {@link Optional} containing the detected collision, or
+   *     {@link Optional#empty()} when the shapes do not overlap
    */
   @Override
-  public Collision detectCollision(GameObject objectA, GameObject objectB) {
-    return null;
+  public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
+    return findSatCollision(objectA, objectB);
   }
   //TODO: figure out how Collision will be returned if no collision was detected
 
@@ -66,9 +68,9 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * Performs SAT checks on both polygon axis sets and returns the first separating-axis failure or
    * minimum-penetration collision.
    */
-  private Collision collisionDetected(GameObject objectA, GameObject objectB) {
-    Collision collisionOnAxesOfA = penetrationDepthOnAxesOfA(objectA, objectB);
-    if (collisionOnAxesOfA.isCollided()) {
+  private Optional<Collision> findSatCollision(GameObject objectA, GameObject objectB) {
+    Optional<Collision> collisionOnAxesOfA = penetrationDepthOnAxesOfA(objectA, objectB);
+    if (collisionOnAxesOfA.isPresent()) {
       return collisionOnAxesOfA;
     }
     return penetrationDepthOnAxesOfA(objectB, objectA);
@@ -78,7 +80,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * Detects collisions using the SAT along the edges of {@code objectA} and tracks the smallest
    * penetration vector across those edges.
    */
-  private Collision penetrationDepthOnAxesOfA(GameObject objectA, GameObject objectB) {
+  private Optional<Collision> penetrationDepthOnAxesOfA(GameObject objectA, GameObject objectB) {
     ConvexPolygon polygonA = objectA.getPolygon();
     ConvexPolygon polygonB = objectB.getPolygon();
 
@@ -94,8 +96,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
       double[] projectionB = projectPolygonAlongVector(polygonB, normal);
       boolean shadowsOverlap = projectionA[1] <= projectionB[0] || projectionB[1] <= projectionA[0];
       if (shadowsOverlap) { //if the shadows don't overlap in at least one axis, there is no collision by the SAT
-        collision.setCollided(false);
-        return collision;
+        return Optional.empty();
       }
 
       double currentPenetrationDepth =
@@ -106,6 +107,6 @@ public class CollisionDetectorImpl implements CollisionDetector {
         minPenetrationDepth = currentPenetrationDepth;
       }
     }
-    return collision;
+    return Optional.of(collision);
   }
 }

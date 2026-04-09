@@ -1,5 +1,6 @@
 package oogasalad.model.engine.api;
 
+import java.util.Optional;
 import oogasalad.model.engine.Collision;
 
 /**
@@ -17,7 +18,8 @@ public interface CollisionDetector {
    *
    * @param objectA first object in the pair
    * @param objectB second object in the pair
-   * @return collision results for this pair (typically empty or a single collision record)
+   * @return an {@link Optional} containing a collision record when the objects overlap, or
+   *     {@link Optional#empty()} when no collision is detected
    */
-  Collision detectCollision(GameObject objectA, GameObject objectB);
+  Optional<Collision> detectCollision(GameObject objectA, GameObject objectB);
 }

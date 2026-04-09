@@ -30,7 +30,6 @@ public class Collision {
 
   private GameObject objectA;
   private GameObject objectB;
-  private boolean collided;
   private Vector penetration;
   private Vector[] referenceEdge;
   private Vector[] incidentEdge;
@@ -46,18 +45,8 @@ public class Collision {
   public Collision(GameObject objectA, GameObject objectB, boolean collided, Vector penetration) {
     this.objectA = objectA;
     this.objectB = objectB;
-    this.collided = collided;
     this.penetration = penetration;
   }
-
-  public boolean isCollided() {
-    return collided;
-  }
-
-  public void setCollided(boolean collided) {
-    this.collided = collided;
-  }
-
   //TODO: rename to incident & reference objects?
   public GameObject getObjectA() {
     return objectA;
