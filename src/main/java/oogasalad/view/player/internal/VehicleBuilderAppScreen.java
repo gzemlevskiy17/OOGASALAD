@@ -1,16 +1,17 @@
 package oogasalad.view.player.internal;
 
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
@@ -22,8 +23,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.VehicleBuilderAppScreen");
 
-  public VehicleBuilderAppScreen(ScreenManager screenManager) {
-    super(screenManager);
+  public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome) {
+    super(onOutcome);
   }
 
   @Override
@@ -35,8 +36,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     VBox mainContent = new VBox(d("main.content.spacing"));
     mainContent.setAlignment(Pos.CENTER);
 
-    // Assembling the regions
     mainContent.getChildren().addAll(
+        createTitleRegion(),
         createGridRegion(),
         createComponentSection(),
         createStartLevelRegion()
@@ -50,12 +51,16 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     return root;
   }
 
+  private Node createTitleRegion() {
+    Label title = new Label(s("title.text"));
+    title.getStyleClass().add("header-title");
+    return title;
+  }
+
   private Node createStartLevelRegion() {
     Button startButton = new Button(s("start.button.text"));
     startButton.getStyleClass().add("start-button");
-    startButton.setOnAction(event -> {
-      screenManager.switchScreen(ScreenFactory.GAMEPLAY_APP_SCREEN_KEY, null);
-    });
+    startButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_GAMEPLAY));
 
     VBox container = new VBox(startButton);
     container.getStyleClass().add("selection-region");
@@ -84,17 +89,13 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     componentGrid.getStyleClass().add("component-grid");
     componentGrid.setAlignment(Pos.CENTER);
 
-    // Read grid dimensions from the properties file - later to be replaced by the passed values
     int cols = (int) d("componentGrid.columns");
     int rows = (int) d("componentGrid.rows");
 
-    // Populate the grid with empty cells initially
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
         StackPane componentCell = new StackPane();
         componentCell.getStyleClass().add("component-cell");
-
-        // Add the cell to the grid at the specified column and row
         componentGrid.add(componentCell, col, row);
       }
     }
@@ -107,17 +108,13 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     grid.getStyleClass().add("vehicle-grid");
     grid.setAlignment(Pos.CENTER);
 
-    // Read grid dimensions from the properties file - later to be replaced by the passed values
     int cols = (int) d("grid.columns");
     int rows = (int) d("grid.rows");
 
-    // Populate the grid with empty cells initially
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
         StackPane cell = new StackPane();
         cell.getStyleClass().add("grid-cell");
-
-        // Add the cell to the grid at the specified column and row
         grid.add(cell, col, row);
       }
     }
@@ -128,7 +125,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private Node createBackButtonRegion() {
     Button backButton = new Button(s("back.button.text"));
     backButton.getStyleClass().add("back-button");
-    backButton.setOnAction(e -> screenManager.switchScreen(ScreenFactory.PLAYER_ENTRY_APP_SCREEN_KEY, null));
+    backButton.setOnAction(e -> onOutcome.accept(Outcome.BACK_TO_PLAYER_ENTRY));
 
     StackPane container = new StackPane(backButton);
     StackPane.setAlignment(backButton, Pos.BOTTOM_LEFT);
@@ -137,6 +134,5 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   }
 
   private String s(String key) { return PROPS.getString(key); }
-
   private double d(String key) { return Double.parseDouble(PROPS.getString(key)); }
 }

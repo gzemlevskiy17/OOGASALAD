@@ -1,6 +1,7 @@
 package oogasalad.view.core.api;
 
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -10,8 +11,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.controller.core.api.Outcome;
 
 /**
  * Basic start menu screen for the application.
@@ -23,7 +23,7 @@ public class GameMenuScreen implements AppScreen {
 
   private final Parent root;
 
-  public GameMenuScreen(ScreenManager screenManager) {
+  public GameMenuScreen(Consumer<Outcome> onOutcome) {
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/core/game-menu.css").toExternalForm());
@@ -47,14 +47,12 @@ public class GameMenuScreen implements AppScreen {
     Button playButton = new Button(PROPS.getString("playButtonText"));
     playButton.setPrefWidth(buttonWidth);
     playButton.getStyleClass().addAll("menu-button", "menu-primary-button");
-    playButton.setOnAction(event ->
-        screenManager.switchScreen(ScreenFactory.PLAYER_ENTRY_APP_SCREEN_KEY, null));
+    playButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_PLAYER_ENTRY));
 
     Button createButton = new Button(PROPS.getString("createButtonText"));
     createButton.setPrefWidth(buttonWidth);
     createButton.getStyleClass().addAll("menu-button", "menu-primary-button");
-    createButton.setOnAction(event ->
-        screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY, null));
+    createButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_AUTHORING_ENTRY));
 
     VBox centerContent = new VBox(
         Double.parseDouble(PROPS.getString("buttonSpacing")), title, playButton, createButton);

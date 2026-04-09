@@ -3,6 +3,7 @@ package oogasalad.view.player.internal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -12,8 +13,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
@@ -25,9 +25,13 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.PlayerEntryScreen");
 
-  public PlayerEntryAppScreen(ScreenManager screenManager) {
-    super(screenManager);
+  public PlayerEntryAppScreen(Consumer<Outcome> onOutcome) {
+    super(onOutcome);
   }
+
+  private Button selectedWorldButton;
+  private Button selectedLevelButton;
+  private Button startButton;
 
   @Override
   protected BorderPane createRoot() {
@@ -40,7 +44,6 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     VBox mainContent = new VBox(d("main.content.spacing"));
     mainContent.setAlignment(Pos.CENTER);
 
-    // Assembling the regions
     mainContent.getChildren().addAll(
         createLevelChoiceContentRegion(),
         createStartBadPiggiesContentRegion()
@@ -67,11 +70,13 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   }
 
   private VBox createStartBadPiggiesContentRegion() {
-    Button startButton = new Button(s("start.button.text"));
+    startButton = new Button(s("start.button.text"));
     startButton.getStyleClass().add("start-button");
-    startButton.setOnAction(event -> {
-      screenManager.switchScreen(ScreenFactory.VEHICLE_BUILDER_APP_SCREEN_KEY, null);
-    });
+
+    // Disabled until both selections exist
+    startButton.setDisable(true);
+
+    startButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER));
 
     VBox container = new VBox(startButton);
     container.getStyleClass().add("selection-region");
@@ -86,24 +91,62 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     for (String world : getList("worlds")) {
       Button btn = new Button(s("world.button." + world));
       btn.getStyleClass().add("world-button");
-      btn.getStyleClass().add("world-" + world); // Hovering logic
+      btn.getStyleClass().add("world-" + world);
       worldBox.getChildren().add(btn);
+
+      btn.setOnAction(e -> selectWorld(btn));
     }
     return worldBox;
+  }
+
+  private void selectWorld(Button btn) {
+    if (selectedWorldButton != null) {
+      selectedWorldButton.getStyleClass().remove("world-selected");
+    }
+    selectedWorldButton = btn;
+    selectedWorldButton.getStyleClass().add("world-selected");
+    updateStartButtonState();
+  }
+
+  private void updateStartButtonState() {
+    if (startButton != null) {
+      startButton.setDisable(selectedWorldButton == null || selectedLevelButton == null);
+    }
   }
 
   private HBox createLevelButtonRegion() {
     HBox levelBox = new HBox(d("level.region.spacing"));
     levelBox.setAlignment(Pos.CENTER);
 
+    List<String> lockedLevels = getList("locked.levels");
+
     for (String level : getList("levels")) {
       Button btn = new Button(s("level.button." + level));
       btn.getStyleClass().add("level-button");
-      // high levels are not open
-      if (level.contains("locked")) btn.getStyleClass().add("filled");
+
+      // Levels not yet open
+      if (lockedLevels.contains(level)) {
+        btn.getStyleClass().add("locked-level");
+        btn.setDisable(true);
+      };
+
+      // Allow level selection only for the open buttons
+      if (!lockedLevels.contains(level)) {
+        btn.setOnAction(e -> selectLevel(btn));
+      }
+
       levelBox.getChildren().add(btn);
     }
     return levelBox;
+  }
+
+  private void selectLevel(Button btn) {
+    if (selectedLevelButton != null) {
+      selectedLevelButton.getStyleClass().remove("level-selected");
+    }
+    selectedLevelButton = btn;
+    selectedLevelButton.getStyleClass().add("level-selected");
+    updateStartButtonState();
   }
 
   private Label createTitleRegion() {
@@ -121,7 +164,7 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   private Node createBackButtonRegion() {
     Button backButton = new Button(s("back.button.text"));
     backButton.getStyleClass().add("back-button");
-    backButton.setOnAction(e -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
+    backButton.setOnAction(e -> onOutcome.accept(Outcome.BACK_TO_MENU));
 
     StackPane container = new StackPane(backButton);
     StackPane.setAlignment(backButton, Pos.BOTTOM_LEFT);

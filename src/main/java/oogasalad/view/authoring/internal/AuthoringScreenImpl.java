@@ -186,7 +186,7 @@ public class AuthoringScreenImpl implements AppScreen {
         d("backButtonHeight"));
     backButton.getStyleClass().add("authoring-back-button");
     backButton.setOnAction(
-        event -> this.screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY, null));
+        event -> this.screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY));
 
     double actionWidth = d("topActionButtonWidth");
     double actionHeight = d("topActionButtonHeight");

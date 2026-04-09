@@ -1,6 +1,5 @@
 package oogasalad.controller.player.internal;
 
-import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.player.api.Action;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.data.api.GameConfig;
@@ -42,7 +41,7 @@ public class RestartAction implements Action {
 
   @Override
   public void execute() {
-    gameController.stopSimulation();
+    gameController.resetSimulation();
     // TODO: call world.clear() once that method is added to the World interface
     levelLoader.loadLevel(levelPath, world, config);
     gameController.startSimulation();

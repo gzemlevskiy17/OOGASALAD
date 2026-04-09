@@ -41,7 +41,7 @@ public class AuthoringEntryScreenImpl implements AppScreen {
     Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
     createNewLevelButton.setOnAction(
-        event -> screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY, null));
+        event -> screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY));
 
     Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
@@ -65,7 +65,7 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
     Button backButton = new Button(s("backButtonText"));
     backButton.getStyleClass().add("authoring-entry-back");
-    backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
+    backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY));
     root.setBottom(wrapBottomLeft(backButton));
 
     this.root = root;

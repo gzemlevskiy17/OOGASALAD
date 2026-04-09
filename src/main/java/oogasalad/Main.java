@@ -25,7 +25,7 @@ public class Main extends Application {
             screenManager.registerScreen(screenEntry.getKey(), screenEntry.getValue());
         }
 
-        screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null);
+        screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY);
 
         stage.setTitle("Good Piggies");
         stage.show();

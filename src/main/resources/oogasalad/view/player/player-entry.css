@@ -44,6 +44,23 @@
   -fx-background-radius: 25;
 }
 
+.level-button:hover {
+  -fx-background-color: #D1FFBD;
+  -fx-cursor: hand;
+}
+
+.level-button.locked-level {
+  -fx-background-color: #D3D3D3;
+  -fx-text-fill: #6b6b6b;
+  -fx-opacity: 0.95; /* keep text readable while disabled */
+}
+
+/* Keep selected level at hover color even after click */
+.level-button.level-selected,
+.level-button.level-selected:hover {
+  -fx-background-color: #D1FFBD;
+}
+
 /* The Grey Fill State */
 .filled {
   -fx-background-color: #D3D3D3;
@@ -57,10 +74,19 @@
   -fx-background-radius: 10;
 }
 
+.start-button:hover {
+  -fx-background-color: #f7f7f7;
+  -fx-cursor: hand;
+}
+
 .back-button {
   -fx-background-color: #E0E0E0;
   -fx-padding: 5 15;
   -fx-border-radius: 5;
+}
+
+.back-button:hover {
+  -fx-cursor: hand;
 }
 
 .nav-region {
@@ -82,20 +108,47 @@
 
 .world-forest:hover {
   -fx-background-color: #A8E6CF; /* Green */
+  -fx-cursor: hand;
 }
 
 .world-desert:hover {
   -fx-background-color: #FFD3B6; /* Yellow/Sand */
+  -fx-cursor: hand;
 }
 
 .world-moon:hover {
   -fx-background-color: #D3D3D3; /* Lunar Grey */
+  -fx-cursor: hand;
 }
 
 .world-glacier:hover {
   -fx-background-color: #C4FCE8; /* Ice Blue */
+  -fx-cursor: hand;
 }
 
 .world-mars:hover {
   -fx-background-color: #FFAAA5; /* Dusty Red */
+  -fx-cursor: hand;
+}
+
+/* Keep selected world at its world-specific hover color */
+.world-button.world-selected.world-forest,
+.world-button.world-selected.world-forest:hover {
+  -fx-background-color: #A8E6CF;
+}
+.world-button.world-selected.world-desert,
+.world-button.world-selected.world-desert:hover {
+  -fx-background-color: #FFD3B6;
+}
+.world-button.world-selected.world-moon,
+.world-button.world-selected.world-moon:hover {
+  -fx-background-color: #D3D3D3;
+}
+.world-button.world-selected.world-glacier,
+.world-button.world-selected.world-glacier:hover {
+  -fx-background-color: #C4FCE8;
+}
+.world-button.world-selected.world-mars,
+.world-button.world-selected.world-mars:hover {
+  -fx-background-color: #FFAAA5;
 }
