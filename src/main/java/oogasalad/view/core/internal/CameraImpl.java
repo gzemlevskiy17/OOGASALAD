@@ -39,6 +39,12 @@ public class CameraImpl implements Camera {
     this.cameraBehavior = behavior;
   }
 
+  public void updateBehavior() {
+    if (cameraBehavior != null) {
+      cameraBehavior.update(this);
+    }
+  }
+
   public void setViewBoundaries(double width, double height) {
     if (width <= 0 || height <= 0) {
       throw new IllegalArgumentException("Viewport size must be positive");

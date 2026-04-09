@@ -15,4 +15,6 @@ public interface Camera {
 
   /** @param behavior The logic that will control this camera's movement. */
   void setBehavior(CameraBehavior behavior);
+
+  void updateBehavior();
 }
