@@ -1,14 +1,14 @@
-package oogasalad.view.player.internal;
+package oogasalad.controller.player.internal;
 
 import java.util.function.Consumer;
 import javafx.scene.Parent;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameplaySessionFactory;
-import oogasalad.controller.player.internal.GameplaySession;
 import oogasalad.view.core.api.AppScreen;
+import oogasalad.view.player.internal.GamePlayAppScreen;
 
 // Keep GamePlayAppScreen view-only
-public class GamePlayCoordinatorScreen implements AppScreen {
+public class GamePlayScreenCoordinator implements AppScreen {
 
   private final Consumer<Outcome> onOutcome;
   private final GameplaySessionFactory sessionFactory;
@@ -16,7 +16,7 @@ public class GamePlayCoordinatorScreen implements AppScreen {
 
   private GameplaySession session;
 
-  public GamePlayCoordinatorScreen(Consumer<Outcome> onOutcome, GameplaySessionFactory sessionFactory) {
+  public GamePlayScreenCoordinator(Consumer<Outcome> onOutcome, GameplaySessionFactory sessionFactory) {
     this.onOutcome = onOutcome;
     this.sessionFactory = sessionFactory;
     this.view = new GamePlayAppScreen(this::handleOutcome);
