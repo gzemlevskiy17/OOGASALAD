@@ -6,6 +6,7 @@ import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 
@@ -76,9 +77,7 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
-//    for (Joint joint :  world.getJoints()) {
-//
-//    }
+    applyJointConstraints(elapsedTime);
 
     handleCollisions();
 
@@ -101,6 +100,12 @@ public class GameEngineImpl implements GameEngine {
 //    }
 
     solveCollisions(collisions);
+  }
+
+  private void applyJointConstraints(double elapsedTime) {
+    for (Joint joint : world.getJoints()) {
+      joint.apply(elapsedTime);
+    }
   }
 
   private List<Collision> getCollisions() {

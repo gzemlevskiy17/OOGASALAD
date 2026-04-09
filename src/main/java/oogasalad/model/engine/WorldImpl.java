@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.GameComponent;
+import oogasalad.model.engine.internal.components.GameComponent;
 
 /**
  * Default in-memory {@link World} implementation.
