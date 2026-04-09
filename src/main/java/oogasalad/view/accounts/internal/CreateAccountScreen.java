@@ -39,6 +39,17 @@ public class CreateAccountScreen implements AppScreen {
     backButton.setOnAction(e -> onNav.accept(Outcome.OPEN_LOGIN));
     layout.setTop(backButton);
 
+    double fieldWidth = Double.parseDouble(PROPS.getString("fieldWidth"));
+    usernameField.setPromptText(PROPS.getString("usernamePlaceholder"));
+    usernameField.setMaxWidth(fieldWidth);
+    passwordField.setPromptText(PROPS.getString("passwordPlaceholder"));
+    passwordField.setMaxWidth(fieldWidth);
+    confirmPasswordField.setPromptText(PROPS.getString("confirmPasswordPlaceholder"));
+    confirmPasswordField.setMaxWidth(fieldWidth);
+    avatarPathLabel.setText(PROPS.getString("noAvatarSelected"));
+    avatarPathLabel.getStyleClass().add("accounts-path-label");
+    errorLabel.getStyleClass().add("accounts-error");
+
     Button browseButton = new Button(PROPS.getString("browseButton"));
     browseButton.setOnAction(e -> {
       FileChooser chooser = new FileChooser();
@@ -62,6 +73,7 @@ public class CreateAccountScreen implements AppScreen {
     VBox center = new VBox(10, usernameField, passwordField, confirmPasswordField,
         new HBox(avatarPathLabel, browseButton), createButton, errorLabel);
     center.setAlignment(Pos.CENTER);
+    center.getStyleClass().add("accounts-form");
     layout.setCenter(center);
 
     this.root = layout;

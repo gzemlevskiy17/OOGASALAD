@@ -50,3 +50,7 @@
 .menu-secondary-button {
   -fx-font-size: 15px;
 }
+
+.accounts-form {
+  -fx-max-width: 320px;
+}

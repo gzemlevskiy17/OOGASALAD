@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
 import oogasalad.controller.accounts.internal.AuthControllerImpl;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.model.auth.api.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
@@ -53,7 +54,7 @@ public class ScreenFactory {
     this.screenManager = screenManager;
     this.authController = new AuthControllerImpl(
         authService,
-        screenManager::onOutcome,
+        this::guardedOutcome,
         this::handleAuthError
     );
   }
@@ -66,31 +67,31 @@ public class ScreenFactory {
 
     // Non-auth screens — menu gets a live isLoggedIn supplier, not the service itself
     screens.put(MENU_SCREEN_KEY,
-        new GameMenuScreen(screenManager::onOutcome, authService.session()::isLoggedIn));
-    screens.put(AUTHORING_ENTRY_SCREEN_KEY, new AuthoringEntryScreenImpl(screenManager::onOutcome));
-    screens.put(AUTHORING_SCREEN_KEY, new AuthoringScreenImpl(screenManager::onOutcome));
-    screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(screenManager::onOutcome));
-    screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(screenManager::onOutcome));
-    screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(screenManager::onOutcome));
+        new GameMenuScreen(this::guardedOutcome, authService.session()::isLoggedIn));
+    screens.put(AUTHORING_ENTRY_SCREEN_KEY, new AuthoringEntryScreenImpl(this::guardedOutcome));
+    screens.put(AUTHORING_SCREEN_KEY, new AuthoringScreenImpl(this::guardedOutcome));
+    screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(this::guardedOutcome));
+    screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(this::guardedOutcome));
+    screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(this::guardedOutcome));
 
     // Auth screens — each wraps the action consumer to bind its own error display before
     // delegating to the controller, so handleAuthError reaches the right screen.
-    loginScreen = new LoginScreen(screenManager::onOutcome, intent -> {
+    loginScreen = new LoginScreen(this::guardedOutcome, intent -> {
       activeErrorDisplay = loginScreen::displayError;
       authController.handle(intent);
     });
-    createAccountScreen = new CreateAccountScreen(screenManager::onOutcome, intent -> {
+    createAccountScreen = new CreateAccountScreen(this::guardedOutcome, intent -> {
       activeErrorDisplay = createAccountScreen::displayError;
       authController.handle(intent);
     });
-    updateProfileScreen = new UpdateProfileScreen(screenManager::onOutcome, intent -> {
+    updateProfileScreen = new UpdateProfileScreen(this::guardedOutcome, intent -> {
       activeErrorDisplay = updateProfileScreen::displayError;
       authController.handle(intent);
     });
 
     // ProfileScreen gets a live supplier for the current user — no direct model access in view
     screens.put(PROFILE_SCREEN_KEY,
-        new ProfileScreen(screenManager::onOutcome, intent -> {
+        new ProfileScreen(this::guardedOutcome, intent -> {
           activeErrorDisplay = msg -> {
           }; // profile screen has no error label; log only
           authController.handle(intent);
@@ -101,6 +102,18 @@ public class ScreenFactory {
     screens.put(UPDATE_PROFILE_SCREEN_KEY, updateProfileScreen);
 
     return screens;
+  }
+
+  /**
+   * Intercepts BACK_TO_MENU and redirects to the login screen when no player is logged in. All
+   * other outcomes pass through unchanged.
+   */
+  private void guardedOutcome(Outcome outcome) {
+    if (outcome == Outcome.BACK_TO_MENU && !authService.session().isLoggedIn()) {
+      screenManager.onOutcome(Outcome.OPEN_LOGIN);
+    } else {
+      screenManager.onOutcome(outcome);
+    }
   }
 
   private void handleAuthError(String message) {

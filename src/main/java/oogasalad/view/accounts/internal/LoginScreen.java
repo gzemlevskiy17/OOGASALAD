@@ -58,6 +58,7 @@ public class LoginScreen implements AppScreen {
         Double.parseDouble(PROPS.getString("spacing")),
         title, usernameField, passwordField, loginButton, createButton, errorLabel);
     center.setAlignment(Pos.CENTER);
+    center.getStyleClass().add("accounts-form");
     layout.setCenter(center);
 
     this.root = layout;
