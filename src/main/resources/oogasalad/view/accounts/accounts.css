@@ -1,0 +1,52 @@
+.screen-root {
+  -fx-background-color: white;
+  -fx-border-color: #e67e22;
+  -fx-border-width: 4;
+}
+
+.accounts-title {
+  -fx-font-family: "Serif";
+  -fx-font-size: 32px;
+  -fx-text-fill: #333333;
+}
+
+.accounts-subtitle {
+  -fx-font-family: "Serif";
+  -fx-font-size: 18px;
+  -fx-text-fill: #555555;
+}
+
+.accounts-error {
+  -fx-text-fill: #c0392b;
+  -fx-font-size: 14px;
+}
+
+.accounts-path-label {
+  -fx-font-size: 14px;
+  -fx-text-fill: #777777;
+}
+
+.menu-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-border-radius: 10;
+  -fx-background-radius: 10;
+  -fx-font-family: "Serif";
+  -fx-font-size: 18px;
+  -fx-padding: 10 18;
+}
+
+.menu-button:hover {
+  -fx-background-color: #f7f7f7;
+  -fx-cursor: hand;
+}
+
+.menu-primary-button {
+  -fx-font-size: 24px;
+  -fx-min-height: 64;
+}
+
+.menu-secondary-button {
+  -fx-font-size: 15px;
+}
