@@ -15,6 +15,13 @@ public class Main extends Application {
 
     private static final double VERSION = 0.001;
 
+    /**
+     * Start of the program.
+     */
+    static void main(String[] args) {
+        launch(args);
+    }
+
     @Override
     public void start(Stage stage) {
         ScreenManager screenManager = new ScreenManagerImpl(stage);
@@ -25,19 +32,12 @@ public class Main extends Application {
             screenManager.registerScreen(screenEntry.getKey(), screenEntry.getValue());
         }
 
-        screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null);
+        screenManager.switchScreen(ScreenFactory.LOGIN_SCREEN_KEY);
 
         stage.setTitle("Good Piggies");
         stage.show();
         stage.setMaximized(true);
 
-    }
-
-    /**
-     * Start of the program.
-     */
-    public static void main(String[] args) {
-        launch(args);
     }
 
     /**

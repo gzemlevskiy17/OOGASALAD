@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.Joint;
@@ -37,7 +38,7 @@ class AuthoringControllerImplTest {
     canvas = new SpyCanvas();
 
     controller = new AuthoringControllerImpl(
-        world, loader, saver, new FakeGameConfig(), toolSelector, canvas);
+        world, loader, saver, new LevelAttributes(), toolSelector, canvas);
   }
 
   @Test
@@ -91,11 +92,6 @@ class AuthoringControllerImplTest {
 
   // --- Test doubles ---
 
-  private static class FakeGameConfig implements GameConfig {
-    @Override public String getSetting(String key) { return null; }
-    @Override public double getNumericSetting(String key) { return 0; }
-  }
-
   private static class FakeWorld implements World {
     private final List<GameComponent> components = new ArrayList<>();
     @Override public Collection<GameComponent> getComponents() { return Collections.unmodifiableList(components); }
@@ -136,5 +132,6 @@ class AuthoringControllerImplTest {
     @Override public void placeBlock(int col, int row) {}
     @Override public void showHoverPreview(int col, int row) {}
     @Override public void clearHoverPreview() {}
+    @Override public void setOnObjectSelected(java.util.function.Consumer<AuthoringPlaceable> handler) {}
   }
 }

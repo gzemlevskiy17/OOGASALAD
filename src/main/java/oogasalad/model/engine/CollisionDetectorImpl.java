@@ -45,16 +45,18 @@ public class CollisionDetectorImpl implements CollisionDetector {
   //TODO: figure out how Collision will be returned if no collision was detected
 
   /**
-   * Projects all polygon vertices onto the given axis and returns [min, max] interval values.
+   * Projects all polygon vertices onto the given axis and returns [min, max] values of the
+   * endpoints of the shadow of the shape along the normal. The shadow is cast in the tangent
+   * direction, so the endpoints form a line segment parallel to the normal.
    */
   private double[] projectPolygonAlongVector(ConvexPolygon polygon, Vector normal) {
     double[] projection = new double[2];
     projection[0] = Double.MAX_VALUE;
     projection[1] = -Double.MAX_VALUE;
-    for (Vector point : polygon.getPoints()) {
-      double direction = normal.dot(point); //TODO: confirm direction variable name
-      projection[0] = Math.min(direction, projection[0]);
-      projection[1] = Math.max(direction, projection[1]);
+    for (Vector point : polygon.getPoints()) { //Check all points to find those that cast the biggest shadow.
+      double shadowPoint = normal.dot(point);
+      projection[0] = Math.min(shadowPoint, projection[0]);
+      projection[1] = Math.max(shadowPoint, projection[1]);
     }
 
     return projection;
@@ -73,8 +75,8 @@ public class CollisionDetectorImpl implements CollisionDetector {
   }
 
   /**
-   * Tests overlap using only axes derived from {@code objectA} and tracks the smallest penetration
-   * vector across those axes.
+   * Detects collisions using the SAT along the edges of {@code objectA} and tracks the smallest
+   * penetration vector across those edges.
    */
   private Collision penetrationDepthOnAxesOfA(GameObject objectA, GameObject objectB) {
     ConvexPolygon polygonA = objectA.getPolygon();
@@ -82,22 +84,23 @@ public class CollisionDetectorImpl implements CollisionDetector {
 
     Collision collision = new Collision(objectA, objectB, true, new Vector(0, 0));
     double minPenetrationDepth = Double.MAX_VALUE;
-    for (int i = 0; i < polygonA.getPoints().size() - 1; i++) {
+    for (int i = 0; i < polygonA.getPoints().size() - 1; i++) { // Looping over edges clockwise
       Vector point1 = polygonA.getPoints().get(i);
       Vector point2 = polygonA.getPoints().get(i + 1);
       Vector tangent = point2.subtract(point1).normalize();
-      Vector normal = tangent.rotateLeft();
+      Vector normal = tangent.rotateLeft(); //Find the inward normal along which to compute the penetration depth
 
       double[] projectionA = projectPolygonAlongVector(polygonA, normal);
       double[] projectionB = projectPolygonAlongVector(polygonB, normal);
-      if (projectionA[1] <= projectionB[0] || projectionB[1] <= projectionA[0]) {
+      boolean shadowsOverlap = projectionA[1] <= projectionB[0] || projectionB[1] <= projectionA[0];
+      if (shadowsOverlap) { //if the shadows don't overlap in at least one axis, there is no collision by the SAT
         collision.setCollided(false);
         return collision;
       }
 
       double currentPenetrationDepth =
           Math.min(projectionA[1], projectionB[1]) - Math.max(projectionA[0],
-              projectionB[0]); //TODO: verify
+              projectionB[0]);
       if (currentPenetrationDepth < minPenetrationDepth) {
         collision.setPenetration(normal.multiply(currentPenetrationDepth));
         minPenetrationDepth = currentPenetrationDepth;

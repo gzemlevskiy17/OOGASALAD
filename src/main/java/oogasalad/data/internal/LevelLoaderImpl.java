@@ -41,6 +41,7 @@ public class LevelLoaderImpl implements LevelLoader {
 
   private static final Logger LOG = LogManager.getLogger(LevelLoaderImpl.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final LevelValidator VALIDATOR = new LevelValidator();
 
   private static final double DEFAULT_FRICTION = 0.5;
   private static final double DEFAULT_SIZE = 1.0;
@@ -48,12 +49,9 @@ public class LevelLoaderImpl implements LevelLoader {
   @Override
   public void loadLevel(String fileName, World world, GameConfig config) {
     JsonNode root = parseFile(fileName);
-    JsonNode level = root.path("level");
-    if (level.isMissingNode()) {
-      throw new LevelLoadException("Level file missing required 'level' root key: " + fileName);
-    }
+    VALIDATOR.validate(root);
 
-    loadTerrain(level.path("terrain"), world, fileName);
+    loadTerrain(root.path("level").path("terrain"), world, fileName);
     LOG.info("Level loaded from {}", fileName);
   }
 

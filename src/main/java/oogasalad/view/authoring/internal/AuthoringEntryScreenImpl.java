@@ -1,6 +1,7 @@
 package oogasalad.view.authoring.internal;
 
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -11,8 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.api.AppScreen;
 
 /**
@@ -25,34 +25,41 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
   private final Parent root;
 
-  public AuthoringEntryScreenImpl(ScreenManager screenManager) {
+  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome) {
     BorderPane root = new BorderPane();
-    root.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
+    root.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
+    root.getStyleClass().add("screen-root");
+    root.setPadding(new Insets(d("rootPadding")));
 
-    Label title = new Label(PROPS.getString("titleText"));
-    title.setFont(Font.font(Double.parseDouble(PROPS.getString("titleFontSize"))));
+    Label title = new Label(s("titleText"));
+    title.setFont(Font.font(d("titleFontSize")));
+    title.getStyleClass().add("authoring-entry-title");
 
-    Button createNewLevelButton = new Button(PROPS.getString("createNewLevelButtonText"));
+    Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
     createNewLevelButton.setOnAction(
-        event -> screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY, null));
+        event -> onOutcome.accept(Outcome.OPEN_AUTHORING));
 
-    Button loadExistingLevelButton = new Button(PROPS.getString("loadExistingLevelButtonText"));
+    Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
 
     HBox buttonRegion = new HBox(
-        Double.parseDouble(PROPS.getString("buttonRegionSpacing")),
+        d("buttonRegionSpacing"),
         createNewLevelButton, loadExistingLevelButton);
     buttonRegion.setAlignment(Pos.CENTER);
-    buttonRegion.setPadding(new Insets(Double.parseDouble(PROPS.getString("buttonRegionPadding"))));
+    buttonRegion.setPadding(new Insets(d("buttonRegionPadding")));
+    buttonRegion.getStyleClass().add("authoring-entry-button-row");
 
     VBox centerContent = new VBox(
-        Double.parseDouble(PROPS.getString("titleSectionSpacing")), title, buttonRegion);
+        d("titleSectionSpacing"), title, buttonRegion);
     centerContent.setAlignment(Pos.TOP_CENTER);
+    centerContent.getStyleClass().add("authoring-entry-center");
     root.setCenter(centerContent);
 
-    Button backButton = new Button(PROPS.getString("backButtonText"));
-    backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
+    Button backButton = new Button(s("backButtonText"));
+    backButton.getStyleClass().add("authoring-entry-back");
+    backButton.setOnAction(event -> onOutcome.accept(Outcome.BACK_TO_MENU));
     root.setBottom(wrapBottomLeft(backButton));
 
     this.root = root;
@@ -64,16 +71,26 @@ public class AuthoringEntryScreenImpl implements AppScreen {
   }
 
   private void configureActionButton(Button button) {
-    button.setFont(Font.font(Double.parseDouble(PROPS.getString("actionFontSize"))));
+    button.setFont(Font.font(d("actionFontSize")));
     button.setPrefSize(
-        Double.parseDouble(PROPS.getString("actionButtonWidth")),
-        Double.parseDouble(PROPS.getString("actionButtonHeight")));
+        d("actionButtonWidth"),
+        d("actionButtonHeight"));
     button.setWrapText(true);
+    button.getStyleClass().add("authoring-entry-action");
   }
 
   private StackPane wrapBottomLeft(Button button) {
     StackPane container = new StackPane(button);
     StackPane.setAlignment(button, Pos.BOTTOM_LEFT);
+    container.getStyleClass().add("authoring-entry-nav");
     return container;
+  }
+
+  private String s(String key) {
+    return PROPS.getString(key);
+  }
+
+  private double d(String key) {
+    return Double.parseDouble(PROPS.getString(key));
   }
 }

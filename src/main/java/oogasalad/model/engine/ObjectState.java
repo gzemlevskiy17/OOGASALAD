@@ -103,4 +103,24 @@ public class ObjectState {
   public void setAngularAcceleration(Vector angularAcceleration) {
     this.angularAcceleration = angularAcceleration;
   }
+
+  public void integrateObjectState(double elapsedTime) {
+    linearVelocity = integrateVector(linearVelocity, linearAcceleration, elapsedTime);
+    linearPosition = integrateVector(linearPosition, linearVelocity, elapsedTime);
+
+    //TODO: does integrateVector work for angular?
+    angularVelocity = integrateVector(angularVelocity, angularAcceleration, elapsedTime);
+    angularPosition = integrateScalar(angularPosition, angularVelocity.magnitude(), elapsedTime);
+  }
+
+  private Vector integrateVector(Vector previousVector, Vector integrand, double elapsedTime) {
+    double newX = integrateScalar(previousVector.x(), integrand.x(), elapsedTime);
+    double newY = integrateScalar(previousVector.y(), integrand.y(), elapsedTime);
+
+    return new Vector(newX, newY);
+  }
+
+  private double integrateScalar(double previousValue, double integrandValue, double elapsedTime) {
+    return previousValue + integrandValue * elapsedTime;
+  }
 }
