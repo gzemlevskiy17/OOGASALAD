@@ -39,21 +39,12 @@ public class Collision {
    *
    * @param referenceObject first colliding object
    * @param incidentObject  second colliding object
-   * @param penetration     penetration vector (direction and magnitude); often zero when no
-   *                        overlap
    */
-  public Collision(GameObject referenceObject, GameObject incidentObject, Vector penetration) {
-    this.referenceObject = referenceObject;
-    this.incidentObject = incidentObject;
-    this.penetration = penetration;
-  }
-
   public Collision(GameObject referenceObject, GameObject incidentObject) {
     this.referenceObject = referenceObject;
     this.incidentObject = incidentObject;
   }
 
-  //TODO: rename to incident & reference objects?
   public GameObject getReferenceObject() {
     return referenceObject;
   }
@@ -82,7 +73,6 @@ public class Collision {
     return incidentEdge;
   }
 
-  //TODO: actually use and move into constructor
   public void setIncidentEdge(Vector[] incidentEdge) {
     this.incidentEdge = incidentEdge;
   }
