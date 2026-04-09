@@ -18,21 +18,19 @@ public class CameraImpl implements Camera {
     setViewBoundaries(viewportWidth, viewportHeight);
   }
 
-  @Override public double getX() {
-    return x;
+  public double getX() {
+    return this.x;
   }
 
-  @Override public double getY() {
-    return y;
+  public double getY() {
+    return this.y;
   }
 
-  @Override public void setX(double x) {
+  @Override public void setPosition(double x, double y) {
     this.x = x;
-  }
-
-  @Override public void setY(double y) {
     this.y = y;
   }
+
 
   @Override
   public void setBehavior(CameraBehavior behavior) {

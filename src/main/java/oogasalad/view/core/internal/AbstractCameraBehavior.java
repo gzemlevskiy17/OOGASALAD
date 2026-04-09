@@ -47,7 +47,7 @@ public abstract class AbstractCameraBehavior implements CameraBehavior {
     double targetX = desiredX(camera);
     double targetY = desiredY(camera);
 
-    if (!clampEnabled) {
+    if (clampEnabled) {
       targetX = clamp(targetX, minX, maxX);
       targetY = clamp(targetY, minY, maxY);
     }
@@ -55,8 +55,7 @@ public abstract class AbstractCameraBehavior implements CameraBehavior {
     double nextX = lerp(camera.getX(), targetX, smoothing);
     double nextY = lerp(camera.getY(), targetY, smoothing);
 
-    camera.setX(nextX);
-    camera.setY(nextY);
+    camera.setPosition(nextX, nextY);
   }
 
   protected abstract double desiredX(Camera camera);

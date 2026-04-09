@@ -8,8 +8,7 @@ public interface Camera {
   double getX();
   double getY();
 
-  void setX(double x);
-  void setY(double y);
+  void setPosition(double x, double y);
 
   void setViewBoundaries(double width, double height);
 
