@@ -46,6 +46,7 @@
 
 .level-button:hover {
   -fx-background-color: #D1FFBD;
+  -fx-cursor: hand;
 }
 
 .level-button.locked-level {
@@ -67,10 +68,19 @@
   -fx-background-radius: 10;
 }
 
+.start-button:hover {
+  -fx-background-color: #f7f7f7;
+  -fx-cursor: hand;
+}
+
 .back-button {
   -fx-background-color: #E0E0E0;
   -fx-padding: 5 15;
   -fx-border-radius: 5;
+}
+
+.back-button:hover {
+  -fx-cursor: hand;
 }
 
 .nav-region {
@@ -92,20 +102,25 @@
 
 .world-forest:hover {
   -fx-background-color: #A8E6CF; /* Green */
+  -fx-cursor: hand;
 }
 
 .world-desert:hover {
   -fx-background-color: #FFD3B6; /* Yellow/Sand */
+  -fx-cursor: hand;
 }
 
 .world-moon:hover {
   -fx-background-color: #D3D3D3; /* Lunar Grey */
+  -fx-cursor: hand;
 }
 
 .world-glacier:hover {
   -fx-background-color: #C4FCE8; /* Ice Blue */
+  -fx-cursor: hand;
 }
 
 .world-mars:hover {
   -fx-background-color: #FFAAA5; /* Dusty Red */
+  -fx-cursor: hand;
 }
