@@ -3,6 +3,12 @@ package oogasalad.view.core.internal;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 
+/**
+ * Base camera behavior with optional smoothing and world-bound clamping.
+ * Subclasses provide target coordinates via {@code desiredX}/{@code desiredY}.
+ *
+ * @author Iurii Beliaev
+ */
 public abstract class AbstractCameraBehavior implements CameraBehavior {
 
   private final double smoothing;

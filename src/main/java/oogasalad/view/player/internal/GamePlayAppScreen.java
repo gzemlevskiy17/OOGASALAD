@@ -122,7 +122,6 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
       toolBtn.setOnAction(e -> {
         // TODO: Update GameController
-        System.out.println(tool + " is now " + (toolBtn.isSelected() ? "Active" : "Inactive"));
       });
 
       container.getChildren().add(toolBtn);

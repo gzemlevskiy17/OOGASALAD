@@ -27,6 +27,12 @@ import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
 import oogasalad.view.core.internal.RendererImpl;
 import oogasalad.view.player.internal.GamePlayAppScreen;
 
+/**
+ * Default factory that assembles the full gameplay runtime graph (world, engine, camera,
+ * renderer, input, win/loss checks, and controller) for one playable session.
+ *
+ * @author Iurii Beliaev
+ */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   // Constants for a demonstration
@@ -34,6 +40,13 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double WORLD_WIDTH = 2600.0;
   private static final double WORLD_HEIGHT = 1600.0;
 
+  /**
+   * Builds and wires one gameplay session using the supplied screen and outcome callback.
+   *
+   * @param screen gameplay view implementation used for render-layer attachment and sizing
+   * @param onOutcome callback fired when controller detects terminal game outcomes
+   * @return fully assembled gameplay session ready to start
+   */
   @Override
   public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome) {
     World world = buildWorldForCurrentLevel();
