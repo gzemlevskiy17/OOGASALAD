@@ -208,6 +208,15 @@ public class AuthoringScreenImpl implements AppScreen {
 
     double actionWidth = d("topActionButtonWidth");
     double actionHeight = d("topActionButtonHeight");
+    Button drawButton = createSizedButton(s("drawButtonText"), actionWidth, actionHeight);
+    Button eraseButton = createSizedButton(s("eraseButtonText"), actionWidth, actionHeight);
+    drawButton.getStyleClass().add("authoring-action-button");
+    eraseButton.getStyleClass().add("authoring-action-button");
+    drawButton.setOnAction(event ->
+        controller.setActiveTool(oogasalad.controller.authoring.api.ToolSelector.ToolType.DRAW));
+    eraseButton.setOnAction(event ->
+        controller.setActiveTool(oogasalad.controller.authoring.api.ToolSelector.ToolType.ERASE));
+
     Button saveButton = createSizedButton(s("saveButtonText"), actionWidth, actionHeight);
     Button runButton = createSizedButton(s("runButtonText"), actionWidth, actionHeight);
     Button loadButton = createSizedButton(s("loadButtonText"), actionWidth, actionHeight);
@@ -218,6 +227,9 @@ public class AuthoringScreenImpl implements AppScreen {
     saveButton.setOnAction(event -> handleSave(saveButton.getScene().getWindow()));
     loadButton.setOnAction(event -> handleLoad(loadButton.getScene().getWindow()));
 
+    HBox toolButtons = new HBox(d("topBarSpacing"), drawButton, eraseButton);
+    toolButtons.setAlignment(Pos.CENTER_LEFT);
+
     HBox rightButtons = new HBox(
         d("topBarSpacing"), saveButton, runButton, loadButton);
     rightButtons.setAlignment(Pos.CENTER_RIGHT);
@@ -225,7 +237,7 @@ public class AuthoringScreenImpl implements AppScreen {
     Region spacer = new Region();
     HBox.setHgrow(spacer, Priority.ALWAYS);
 
-    HBox topBar = new HBox(backButton, spacer, rightButtons);
+    HBox topBar = new HBox(backButton, toolButtons, spacer, rightButtons);
     topBar.setAlignment(Pos.CENTER_LEFT);
     topBar.getStyleClass().add("authoring-top-bar");
     return topBar;
