@@ -23,7 +23,7 @@ import oogasalad.view.core.api.Renderer;
 /**
  * Drives the gameplay simulation at 60 FPS using a JavaFX Timeline.
  * <p>
- * Each frame: updates the camera position via CameraBehavior, advances physics via GameEngine,
+ * Each frame: updates the camera position via camera.updateCameraBehavior(), advances physics via GameEngine,
  * redraws via Renderer, then checks win/loss conditions. Reads key bindings from GameConfig and
  * registers them with InputRouter on the first call to startSimulation().
  * <p>
@@ -42,7 +42,6 @@ public class GameControllerImpl implements GameController {
   private final World world;
   private final Renderer renderer;
   private final Camera camera;
-  private final CameraBehavior cameraBehavior;
   private final WinConditionChecker winChecker;
   private final LossConditionChecker lossChecker;
   private final InputRouter inputRouter;
@@ -144,7 +143,7 @@ public class GameControllerImpl implements GameController {
    */
   private void tick() {
     engine.step(FRAME_DURATION_SECONDS);
-    cameraBehavior.update(camera);
+    camera.updateBehavior();
     renderer.render(camera, world.getObjects());
     checkWinLoss();
   }
