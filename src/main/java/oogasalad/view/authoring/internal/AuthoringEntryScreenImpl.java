@@ -15,7 +15,6 @@ import javafx.scene.text.Font;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.api.AppScreen;
-import java.util.function.Runnable;
 
 /**
  * Entry screen for the authoring environment.
