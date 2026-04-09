@@ -1,4 +1,4 @@
-package oogasalad.model.auth.api;
+package oogasalad.model.auth.internal;
 
 import java.util.Optional;
 

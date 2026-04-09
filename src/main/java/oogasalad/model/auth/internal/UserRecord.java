@@ -1,4 +1,6 @@
-package oogasalad.model.auth.api;
+package oogasalad.model.auth.internal;
+
+import oogasalad.model.auth.api.PlayerProfile;
 
 /**
  * A raw database record for a user account.
