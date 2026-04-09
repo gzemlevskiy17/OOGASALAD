@@ -57,7 +57,7 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     root.getStylesheets().add(getClass().getResource("/oogasalad/view/player/gameplay.css").toExternalForm());
     root.getStyleClass().add("screen-root");
 
-    Pane gameArea = createGameAreaRegion();
+    gameLayer = createGameAreaRegion();
 
     HBox topControls = createTopControlsRegion();
     HBox bottomControls = createBottomControlsRegion();
@@ -68,7 +68,7 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     StackPane.setAlignment(backButton, Pos.TOP_RIGHT);
     StackPane.setAlignment(bottomControls, Pos.BOTTOM_CENTER);
 
-    root.getChildren().addAll(gameArea, topControls, bottomControls, backButton);
+    root.getChildren().addAll(gameLayer, topControls, bottomControls, backButton);
 
     return root;
   }
