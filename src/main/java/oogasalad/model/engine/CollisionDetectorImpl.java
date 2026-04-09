@@ -1,5 +1,6 @@
 package oogasalad.model.engine;
 
+import java.util.List;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.GameObject;
@@ -29,7 +30,6 @@ import oogasalad.model.engine.api.Vector;
  */
 public class CollisionDetectorImpl implements CollisionDetector {
   //TODO: test & refactor
-  //TODO: tie together
   //TODO: update javadoc once complete
 
   /**
@@ -37,14 +37,13 @@ public class CollisionDetectorImpl implements CollisionDetector {
    *
    * @param objectA first object in the pair
    * @param objectB second object in the pair
-   * @return an {@link Optional} containing the detected collision, or
-   *     {@link Optional#empty()} when the shapes do not overlap
+   * @return an {@link Optional} containing the detected collision, or {@link Optional#empty()} when
+   * the shapes do not overlap
    */
   @Override
   public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
     return findSatCollision(objectA, objectB);
   }
-  //TODO: figure out how Collision will be returned if no collision was detected
 
   /**
    * Projects all polygon vertices onto the given axis and returns [min, max] values of the
@@ -84,8 +83,10 @@ public class CollisionDetectorImpl implements CollisionDetector {
     ConvexPolygon polygonA = objectA.getPolygon();
     ConvexPolygon polygonB = objectB.getPolygon();
 
-    Collision collision = new Collision(objectA, objectB, new Vector(0, 0));
+    Collision collision = new Collision(objectA, objectB);
     double minPenetrationDepth = Double.MAX_VALUE;
+    Vector penetrationNormal = null;
+    Vector[] minReferenceEdge = new Vector[2];
     for (int i = 0; i < polygonA.getPoints().size() - 1; i++) { // Looping over edges clockwise
       Vector point1 = polygonA.getPoints().get(i);
       Vector point2 = polygonA.getPoints().get(i + 1);
@@ -103,10 +104,38 @@ public class CollisionDetectorImpl implements CollisionDetector {
           Math.min(projectionA[1], projectionB[1]) - Math.max(projectionA[0],
               projectionB[0]);
       if (currentPenetrationDepth < minPenetrationDepth) {
-        collision.setPenetration(normal.multiply(currentPenetrationDepth));
+        penetrationNormal = normal.multiply(currentPenetrationDepth);
         minPenetrationDepth = currentPenetrationDepth;
+        minReferenceEdge[0] = point1;
+        minReferenceEdge[1] = point2;
       }
     }
+    collision.setPenetration(penetrationNormal);
+    collision.setReferenceEdge(minReferenceEdge);
+    collision.setIncidentEdge(findIncidentEdge(polygonA, penetrationNormal));
     return Optional.of(collision);
+  }
+
+  /**
+   * Selects the incident edge whose outward normal is most orthogonal to the outward penetration
+   * normal.
+   *
+   * <p>Assumes clockwise polygon point order and an outward penetration normal.
+   */
+  private Vector[] findIncidentEdge(ConvexPolygon incidentPolygon, Vector penetrationNormal) {
+    Vector[] incidentEdge = new Vector[2];
+    double minimumDotProduct = Double.MAX_VALUE;
+
+    List<Vector> points = incidentPolygon.getPoints();
+    for (int i = 0; i < points.size() - 1; i++) {
+      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize().rotateLeft();
+      double dotWithIncident = penetrationNormal.dot(incidentNormal);
+      if (dotWithIncident < minimumDotProduct) {
+        minimumDotProduct = dotWithIncident;
+        incidentEdge[0] = points.get(i);
+        incidentEdge[1] = points.get(i + 1);
+      }
+    }
+    return incidentEdge;
   }
 }

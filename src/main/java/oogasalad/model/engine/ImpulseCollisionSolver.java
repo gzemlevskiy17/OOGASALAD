@@ -54,29 +54,6 @@ public class ImpulseCollisionSolver implements CollisionSolver {
   }
 
   /**
-   * Selects the incident edge whose outward normal is most orthogonal to the outward penetration
-   * normal.
-   *
-   * <p>Assumes clockwise polygon point order and an outward penetration normal.
-   */
-  private Vector[] incidentEdge(ConvexPolygon incidentPolygon, Vector penetrationNormal) {
-    Vector[] incidentEdge = new Vector[2];
-    double minimumDotProduct = Double.MAX_VALUE;
-
-    List<Vector> points = incidentPolygon.getPoints();
-    for (int i = 0; i < points.size() - 1; i++) {
-      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize().rotateLeft();
-      double dotWithIncident = penetrationNormal.dot(incidentNormal);
-      if (dotWithIncident < minimumDotProduct) {
-        minimumDotProduct = dotWithIncident;
-        incidentEdge[0] = points.get(i);
-        incidentEdge[1] = points.get(i + 1);
-      }
-    }
-    return incidentEdge;
-  }
-
-  /**
    * Clips an incident edge that has been clipped against the reference edge by width, against the
    * reference edge by depth. That is, it adds endpoints of {@code clippedIncidentEdge} to the
    * collision manifold if they inside the reference polygon ('below' the reference edge). Assume
@@ -245,8 +222,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
     ObjectState stateA = objectA.getState();
     ObjectState stateB = objectB.getState();
 
-    double invMassA = inverseOrZero(objectA.getMass());
-    double invMassB = inverseOrZero(objectB.getMass());
+    double invMassA = 1 / objectA.getMass();
+    double invMassB = 1 / objectB.getMass();
     double inverseMassSum = invMassA + invMassB;
     if (inverseMassSum == 0.0 || contactCount <= 0 || depths.length == 0) {
       return;

@@ -46,6 +46,12 @@ public class Collision {
     this.objectB = objectB;
     this.penetration = penetration;
   }
+
+  public Collision(GameObject objectA, GameObject objectB) {
+    this.objectA = objectA;
+    this.objectB = objectB;
+  }
+
   //TODO: rename to incident & reference objects?
   public GameObject getObjectA() {
     return objectA;
