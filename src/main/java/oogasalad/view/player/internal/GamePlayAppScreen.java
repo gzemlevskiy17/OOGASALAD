@@ -105,7 +105,15 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     resetBtn.setOnAction(e -> onReset.run());
     resetBtn.getStyleClass().add("sys-button");
 
-    container.getChildren().addAll(pauseBtn, resetBtn);
+    Button tempWinBtn = new Button(s("button.debug.win"));
+    tempWinBtn.getStyleClass().add("sys-button");
+    tempWinBtn.setOnAction(event -> onOutcome.accept(Outcome.GAME_WON));
+
+    Button tempLoseBtn = new Button(s("button.debug.lose"));
+    tempLoseBtn.getStyleClass().add("sys-button");
+    tempLoseBtn.setOnAction(event -> onOutcome.accept(Outcome.GAME_LOST));
+
+    container.getChildren().addAll(pauseBtn, resetBtn, tempWinBtn, tempLoseBtn);
     return container;
   }
 

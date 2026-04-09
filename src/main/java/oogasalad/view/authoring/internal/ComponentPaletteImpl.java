@@ -9,11 +9,17 @@ import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.WritableImage;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.scene.transform.Scale;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 import oogasalad.view.authoring.api.ComponentPallete;
 
@@ -28,6 +34,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
 
   private final ResourceBundle props;
   private final double sampleSize;
+  private final double cellSize;
   private final Color selectedStroke;
   private final double selectedStrokeWidth;
 
@@ -45,6 +52,9 @@ public class ComponentPaletteImpl implements ComponentPallete {
   public ComponentPaletteImpl(String bundleName) {
     this.props = ResourceBundle.getBundle(bundleName);
     this.sampleSize = d("sampleSize");
+    this.cellSize = Double.parseDouble(
+        ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas")
+            .getString("cellSize"));
     this.selectedStroke = Color.web(s("selectedStroke"));
     this.selectedStrokeWidth = d("selectedStrokeWidth");
     paletteContent.setPadding(new Insets(d("rootPadding")));
@@ -100,6 +110,30 @@ public class ComponentPaletteImpl implements ComponentPallete {
       sample.getStyleClass().add("authoring-palette-sample");
       drawSample(sample, entry, false);
       sample.setOnMouseClicked(e -> select(entry.name(), sample));
+      // Drag-from-palette: select on drag start so subscribers (canvas + controller)
+      // pick up the new placeable before the drop fires, then start a real
+      // Dragboard gesture so the cursor shows a preview and the canvas's
+      // setOnDragDropped handler can place a single block on release.
+      sample.setOnDragDetected(e -> {
+        select(entry.name(), sample);
+        Dragboard db = sample.startDragAndDrop(TransferMode.COPY);
+        ClipboardContent cc = new ClipboardContent();
+        cc.putString(entry.name());
+        // Scale the sample snapshot down to the actual block pixel size on the
+        // canvas (blockCols * cellSize x blockRows * cellSize) so the cursor
+        // preview matches the placed block instead of the larger palette sample.
+        double targetWidth = entry.blockCols() * cellSize;
+        double targetHeight = entry.blockRows() * cellSize;
+        SnapshotParameters params = new SnapshotParameters();
+        params.setTransform(new Scale(targetWidth / sampleSize, targetHeight / sampleSize));
+        WritableImage scaledImage = new WritableImage(
+            Math.max(1, (int) Math.round(targetWidth)),
+            Math.max(1, (int) Math.round(targetHeight)));
+        sample.snapshot(params, scaledImage);
+        db.setDragView(scaledImage, targetWidth / 2, targetHeight / 2);
+        db.setContent(cc);
+        e.consume();
+      });
       paletteContent.getChildren().add(sample);
     }
   }
@@ -107,9 +141,6 @@ public class ComponentPaletteImpl implements ComponentPallete {
   private void select(String name, Canvas clicked) {
     selectedName = name;
     PaletteEntry entry = entries.get(name);
-    double cellSize = Double.parseDouble(
-        ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas")
-            .getString("cellSize"));
     AuthoringPlaceable placeable = new TerrainPlaceable(
         entry.blockCols() * cellSize, entry.blockRows() * cellSize,
         entry.color(), entry.sprite(), entry.tiled(), entry.friction());

@@ -1,6 +1,7 @@
 package oogasalad.view.authoring.internal;
 
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -16,8 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
@@ -50,8 +50,8 @@ public class AuthoringScreenImpl implements AppScreen {
   }
 
   private final Parent root;
-  private final ScreenManager screenManager;
   private final AuthoringControllerImpl controller;
+  private final Consumer<Outcome> onOutcome;
   private final StackPane canvasHost;
   private final ComponentPallete vehiclePalette;
   private final ComponentPaletteImpl terrainPalette;
@@ -78,8 +78,8 @@ public class AuthoringScreenImpl implements AppScreen {
   private AuthoringMode currentMode;
   private LevelPaletteMode currentLevelPaletteMode;
 
-  public AuthoringScreenImpl(ScreenManager screenManager) {
-    this.screenManager = screenManager;
+  public AuthoringScreenImpl(Consumer<Outcome> onOutcome) {
+    this.onOutcome = onOutcome;
     // TODO: replace with existing or shared World instance
     this.world = new WorldImpl();
     this.levelAttributes = new LevelAttributes();
@@ -204,7 +204,7 @@ public class AuthoringScreenImpl implements AppScreen {
         d("backButtonHeight"));
     backButton.getStyleClass().add("authoring-back-button");
     backButton.setOnAction(
-        event -> this.screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY));
+        event -> onOutcome.accept(Outcome.BACK_TO_AUTHORING_ENTRY));
 
     double actionWidth = d("topActionButtonWidth");
     double actionHeight = d("topActionButtonHeight");

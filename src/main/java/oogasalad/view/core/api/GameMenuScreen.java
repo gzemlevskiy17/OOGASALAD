@@ -1,6 +1,7 @@
 package oogasalad.view.core.api;
 
 import java.util.ResourceBundle;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -23,7 +24,7 @@ public class GameMenuScreen implements AppScreen {
 
   private final Parent root;
 
-  public GameMenuScreen(Consumer<Outcome> onOutcome) {
+  public GameMenuScreen(Consumer<Outcome> onOutcome, BooleanSupplier isLoggedIn) {
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/core/game-menu.css").toExternalForm());
@@ -36,6 +37,13 @@ public class GameMenuScreen implements AppScreen {
     settingsButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     helpButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     profileButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    profileButton.setOnAction(event -> {
+      if (isLoggedIn.getAsBoolean()) {
+        onOutcome.accept(Outcome.OPEN_PROFILE);
+      } else {
+        onOutcome.accept(Outcome.OPEN_LOGIN);
+      }
+    });
     root.setTop(wrapTopLeft(settingsButton, helpButton, profileButton));
 
     Label title = new Label(PROPS.getString("menuTitle"));
@@ -62,6 +70,7 @@ public class GameMenuScreen implements AppScreen {
 
     Button loginButton = new Button(PROPS.getString("loginButtonText"));
     loginButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    loginButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_LOGIN));
     root.setBottom(wrapBottomLeft(loginButton));
 
     this.root = root;

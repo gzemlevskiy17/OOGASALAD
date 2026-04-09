@@ -49,6 +49,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
    */
   @Override
   public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome) {
+    // Re-entry / retry can reuse the same view instance, so clear stale nodes from prior sessions.
+    screen.getGameLayer().getChildren().clear();
+
     World world = buildWorldForCurrentLevel();
     GameEngine engine = buildEngine(world);
     GameConfig config = buildConfig();
