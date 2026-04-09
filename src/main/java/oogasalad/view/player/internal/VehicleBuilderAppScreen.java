@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
@@ -36,6 +37,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     mainContent.setAlignment(Pos.CENTER);
 
     mainContent.getChildren().addAll(
+        createTitleRegion(),
         createGridRegion(),
         createComponentSection(),
         createStartLevelRegion()
@@ -47,6 +49,12 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     root.setBottom(backButton);
 
     return root;
+  }
+
+  private Node createTitleRegion() {
+    Label title = new Label(s("title.text"));
+    title.getStyleClass().add("header-title");
+    return title;
   }
 
   private Node createStartLevelRegion() {
