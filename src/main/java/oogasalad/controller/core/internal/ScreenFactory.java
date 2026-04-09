@@ -3,11 +3,13 @@ package oogasalad.controller.core.internal;
 import java.util.HashMap;
 import java.util.Map;
 import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.core.api.GameMenuScreen;
 import oogasalad.view.player.internal.GamePlayAppScreen;
+import oogasalad.view.player.internal.GamePlayCoordinatorScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
 
@@ -45,7 +47,10 @@ public class ScreenFactory {
             authoringScreen::resetForNewLevel));
     screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(screenManager::onOutcome));
     screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(screenManager::onOutcome));
-    screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(screenManager::onOutcome));
+    screens.put(
+        GAMEPLAY_APP_SCREEN_KEY,
+        new GamePlayCoordinatorScreen(screenManager::onOutcome, new GameplaySessionFactoryImpl())
+    );
     return screens;
   }
 }
