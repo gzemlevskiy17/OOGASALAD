@@ -25,7 +25,7 @@ public class Main extends Application {
             screenManager.registerScreen(screenEntry.getKey(), screenEntry.getValue());
         }
 
-        screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY);
+      screenManager.switchScreen(ScreenFactory.LOGIN_SCREEN_KEY);
 
         stage.setTitle("Good Piggies");
         stage.show();
@@ -36,7 +36,7 @@ public class Main extends Application {
     /**
      * Start of the program.
      */
-    public static void main(String[] args) {
+    static void main(String[] args) {
         launch(args);
     }
 
