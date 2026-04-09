@@ -35,7 +35,7 @@ import oogasalad.model.engine.api.Vector;
  */
 public class ImpulseCollisionSolver implements CollisionSolver {
 
-  public final static int MAX_CONTACT_POINTS = 2;
+  public final static int MAX_CONTACT_POINTS = 2; //TODO: put in properties file
 
   /**
    * Resolves one collision using the impulse solver pipeline.
@@ -54,50 +54,12 @@ public class ImpulseCollisionSolver implements CollisionSolver {
   }
 
   /**
-   * Builds up to two contact points by clipping the incident edge against the reference edge side
-   * planes and then filtering against the reference face plane.
-   */
-  private Vector[] computeCollisionManifold(Collision collision, Vector refNormal) {
-    Vector[] incidentEdge = collision.getIncidentEdge();
-    Vector[] referenceEdge = collision.getReferenceEdge();
-    if (incidentEdge == null || referenceEdge == null) {
-      return new Vector[MAX_CONTACT_POINTS];
-    }
-
-    Vector referenceStart = referenceEdge[0];
-    Vector referenceEnd = referenceEdge[1];
-    Vector tangent = referenceEnd.subtract(referenceStart).normalize();
-    double leftOffset = tangent.dot(referenceStart);
-    double rightOffset = tangent.multiply(-1).dot(referenceEnd);
-
-    List<Vector> leftClip = clipToHalfSpace(incidentEdge, tangent, leftOffset);
-    if (leftClip.size() < 2) {
-      return new Vector[MAX_CONTACT_POINTS];
-    }
-
-    Vector[] leftClippedEdge = new Vector[]{leftClip.get(0), leftClip.get(1)};
-    List<Vector> sideClip = clipToHalfSpace(leftClippedEdge, tangent.multiply(-1), rightOffset);
-
-    Vector[] finalManifold = new Vector[MAX_CONTACT_POINTS];
-    int manifoldCount = 0;
-    double faceOffset = refNormal.dot(referenceStart);
-    for (Vector vector : sideClip) {
-      double separation = refNormal.dot(vector) - faceOffset;
-      if (separation <= 0 && manifoldCount < MAX_CONTACT_POINTS) {
-        finalManifold[manifoldCount++] = vector;
-      }
-    }
-
-    return finalManifold;
-  }
-
-  /**
-   * Selects the incident edge whose normal is most anti-parallel to the penetration normal.
+   * Selects the incident edge whose outward normal is most orthogonal to the outward penetration
+   * normal.
    *
-   * <p>Assumes clockwise polygon point order and a repeated final point for edge iteration.
+   * <p>Assumes clockwise polygon point order and an outward penetration normal.
    */
   private Vector[] incidentEdge(ConvexPolygon incidentPolygon, Vector penetrationNormal) {
-    //TODO: confirm direction of normals
     Vector[] incidentEdge = new Vector[2];
     double minimumDotProduct = Double.MAX_VALUE;
 
@@ -111,58 +73,101 @@ public class ImpulseCollisionSolver implements CollisionSolver {
         incidentEdge[1] = points.get(i + 1);
       }
     }
-
     return incidentEdge;
   }
 
   /**
-   * Clips a segment against a single half-space defined by
-   * {@code dot(planeNormal, p) >= planeOffset}.
+   * Clips an incident edge that has been clipped against the reference edge by width, against the
+   * reference edge by depth. That is, it adds endpoints of {@code clippedIncidentEdge} to the
+   * collision manifold if they inside the reference polygon ('below' the reference edge). Assume
+   * that at least one endpoint of the clipped incident edge lies below the reference edge and that
+   * reference edge has preserved its order (CW)
    */
-  private List<Vector> clipToHalfSpace(Vector[] incidentEdge, Vector planeNormal,
-      double planeOffset) {
-
-    //TODO: potentially refactor into one clip from both sides, or to return a clipped line segment out of which a manifold is constructed
-    Vector incidentStart = incidentEdge[0];
-    Vector incidentEnd = incidentEdge[1];
-
-    List<Vector> result = new ArrayList<>();
-    double distanceFromIncidentStart = planeNormal.dot(incidentStart) - planeOffset;
-    double distanceFromIncidentEnd = planeNormal.dot(incidentEnd) - planeOffset;
-
-    if (distanceFromIncidentStart >= 0.0) {
-      addCandidatePointToManifold(result, incidentStart);
-    }
-    if (distanceFromIncidentEnd >= 0.0) {
-      addCandidatePointToManifold(result, incidentEnd);
+  private List<Vector> faceClip(Vector[] clippedIncidentEdge, Vector[] referenceEdge) {
+    Vector referenceOutwardNormal = referenceEdge[1].subtract(referenceEdge[0]).normalize()
+        .rotateLeft();
+    List<Vector> manifoldPoints = new ArrayList<>();
+    if (clippedIncidentEdge[0].subtract(referenceEdge[0]).dot(referenceOutwardNormal) < 0) {
+      manifoldPoints.add(clippedIncidentEdge[0]);
     }
 
-    if (distanceFromIncidentStart * distanceFromIncidentEnd < 0.0) {
-      double fractionOfIncidentEdge =
-          distanceFromIncidentStart / (distanceFromIncidentStart - distanceFromIncidentEnd);
-      Vector intersection = incidentStart.add(
-          incidentEnd.subtract(incidentStart).multiply(fractionOfIncidentEdge));
-      addCandidatePointToManifold(result, intersection);
+    if (clippedIncidentEdge[1].subtract(referenceEdge[0]).dot(referenceOutwardNormal) < 0) {
+      manifoldPoints.add(clippedIncidentEdge[1]);
     }
 
-    return result;
+    return manifoldPoints;
+  }
+  //TODO: delegate plane offset method
+  //hand-tested: clippedIncidentEdge = [(0, 1), (8, 9)] referenceEdge = [(0, 5), (8, 5)] referenceOutwardNormal = (0, 1)
+  // only adds (0, 1) to manifold, not (8, 9), which is not in the reference polygon.
+
+  private List<Vector> computeCollisionManifold(Collision collision) {
+    Vector[] incidentEdge = collision.getIncidentEdge();
+    Vector[] referenceEdge = collision.getReferenceEdge();
+    Vector[] clippedIncidentEdge = clipToReferenceEdge(incidentEdge, referenceEdge);
+    return faceClip(clippedIncidentEdge, referenceEdge);
   }
 
-  private void addCandidatePointToManifold(List<Vector> points, Vector point) {
-    if (points.size() < MAX_CONTACT_POINTS) {
-      points.add(point);
+
+  private Vector[] clipToReferenceEdge(Vector[] incidentEdge, Vector[] referenceEdge) {
+    // 4 situations: incident edge has both, either, or no endpoints outside of reference edge.
+    // Assuming that the incident edge will intersect the reference edge, and at least some part of
+    // the incident edge is within the reference edge endpoints
+    Vector sideANormal = referenceEdge[0].subtract(referenceEdge[1]);
+    Vector sideBNormal = referenceEdge[1].subtract(referenceEdge[0]);
+
+    //find where the endpoints of the incident edge are relative to the planes
+    Vector unclippedSideAEndpoint = null;
+    Vector unclippedSideBEndpoint = null;
+    if (incidentEdge[0].subtract(referenceEdge[0]).dot(sideANormal) > incidentEdge[1].subtract(
+        referenceEdge[0]).dot(
+        sideANormal)) { //the more positive dot product with the outward A normal, the farthest that point is in the outward direction
+      unclippedSideAEndpoint = incidentEdge[0];
+      unclippedSideBEndpoint = incidentEdge[1];
+    } else {
+      unclippedSideAEndpoint = incidentEdge[1];
+      unclippedSideBEndpoint = incidentEdge[0];
     }
+    Vector clippedIncidentAEndpoint = unclippedSideAEndpoint;
+    if (unclippedSideAEndpoint.subtract(referenceEdge[0]).dot(sideANormal) > 0) {
+      //compute the point of intersection of the incident edge and the side A plane
+      clippedIncidentAEndpoint = computeLineIntersection(incidentEdge, referenceEdge[0],
+          sideANormal);
+    }
+
+    Vector clippedIncidentBEndpoint = unclippedSideBEndpoint;
+    if (unclippedSideAEndpoint.subtract(referenceEdge[1]).dot(sideBNormal) > 0) {
+      //compute the point of intersection of the incident edge and the side B plane
+      clippedIncidentBEndpoint = computeLineIntersection(incidentEdge, referenceEdge[1],
+          sideBNormal);
+    }
+
+    return new Vector[]{clippedIncidentAEndpoint, clippedIncidentBEndpoint};
   }
+
+  private Vector computeLineIntersection(Vector[] incidentEdge, Vector referencePlaneIntersection,
+      Vector outwardPlaneNormal) {
+    //TODO: referencePlaneIntersection should be endpoint
+    Vector edgeDirection = incidentEdge[1].subtract(incidentEdge[0]);
+    double edgeLengthInPlaneNormalDirection = edgeDirection.dot(outwardPlaneNormal);
+//    if (edgeLengthInPlaneNormalDirection == 0.0) {
+//      return null;
+//    }
+    double fractionAlongIncidentEdge = (referencePlaneIntersection.subtract(incidentEdge[0])).dot(
+        outwardPlaneNormal) / edgeLengthInPlaneNormalDirection; //
+//    if (fractionAlongIncidentEdge < 0.0 || fractionAlongIncidentEdge > 1.0) {
+//      return null;
+//    }
+    return incidentEdge[0].add(edgeDirection.multiply(fractionAlongIncidentEdge));
+  }
+  //hand-tested: incidentEdge = [(-1, 0), (9, 10)] referencePlaneIntersection = (0, 5) outwardPlaneNormal = (-1, 0) returns (1, 0)
 
   /**
    * Applies impulse-based collision response at each manifold contact, updating linear and angular
    * velocities in-place on both colliding object states.
    */
-  private void resolveImpulseAtContacts(
-      Collision collision,
-      Vector normal,
-      Vector[] contactPoints,
-      int contactCount) {
+  private void resolveImpulseAtContacts(Collision collision, Vector normal,
+      List<Vector> collisionManifold) {
 
     //TODO: refactor
     GameObject objectA = collision.getObjectA();
@@ -175,23 +180,13 @@ public class ImpulseCollisionSolver implements CollisionSolver {
     double angVelocityA = stateA.getAngularVelocity().x();
     double angVelocityB = stateB.getAngularVelocity().x();
 
-    double invMassA = inverseOrZero(objectA.getMass());
-    double invMassB = inverseOrZero(objectB.getMass());
-    double invInertiaA = inverseOrZero(objectA.getMomentOfInertia());
-    double invInertiaB = inverseOrZero(objectB.getMomentOfInertia());
+    double invMassA = 1 / objectA.getMass();
+    double invMassB = 1 / objectB.getMass();
+    double invInertiaA = objectA.getMomentOfInertia();
+    double invInertiaB = objectB.getMomentOfInertia();
     double restitution = Math.min(objectA.getRestitution(), objectB.getRestitution());
 
-    int effectiveContactCount = Math.min(contactCount, contactPoints.length);
-    if (effectiveContactCount <= 0) {
-      return;
-    }
-
-    for (int i = 0; i < effectiveContactCount; i++) {
-      Vector contactPoint = contactPoints[i];
-      if (contactPoint == null) {
-        continue;
-      }
-
+    for (Vector contactPoint : collisionManifold) {
       Vector ra = contactPoint.subtract(stateA.getLinearPosition());
       Vector rb = contactPoint.subtract(stateB.getLinearPosition());
 
@@ -214,7 +209,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       }
 
       double impulseScalar = -(1.0 + restitution) * contactVelocity;
-      impulseScalar /= denominator * effectiveContactCount;
+      impulseScalar /= denominator * collisionManifold.size();
       Vector impulse = normal.multiply(impulseScalar);
 
       velocityA = velocityA.subtract(impulse.multiply(invMassA));
@@ -272,10 +267,10 @@ public class ImpulseCollisionSolver implements CollisionSolver {
   }
 
   //TODO: is this needed?
-  private double inverseOrZero(double value) {
-    if (value <= 0.0) {
-      return 0.0;
-    }
-    return 1.0 / value;
-  }
+//  private double inverseOrZero(double value) {
+//    if (value <= 0.0) {
+//      return 0.0;
+//    }
+//    return 1.0 / value;
+//  }
 }
