@@ -18,6 +18,7 @@ import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.internal.LevelLoaderImpl;
@@ -44,7 +45,8 @@ public class AuthoringScreenImpl implements AppScreen {
     TERRAIN,
     PIGS,
     LEVEL_ITEMS,
-    CUSTOM
+    CUSTOM,
+    SETTINGS
   }
 
   private final Parent root;
@@ -66,6 +68,10 @@ public class AuthoringScreenImpl implements AppScreen {
   private final Button pigsPaletteButton;
   private final Button levelItemsPaletteButton;
   private final Button customPaletteButton;
+  private final Button settingsPaletteButton;
+  private final LevelAttributesPanel levelAttributesPanel;
+  private final LevelAttributes levelAttributes;
+  private final TerrainPropertiesPanel terrainPropertiesPanel;
 
   private AuthoringMode currentMode;
   private LevelPaletteMode currentLevelPaletteMode;
@@ -74,10 +80,14 @@ public class AuthoringScreenImpl implements AppScreen {
     this.screenManager = screenManager;
     // TODO: replace with existing or shared World instance
     World world = new WorldImpl();
+    this.levelAttributes = new LevelAttributes();
+    this.levelAttributesPanel = new LevelAttributesPanel(levelAttributes);
+    this.terrainPropertiesPanel = new TerrainPropertiesPanel();
     AuthoringCanvasImpl canvas = new AuthoringCanvasImpl(world);
+    canvas.setOnObjectSelected(terrainPropertiesPanel::show);
     this.controller = new AuthoringControllerImpl(
         world, new LevelLoaderImpl(), new LevelSaverImpl(),
-        null, new ToolSelectorImpl(), canvas);
+        levelAttributes, new ToolSelectorImpl(), canvas);
     this.alertService = new AuthoringAlertService();
     this.fileChooserService = new FileChooserService();
     controller.setPlacementErrorHandler(
@@ -106,6 +116,7 @@ public class AuthoringScreenImpl implements AppScreen {
     this.pigsPaletteButton = createTabButton(s("pigsButtonText"));
     this.levelItemsPaletteButton = createTabButton(s("levelItemsButtonText"));
     this.customPaletteButton = createTabButton(s("customButtonText"));
+    this.settingsPaletteButton = createTabButton(s("settingsButtonText"));
     this.paletteModeRow = buildPaletteModeRow();
     this.bottomContentHost = new StackPane();
     this.levelModeButton = createTabButton(s("levelButtonText"));
@@ -136,6 +147,7 @@ public class AuthoringScreenImpl implements AppScreen {
     layout.setTop(topSections);
     layout.setCenter(canvasHost);
     layout.setBottom(bottomSections);
+    layout.setRight(terrainPropertiesPanel.getVisualRoot());
 
     this.root = layout;
 
@@ -161,6 +173,10 @@ public class AuthoringScreenImpl implements AppScreen {
     });
     customPaletteButton.setOnAction(event -> {
       currentLevelPaletteMode = LevelPaletteMode.CUSTOM;
+      refreshDisplayedMode();
+    });
+    settingsPaletteButton.setOnAction(event -> {
+      currentLevelPaletteMode = LevelPaletteMode.SETTINGS;
       refreshDisplayedMode();
     });
 
@@ -218,7 +234,8 @@ public class AuthoringScreenImpl implements AppScreen {
         terrainPaletteButton,
         pigsPaletteButton,
         levelItemsPaletteButton,
-        customPaletteButton);
+        customPaletteButton,
+        settingsPaletteButton);
     row.setAlignment(Pos.CENTER_LEFT);
     row.getStyleClass().add("authoring-palette-mode-row");
     return row;
@@ -250,6 +267,7 @@ public class AuthoringScreenImpl implements AppScreen {
         case PIGS -> pigsPalette.getVisualRoot();
         case LEVEL_ITEMS -> levelItemsPalette.getVisualRoot();
         case CUSTOM -> customPalette.getVisualRoot();
+        case SETTINGS -> levelAttributesPanel.getVisualRoot();
       };
     }
     StackPane.setAlignment(paletteNode, Pos.TOP_LEFT);
