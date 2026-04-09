@@ -4,6 +4,7 @@ import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.AuthoringPlacementException;
 import oogasalad.controller.authoring.api.ToolSelector;
@@ -92,29 +93,67 @@ public class AuthoringControllerImpl implements AuthoringController {
 
     root.setOnMouseExited(e -> canvas.clearHoverPreview());
 
-    root.setOnMousePressed(e -> {
-      int col = (int) Math.floor(e.getX() / cellSize);
-      int row = (int) Math.floor(e.getY() / cellSize);
-      if (!canvas.isWithinBounds(col, row)) {
-        return;
+    root.setOnMousePressed(e -> startStrokeAt(e.getX(), e.getY()));
+    root.setOnMouseDragged(e -> extendStrokeTo(e.getX(), e.getY()));
+
+    // Drag-and-drop from a palette item (separate event stream from the
+    // mouse-press paint stroke above). ComponentPaletteImpl starts a Dragboard
+    // gesture in setOnDragDetected; the handlers below preview and place the
+    // dropped block at the cursor cell.
+    root.setOnDragOver(e -> {
+      if (e.getGestureSource() != root && e.getDragboard().hasString()) {
+        e.acceptTransferModes(TransferMode.COPY);
+        int col = (int) Math.floor(e.getX() / cellSize);
+        int row = (int) Math.floor(e.getY() / cellSize);
+        canvas.showHoverPreview(col, row);
       }
-      handleCellInteraction(col, row);
-      lastDragCol = col;
-      lastDragRow = row;
+      e.consume();
     });
 
-    root.setOnMouseDragged(e -> {
-      int col = (int) Math.floor(e.getX() / cellSize);
-      int row = (int) Math.floor(e.getY() / cellSize);
-      if (!canvas.isWithinBounds(col, row)) {
-        return;
-      }
-      int spanCols = selectedPlaceable.colSpan(cellSize);
-      int spanRows = selectedPlaceable.rowSpan(cellSize);
-      int[] lastPlaced = fillLine(lastDragCol, lastDragRow, col, row, spanCols, spanRows);
-      lastDragCol = lastPlaced[0];
-      lastDragRow = lastPlaced[1];
+    root.setOnDragExited(e -> {
+      canvas.clearHoverPreview();
+      e.consume();
     });
+
+    root.setOnDragDropped(e -> {
+      boolean placed = false;
+      if (e.getDragboard().hasString()) {
+        int col = (int) Math.floor(e.getX() / cellSize);
+        int row = (int) Math.floor(e.getY() / cellSize);
+        if (canvas.isWithinBounds(col, row)) {
+          handleCellInteraction(col, row);
+          placed = true;
+        }
+      }
+      e.setDropCompleted(placed);
+      e.consume();
+    });
+  }
+
+  private void startStrokeAt(double x, double y) {
+    double cellSize = canvas.getCellSize();
+    int col = (int) Math.floor(x / cellSize);
+    int row = (int) Math.floor(y / cellSize);
+    if (!canvas.isWithinBounds(col, row)) {
+      return;
+    }
+    handleCellInteraction(col, row);
+    lastDragCol = col;
+    lastDragRow = row;
+  }
+
+  private void extendStrokeTo(double x, double y) {
+    double cellSize = canvas.getCellSize();
+    int col = (int) Math.floor(x / cellSize);
+    int row = (int) Math.floor(y / cellSize);
+    if (!canvas.isWithinBounds(col, row)) {
+      return;
+    }
+    int spanCols = selectedPlaceable.colSpan(cellSize);
+    int spanRows = selectedPlaceable.rowSpan(cellSize);
+    int[] lastPlaced = fillLine(lastDragCol, lastDragRow, col, row, spanCols, spanRows);
+    lastDragCol = lastPlaced[0];
+    lastDragRow = lastPlaced[1];
   }
 
   /**
