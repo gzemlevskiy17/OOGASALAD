@@ -2,6 +2,7 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameEngine;
@@ -112,7 +113,8 @@ public class GameEngineImpl implements GameEngine {
     List<Collision> collisions = new ArrayList<>();
     for (GameObject objectA : world.getObjects()) {
       for (GameObject objectB : world.getObjects()) {
-        collisions.add(collisionDetector.detectCollision(objectA, objectB));
+        Optional<Collision> collision = collisionDetector.detectCollision(objectA, objectB);
+        collision.ifPresent(collisions::add);
       }
     }
     return collisions;
