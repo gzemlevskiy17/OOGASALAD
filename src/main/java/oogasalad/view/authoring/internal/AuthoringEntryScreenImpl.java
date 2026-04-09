@@ -1,6 +1,7 @@
 package oogasalad.view.authoring.internal;
 
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -11,8 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.api.AppScreen;
 
 /**
@@ -25,7 +25,7 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
   private final Parent root;
 
-  public AuthoringEntryScreenImpl(ScreenManager screenManager) {
+  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome) {
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
@@ -39,7 +39,7 @@ public class AuthoringEntryScreenImpl implements AppScreen {
     Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
     createNewLevelButton.setOnAction(
-        event -> screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY, null));
+        event -> onOutcome.accept(Outcome.OPEN_AUTHORING));
 
     Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
@@ -59,7 +59,7 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
     Button backButton = new Button(s("backButtonText"));
     backButton.getStyleClass().add("authoring-entry-back");
-    backButton.setOnAction(event -> screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null));
+    backButton.setOnAction(event -> onOutcome.accept(Outcome.BACK_TO_MENU));
     root.setBottom(wrapBottomLeft(backButton));
 
     this.root = root;
