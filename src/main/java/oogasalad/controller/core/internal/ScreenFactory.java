@@ -8,7 +8,6 @@ import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.core.api.GameMenuScreen;
-import oogasalad.view.player.internal.GamePlayAppScreen;
 import oogasalad.view.player.internal.GamePlayCoordinatorScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
