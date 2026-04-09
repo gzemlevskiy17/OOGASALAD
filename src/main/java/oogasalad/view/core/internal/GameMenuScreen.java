@@ -1,4 +1,4 @@
-package oogasalad.view.core.api;
+package oogasalad.view.core.internal;
 
 import java.util.ResourceBundle;
 import java.util.function.BooleanSupplier;
@@ -16,15 +16,29 @@ import oogasalad.controller.core.api.Outcome;
 
 /**
  * Basic start menu screen for the application.
+ *
+ * @author Iurii Beliaev
  */
-public class GameMenuScreen implements AppScreen {
+public class GameMenuScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.core.GameMenu");
-
-  private final Parent root;
+  private static final ThreadLocal<BooleanSupplier> PENDING_LOGIN_STATE = new ThreadLocal<>();
 
   public GameMenuScreen(Consumer<Outcome> onOutcome, BooleanSupplier isLoggedIn) {
+    super(prepare(onOutcome, isLoggedIn));
+    PENDING_LOGIN_STATE.remove();
+  }
+
+  private static Consumer<Outcome> prepare(Consumer<Outcome> onOutcome,
+      BooleanSupplier isLoggedIn) {
+    PENDING_LOGIN_STATE.set(isLoggedIn);
+    return onOutcome;
+  }
+
+  @Override
+  protected Parent createRoot() {
+    BooleanSupplier isLoggedIn = PENDING_LOGIN_STATE.get();
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/core/game-menu.css").toExternalForm());
@@ -73,11 +87,6 @@ public class GameMenuScreen implements AppScreen {
     loginButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_LOGIN));
     root.setBottom(wrapBottomLeft(loginButton));
 
-    this.root = root;
-  }
-
-  @Override
-  public Parent getRoot() {
     return root;
   }
 

@@ -26,12 +26,12 @@ import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
 import oogasalad.view.authoring.api.ComponentPallete;
-import oogasalad.view.core.api.AppScreen;
+import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
  * Layout shell for the authoring environment.
  */
-public class AuthoringScreenImpl implements AppScreen {
+public class AuthoringScreenImpl extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringScreen");
@@ -49,82 +49,40 @@ public class AuthoringScreenImpl implements AppScreen {
     SETTINGS
   }
 
-  private final Parent root;
-  private final AuthoringControllerImpl controller;
-  private final Consumer<Outcome> onOutcome;
-  private final StackPane canvasHost;
-  private final ComponentPallete vehiclePalette;
-  private final ComponentPaletteImpl terrainPalette;
-  private final ComponentPaletteImpl pigsPalette;
-  private final ComponentPaletteImpl levelItemsPalette;
-  private final ComponentPaletteImpl customPalette;
-  private final AuthoringAlertService alertService;
-  private final FileChooserService fileChooserService;
-  private final HBox paletteModeRow;
-  private final StackPane bottomContentHost;
-  private final Button levelModeButton;
-  private final Button vehicleModeButton;
-  private final Button terrainPaletteButton;
-  private final Button pigsPaletteButton;
-  private final Button levelItemsPaletteButton;
-  private final Button customPaletteButton;
-  private final Button settingsPaletteButton;
-  private final LevelAttributesPanel levelAttributesPanel;
-  private final LevelAttributes levelAttributes;
-  private final TerrainPropertiesPanel terrainPropertiesPanel;
-  private final World world;
-  private final AuthoringCanvasImpl canvas;
+  private AuthoringControllerImpl controller;
+  private StackPane canvasHost;
+  private ComponentPallete vehiclePalette;
+  private ComponentPaletteImpl terrainPalette;
+  private ComponentPaletteImpl pigsPalette;
+  private ComponentPaletteImpl levelItemsPalette;
+  private ComponentPaletteImpl customPalette;
+  private AuthoringAlertService alertService;
+  private FileChooserService fileChooserService;
+  private HBox paletteModeRow;
+  private StackPane bottomContentHost;
+  private Button levelModeButton;
+  private Button vehicleModeButton;
+  private Button terrainPaletteButton;
+  private Button pigsPaletteButton;
+  private Button levelItemsPaletteButton;
+  private Button customPaletteButton;
+  private Button settingsPaletteButton;
+  private LevelAttributesPanel levelAttributesPanel;
+  private LevelAttributes levelAttributes;
+  private TerrainPropertiesPanel terrainPropertiesPanel;
+  private World world;
+  private AuthoringCanvasImpl canvas;
 
   private AuthoringMode currentMode;
   private LevelPaletteMode currentLevelPaletteMode;
 
   public AuthoringScreenImpl(Consumer<Outcome> onOutcome) {
-    this.onOutcome = onOutcome;
-    // TODO: replace with existing or shared World instance
-    this.world = new WorldImpl();
-    this.levelAttributes = new LevelAttributes();
-    this.levelAttributesPanel = new LevelAttributesPanel(levelAttributes);
-    this.terrainPropertiesPanel = new TerrainPropertiesPanel();
-    this.canvas = new AuthoringCanvasImpl(world);
-    canvas.setOnObjectSelected(terrainPropertiesPanel::show);
-    this.controller = new AuthoringControllerImpl(
-        world, new LevelLoaderImpl(), new LevelSaverImpl(),
-        levelAttributes, new ToolSelectorImpl(), canvas);
-    this.alertService = new AuthoringAlertService();
-    this.fileChooserService = new FileChooserService();
-    controller.setPlacementErrorHandler(
-        message -> alertService.showWarning(s("placementWarningTitle"), message));
-    controller.initializeCanvasHandlers();
-    ScrollPane canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
-    canvasScrollPane.setFitToWidth(false);
-    canvasScrollPane.setFitToHeight(false);
-    canvasScrollPane.setPannable(true);
-    canvasScrollPane.getStyleClass().add("authoring-canvas-scroll");
-    this.canvasHost = new StackPane(canvasScrollPane);
-    this.vehiclePalette = new VehicleComponentScrollPalette();
-    this.terrainPalette = new ComponentPaletteImpl();
-    this.pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
-    this.levelItemsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.LevelItemsPalette");
-    this.customPalette = new ComponentPaletteImpl("oogasalad.view.authoring.CustomPalette");
-    terrainPalette.subscribe(canvas::setSelectedPlaceable);
-    terrainPalette.subscribe(controller::setSelectedPlaceable);
-    pigsPalette.subscribe(canvas::setSelectedPlaceable);
-    pigsPalette.subscribe(controller::setSelectedPlaceable);
-    levelItemsPalette.subscribe(canvas::setSelectedPlaceable);
-    levelItemsPalette.subscribe(controller::setSelectedPlaceable);
-    customPalette.subscribe(canvas::setSelectedPlaceable);
-    customPalette.subscribe(controller::setSelectedPlaceable);
-    this.terrainPaletteButton = createTabButton(s("terrainButtonText"));
-    this.pigsPaletteButton = createTabButton(s("pigsButtonText"));
-    this.levelItemsPaletteButton = createTabButton(s("levelItemsButtonText"));
-    this.customPaletteButton = createTabButton(s("customButtonText"));
-    this.settingsPaletteButton = createTabButton(s("settingsButtonText"));
-    this.paletteModeRow = buildPaletteModeRow();
-    this.bottomContentHost = new StackPane();
-    this.levelModeButton = createTabButton(s("levelButtonText"));
-    this.vehicleModeButton = createTabButton(s("vehicleButtonText"));
-    this.currentMode = AuthoringMode.LEVEL;
-    this.currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
+    super(onOutcome);
+  }
+
+  @Override
+  protected Parent createRoot() {
+    initializeAuthoringState();
 
     BorderPane layout = new BorderPane();
     layout.getStylesheets().add(
@@ -151,8 +109,70 @@ public class AuthoringScreenImpl implements AppScreen {
     layout.setBottom(bottomSections);
     layout.setRight(terrainPropertiesPanel.getVisualRoot());
 
-    this.root = layout;
+    wireModeHandlers();
+    refreshDisplayedMode();
+    return layout;
+  }
 
+  /** Clears all placed objects and resets the canvas for a fresh level. */
+  public void resetForNewLevel() {
+    world.clear();
+    terrainPropertiesPanel.hide();
+    canvas.refreshGrid();
+  }
+
+  private void initializeAuthoringState() {
+    world = new WorldImpl();
+    levelAttributes = new LevelAttributes();
+    levelAttributesPanel = new LevelAttributesPanel(levelAttributes);
+    terrainPropertiesPanel = new TerrainPropertiesPanel();
+    canvas = new AuthoringCanvasImpl(world);
+    canvas.setOnObjectSelected(terrainPropertiesPanel::show);
+    controller = new AuthoringControllerImpl(
+        world, new LevelLoaderImpl(), new LevelSaverImpl(),
+        levelAttributes, new ToolSelectorImpl(), canvas);
+    alertService = new AuthoringAlertService();
+    fileChooserService = new FileChooserService();
+    controller.setPlacementErrorHandler(
+        message -> alertService.showWarning(s("placementWarningTitle"), message));
+    controller.initializeCanvasHandlers();
+
+    ScrollPane canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
+    canvasScrollPane.setFitToWidth(false);
+    canvasScrollPane.setFitToHeight(false);
+    canvasScrollPane.setPannable(true);
+    canvasScrollPane.getStyleClass().add("authoring-canvas-scroll");
+    canvasHost = new StackPane(canvasScrollPane);
+
+    vehiclePalette = new VehicleComponentScrollPalette();
+    terrainPalette = new ComponentPaletteImpl();
+    pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
+    levelItemsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.LevelItemsPalette");
+    customPalette = new ComponentPaletteImpl("oogasalad.view.authoring.CustomPalette");
+    subscribePalette(terrainPalette);
+    subscribePalette(pigsPalette);
+    subscribePalette(levelItemsPalette);
+    subscribePalette(customPalette);
+
+    terrainPaletteButton = createTabButton(s("terrainButtonText"));
+    pigsPaletteButton = createTabButton(s("pigsButtonText"));
+    levelItemsPaletteButton = createTabButton(s("levelItemsButtonText"));
+    customPaletteButton = createTabButton(s("customButtonText"));
+    settingsPaletteButton = createTabButton(s("settingsButtonText"));
+    paletteModeRow = buildPaletteModeRow();
+    bottomContentHost = new StackPane();
+    levelModeButton = createTabButton(s("levelButtonText"));
+    vehicleModeButton = createTabButton(s("vehicleButtonText"));
+    currentMode = AuthoringMode.LEVEL;
+    currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
+  }
+
+  private void subscribePalette(ComponentPaletteImpl palette) {
+    palette.subscribe(canvas::setSelectedPlaceable);
+    palette.subscribe(controller::setSelectedPlaceable);
+  }
+
+  private void wireModeHandlers() {
     levelModeButton.setOnAction(event -> {
       currentMode = AuthoringMode.LEVEL;
       refreshDisplayedMode();
@@ -181,20 +201,6 @@ public class AuthoringScreenImpl implements AppScreen {
       currentLevelPaletteMode = LevelPaletteMode.SETTINGS;
       refreshDisplayedMode();
     });
-
-    refreshDisplayedMode();
-  }
-
-  @Override
-  public Parent getRoot() {
-    return root;
-  }
-
-  /** Clears all placed objects and resets the canvas for a fresh level. */
-  public void resetForNewLevel() {
-    world.clear();
-    terrainPropertiesPanel.hide();
-    canvas.refreshGrid();
   }
 
   private HBox buildTopBar() {

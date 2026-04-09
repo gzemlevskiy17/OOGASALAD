@@ -13,19 +13,22 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.view.core.api.AppScreen;
+import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
  * Entry screen for the authoring environment.
  */
-public class AuthoringEntryScreenImpl implements AppScreen {
+public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringEntry");
 
-  private final Parent root;
-
   public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome) {
+    super(onOutcome);
+  }
+
+  @Override
+  protected Parent createRoot() {
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
@@ -62,11 +65,6 @@ public class AuthoringEntryScreenImpl implements AppScreen {
     backButton.setOnAction(event -> onOutcome.accept(Outcome.BACK_TO_MENU));
     root.setBottom(wrapBottomLeft(backButton));
 
-    this.root = root;
-  }
-
-  @Override
-  public Parent getRoot() {
     return root;
   }
 
