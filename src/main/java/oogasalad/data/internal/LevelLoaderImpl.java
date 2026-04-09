@@ -8,7 +8,7 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

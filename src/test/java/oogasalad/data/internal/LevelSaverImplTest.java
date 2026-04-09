@@ -14,10 +14,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import oogasalad.data.api.LevelSaveException;
+import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.TerrainBlock;
-import oogasalad.model.engine.internal.GameComponent;
+import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.GameComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,7 +38,7 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_singleTerrainBlock_writesCorrectJson() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addComponent(new TerrainBlock(0, 0, 10, 2, "assets/terrain/grass.png", true, 0.6));
+    world.addObject(new TerrainBlock(0, 0, 10, 2, "assets/terrain/grass.png", true, 0.6));
 
     File output = tempDir.resolve("saved_level.json").toFile();
     saver.saveLevel(output.getAbsolutePath(), world);
@@ -56,8 +57,8 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_multipleBlocks_writesAllEntries() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addComponent(new TerrainBlock(0, 0, 5, 1, "a.png", true, 0.5));
-    world.addComponent(new TerrainBlock(5, 0, 5, 1, "b.png", false, 0.4));
+    world.addObject(new TerrainBlock(0, 0, 5, 1, "a.png", true, 0.5));
+    world.addObject(new TerrainBlock(5, 0, 5, 1, "b.png", false, 0.4));
 
     File output = tempDir.resolve("saved_level.json").toFile();
     saver.saveLevel(output.getAbsolutePath(), world);
@@ -80,7 +81,7 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_roundTrip_loaderRestoresSameBlockCount() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addComponent(new TerrainBlock(3, 1, 4, 2, "assets/terrain/dirt.png", false, 0.3));
+    world.addObject(new TerrainBlock(3, 1, 4, 2, "assets/terrain/dirt.png", false, 0.3));
 
     File output = tempDir.resolve("round_trip.json").toFile();
     saver.saveLevel(output.getAbsolutePath(), world);

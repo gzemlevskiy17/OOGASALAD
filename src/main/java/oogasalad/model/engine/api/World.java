@@ -3,7 +3,7 @@ package oogasalad.model.engine.api;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
-import oogasalad.model.engine.internal.GameComponent;
+import oogasalad.model.engine.internal.components.GameComponent;
 
 /** Memory container for all simulation components and physical joints. */
 public interface World {

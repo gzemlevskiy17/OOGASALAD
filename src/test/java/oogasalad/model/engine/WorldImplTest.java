@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
-import oogasalad.model.engine.internal.GameComponent;
-import oogasalad.model.engine.internal.TerrainBlock;
+import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
