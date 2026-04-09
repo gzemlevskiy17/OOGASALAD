@@ -3,6 +3,7 @@ package oogasalad.controller.player.internal;
 import java.util.function.Consumer;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
@@ -48,13 +49,25 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     if (viewWidth <= 0) viewWidth = 1280;
     if (viewHeight <= 0) viewHeight = 720;
 
+    // World boundary overlay (drawn in world space, projected each frame)
+    Rectangle worldBounds = new Rectangle(WORLD_WIDTH, WORLD_HEIGHT);
+    worldBounds.setManaged(false);
+    worldBounds.setFill(Color.TRANSPARENT);
+    worldBounds.setStroke(Color.LIMEGREEN);
+    worldBounds.setStrokeWidth(2.0);
+    worldBounds.getStrokeDashArray().addAll(10.0, 8.0);
+
+    // keep the world boundary behind balls
+    screen.getGameLayer().getChildren().add(worldBounds);
+    worldBounds.toBack();
+
     Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
     GameObject player = resolveControlledPlayer(world);
 
     CameraBehavior behavior = new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight, 0, 0, 0.2);
     camera.setBehavior(behavior);
 
-    Renderer renderer = new RendererImpl(screen.getGameLayer(), r -> {
+    Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
       Circle c = new Circle(BALL_RADIUS);
       if (r == player) {
         c.setRadius(BALL_RADIUS + 3);
@@ -68,6 +81,14 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       }
       return c;
     });
+
+    Renderer renderer = (cameraRef, objects) -> {
+      objectRenderer.render(cameraRef, objects);
+
+      // project world border into viewport using camera transform
+      worldBounds.setLayoutX(-cameraRef.getX());
+      worldBounds.setLayoutY(-cameraRef.getY());
+    };
 
     GameController controller = new GameControllerImpl(
         engine, world, renderer, camera, behavior, winChecker, lossChecker, inputRouter, config
