@@ -8,7 +8,7 @@ import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.AuthoringPlacementException;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
-import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
@@ -25,12 +25,8 @@ import org.apache.logging.log4j.Logger;
  *
  * Grid interaction rules:
  *   DRAW  → snap mouse position to grid cell, place a 1x1 TerrainBlock there.
- *   ERASE → requires World.removeObject() which is not yet on the World interface.
- *           Flagged as TODO — pending discussion with World owner (Xuye).
- *
- * NOTE: loadLevel() currently appends to the existing World rather than clearing
- * it first. A World.clear() method is needed for proper reload behavior.
- * Flagged as TODO — pending discussion with World owner (Xuye).
+ *   ERASE → snap mouse position to grid cell, remove any placed object whose
+ *           bounds contain that cell.
  *
  * Collaborators: World (model state via interface only),
  *                LevelLoaderImpl (populates world from file),
@@ -47,7 +43,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final World world;
   private final LevelLoader loader;
   private final LevelSaver saver;
-  private final GameConfig config;
+  private final LevelAttributes levelAttributes;
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
   private final PlacementValidator placementValidator;
@@ -58,17 +54,21 @@ public class AuthoringControllerImpl implements AuthoringController {
   private int lastDragRow = -1;
 
   public AuthoringControllerImpl(World world, LevelLoader loader, LevelSaver saver,
-      GameConfig config, ToolSelector toolSelector, AuthoringCanvas canvas) {
+      LevelAttributes levelAttributes, ToolSelector toolSelector, AuthoringCanvas canvas) {
     this.world = world;
     this.loader = loader;
     this.saver = saver;
-    this.config = config;
+    this.levelAttributes = levelAttributes;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
     this.placementValidator = new PlacementValidator();
     double cellSize = canvas.getCellSize();
     this.selectedPlaceable = new TerrainPlaceable(
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
+  }
+
+  public void setActiveTool(ToolSelector.ToolType type) {
+    toolSelector.setActiveTool(type);
   }
 
   public void setSelectedPlaceable(AuthoringPlaceable placeable) {
@@ -152,13 +152,22 @@ public class AuthoringControllerImpl implements AuthoringController {
       if (toolSelector.getActiveTool() == ToolType.DRAW) {
         placeSelectedObject(col, row);
       } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
-        // TODO: requires World.removeObject() — flag to Xuye to add to World interface.
-        LOG.warn("Erase tool not yet supported: World.removeObject() pending API addition.");
+        eraseAt(col, row);
       }
     } catch (AuthoringPlacementException e) {
       placementErrorHandler.accept(e.getMessage());
     }
     canvas.refreshGrid();
+  }
+
+  private void eraseAt(int col, int row) {
+    world.getObjects().stream()
+        .filter(AuthoringPlaceable.class::isInstance)
+        .map(AuthoringPlaceable.class::cast)
+        .filter(p -> col >= p.left() && col < p.right()
+            && row >= p.top() && row < p.bottom())
+        .findFirst()
+        .ifPresent(p -> world.removeObject((GameObject) p));
   }
 
   /**
@@ -206,8 +215,8 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   @Override
   public void loadLevel(String fileName) {
-    // TODO: world should be cleared before loading — requires World.clear() from Xuye.
-    loader.loadLevel(fileName, world, config);
+    world.clear();
+    loader.loadLevel(fileName, world, null);
     canvas.refreshGrid();
     LOG.info("Loaded level from {}", fileName);
   }

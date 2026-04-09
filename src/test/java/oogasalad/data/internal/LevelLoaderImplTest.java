@@ -121,6 +121,41 @@ class LevelLoaderImplTest {
         () -> loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig()));
   }
 
+  @Test
+  void loadLevel_terrainEntryWithZeroWidth_throwsLevelLoadException() throws IOException {
+    File level = writeLevel("""
+        {
+          "level": {
+            "terrain": [
+              {
+                "position": { "x": 0, "y": 0 },
+                "size": { "width": 0, "height": 2 },
+                "properties": { "texture": "a.png", "tile_texture": false, "friction": 0.5 }
+              }
+            ]
+          }
+        }
+        """);
+
+    assertThrows(LevelLoadException.class,
+        () -> loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig()));
+  }
+
+  @Test
+  void loadLevel_missingClosingBrace_throwsLevelLoadException() throws IOException {
+    File level = writeLevel("""
+        {
+          "level": {
+            "terrain": [
+              { "position": {"x": 0, "y": 0}, "size": {"width": 10, "height": 2} }
+            ]
+          }
+        """);
+
+    assertThrows(LevelLoadException.class,
+        () -> loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig()));
+  }
+
   // --- Test doubles ---
 
   private static class FakeWorld implements World {
