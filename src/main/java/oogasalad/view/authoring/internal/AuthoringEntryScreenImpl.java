@@ -24,8 +24,10 @@ public class AuthoringEntryScreenImpl implements AppScreen {
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringEntry");
 
   private final Parent root;
+  private final FileChooserService fileChooserService;
 
   public AuthoringEntryScreenImpl(ScreenManager screenManager) {
+    this.fileChooserService = new FileChooserService();
     BorderPane root = new BorderPane();
     root.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
 
@@ -39,6 +41,10 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
     Button loadExistingLevelButton = new Button(PROPS.getString("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
+    loadExistingLevelButton.setOnAction(event ->
+        fileChooserService.chooseLoadFile(loadExistingLevelButton.getScene().getWindow())
+            .ifPresent(file -> screenManager.switchScreen(
+                ScreenFactory.AUTHORING_SCREEN_KEY, file.getAbsolutePath())));
 
     HBox buttonRegion = new HBox(
         Double.parseDouble(PROPS.getString("buttonRegionSpacing")),
