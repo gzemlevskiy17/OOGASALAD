@@ -15,6 +15,7 @@ import javafx.scene.text.Font;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.core.internal.ScreenFactory;
 import oogasalad.view.core.api.AppScreen;
+import java.util.function.Runnable;
 
 /**
  * Entry screen for the authoring environment.
@@ -27,7 +28,8 @@ public class AuthoringEntryScreenImpl implements AppScreen {
   private final Parent root;
   private final FileChooserService fileChooserService;
 
-  public AuthoringEntryScreenImpl(ScreenManager screenManager, Consumer<String> levelLoader) {
+  public AuthoringEntryScreenImpl(ScreenManager screenManager, Consumer<String> levelLoader,
+      Runnable onCreateNewLevel) {
     this.fileChooserService = new FileChooserService();
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
@@ -41,8 +43,10 @@ public class AuthoringEntryScreenImpl implements AppScreen {
 
     Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
-    createNewLevelButton.setOnAction(
-        event -> screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY));
+    createNewLevelButton.setOnAction(event -> {
+      onCreateNewLevel.run();
+      screenManager.switchScreen(ScreenFactory.AUTHORING_SCREEN_KEY);
+    });
 
     Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);

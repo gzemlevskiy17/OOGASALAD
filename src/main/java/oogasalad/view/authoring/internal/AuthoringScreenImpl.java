@@ -72,6 +72,8 @@ public class AuthoringScreenImpl implements AppScreen {
   private final LevelAttributesPanel levelAttributesPanel;
   private final LevelAttributes levelAttributes;
   private final TerrainPropertiesPanel terrainPropertiesPanel;
+  private final World world;
+  private final AuthoringCanvasImpl canvas;
 
   private AuthoringMode currentMode;
   private LevelPaletteMode currentLevelPaletteMode;
@@ -79,11 +81,11 @@ public class AuthoringScreenImpl implements AppScreen {
   public AuthoringScreenImpl(ScreenManager screenManager) {
     this.screenManager = screenManager;
     // TODO: replace with existing or shared World instance
-    World world = new WorldImpl();
+    this.world = new WorldImpl();
     this.levelAttributes = new LevelAttributes();
     this.levelAttributesPanel = new LevelAttributesPanel(levelAttributes);
     this.terrainPropertiesPanel = new TerrainPropertiesPanel();
-    AuthoringCanvasImpl canvas = new AuthoringCanvasImpl(world);
+    this.canvas = new AuthoringCanvasImpl(world);
     canvas.setOnObjectSelected(terrainPropertiesPanel::show);
     this.controller = new AuthoringControllerImpl(
         world, new LevelLoaderImpl(), new LevelSaverImpl(),
@@ -186,6 +188,13 @@ public class AuthoringScreenImpl implements AppScreen {
   @Override
   public Parent getRoot() {
     return root;
+  }
+
+  /** Clears all placed objects and resets the canvas for a fresh level. */
+  public void resetForNewLevel() {
+    world.clear();
+    terrainPropertiesPanel.hide();
+    canvas.refreshGrid();
   }
 
   private HBox buildTopBar() {

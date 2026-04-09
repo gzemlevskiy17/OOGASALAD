@@ -132,5 +132,6 @@ class AuthoringControllerImplTest {
     @Override public void placeBlock(int col, int row) {}
     @Override public void showHoverPreview(int col, int row) {}
     @Override public void clearHoverPreview() {}
+    @Override public void setOnObjectSelected(java.util.function.Consumer<AuthoringPlaceable> handler) {}
   }
 }
