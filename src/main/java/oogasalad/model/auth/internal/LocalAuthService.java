@@ -5,8 +5,6 @@ import oogasalad.model.auth.api.AuthResult;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
 import oogasalad.model.auth.api.SessionContext;
-import oogasalad.model.auth.api.UserRecord;
-import oogasalad.model.auth.api.UserRepository;
 
 /**
  * Authenticates players against a local SQLite database.
