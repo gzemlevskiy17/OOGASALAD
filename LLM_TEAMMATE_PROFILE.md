@@ -1,5 +1,5 @@
 # LLM Teammate Profile
-## NAME: Cody 
+## NAME: Cody (me)
 ## EMAIL: cody@goodpiggies.duke.edu
 
 
