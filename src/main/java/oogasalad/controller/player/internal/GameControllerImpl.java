@@ -143,8 +143,8 @@ public class GameControllerImpl implements GameController {
    * automatically by the Timeline every ~16.67ms.
    */
   private void tick() {
-    cameraBehavior.update(camera);
     engine.step(FRAME_DURATION_SECONDS);
+    cameraBehavior.update(camera);
     renderer.render(camera, world.getObjects());
     checkWinLoss();
   }
