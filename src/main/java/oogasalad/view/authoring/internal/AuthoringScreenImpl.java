@@ -172,13 +172,6 @@ public class AuthoringScreenImpl implements AppScreen {
     return root;
   }
 
-  @Override
-  public void onEnter(Object payload) {
-    if (payload instanceof String path) {
-      loadLevelFromPath(path);
-    }
-  }
-
   private HBox buildTopBar() {
     Button backButton = createSizedButton(
         s("backButtonText"),
@@ -278,7 +271,7 @@ public class AuthoringScreenImpl implements AppScreen {
         .ifPresent(file -> loadLevelFromPath(file.getAbsolutePath()));
   }
 
-  private void loadLevelFromPath(String path) {
+  public void loadLevelFromPath(String path) {
     try {
       controller.loadLevel(path);
     } catch (LevelLoadException e) {
