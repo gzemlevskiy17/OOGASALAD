@@ -1,7 +1,5 @@
 package oogasalad.model.auth.internal;
 
-import oogasalad.model.auth.api.UserRepository;
-
 /**
  * Creates {@link UserRepository} instances.
  *

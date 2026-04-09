@@ -10,8 +10,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Optional;
 import java.util.UUID;
-import oogasalad.model.auth.api.UserRecord;
-import oogasalad.model.auth.api.UserRepository;
 
 /**
  * Stores user accounts in a SQLite database file at {@code ~/.oogasalad/users.db}.
