@@ -8,11 +8,12 @@ public interface Camera {
   double getX();
   double getY();
 
-  void setX(double x);
-  void setY(double y);
+  void setPosition(double x, double y);
 
   void setViewBoundaries(double width, double height);
 
   /** @param behavior The logic that will control this camera's movement. */
   void setBehavior(CameraBehavior behavior);
+
+  void updateBehavior();
 }
