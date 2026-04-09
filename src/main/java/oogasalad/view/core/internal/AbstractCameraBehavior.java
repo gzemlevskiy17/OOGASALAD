@@ -3,7 +3,7 @@ package oogasalad.view.core.internal;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 
-public class AbstractCameraBehavior implements CameraBehavior {
+public abstract class AbstractCameraBehavior implements CameraBehavior {
 
   private final double smoothing;
   private final boolean clampEnabled;
@@ -36,6 +36,39 @@ public class AbstractCameraBehavior implements CameraBehavior {
     this.maxX = maxX;
     this.minY = minY;
     this.maxY = maxY;
+  }
+
+  @Override
+  public void update(Camera camera) {
+    if (camera == null) {
+      throw new IllegalArgumentException("Camera cannot be null");
+    }
+
+    double targetX = desiredX(camera);
+    double targetY = desiredY(camera);
+
+    if (!clampEnabled) {
+      targetX = clamp(targetX, minX, maxX);
+      targetY = clamp(targetY, minY, maxY);
+    }
+
+    double nextX = lerp(camera.getX(), targetX, smoothing);
+    double nextY = lerp(camera.getY(), targetY, smoothing);
+
+    camera.setX(nextX);
+    camera.setY(nextY);
+  }
+
+  protected abstract double desiredX(Camera camera);
+
+  protected abstract double desiredY(Camera camera);
+
+  // Linear interpolation to integrate smooting
+  private static double lerp(double from, double to, double t) {
+    return from + (to - from) * t;
+  }
+  private static double clamp(double value, double min, double max) {
+    return Math.max(min, Math.min(max, value));
   }
 
 }
