@@ -1,5 +1,6 @@
 package oogasalad.view.authoring.api;
 
+import java.util.function.Consumer;
 import javafx.scene.Node;
 
 /** Contract for the visual grid where blocks and game elements are placed. */
@@ -33,4 +34,9 @@ public interface AuthoringCanvas {
    * Removes any currently displayed hover preview.
    */
   void clearHoverPreview();
+
+  /**
+   * Registers a callback invoked when the user clicks a placed object on the canvas.
+   */
+  void setOnObjectSelected(java.util.function.Consumer<AuthoringPlaceable> handler);
 }
