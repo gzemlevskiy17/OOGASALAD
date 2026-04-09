@@ -1,6 +1,7 @@
 package oogasalad.view.core.api;
 
 import java.util.ResourceBundle;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,7 +13,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.model.auth.api.AuthService;
 
 /**
  * Basic start menu screen for the application.
@@ -24,7 +24,7 @@ public class GameMenuScreen implements AppScreen {
 
   private final Parent root;
 
-  public GameMenuScreen(Consumer<Outcome> onOutcome, AuthService authService) {
+  public GameMenuScreen(Consumer<Outcome> onOutcome, BooleanSupplier isLoggedIn) {
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/core/game-menu.css").toExternalForm());
@@ -38,7 +38,7 @@ public class GameMenuScreen implements AppScreen {
     helpButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     profileButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     profileButton.setOnAction(event -> {
-      if (authService.session().isLoggedIn()) {
+      if (isLoggedIn.getAsBoolean()) {
         onOutcome.accept(Outcome.OPEN_PROFILE);
       } else {
         onOutcome.accept(Outcome.OPEN_LOGIN);
