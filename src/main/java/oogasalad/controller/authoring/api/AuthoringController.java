@@ -9,6 +9,9 @@ public interface AuthoringController {
   /** Translates mouse clicks into grid placements or removals. */
   void handleGridInteraction(MouseEvent event);
 
+  /** Registers mouse handlers (hover, click, drag) on the canvas's visual root. */
+  void initializeCanvasHandlers();
+
   /** Commands the data layer to save the current progress. */
   void saveLevel(String fileName);
 

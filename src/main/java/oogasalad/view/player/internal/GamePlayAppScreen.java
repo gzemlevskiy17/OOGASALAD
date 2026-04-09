@@ -3,6 +3,7 @@ package oogasalad.view.player.internal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -10,16 +11,20 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
+import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.internal.AbstractAppScreen;
+
+/**
+ * Screen for the main window of the gameplay
+ * @author Iurii Beliaev
+ */
 
 public class GamePlayAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
-  public GamePlayAppScreen(ScreenManager screenManager) {
-    super(screenManager);
+  public GamePlayAppScreen(Consumer<Outcome> onOutcome) {
+    super(onOutcome);
   }
 
   @Override
@@ -47,13 +52,12 @@ public class GamePlayAppScreen extends AbstractAppScreen {
   private Node createBackButtonRegion() {
     Button backButton = new Button(s("back.button.text"));
     backButton.getStyleClass().add("back-button");
-    backButton.setOnAction(e -> screenManager.switchScreen(ScreenFactory.VEHICLE_BUILDER_APP_SCREEN_KEY, null));
+    backButton.setOnAction(e -> onOutcome.accept(Outcome.BACK_TO_VEHICLE_BUILDER));
 
     return backButton;
   }
 
   private Pane createGameAreaRegion() {
-    // This Pane will hold the rendering
     Pane gameContainer = new Pane();
     gameContainer.getStyleClass().add("game-container");
     return gameContainer;
@@ -64,7 +68,6 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     container.getStyleClass().add("hud-top");
 
     container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-
     container.setPickOnBounds(false);
 
     Button pauseBtn = new Button(s("button.pause"));
@@ -82,14 +85,12 @@ public class GamePlayAppScreen extends AbstractAppScreen {
     container.getStyleClass().add("hud-bottom");
 
     container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-
     container.setPickOnBounds(false);
 
     for (String tool : getList("tools")) {
       ToggleButton toolBtn = new ToggleButton(s("tool." + tool));
       toolBtn.getStyleClass().add("tool-button");
 
-      // You only need the listener if you want to update your game model.
       toolBtn.setOnAction(e -> {
         // TODO: Update GameController
         System.out.println(tool + " is now " + (toolBtn.isSelected() ? "Active" : "Inactive"));

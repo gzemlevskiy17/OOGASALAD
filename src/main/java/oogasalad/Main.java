@@ -13,6 +13,8 @@ import oogasalad.view.core.api.AppScreen;
  */
 public class Main extends Application {
 
+    private static final double VERSION = 0.001;
+
     @Override
     public void start(Stage stage) {
         ScreenManager screenManager = new ScreenManagerImpl(stage);
@@ -23,7 +25,7 @@ public class Main extends Application {
             screenManager.registerScreen(screenEntry.getKey(), screenEntry.getValue());
         }
 
-        screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY, null);
+        screenManager.switchScreen(ScreenFactory.MENU_SCREEN_KEY);
 
         stage.setTitle("Good Piggies");
         stage.show();
@@ -36,5 +38,12 @@ public class Main extends Application {
      */
     public static void main(String[] args) {
         launch(args);
+    }
+
+    /**
+     * Returns the current application version used by the starter sanity test.
+     */
+    public double getVersion() {
+        return VERSION;
     }
 }

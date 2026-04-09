@@ -1,5 +1,7 @@
 package oogasalad.view.core.api;
 
+import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -9,46 +11,57 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.controller.core.internal.ScreenFactory;
-import oogasalad.view.constants.GameMenuConstants;
+import oogasalad.controller.core.api.Outcome;
 
 /**
  * Basic start menu screen for the application.
  */
 public class GameMenuScreen implements AppScreen {
 
+  private static final ResourceBundle PROPS =
+      ResourceBundle.getBundle("oogasalad.view.core.GameMenu");
+
   private final Parent root;
 
-  public GameMenuScreen(ScreenManager screenManager) {
+  public GameMenuScreen(Consumer<Outcome> onOutcome) {
     BorderPane root = new BorderPane();
-    root.setPadding(new Insets(GameMenuConstants.ROOT_PADDING));
+    root.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/core/game-menu.css").toExternalForm());
+    root.getStyleClass().add("screen-root");
+    root.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
 
-    Button settingsButton = new Button(GameMenuConstants.SETTINGS_BUTTON_TEXT);
-    Button helpButton = new Button(GameMenuConstants.HELP_BUTTON_TEXT);
-    Button profileButton = new Button(GameMenuConstants.PROFILE_BUTTON_TEXT);
+    Button settingsButton = new Button(PROPS.getString("settingsButtonText"));
+    Button helpButton = new Button(PROPS.getString("helpButtonText"));
+    Button profileButton = new Button(PROPS.getString("profileButtonText"));
+    settingsButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    helpButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    profileButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     root.setTop(wrapTopLeft(settingsButton, helpButton, profileButton));
 
-    Label title = new Label(GameMenuConstants.MENU_TITLE);
-    title.setFont(Font.font(GameMenuConstants.TITLE_FONT_SIZE));
+    Label title = new Label(PROPS.getString("menuTitle"));
+    title.setFont(Font.font(Double.parseDouble(PROPS.getString("titleFontSize"))));
+    title.getStyleClass().add("menu-title");
 
-    Button playButton = new Button(GameMenuConstants.PLAY_BUTTON_TEXT);
-    playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
-    playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
-    playButton.setOnAction(event ->
-        screenManager.switchScreen(ScreenFactory.PLAYER_ENTRY_APP_SCREEN_KEY, null));
+    double buttonWidth = Double.parseDouble(PROPS.getString("buttonWidth"));
 
-    Button createButton = new Button(GameMenuConstants.CREATE_BUTTON_TEXT);
-    playButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
-    createButton.setPrefWidth(GameMenuConstants.BUTTON_WIDTH);
-    createButton.setOnAction(event ->
-        screenManager.switchScreen(ScreenFactory.AUTHORING_ENTRY_SCREEN_KEY, null));
+    Button playButton = new Button(PROPS.getString("playButtonText"));
+    playButton.setPrefWidth(buttonWidth);
+    playButton.getStyleClass().addAll("menu-button", "menu-primary-button");
+    playButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_PLAYER_ENTRY));
 
-    VBox centerContent = new VBox(GameMenuConstants.BUTTON_SPACING, title, playButton, createButton);
+    Button createButton = new Button(PROPS.getString("createButtonText"));
+    createButton.setPrefWidth(buttonWidth);
+    createButton.getStyleClass().addAll("menu-button", "menu-primary-button");
+    createButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_AUTHORING_ENTRY));
+
+    VBox centerContent = new VBox(
+        Double.parseDouble(PROPS.getString("buttonSpacing")), title, playButton, createButton);
     centerContent.setAlignment(Pos.CENTER);
+    centerContent.getStyleClass().add("menu-center-region");
     root.setCenter(centerContent);
 
-    Button loginButton = new Button(GameMenuConstants.LOGIN_BUTTON_TEXT);
+    Button loginButton = new Button(PROPS.getString("loginButtonText"));
+    loginButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     root.setBottom(wrapBottomLeft(loginButton));
 
     this.root = root;
@@ -60,14 +73,17 @@ public class GameMenuScreen implements AppScreen {
   }
 
   private VBox wrapTopLeft(Button... buttons) {
-    VBox container = new VBox(GameMenuConstants.CORNER_BUTTON_SPACING, buttons);
+    VBox container = new VBox(
+        Double.parseDouble(PROPS.getString("cornerButtonSpacing")), buttons);
     container.setAlignment(Pos.TOP_LEFT);
+    container.getStyleClass().add("menu-corner-region");
     return container;
   }
 
   private StackPane wrapBottomLeft(Button button) {
     StackPane container = new StackPane(button);
     StackPane.setAlignment(button, Pos.BOTTOM_LEFT);
+    container.getStyleClass().add("menu-login-region");
     return container;
   }
 }

@@ -1,8 +1,8 @@
 package oogasalad.model.engine.internal;
 
 import java.util.Objects;
-import oogasalad.model.ConvexPolygon;
-import oogasalad.model.ObjectState;
+import oogasalad.model.engine.ConvexPolygon;
+import oogasalad.model.engine.ObjectState;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Pose;
@@ -20,12 +20,22 @@ public abstract class GameComponent implements GameObject {
   private boolean affectedByGravity;
   private boolean trigger;
 
+  /**
+   *
+   * @param pose
+   * @param mass
+   * @param friction
+   * @author Xuye
+   * @author Georgiy Zemlevskiy
+   */
   public GameComponent(Pose pose, double mass, double friction) {
     Pose initialPose = Objects.requireNonNull(pose, EngineError.NULL_POSE.message());
     this.state = new ObjectState(
         new Vector(initialPose.x(), initialPose.y()),
         new Vector(0, 0),
+        new Vector(0, 0),
         initialPose.rotation(),
+        new Vector(0, 0),
         new Vector(0, 0)
     );
     setMass(mass);
@@ -45,14 +55,6 @@ public abstract class GameComponent implements GameObject {
     Pose newPose = Objects.requireNonNull(position, EngineError.NULL_POSE.message());
     state.setLinearPosition(new Vector(newPose.x(), newPose.y()));
     state.setAngularPosition(newPose.rotation());
-  }
-
-  public Vector getVelocity() {
-    return state.getLinearVelocity();
-  }
-
-  public void setVelocity(Vector velocity) {
-    state.setLinearVelocity(Objects.requireNonNull(velocity, EngineError.NULL_VECTOR.message()));
   }
 
   @Override

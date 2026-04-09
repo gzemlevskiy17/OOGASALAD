@@ -1,0 +1,52 @@
+.screen-root {
+  -fx-background-color: white;
+  -fx-border-color: #e67e22;
+  -fx-border-width: 4;
+}
+
+.authoring-entry-center {
+  -fx-alignment: top-center;
+}
+
+.authoring-entry-title {
+  -fx-font-family: "Serif";
+  -fx-text-fill: #333333;
+}
+
+.authoring-entry-button-row {
+  -fx-alignment: center;
+}
+
+.authoring-entry-action {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
+  -fx-border-radius: 16;
+  -fx-background-radius: 16;
+  -fx-font-family: "Serif";
+  -fx-text-fill: #333333;
+}
+
+.authoring-entry-action:hover {
+  -fx-background-color: #f7f7f7;
+  -fx-cursor: hand;
+}
+
+.authoring-entry-back {
+  -fx-background-color: #E0E0E0;
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 6;
+  -fx-background-radius: 6;
+  -fx-font-family: "Serif";
+  -fx-padding: 6 16;
+}
+
+.authoring-entry-back:hover {
+  -fx-background-color: #f0f0f0;
+  -fx-cursor: hand;
+}
+
+.authoring-entry-nav {
+  -fx-padding: 20;
+}

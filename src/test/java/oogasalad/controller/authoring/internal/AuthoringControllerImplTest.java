@@ -9,12 +9,14 @@ import java.util.Collections;
 import java.util.List;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
-import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.GameComponent;
 import oogasalad.view.authoring.api.AuthoringCanvas;
+import oogasalad.view.authoring.api.AuthoringPlaceable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +38,7 @@ class AuthoringControllerImplTest {
     canvas = new SpyCanvas();
 
     controller = new AuthoringControllerImpl(
-        world, loader, saver, new FakeGameConfig(), toolSelector, canvas);
+        world, loader, saver, new LevelAttributes(), toolSelector, canvas);
   }
 
   @Test
@@ -90,18 +92,18 @@ class AuthoringControllerImplTest {
 
   // --- Test doubles ---
 
-  private static class FakeGameConfig implements GameConfig {
-    @Override public String getSetting(String key) { return null; }
-    @Override public double getNumericSetting(String key) { return 0; }
-  }
-
   private static class FakeWorld implements World {
-    private final List<GameObject> objects = new ArrayList<>();
-    @Override public Collection<GameObject> getObjects() { return Collections.unmodifiableList(objects); }
+    private final List<GameComponent> components = new ArrayList<>();
+    @Override public Collection<GameComponent> getComponents() { return Collections.unmodifiableList(components); }
+    @Override public Collection<GameComponent> getAllComponents() { return Collections.unmodifiableList(components); }
+    @Override public Collection<GameComponent> getActiveComponents() { return Collections.unmodifiableList(components); }
     @Override public Collection<Joint> getJoints() { return List.of(); }
-    @Override public void addObject(GameObject o) { objects.add(o); }
+    @Override public void addComponent(GameComponent component) { components.add(component); }
+    @Override public void removeComponent(GameComponent component) { components.remove(component); }
+    @Override public void clear() { components.clear(); }
     @Override public void addJoint(Joint j) {}
-    int objectCount() { return objects.size(); }
+    @Override public void removeJoint(Joint j) {}
+    int objectCount() { return components.size(); }
   }
 
   private static class FakeToolSelector implements oogasalad.controller.authoring.api.ToolSelector {
@@ -124,5 +126,12 @@ class AuthoringControllerImplTest {
     boolean refreshCalled = false;
     @Override public javafx.scene.Node getVisualRoot() { return null; }
     @Override public void refreshGrid() { refreshCalled = true; }
+    @Override public boolean isWithinBounds(int col, int row) { return true; }
+    @Override public double getCellSize() { return 40.0; }
+    @Override public void setSelectedPlaceable(AuthoringPlaceable placeable) {}
+    @Override public void placeBlock(int col, int row) {}
+    @Override public void showHoverPreview(int col, int row) {}
+    @Override public void clearHoverPreview() {}
+    @Override public void setOnObjectSelected(java.util.function.Consumer<AuthoringPlaceable> handler) {}
   }
 }

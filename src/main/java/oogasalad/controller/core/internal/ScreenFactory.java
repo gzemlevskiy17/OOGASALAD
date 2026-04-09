@@ -3,8 +3,8 @@ package oogasalad.controller.core.internal;
 import java.util.HashMap;
 import java.util.Map;
 import oogasalad.controller.core.api.ScreenManager;
-import oogasalad.view.authoring.api.AuthoringEntryScreen;
-import oogasalad.view.authoring.api.AuthoringScreen;
+import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
+import oogasalad.view.authoring.internal.AuthoringScreenImpl;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.core.api.GameMenuScreen;
 import oogasalad.view.player.internal.GamePlayAppScreen;
@@ -36,14 +36,16 @@ public class ScreenFactory {
    */
   public Map<String, AppScreen> createScreens() {
     Map<String, AppScreen> screens = new HashMap<>();
-    screens.put(MENU_SCREEN_KEY, new GameMenuScreen(screenManager));
-    screens.put(AUTHORING_ENTRY_SCREEN_KEY, new AuthoringEntryScreen(screenManager));
-    screens.put(AUTHORING_SCREEN_KEY, new AuthoringScreen(screenManager));
-    screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(screenManager));
-    screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(screenManager));
-    screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(screenManager));
-
-
+    AuthoringScreenImpl authoringScreen = new AuthoringScreenImpl(screenManager);
+    screens.put(MENU_SCREEN_KEY, new GameMenuScreen(screenManager::onOutcome));
+    screens.put(AUTHORING_SCREEN_KEY, authoringScreen);
+    screens.put(AUTHORING_ENTRY_SCREEN_KEY,
+        new AuthoringEntryScreenImpl(screenManager,
+            authoringScreen::loadLevelFromPath,
+            authoringScreen::resetForNewLevel));
+    screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(screenManager::onOutcome));
+    screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(screenManager::onOutcome));
+    screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(screenManager::onOutcome));
     return screens;
   }
 }
