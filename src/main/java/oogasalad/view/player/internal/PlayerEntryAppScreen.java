@@ -96,11 +96,18 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     HBox levelBox = new HBox(d("level.region.spacing"));
     levelBox.setAlignment(Pos.CENTER);
 
+    List<String> lockedLevels = getList("locked.levels");
+
     for (String level : getList("levels")) {
       Button btn = new Button(s("level.button." + level));
       btn.getStyleClass().add("level-button");
-      // high levels are not open
-      if (level.contains("locked")) btn.getStyleClass().add("filled");
+
+      // Levels not yet open
+      if (lockedLevels.contains(level)) {
+        btn.getStyleClass().add("locked-level");
+        btn.setDisable(true);
+      };
+
       levelBox.getChildren().add(btn);
     }
     return levelBox;
