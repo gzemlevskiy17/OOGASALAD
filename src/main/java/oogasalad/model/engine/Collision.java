@@ -39,10 +39,9 @@ public class Collision {
    *
    * @param objectA first colliding object
    * @param objectB second colliding object
-   * @param collided whether overlap was detected
    * @param penetration penetration vector (direction and magnitude); often zero when no overlap
    */
-  public Collision(GameObject objectA, GameObject objectB, boolean collided, Vector penetration) {
+  public Collision(GameObject objectA, GameObject objectB, Vector penetration) {
     this.objectA = objectA;
     this.objectB = objectB;
     this.penetration = penetration;

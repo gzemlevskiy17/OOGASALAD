@@ -84,13 +84,13 @@ public class CollisionDetectorImpl implements CollisionDetector {
     ConvexPolygon polygonA = objectA.getPolygon();
     ConvexPolygon polygonB = objectB.getPolygon();
 
-    Collision collision = new Collision(objectA, objectB, true, new Vector(0, 0));
+    Collision collision = new Collision(objectA, objectB, new Vector(0, 0));
     double minPenetrationDepth = Double.MAX_VALUE;
     for (int i = 0; i < polygonA.getPoints().size() - 1; i++) { // Looping over edges clockwise
       Vector point1 = polygonA.getPoints().get(i);
       Vector point2 = polygonA.getPoints().get(i + 1);
       Vector tangent = point2.subtract(point1).normalize();
-      Vector normal = tangent.rotateLeft(); //Find the inward normal along which to compute the penetration depth
+      Vector normal = tangent.rotateRight(); //Find the inward normal along which to compute the penetration depth
 
       double[] projectionA = projectPolygonAlongVector(polygonA, normal);
       double[] projectionB = projectPolygonAlongVector(polygonB, normal);
