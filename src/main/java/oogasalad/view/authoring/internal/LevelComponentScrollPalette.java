@@ -21,7 +21,7 @@ import oogasalad.view.authoring.api.ComponentPallete;
  * Palette implementation that reads object definitions from properties and notifies subscribers
  * when the user selects a different object type.
  */
-public class ComponentPaletteImpl implements ComponentPallete {
+public class LevelComponentScrollPalette implements ComponentPallete {
 
   private static final ResourceBundle TERRAIN_PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.TerrainBlock");
@@ -38,11 +38,11 @@ public class ComponentPaletteImpl implements ComponentPallete {
 
   private String selectedName;
 
-  public ComponentPaletteImpl() {
+  public LevelComponentScrollPalette() {
     this("oogasalad.view.authoring.ComponentPalette");
   }
 
-  public ComponentPaletteImpl(String bundleName) {
+  public LevelComponentScrollPalette(String bundleName) {
     this.props = ResourceBundle.getBundle(bundleName);
     this.sampleSize = d("sampleSize");
     this.selectedStroke = Color.web(s("selectedStroke"));
