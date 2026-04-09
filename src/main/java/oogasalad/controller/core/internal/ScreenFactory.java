@@ -19,8 +19,10 @@ import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.core.api.GameMenuScreen;
+import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
+import oogasalad.view.player.internal.WinAppScreen;
 
 /**
  * Creates and collects application screens for registration with the ScreenManager.
@@ -33,6 +35,8 @@ public class ScreenFactory {
   public static final String AUTHORING_SCREEN_KEY = "AUTHORING_SCREEN";
   public static final String VEHICLE_BUILDER_APP_SCREEN_KEY = "VEHICLE_BUILDER_SCREEN";
   public static final String GAMEPLAY_APP_SCREEN_KEY = "GAMEPLAY_SCREEN";
+  public static final String WIN_APP_SCREEN_KEY = "WIN_SCREEN";
+  public static final String LOSE_APP_SCREEN_KEY = "LOSE_SCREEN";
   public static final String LOGIN_SCREEN_KEY = "LOGIN";
   public static final String CREATE_ACCOUNT_SCREEN_KEY = "CREATE_ACCOUNT";
   public static final String PROFILE_SCREEN_KEY = "PROFILE";
@@ -75,6 +79,8 @@ public class ScreenFactory {
     screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(this::guardedOutcome));
     screens.put(GAMEPLAY_APP_SCREEN_KEY,
         new GamePlayScreenCoordinator(this::guardedOutcome, new GameplaySessionFactoryImpl()));
+    screens.put(WIN_APP_SCREEN_KEY, new WinAppScreen(this::guardedOutcome));
+    screens.put(LOSE_APP_SCREEN_KEY, new LoseAppScreen(this::guardedOutcome));
 
     // Auth screens — each wraps the action consumer to bind its own error display before
     // delegating to the controller, so handleAuthError reaches the right screen.
