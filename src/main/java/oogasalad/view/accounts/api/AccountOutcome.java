@@ -3,7 +3,9 @@ package oogasalad.view.accounts.api;
 /**
  * Represents user actions taken on account screens.
  */
-public interface AccountOutcome {
+public sealed interface AccountOutcome
+    permits AccountOutcome.LoginRequested, AccountOutcome.RegisterRequested,
+    AccountOutcome.LogoutRequested, AccountOutcome.UpdateAvatarRequested {
 
   record LoginRequested(String user, String pass) implements AccountOutcome {
 
