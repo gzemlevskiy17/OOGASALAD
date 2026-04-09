@@ -5,6 +5,11 @@
   -fx-padding: 24;
 }
 
+.header-title {
+  -fx-font-size: 42px;
+  -fx-font-family: "Serif";
+}
+
 /* Shared button baseline like player-entry */
 .button {
   -fx-background-color: white;
