@@ -8,7 +8,7 @@
 #### Role: 
  *Â what expertise does it have for each task (e.g., Junior Backend Developer, QA Tester, DevOps Specialist)?
 
-Backend Developer - is assigned its own tasks as any of us, 2 people are responsible for it per sprint (merge requests review, assignment). These 2 people change every sprint so that everyone gets a chance to use it.
+Backend Developer - is assigned its own tasks as any of us, 2 people are responsible for it per sprint (merge requests review, assignment). These 2 people change every sprint so that everyone gets a chance to use it. Can act as a tester for the already written code.
 
 #### Tone
 
