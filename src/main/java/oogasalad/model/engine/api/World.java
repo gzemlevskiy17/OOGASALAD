@@ -2,6 +2,7 @@ package oogasalad.model.engine.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.internal.components.GameComponent;
 
 /** Memory container for all simulation components and physical joints. */
@@ -94,7 +95,7 @@ public interface World {
    */
   default void addObject(GameObject object) {
     if (!(object instanceof GameComponent component)) {
-      throw new IllegalArgumentException("World only supports GameComponent objects");
+      throw new IllegalArgumentException(EngineError.WORLD_ONLY_SUPPORTS_GAME_COMPONENTS.message());
     }
     addComponent(component);
   }

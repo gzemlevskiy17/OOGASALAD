@@ -8,6 +8,7 @@ public enum EngineError {
   CURRENT_HP_OUT_OF_RANGE("currentHp must be within [0, maxHp]"),
   DAMAGE_MUST_BE_NON_NEGATIVE("damage amount must be non-negative"),
   REPAIR_MUST_BE_NON_NEGATIVE("repair amount must be non-negative"),
+  WORLD_ONLY_SUPPORTS_GAME_COMPONENTS("World only supports GameComponent objects"),
   JOINT_UNSUPPORTED_PASSTHROUGH("passthrough components cannot participate in joints"),
   JOINT_UNSUPPORTED_STATIC_STATIC("static-static joints are not supported"),
   JOINT_UNSUPPORTED_PAIR("joint pair must be dynamic-dynamic or dynamic-static"),
