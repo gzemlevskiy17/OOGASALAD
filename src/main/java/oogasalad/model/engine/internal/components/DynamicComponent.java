@@ -1,9 +1,7 @@
 package oogasalad.model.engine.internal.components;
 
-import oogasalad.model.engine.api.Pose;
-
 public abstract class DynamicComponent extends GameComponent {
-  public DynamicComponent(Pose pose, double mass, double friction) {
-    super(pose, mass, friction);
+  public DynamicComponent(double x, double y, double rotation, double mass, double friction) {
+    super(x, y, rotation, mass, friction);
   }
 }

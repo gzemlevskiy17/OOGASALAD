@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.PassthroughComponent;
@@ -17,8 +16,8 @@ class DistanceJointTest {
 
   @Test
   void apply_zeroStiffnessBehavesAsRigidDistanceConstraint() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(4, 0, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(4, 0, 0);
     DistanceJoint joint = new DistanceJoint(objectA, objectB, 0.0, 0.0);
 
     objectB.getState().setLinearPosition(new Vector(6, 0));
@@ -33,8 +32,8 @@ class DistanceJointTest {
 
   @Test
   void apply_positiveStiffnessBehavesAsSpring() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(4, 0, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(4, 0, 0);
     DistanceJoint joint = new DistanceJoint(objectA, objectB, 10.0, 0.0);
 
     objectB.getState().setLinearPosition(new Vector(6, 0));
@@ -49,8 +48,8 @@ class DistanceJointTest {
 
   @Test
   void apply_positiveStiffnessWhenCompressedVertically_pushesBodiesApart() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(0, 4, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 4, 0);
     DistanceJoint joint = new DistanceJoint(objectA, objectB, 8.0, 0.0);
 
     objectB.getState().setLinearPosition(new Vector(0, 2));
@@ -64,8 +63,8 @@ class DistanceJointTest {
 
   @Test
   void apply_positiveStiffnessWhenStretchedDiagonally_pullsBodiesTogether() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(3, 4, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(3, 4, 0);
     DistanceJoint joint = new DistanceJoint(objectA, objectB, 10.0, 0.0);
 
     objectB.getState().setLinearPosition(new Vector(6, 8));
@@ -79,8 +78,8 @@ class DistanceJointTest {
 
   @Test
   void apply_withDistanceRangeOnlyCorrectsOutsideBand() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(4, 0, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(4, 0, 0);
     DistanceJoint joint = new DistanceJoint(objectA, objectB, 3.0, 5.0, 10.0, 0.0);
 
     joint.apply(1.0);
@@ -95,8 +94,8 @@ class DistanceJointTest {
 
   @Test
   void apply_zeroStiffnessCorrectsVerticalCompression() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(0, 4, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 4, 0);
     DistanceJoint joint = new DistanceJoint(objectA, objectB, 0.0, 0.0);
 
     objectB.getState().setLinearPosition(new Vector(0, 2));
@@ -110,8 +109,8 @@ class DistanceJointTest {
 
   @Test
   void apply_zeroStiffnessCorrectsDiagonalStretchForDynamicStaticPair() {
-    TestDynamicComponent dynamic = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestStaticComponent fixed = new TestStaticComponent(new Pose(3, 4, 0));
+    TestDynamicComponent dynamic = new TestDynamicComponent(0, 0, 0);
+    TestStaticComponent fixed = new TestStaticComponent(3, 4, 0);
     DistanceJoint joint = new DistanceJoint(dynamic, fixed, 0.0, 0.0);
 
     dynamic.getState().setLinearPosition(new Vector(-3, -4));
@@ -125,8 +124,8 @@ class DistanceJointTest {
 
   @Test
   void anchors_shiftConstraintEndpointsAwayFromBodyCenters() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(10, 0, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(10, 0, 0);
     DistanceJoint joint = new DistanceJoint(
         objectA,
         objectB,
@@ -150,8 +149,8 @@ class DistanceJointTest {
 
   @Test
   void anchors_rotateWithBodiesBeforeDistanceIsMeasured() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, Math.PI / 2));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(0, 10, Math.PI));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, Math.PI / 2);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 10, Math.PI);
     DistanceJoint joint = new DistanceJoint(
         objectA,
         objectB,
@@ -179,10 +178,10 @@ class DistanceJointTest {
 
   @Test
   void constructor_rejectsStaticStaticAndPassthroughPairs() {
-    TestStaticComponent staticA = new TestStaticComponent(new Pose(0, 0, 0));
-    TestStaticComponent staticB = new TestStaticComponent(new Pose(2, 0, 0));
-    TestDynamicComponent dynamic = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestPassthroughComponent passthrough = new TestPassthroughComponent(new Pose(2, 0, 0));
+    TestStaticComponent staticA = new TestStaticComponent(0, 0, 0);
+    TestStaticComponent staticB = new TestStaticComponent(2, 0, 0);
+    TestDynamicComponent dynamic = new TestDynamicComponent(0, 0, 0);
+    TestPassthroughComponent passthrough = new TestPassthroughComponent(2, 0, 0);
 
     assertThrows(IllegalArgumentException.class, () -> new DistanceJoint(staticA, staticB, 0.0, 0.0));
     assertThrows(IllegalArgumentException.class, () -> new DistanceJoint(dynamic, passthrough, 0.0, 0.0));
@@ -193,21 +192,21 @@ class DistanceJointTest {
   }
 
   private static class TestDynamicComponent extends DynamicComponent {
-    TestDynamicComponent(Pose pose) {
-      super(pose, 1.0, 0.5);
+    TestDynamicComponent(double x, double y, double rotation) {
+      super(x, y, rotation, 1.0, 0.5);
     }
   }
 
   private static class TestStaticComponent extends StaticComponent {
-    TestStaticComponent(Pose pose) {
-      super(pose, 0.0, 0.5);
+    TestStaticComponent(double x, double y, double rotation) {
+      super(x, y, rotation, 0.0, 0.5);
       setAffectedByGravity(false);
     }
   }
 
   private static class TestPassthroughComponent extends PassthroughComponent {
-    TestPassthroughComponent(Pose pose) {
-      super(pose, 0.0, 0.0);
+    TestPassthroughComponent(double x, double y, double rotation) {
+      super(x, y, rotation, 0.0, 0.0);
     }
 
     @Override

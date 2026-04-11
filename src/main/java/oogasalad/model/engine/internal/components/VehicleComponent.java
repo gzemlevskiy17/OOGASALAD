@@ -1,7 +1,6 @@
 package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.EngineError;
-import oogasalad.model.engine.api.Pose;
 
 /**
  * @author Xuye
@@ -10,8 +9,9 @@ public abstract class VehicleComponent extends DynamicComponent {
   private double maxHp;
   private double currentHp;
 
-  public VehicleComponent(Pose pose, double mass, double friction, double maxHp) {
-    super(pose, mass, friction);
+  public VehicleComponent(double x, double y, double rotation, double mass, double friction,
+      double maxHp) {
+    super(x, y, rotation, mass, friction);
     if (maxHp < 0) {throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());}
     this.maxHp = maxHp;
     this.currentHp = maxHp;

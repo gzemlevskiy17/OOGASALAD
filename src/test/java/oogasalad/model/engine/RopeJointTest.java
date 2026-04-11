@@ -3,7 +3,6 @@ package oogasalad.model.engine;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
@@ -14,8 +13,8 @@ class RopeJointTest {
 
   @Test
   void apply_onlyCorrectsWhenBodiesExceedMaximumDistance() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(4, 0, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(4, 0, 0);
     RopeJoint joint = new RopeJoint(objectA, objectB, 5.0);
 
     joint.apply(1.0);
@@ -31,8 +30,8 @@ class RopeJointTest {
 
   @Test
   void apply_atExactMaximumDistance_keepsRopeSlackButUnchanged() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(3, 4, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(3, 4, 0);
     RopeJoint joint = new RopeJoint(objectA, objectB, 5.0);
 
     joint.apply(1.0);
@@ -45,8 +44,8 @@ class RopeJointTest {
 
   @Test
   void apply_whenRopeIsFullySlack_doesNotPushBodiesApart() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(0, 2, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 2, 0);
     RopeJoint joint = new RopeJoint(objectA, objectB, 5.0);
 
     joint.apply(1.0);
@@ -57,8 +56,8 @@ class RopeJointTest {
 
   @Test
   void apply_verticalOverstretch_onlyMovesDynamicBodyAgainstStaticAnchor() {
-    TestDynamicComponent dynamic = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestStaticComponent fixed = new TestStaticComponent(new Pose(0, 4, 0));
+    TestDynamicComponent dynamic = new TestDynamicComponent(0, 0, 0);
+    TestStaticComponent fixed = new TestStaticComponent(0, 4, 0);
     RopeJoint joint = new RopeJoint(dynamic, fixed, 4.0);
 
     dynamic.getState().setLinearPosition(new Vector(0, -2));
@@ -72,8 +71,8 @@ class RopeJointTest {
 
   @Test
   void apply_diagonalOverstretchWithRotatedAnchors_correctsAlongAnchorDirection() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, Math.PI / 2));
-    TestDynamicComponent objectB = new TestDynamicComponent(new Pose(6, 8, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, Math.PI / 2);
+    TestDynamicComponent objectB = new TestDynamicComponent(6, 8, 0);
     RopeJoint joint = new RopeJoint(
         objectA,
         objectB,
@@ -93,21 +92,21 @@ class RopeJointTest {
 
   @Test
   void constructor_rejectsMaximumDistanceSmallerThanInitialDistance() {
-    TestDynamicComponent objectA = new TestDynamicComponent(new Pose(0, 0, 0));
-    TestStaticComponent objectB = new TestStaticComponent(new Pose(4, 0, 0));
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestStaticComponent objectB = new TestStaticComponent(4, 0, 0);
 
     assertThrows(IllegalArgumentException.class, () -> new RopeJoint(objectA, objectB, 3.0));
   }
 
   private static class TestDynamicComponent extends DynamicComponent {
-    TestDynamicComponent(Pose pose) {
-      super(pose, 1.0, 0.5);
+    TestDynamicComponent(double x, double y, double rotation) {
+      super(x, y, rotation, 1.0, 0.5);
     }
   }
 
   private static class TestStaticComponent extends StaticComponent {
-    TestStaticComponent(Pose pose) {
-      super(pose, 0.0, 0.5);
+    TestStaticComponent(double x, double y, double rotation) {
+      super(x, y, rotation, 0.0, 0.5);
       setAffectedByGravity(false);
     }
   }
