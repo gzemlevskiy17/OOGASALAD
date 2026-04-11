@@ -1,10 +1,6 @@
 package oogasalad.model.engine;
 
 public enum EngineError {
-  NULL_POSE("pose must not be null"),
-  NULL_VECTOR("vector must not be null"),
-  NULL_OBJECT_STATE("object state must not be null"),
-  NULL_GAME_COMPONENT("game component must not be null"),
   MASS_MUST_BE_NON_NEGATIVE("mass must be non-negative"),
   FRICTION_MUST_BE_NON_NEGATIVE("friction must be non-negative"),
   THRUST_FORCE_MUST_BE_NON_NEGATIVE("thrust force must be non-negative"),

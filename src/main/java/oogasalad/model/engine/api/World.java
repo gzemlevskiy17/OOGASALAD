@@ -2,7 +2,6 @@ package oogasalad.model.engine.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
 import oogasalad.model.engine.internal.components.GameComponent;
 
 /** Memory container for all simulation components and physical joints. */
@@ -38,7 +37,7 @@ public interface World {
    * Destroys and unregisters a component from the world.
    */
   default void destroyComponent(GameComponent component) {
-    Objects.requireNonNull(component).destroy();
+    component.destroy();
     removeComponent(component);
   }
 
@@ -46,14 +45,14 @@ public interface World {
    * Activates a registered component.
    */
   default void activateComponent(GameComponent component) {
-    Objects.requireNonNull(component).activate();
+    component.activate();
   }
 
   /**
    * Deactivates a registered component.
    */
   default void deactivateComponent(GameComponent component) {
-    Objects.requireNonNull(component).deactivate();
+    component.deactivate();
   }
 
   /**
@@ -94,7 +93,7 @@ public interface World {
    * Compatibility alias for older code still using GameObject naming.
    */
   default void addObject(GameObject object) {
-    if (!(Objects.requireNonNull(object) instanceof GameComponent component)) {
+    if (!(object instanceof GameComponent component)) {
       throw new IllegalArgumentException("World only supports GameComponent objects");
     }
     addComponent(component);

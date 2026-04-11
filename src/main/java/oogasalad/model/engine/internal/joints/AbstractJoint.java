@@ -1,6 +1,5 @@
 package oogasalad.model.engine.internal.joints;
 
-import java.util.Objects;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
@@ -31,10 +30,10 @@ public abstract class AbstractJoint implements Joint {
   protected AbstractJoint(GameComponent objectA, GameComponent objectB,
       oogasalad.model.engine.api.Vector localAnchorA,
       oogasalad.model.engine.api.Vector localAnchorB) {
-    this.objectA = Objects.requireNonNull(objectA, EngineError.NULL_GAME_COMPONENT.message());
-    this.objectB = Objects.requireNonNull(objectB, EngineError.NULL_GAME_COMPONENT.message());
-    this.localAnchorA = Objects.requireNonNull(localAnchorA, EngineError.NULL_VECTOR.message());
-    this.localAnchorB = Objects.requireNonNull(localAnchorB, EngineError.NULL_VECTOR.message());
+    this.objectA = objectA;
+    this.objectB = objectB;
+    this.localAnchorA = localAnchorA;
+    this.localAnchorB = localAnchorB;
     validatePair(this.objectA, this.objectB);
     this.restDistance = getWorldAnchorB().subtract(getWorldAnchorA()).magnitude();
   }

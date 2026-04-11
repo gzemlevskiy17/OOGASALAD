@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -49,48 +48,43 @@ public class WorldImpl implements World {
 
   @Override
   public void addComponent(GameComponent component) {
-    GameComponent componentToAdd = Objects.requireNonNull(component);
-    if (!allComponents.contains(componentToAdd)) {
-      allComponents.add(componentToAdd);
+    if (!allComponents.contains(component)) {
+      allComponents.add(component);
     }
-    synchronizeActiveMembership(componentToAdd);
+    synchronizeActiveMembership(component);
   }
 
   @Override
   public void removeComponent(GameComponent component) {
-    GameComponent componentToRemove = Objects.requireNonNull(component);
-    activeComponents.remove(componentToRemove);
-    allComponents.remove(componentToRemove);
+    activeComponents.remove(component);
+    allComponents.remove(component);
   }
 
   @Override
   public void destroyComponent(GameComponent component) {
-    GameComponent componentToDestroy = Objects.requireNonNull(component);
-    if (!allComponents.contains(componentToDestroy)) {
+    if (!allComponents.contains(component)) {
       return;
     }
-    componentToDestroy.destroy();
-    removeComponent(componentToDestroy);
+    component.destroy();
+    removeComponent(component);
   }
 
   @Override
   public void activateComponent(GameComponent component) {
-    GameComponent componentToActivate = Objects.requireNonNull(component);
-    if (!allComponents.contains(componentToActivate)) {
+    if (!allComponents.contains(component)) {
       return;
     }
-    componentToActivate.activate();
-    synchronizeActiveMembership(componentToActivate);
+    component.activate();
+    synchronizeActiveMembership(component);
   }
 
   @Override
   public void deactivateComponent(GameComponent component) {
-    GameComponent componentToDeactivate = Objects.requireNonNull(component);
-    if (!allComponents.contains(componentToDeactivate)) {
+    if (!allComponents.contains(component)) {
       return;
     }
-    componentToDeactivate.deactivate();
-    activeComponents.remove(componentToDeactivate);
+    component.deactivate();
+    activeComponents.remove(component);
   }
 
   @Override
@@ -118,24 +112,19 @@ public class WorldImpl implements World {
 
   @Override
   public void addJoint(Joint joint) {
-    Joint jointToAdd = Objects.requireNonNull(joint);
-    if (!joints.contains(jointToAdd)) {
-      joints.add(jointToAdd);
+    if (!joints.contains(joint)) {
+      joints.add(joint);
     }
   }
 
   @Override
   public void removeJoint(Joint joint) {
-    joints.remove(Objects.requireNonNull(joint));
+    joints.remove(joint);
   }
 
   private void synchronizeActiveMembership(GameComponent component) {
     if (component.isActive()) {
-      if (!activeComponents.contains(component)) {
-        activeComponents.add(component);
-      }
-    } else {
-      activeComponents.remove(component);
-    }
+      if (!activeComponents.contains(component)) {activeComponents.add(component);}
+    } else {activeComponents.remove(component);}
   }
 }
