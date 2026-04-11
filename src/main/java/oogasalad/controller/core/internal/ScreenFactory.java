@@ -60,7 +60,7 @@ public class ScreenFactory {
     this.authController = new AuthControllerImpl(
         authService,
         this::guardedOutcome,
-        this::handleAuthError
+        this::handleAuthError // this is equivalently message -> this.handleAuthError(message)
     );
   }
 
