@@ -2,7 +2,6 @@ package oogasalad.model.engine.internal.joints;
 
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.internal.components.GameComponent;
-
 /**
  * Shared base for concrete joint implementations.
  *
@@ -92,6 +91,21 @@ public abstract class AbstractJoint implements Joint {
   protected double getRestDistance() {return restDistance;}
 
   /**
+   * Resolves a scalar distance error into equal-and-opposite positional corrections along the
+   * current anchor direction.
+   */
+  protected void applyDistanceCorrection(double distanceError) {
+    double currentDistance = getCurrentDistance();
+    if (currentDistance == 0.0 || Math.abs(distanceError) < 1e-9) {
+      return;
+    }
+
+    oogasalad.model.engine.api.Vector correction =
+        getAnchorDelta().normalize().multiply(distanceError);
+    applyLinearCorrection(correction, correction.multiply(-1));
+  }
+
+  /**
    * Applies equal-and-opposite positional corrections, distributing motion by inverse mass.
    *
    * <p>Bodies with non-positive mass receive zero motion, which makes static endpoints stay fixed
@@ -119,6 +133,5 @@ public abstract class AbstractJoint implements Joint {
     if (inverseMass(objectA) > 0.0) {objectA.addForce(forceA);}
     if (inverseMass(objectB) > 0.0) {objectB.addForce(forceB);}
   }
-
   private double inverseMass(GameComponent component) {return component.getMass() > 0.0 ? 1.0 / component.getMass() : 0.0;}
 }

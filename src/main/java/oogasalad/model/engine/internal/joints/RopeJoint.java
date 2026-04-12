@@ -33,12 +33,8 @@ public class RopeJoint extends AbstractJoint {
   /** Corrects positions only when the anchors exceed the rope length. */
   @Override
   public void apply(double dt) {
-    Vector delta = getAnchorDelta();
-    double currentDistance = delta.magnitude();
-    if (currentDistance == 0.0 || currentDistance <= maxDistance) {return;}
-    double distanceError = currentDistance - maxDistance;
-    Vector correctionDirection = delta.normalize();
-    Vector correction = correctionDirection.multiply(distanceError);
-    applyLinearCorrection(correction, correction.multiply(-1));
+    double currentDistance = getCurrentDistance();
+    if (currentDistance <= maxDistance) {return;}
+    applyDistanceCorrection(currentDistance - maxDistance);
   }
 }

@@ -71,14 +71,7 @@ public class DistanceJoint extends AbstractJoint {
 
   /** Directly corrects body positions to restore the allowed distance. */
   protected void solveRigid() {
-    Vector delta = getAnchorDelta();
-    double currentDistance = delta.magnitude();
-    if (currentDistance == 0.0) {return;}
-    double distanceError = computeDistanceError(currentDistance);
-    if (Math.abs(distanceError) < 1e-9) {return;}
-    Vector correctionDirection = delta.normalize();
-    Vector correction = correctionDirection.multiply(distanceError);
-    applyLinearCorrection(correction, correction.multiply(-1));
+    applyDistanceCorrection(computeDistanceError(getCurrentDistance()));
   }
 
   /** Applies spring and damping forces without directly correcting positions. */
