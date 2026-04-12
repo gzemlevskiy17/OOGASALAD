@@ -1,13 +1,14 @@
 package oogasalad.model.engine.internal.components;
 
-import oogasalad.model.engine.api.Pose;
+/**
+ * @author Paulina Vvedenskaya
+ */
+public class DriveComponent extends VehicleComponent {
 
-public abstract class DriveComponent extends VehicleComponent {
-
-  public DriveComponent(Pose pose, double mass, double friction, double maxHp,
+  public DriveComponent(double x, double y, double rotation, double mass, double friction,
+      double maxHp,
       String displayName, String spritePath, double spriteWidth, double spriteHeight) {
-    super(pose, mass, friction, maxHp, displayName, spritePath, spriteWidth, spriteHeight);
+    super(x, y, rotation, mass, friction, maxHp, displayName, spritePath, spriteWidth,
+        spriteHeight);
   }
-
-  public abstract void activate();
 }
