@@ -22,43 +22,23 @@ public class RopeJoint extends AbstractJoint {
   public RopeJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
       Vector localAnchorB, double maxDistance) {
     super(objectA, objectB, localAnchorA, localAnchorB);
-    if (maxDistance < getRestDistance()) {
-      throw new IllegalArgumentException(EngineError.ROPE_JOINT_MAX_DISTANCE_TOO_SMALL.message());
-    }
+    if (maxDistance < getRestDistance()) {throw new IllegalArgumentException(EngineError.ROPE_JOINT_MAX_DISTANCE_TOO_SMALL.message());}
     this.maxDistance = maxDistance;
   }
 
   /** Returns the maximum allowed anchor separation. */
-  public double getMaxDistance() {
-    return maxDistance;
-  }
+  public double getMaxDistance() {return maxDistance;}
 
 
   /** Corrects positions only when the anchors exceed the rope length. */
   @Override
   public void apply(double dt) {
-    GameComponent objectA = getComponentA();
-    GameComponent objectB = getComponentB();
-    Vector positionA = objectA.getState().getLinearPosition();
-    Vector positionB = objectB.getState().getLinearPosition();
     Vector delta = getAnchorDelta();
     double currentDistance = delta.magnitude();
-
     if (currentDistance == 0.0 || currentDistance <= maxDistance) {return;}
-
     double distanceError = currentDistance - maxDistance;
     Vector correctionDirection = delta.normalize();
     Vector correction = correctionDirection.multiply(distanceError);
-
-    if (isDynamic(objectA) && isDynamic(objectB)) {
-      objectA.getState().setLinearPosition(positionA.add(correction.multiply(0.5)));
-      objectB.getState().setLinearPosition(positionB.subtract(correction.multiply(0.5)));
-      return;
-    }if (isDynamic(objectA) && isStatic(objectB)) {
-      objectA.getState().setLinearPosition(positionA.add(correction));
-      return;
-    }if (isStatic(objectA) && isDynamic(objectB)) {
-      objectB.getState().setLinearPosition(positionB.subtract(correction));
-    }
+    applyLinearCorrection(correction, correction.multiply(-1));
   }
 }

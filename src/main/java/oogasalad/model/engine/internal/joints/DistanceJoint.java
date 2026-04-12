@@ -24,16 +24,12 @@ public class DistanceJoint extends AbstractJoint {
   public DistanceJoint(GameComponent objectA, GameComponent objectB, double stiffness, double damping) {
     this(objectA, objectB, new Vector(0, 0), new Vector(0, 0), -1.0, -1.0, stiffness, damping);
   }
-
   /**
    * Creates a distance joint with an allowed distance band and default center anchors.
    */
-  public DistanceJoint(GameComponent objectA, GameComponent objectB,
-      double minDistance, double maxDistance, double stiffness, double damping) {
-    this(objectA, objectB, new Vector(0, 0), new Vector(0, 0), minDistance, maxDistance,
-        stiffness, damping);
+  public DistanceJoint(GameComponent objectA, GameComponent objectB, double minDistance, double maxDistance, double stiffness, double damping) {
+    this(objectA, objectB, new Vector(0, 0), new Vector(0, 0), minDistance, maxDistance, stiffness, damping);
   }
-
   /**
    * Creates a distance joint with explicit local anchors, range limits, and spring parameters.
    */
@@ -41,14 +37,10 @@ public class DistanceJoint extends AbstractJoint {
       Vector localAnchorB, double minDistance, double maxDistance, double stiffness,
       double damping) {
     super(objectA, objectB, localAnchorA, localAnchorB);
-    if (stiffness < 0.0 || damping < 0.0) {
-      throw new IllegalArgumentException(EngineError.JOINT_DISTANCE_PARAMS_NON_NEGATIVE.message());
-    }
+    if (stiffness < 0.0 || damping < 0.0) {throw new IllegalArgumentException(EngineError.JOINT_DISTANCE_PARAMS_NON_NEGATIVE.message());}
     double resolvedMin = minDistance < 0.0 ? getRestDistance() : minDistance;
     double resolvedMax = maxDistance < 0.0 ? getRestDistance() : maxDistance;
-    if (resolvedMin > resolvedMax) {
-      throw new IllegalArgumentException(EngineError.JOINT_DISTANCE_RANGE_INVALID.message());
-    }
+    if (resolvedMin > resolvedMax) {throw new IllegalArgumentException(EngineError.JOINT_DISTANCE_RANGE_INVALID.message());}
     this.minDistance = resolvedMin;
     this.maxDistance = resolvedMax;
     this.stiffness = stiffness;
@@ -73,59 +65,36 @@ public class DistanceJoint extends AbstractJoint {
   /** Solves either the rigid or spring form of the distance constraint. */
   @Override
   public void apply(double dt) {
-    if (isRigid()) {solveRigid();
-      return;
-    }solveSpring(dt);
+    if (isRigid()) {solveRigid();return;}
+    solveSpring(dt);
   }
 
   /** Directly corrects body positions to restore the allowed distance. */
   protected void solveRigid() {
-    GameComponent objectA = getComponentA();
-    GameComponent objectB = getComponentB();
-    Vector positionA = objectA.getState().getLinearPosition();
-    Vector positionB = objectB.getState().getLinearPosition();
     Vector delta = getAnchorDelta();
     double currentDistance = delta.magnitude();
-
     if (currentDistance == 0.0) {return;}
     double distanceError = computeDistanceError(currentDistance);
     if (Math.abs(distanceError) < 1e-9) {return;}
-
     Vector correctionDirection = delta.normalize();
     Vector correction = correctionDirection.multiply(distanceError);
-
-    if (isDynamic(objectA) && isDynamic(objectB)) {
-      objectA.getState().setLinearPosition(positionA.add(correction.multiply(0.5)));
-      objectB.getState().setLinearPosition(positionB.subtract(correction.multiply(0.5)));
-      return;
-    }if (isDynamic(objectA) && isStatic(objectB)) {
-      objectA.getState().setLinearPosition(positionA.add(correction));
-      return;
-    }if (isStatic(objectA) && isDynamic(objectB)) {
-      objectB.getState().setLinearPosition(positionB.subtract(correction));
-    }
+    applyLinearCorrection(correction, correction.multiply(-1));
   }
 
   /** Applies spring and damping forces without directly correcting positions. */
   protected void solveSpring(double dt) {
-    GameComponent objectA = getComponentA();
-    GameComponent objectB = getComponentB();
-
-    Vector positionDelta = getAnchorDelta();
-    double currentDistance = positionDelta.magnitude();
+    Vector delta = getAnchorDelta();
+    double currentDistance = delta.magnitude();
     if (currentDistance == 0.0) {return;}
-
-    Vector direction = positionDelta.normalize();
+    Vector direction = delta.normalize();
     double displacement = computeDistanceError(currentDistance);
     if (Math.abs(displacement) < 1e-9) {return;}
-    Vector relativeVelocity = objectB.getState().getLinearVelocity()
-        .subtract(objectA.getState().getLinearVelocity());
+    Vector relativeVelocity = getComponentB().getState().getLinearVelocity()
+        .subtract(getComponentA().getState().getLinearVelocity());
     double dampingForceMagnitude = relativeVelocity.dot(direction) * damping;
     double springForceMagnitude = (stiffness * displacement) + dampingForceMagnitude;
     Vector springForce = direction.multiply(springForceMagnitude);
-
-    if (isDynamic(objectA)) {objectA.addForce(springForce);}
-    if (isDynamic(objectB)) {objectB.addForce(springForce.multiply(-1));}
+    applyLinearForce(springForce, springForce.multiply(-1));
   }
 
   /** Returns the signed distance error relative to the permitted range. */

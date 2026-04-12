@@ -84,14 +84,14 @@ class WorldImplTest {
     assertTrue(world.getJoints().isEmpty());
   }
 
-  private record FakeJoint(GameObject objectA, GameObject objectB) implements Joint {
+  private record FakeJoint(GameComponent objectA, GameComponent objectB) implements Joint {
     @Override
-    public GameObject getObjectA() {
+    public GameComponent getComponentA() {
       return objectA;
     }
 
     @Override
-    public GameObject getObjectB() {
+    public GameComponent getComponentB() {
       return objectB;
     }
   }

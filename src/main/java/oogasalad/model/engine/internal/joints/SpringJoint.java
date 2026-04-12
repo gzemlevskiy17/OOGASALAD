@@ -13,9 +13,7 @@ public class SpringJoint extends DistanceJoint {
   private static final double DEFAULT_DAMPING = 2.0;
 
   /** Creates a spring joint with default stiffness and damping. */
-  public SpringJoint(GameComponent objectA, GameComponent objectB) {
-    this(objectA, objectB, DEFAULT_STIFFNESS, DEFAULT_DAMPING);
-  }
+  public SpringJoint(GameComponent objectA, GameComponent objectB) {this(objectA, objectB, DEFAULT_STIFFNESS, DEFAULT_DAMPING);}
 
   /** Creates a spring joint that uses the initial anchor spacing as its target length. */
   public SpringJoint(GameComponent objectA, GameComponent objectB, double stiffness, double damping) {
@@ -29,9 +27,7 @@ public class SpringJoint extends DistanceJoint {
   public SpringJoint(GameComponent objectA, GameComponent objectB, double minDistance,
       double maxDistance, double stiffness, double damping) {
     super(objectA, objectB, minDistance, maxDistance, stiffness, damping);
-    if (stiffness == 0.0) {
-      throw new IllegalArgumentException(EngineError.SPRING_JOINT_REQUIRES_POSITIVE_STIFFNESS.message());
-    }
+    if (stiffness == 0.0) {throw new IllegalArgumentException(EngineError.SPRING_JOINT_REQUIRES_POSITIVE_STIFFNESS.message());}
   }
 
   /** Creates a spring joint with explicit local anchors, range limits, and spring parameters. */
@@ -39,8 +35,6 @@ public class SpringJoint extends DistanceJoint {
       Vector localAnchorB, double minDistance, double maxDistance, double stiffness, double damping) {
     super(objectA, objectB, localAnchorA, localAnchorB, minDistance, maxDistance, stiffness,
         damping);
-    if (stiffness == 0.0) {
-      throw new IllegalArgumentException(EngineError.SPRING_JOINT_REQUIRES_POSITIVE_STIFFNESS.message());
-    }
+    if (stiffness == 0.0) {throw new IllegalArgumentException(EngineError.SPRING_JOINT_REQUIRES_POSITIVE_STIFFNESS.message());}
   }
 }

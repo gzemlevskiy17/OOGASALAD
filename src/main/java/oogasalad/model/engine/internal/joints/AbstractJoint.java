@@ -1,12 +1,7 @@
 package oogasalad.model.engine.internal.joints;
 
-import oogasalad.model.engine.EngineError;
-import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
-import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
-import oogasalad.model.engine.internal.components.PassthroughComponent;
-import oogasalad.model.engine.internal.components.StaticComponent;
 
 /**
  * Shared base for concrete joint implementations.
@@ -48,47 +43,22 @@ public abstract class AbstractJoint implements Joint {
     this.objectB = objectB;
     this.localAnchorA = localAnchorA;
     this.localAnchorB = localAnchorB;
-    validatePair(this.objectA, this.objectB);
     this.restDistance = getWorldAnchorB().subtract(getWorldAnchorA()).magnitude();
   }
 
   @Override
-  public GameObject getObjectA() {
-    return objectA;
-  }
-
+  public GameComponent getComponentA() {return objectA;}
   @Override
-  public GameObject getObjectB() {
-    return objectB;
-  }
-
-  /**
-   * Returns the first endpoint as a concrete {@link GameComponent}.
-   */
-  protected GameComponent getComponentA() {
-    return objectA;
-  }
-
-  /**
-   * Returns the second endpoint as a concrete {@link GameComponent}.
-   */
-  protected GameComponent getComponentB() {
-    return objectB;
-  }
-
+  public GameComponent getComponentB() {return objectB;}
   /**
    * Returns the anchor stored in {@code objectA}'s local coordinate system.
    */
-  public oogasalad.model.engine.api.Vector getLocalAnchorA() {
-    return localAnchorA;
-  }
+  public oogasalad.model.engine.api.Vector getLocalAnchorA() {return localAnchorA;}
 
   /**
    * Returns the anchor stored in {@code objectB}'s local coordinate system.
    */
-  public oogasalad.model.engine.api.Vector getLocalAnchorB() {
-    return localAnchorB;
-  }
+  public oogasalad.model.engine.api.Vector getLocalAnchorB() {return localAnchorB;}
 
   /**
    * Resolves {@code objectA}'s local anchor into world-space coordinates.
@@ -114,60 +84,41 @@ public abstract class AbstractJoint implements Joint {
   /**
    * Returns the current distance between the two resolved world anchors.
    */
-  protected double getCurrentDistance() {
-    return getAnchorDelta().magnitude();
-  }
-
-  /**
-   * Returns whether the component is a dynamic body.
-   */
-  protected boolean isDynamic(GameComponent component) {
-    return component instanceof DynamicComponent;
-  }
-
-  /**
-   * Returns whether the component is a static body.
-   */
-  protected boolean isStatic(GameComponent component) {
-    return component instanceof StaticComponent;
-  }
-
-  /**
-   * Returns whether the component is a passthrough/trigger-only body.
-   */
-  protected boolean isPassthrough(GameComponent component) {
-    return component instanceof PassthroughComponent;
-  }
+  protected double getCurrentDistance() {return getAnchorDelta().magnitude();}
 
   /**
    * Returns the anchor-to-anchor distance captured when the joint was created.
    */
-  protected double getRestDistance() {
-    return restDistance;
+  protected double getRestDistance() {return restDistance;}
+
+  /**
+   * Applies equal-and-opposite positional corrections, distributing motion by inverse mass.
+   *
+   * <p>Bodies with non-positive mass receive zero motion, which makes static endpoints stay fixed
+   * without type-specific branching in concrete joint implementations.
+   */
+  protected void applyLinearCorrection(
+      oogasalad.model.engine.api.Vector correctionA,
+      oogasalad.model.engine.api.Vector correctionB) {
+    double inverseMassA = inverseMass(objectA);
+    double inverseMassB = inverseMass(objectB);
+    double totalInverseMass = inverseMassA + inverseMassB;
+
+    if (totalInverseMass == 0.0) {return;}
+    if (inverseMassA > 0.0) {
+      objectA.getState().setLinearPosition(objectA.getState().getLinearPosition()
+              .add(correctionA.multiply(inverseMassA / totalInverseMass)));}
+    if (inverseMassB > 0.0) {objectB.getState().setLinearPosition(objectB.getState().getLinearPosition()
+              .add(correctionB.multiply(inverseMassB / totalInverseMass)));}
   }
 
   /**
-   * Validates that the joint endpoints form a supported pair for the current engine.
+   * Applies equal-and-opposite linear forces to movable endpoints only.
    */
-  private void validatePair(GameComponent objectA, GameComponent objectB) {
-    if (isPassthrough(objectA) || isPassthrough(objectB)) {
-      throw new IllegalArgumentException(EngineError.JOINT_UNSUPPORTED_PASSTHROUGH.message());
-    }
-
-    boolean objectAStatic = isStatic(objectA);
-    boolean objectBStatic = isStatic(objectB);
-    boolean objectADynamic = isDynamic(objectA);
-    boolean objectBDynamic = isDynamic(objectB);
-
-    if (objectAStatic && objectBStatic) {
-      throw new IllegalArgumentException(EngineError.JOINT_UNSUPPORTED_STATIC_STATIC.message());
-    }
-
-    boolean supportedPair = (objectADynamic && objectBDynamic)
-        || (objectADynamic && objectBStatic)
-        || (objectAStatic && objectBDynamic);
-    if (!supportedPair) {
-      throw new IllegalArgumentException(EngineError.JOINT_UNSUPPORTED_PAIR.message());
-    }
+  protected void applyLinearForce(oogasalad.model.engine.api.Vector forceA, oogasalad.model.engine.api.Vector forceB) {
+    if (inverseMass(objectA) > 0.0) {objectA.addForce(forceA);}
+    if (inverseMass(objectB) > 0.0) {objectB.addForce(forceB);}
   }
+
+  private double inverseMass(GameComponent component) {return component.getMass() > 0.0 ? 1.0 / component.getMass() : 0.0;}
 }
