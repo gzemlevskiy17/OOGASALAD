@@ -1,6 +1,5 @@
 package oogasalad.model.engine.api;
 
-import java.util.Objects;
 import oogasalad.model.engine.EngineError;
 
 /**
@@ -28,16 +27,6 @@ public interface Driveable {
   void setPlayerControllable(boolean playerControllable);
 
   boolean isActive();
-
-  default void validateThrustDirection(Vector thrustDirection) {
-    Objects.requireNonNull(thrustDirection, EngineError.NULL_VECTOR.message());
-  }
-
-  default void validateThrustForce(double thrustForce) {
-    if (thrustForce < 0) {
-      throw new IllegalArgumentException(EngineError.THRUST_FORCE_MUST_BE_NON_NEGATIVE.message());
-    }
-  }
 
   default void activateDrive() {
     setDriveEnabled(true);

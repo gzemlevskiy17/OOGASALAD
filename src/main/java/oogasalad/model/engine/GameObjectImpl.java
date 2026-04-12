@@ -1,7 +1,6 @@
 package oogasalad.model.engine;
 
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 
 /**
@@ -116,11 +115,6 @@ public class GameObjectImpl implements GameObject {
   @Override
   public boolean isTrigger() {
     return false;
-  }
-
-  @Override
-  public Pose getPose() {
-    return null;
   }
 
   @Override

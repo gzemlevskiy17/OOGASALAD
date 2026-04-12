@@ -71,7 +71,6 @@ class GameObjectImplTest {
     assertFalse(gameObject.isActive());
     assertFalse(gameObject.isAffectedByGravity());
     assertFalse(gameObject.isTrigger());
-    assertNull(gameObject.getPose());
     assertEquals(0.0, gameObject.getRotation(), 1e-9);
   }
 }

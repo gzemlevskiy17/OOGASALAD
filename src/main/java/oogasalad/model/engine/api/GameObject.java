@@ -37,6 +37,5 @@ public interface GameObject extends Renderable {
   boolean isAffectedByGravity();
   boolean isTrigger();
 
-  Pose getPose();
   void addForce(Vector force);
 }
