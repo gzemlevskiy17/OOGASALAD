@@ -1,11 +1,9 @@
 package oogasalad.model.engine.internal.components;
 
-import java.util.Objects;
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.ObjectState;
 import oogasalad.model.engine.EngineError;
+import oogasalad.model.engine.ObjectState;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 
 public abstract class GameComponent implements GameObject {
@@ -22,19 +20,20 @@ public abstract class GameComponent implements GameObject {
 
   /**
    *
-   * @param pose
+   * @param x
+   * @param y
+   * @param rotation
    * @param mass
    * @param friction
    * @author Xuye
    * @author Georgiy Zemlevskiy
    */
-  public GameComponent(Pose pose, double mass, double friction) {
-    Pose initialPose = Objects.requireNonNull(pose, EngineError.NULL_POSE.message());
+  public GameComponent(double x, double y, double rotation, double mass, double friction) {
     this.state = new ObjectState(
-        new Vector(initialPose.x(), initialPose.y()),
+        new Vector(x, y),
         new Vector(0, 0),
         new Vector(0, 0),
-        initialPose.rotation(),
+        rotation,
         new Vector(0, 0),
         new Vector(0, 0)
     );
@@ -46,15 +45,9 @@ public abstract class GameComponent implements GameObject {
     this.trigger = false;
   }
 
-  @Override
-  public Pose getPose() {
-    return new Pose(getX(), getY(), getRotation());
-  }
-
-  public void setPosition(Pose position) {
-    Pose newPose = Objects.requireNonNull(position, EngineError.NULL_POSE.message());
-    state.setLinearPosition(new Vector(newPose.x(), newPose.y()));
-    state.setAngularPosition(newPose.rotation());
+  public void setPosition(double x, double y, double rotation) {
+    state.setLinearPosition(new Vector(x, y));
+    state.setAngularPosition(rotation);
   }
 
   @Override
@@ -88,12 +81,12 @@ public abstract class GameComponent implements GameObject {
 
   @Override
   public void setForce(Vector force) {
-    this.force = Objects.requireNonNull(force, EngineError.NULL_VECTOR.message());
+    this.force = force;
   }
 
   @Override
   public void addForce(Vector force) {
-    this.force = this.force.add(Objects.requireNonNull(force, EngineError.NULL_VECTOR.message()));
+    this.force = this.force.add(force);
   }
 
   @Override
@@ -112,7 +105,7 @@ public abstract class GameComponent implements GameObject {
 
   @Override
   public void setState(ObjectState state) {
-    this.state = Objects.requireNonNull(state, EngineError.NULL_OBJECT_STATE.message());
+    this.state = state;
   }
 
   @Override

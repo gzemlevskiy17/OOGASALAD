@@ -1,9 +1,7 @@
 package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.EngineError;
-import oogasalad.model.engine.api.Pose;
 import oogasalad.view.core.api.SpriteRenderable;
-
 /**
  * @author Xuye
  */
@@ -15,9 +13,10 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
   private final double spriteWidth;
   private final double spriteHeight;
 
-  public VehicleComponent(Pose pose, double mass, double friction, double maxHp,
-      String displayName, String spritePath, double spriteWidth, double spriteHeight) {
-    super(pose, mass, friction);
+  public VehicleComponent(double x, double y, double rotation, double mass, double friction,
+      double maxHp, String displayName, String spritePath, double spriteWidth,
+      double spriteHeight) {
+    super(x, y, rotation, mass, friction);
     if (maxHp < 0) {throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());}
     this.maxHp = maxHp;
     this.currentHp = maxHp;

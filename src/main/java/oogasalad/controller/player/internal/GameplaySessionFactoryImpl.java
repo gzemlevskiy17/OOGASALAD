@@ -13,7 +13,6 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
@@ -149,7 +148,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private GameComponent createMovingCircle(double x, double y, double vx, double vy) {
-    DynamicComponent c = new DynamicComponent(new Pose(x, y, 0), 1.0, 0.1) {};
+    DynamicComponent c = new DynamicComponent(x, y, 0, 1.0, 0.1) {
+    };
     c.setAffectedByGravity(false);
     c.getState().setLinearVelocity(new Vector(vx, vy));
     return c;

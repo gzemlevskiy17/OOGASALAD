@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.model.engine.api.Joint;
@@ -160,10 +158,26 @@ class LevelLoaderImplTest {
 
   private static class FakeWorld implements World {
     private final List<GameComponent> components = new ArrayList<>();
-    @Override public Collection<GameComponent> getComponents() { return Collections.unmodifiableList(components); }
-    @Override public Collection<GameComponent> getAllComponents() { return Collections.unmodifiableList(components); }
-    @Override public Collection<GameComponent> getActiveComponents() { return Collections.unmodifiableList(components); }
-    @Override public Collection<Joint> getJoints() { return List.of(); }
+
+    @Override
+    public List<GameComponent> getComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<GameComponent> getAllComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<GameComponent> getActiveComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<Joint> getJoints() {
+      return List.of();
+    }
     @Override public void addComponent(GameComponent component) { components.add(component); }
     @Override public void removeComponent(GameComponent component) { components.remove(component); }
     @Override public void clear() { components.clear(); }

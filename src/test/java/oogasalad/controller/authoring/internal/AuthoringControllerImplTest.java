@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
@@ -126,10 +124,26 @@ class AuthoringControllerImplTest {
 
   private static class FakeWorld implements World {
     private final List<GameComponent> components = new ArrayList<>();
-    @Override public Collection<GameComponent> getComponents() { return Collections.unmodifiableList(components); }
-    @Override public Collection<GameComponent> getAllComponents() { return Collections.unmodifiableList(components); }
-    @Override public Collection<GameComponent> getActiveComponents() { return Collections.unmodifiableList(components); }
-    @Override public Collection<Joint> getJoints() { return List.of(); }
+
+    @Override
+    public List<GameComponent> getComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<GameComponent> getAllComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<GameComponent> getActiveComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<Joint> getJoints() {
+      return List.of();
+    }
     @Override public void addComponent(GameComponent component) { components.add(component); }
     @Override public void removeComponent(GameComponent component) { components.remove(component); }
     @Override public void clear() { components.clear(); }

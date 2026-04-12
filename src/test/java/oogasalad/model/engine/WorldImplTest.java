@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
@@ -84,14 +83,14 @@ class WorldImplTest {
     assertTrue(world.getJoints().isEmpty());
   }
 
-  private record FakeJoint(GameObject objectA, GameObject objectB) implements Joint {
+  private record FakeJoint(GameComponent objectA, GameComponent objectB) implements Joint {
     @Override
-    public GameObject getObjectA() {
+    public GameComponent getComponentA() {
       return objectA;
     }
 
     @Override
-    public GameObject getObjectB() {
+    public GameComponent getComponentB() {
       return objectB;
     }
   }

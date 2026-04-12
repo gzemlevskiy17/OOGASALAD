@@ -1,14 +1,14 @@
 package oogasalad.model.engine.internal.components;
 
-import oogasalad.model.engine.api.Pose;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 
 /**
  * @author Xuye
  */
 public abstract class TerrainComponent extends StaticComponent implements AuthoringPlaceable {
-  public TerrainComponent(Pose pose, double mass, double friction) {
-    super(pose, mass, friction);
+
+  public TerrainComponent(double x, double y, double rotation, double mass, double friction) {
+    super(x, y, rotation, mass, friction);
   }
 
   public abstract double getWidth();

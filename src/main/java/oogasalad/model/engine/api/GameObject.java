@@ -2,7 +2,7 @@ package oogasalad.model.engine.api;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.ObjectState;
-import oogasalad.view.core.api.Renderable; // Extends the view contract
+import oogasalad.view.core.api.Renderable;
 
 //TODO: complete comments
 /**
@@ -37,6 +37,5 @@ public interface GameObject extends Renderable {
   boolean isAffectedByGravity();
   boolean isTrigger();
 
-  Pose getPose();
   void addForce(Vector force);
 }

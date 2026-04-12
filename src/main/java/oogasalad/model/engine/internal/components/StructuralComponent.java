@@ -1,11 +1,14 @@
 package oogasalad.model.engine.internal.components;
 
-import oogasalad.model.engine.api.Pose;
-
+/**
+ * @author Paulina Vvedenskaya
+ */
 public class StructuralComponent extends VehicleComponent {
 
-  public StructuralComponent(Pose pose, double mass, double friction, double maxHp,
+  public StructuralComponent(double x, double y, double rotation, double mass, double friction,
+      double maxHp,
       String displayName, String spritePath, double spriteWidth, double spriteHeight) {
-    super(pose, mass, friction, maxHp, displayName, spritePath, spriteWidth, spriteHeight);
+    super(x, y, rotation, mass, friction, maxHp, displayName, spritePath, spriteWidth,
+        spriteHeight);
   }
 }
