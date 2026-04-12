@@ -13,10 +13,12 @@ public class RopeJoint extends AbstractJoint {
 
   private final double maxDistance;
 
+  /** Creates a rope joint using each body's local origin as its anchor. */
   public RopeJoint(GameComponent objectA, GameComponent objectB, double maxDistance) {
     this(objectA, objectB, new Vector(0, 0), new Vector(0, 0), maxDistance);
   }
 
+  /** Creates a rope joint with explicit local anchors and a maximum allowed separation. */
   public RopeJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
       Vector localAnchorB, double maxDistance) {
     super(objectA, objectB, localAnchorA, localAnchorB);
@@ -26,10 +28,13 @@ public class RopeJoint extends AbstractJoint {
     this.maxDistance = maxDistance;
   }
 
+  /** Returns the maximum allowed anchor separation. */
   public double getMaxDistance() {
     return maxDistance;
   }
 
+
+  /** Corrects positions only when the anchors exceed the rope length. */
   @Override
   public void apply(double dt) {
     GameComponent objectA = getComponentA();

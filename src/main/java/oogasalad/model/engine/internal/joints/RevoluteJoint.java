@@ -9,10 +9,14 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public class RevoluteJoint extends AbstractJoint {
 
+  /** Creates a revolute joint using each body's local origin as the hinge anchor. */
   public RevoluteJoint(GameComponent objectA, GameComponent objectB) {
     this(objectA, objectB, new Vector(0, 0), new Vector(0, 0));
   }
 
+  /**
+   * Creates a revolute joint whose two local anchors must resolve to the same world-space point.
+   */
   public RevoluteJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
       Vector localAnchorB) {
     super(objectA, objectB, localAnchorA, localAnchorB);
@@ -21,6 +25,7 @@ public class RevoluteJoint extends AbstractJoint {
     }
   }
 
+  /** Re-aligns the two anchors while leaving relative rotation unconstrained. */
   @Override
   public void apply(double dt) {
     GameComponent objectA = getComponentA();

@@ -11,8 +11,8 @@
  * - step(): Advances the entire simulation world by one temporal unit.
  *
  * 2. World: The global entity container.
- * - getObjects(): Provides access to all active GameObjects.
- * - getJoints(): Provides access to all physical connections between objects.
+ * - getObjects(): Provides ordered access to active GameObjects.
+ * - getJoints(): Provides ordered access to physical connections between objects.
  *
  * 3. GameObject: The base physical entity (extends Renderable).
  * - getMass(): Returns the object's mass for physics calculations.
