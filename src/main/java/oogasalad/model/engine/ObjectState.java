@@ -38,14 +38,13 @@ public class ObjectState {
   private double angularAcceleration;
 
   /**
-   * Creates a fully specified object state.
+   * Creates a state container.
    *
-   * @param linearPosition      current world-space position
+   * @param linearPosition  current world position
    * @param linearVelocity      current linear velocity
    * @param linearAcceleration  current linear acceleration
    * @param angularPosition     current orientation angle
-   * @param angularVelocity     current angular velocity
-   * @param angularAcceleration current angular acceleration
+   * @param angularVelocity angular velocity representation
    */
   public ObjectState(Vector linearPosition, Vector linearVelocity, Vector linearAcceleration,
       double angularPosition,

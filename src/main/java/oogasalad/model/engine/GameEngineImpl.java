@@ -82,6 +82,7 @@ public class GameEngineImpl implements GameEngine {
 
     handleCollisions();
 
+    //TODO: do this only for dynamic objects
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
       gameObject.getState().integrateObjectState(elapsedTime);
     }
@@ -92,7 +93,7 @@ public class GameEngineImpl implements GameEngine {
 
   }
 
-
+  //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
     List<Collision> collisions = getCollisions();
 
