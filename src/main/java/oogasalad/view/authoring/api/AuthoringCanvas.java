@@ -35,6 +35,12 @@ public interface AuthoringCanvas {
    */
   void clearHoverPreview();
 
+  /** @return the number of columns in the grid. */
+  int getGridCols();
+
+  /** @return the number of rows in the grid. */
+  int getGridRows();
+
   /**
    * Registers a callback invoked when the user clicks a placed object on the canvas.
    */

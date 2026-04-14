@@ -1,5 +1,6 @@
 package oogasalad.controller.authoring.internal;
 
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.scene.Node;
@@ -201,13 +202,11 @@ public class AuthoringControllerImpl implements AuthoringController {
   }
 
   private void eraseAt(int col, int row) {
-    world.getObjects().stream()
-        .filter(AuthoringPlaceable.class::isInstance)
-        .map(AuthoringPlaceable.class::cast)
-        .filter(p -> col >= p.left() && col < p.right()
-            && row >= p.top() && row < p.bottom())
-        .findFirst()
-        .ifPresent(p -> world.removeObject((GameObject) p));
+    OccupancyGrid grid = buildOccupancyGrid();
+    AuthoringPlaceable target = grid.getObjectAt(col, row);
+    if (target != null) {
+      world.removeObject((GameObject) target);
+    }
   }
 
   /**
@@ -264,14 +263,21 @@ public class AuthoringControllerImpl implements AuthoringController {
   GameObject placeSelectedObject(int col, int row) {
     double cellSize = canvas.getCellSize();
     AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
-    if (placementValidator.overlapsExistingPlacement(
-        placedObject,
-        world.getObjects().stream().map(AuthoringPlaceable.class::cast).toList())) {
+    OccupancyGrid grid = buildOccupancyGrid();
+    if (placementValidator.overlapsExistingPlacement(placedObject, grid)) {
       String message = MESSAGES.getString("placement.overlap");
       LOG.warn(message);
       throw new AuthoringPlacementException(message);
     }
     world.addObject((GameObject) placedObject);
     return (GameObject) placedObject;
+  }
+
+  private OccupancyGrid buildOccupancyGrid() {
+    List<AuthoringPlaceable> placeables = world.getObjects().stream()
+        .filter(AuthoringPlaceable.class::isInstance)
+        .map(AuthoringPlaceable.class::cast)
+        .toList();
+    return new OccupancyGrid(placeables, canvas.getGridCols(), canvas.getGridRows());
   }
 }

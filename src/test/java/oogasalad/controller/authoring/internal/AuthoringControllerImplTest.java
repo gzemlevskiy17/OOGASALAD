@@ -160,6 +160,8 @@ class AuthoringControllerImplTest {
     @Override public void refreshGrid() { refreshCalled = true; }
     @Override public boolean isWithinBounds(int col, int row) { return true; }
     @Override public double getCellSize() { return 40.0; }
+    @Override public int getGridCols() { return 10; }
+    @Override public int getGridRows() { return 10; }
     @Override public void setSelectedPlaceable(AuthoringPlaceable placeable) {}
     @Override public void placeBlock(int col, int row) {}
     @Override public void showHoverPreview(int col, int row) {}
