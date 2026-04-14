@@ -1,4 +1,5 @@
 package oogasalad.model.engine.internal.components;
+import oogasalad.model.engine.api.DefaultTag;
 
 /**
  * @author Xuye
@@ -13,6 +14,6 @@ public abstract class FinishLineComponent extends PassthroughComponent {
 
   @Override
   public String getTag() {
-    return "finish-line";
+    return DefaultTag.FINISH_LINE.value();
   }
 }

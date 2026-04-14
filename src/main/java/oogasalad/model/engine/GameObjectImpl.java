@@ -1,5 +1,6 @@
 package oogasalad.model.engine;
 
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
@@ -42,7 +43,7 @@ public class GameObjectImpl implements GameObject {
 
   @Override
   public String getTag() {
-    return "game-object";
+    return DefaultTag.GAME_OBJECT.value();
   }
 
   @Override

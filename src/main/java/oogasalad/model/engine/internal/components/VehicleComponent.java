@@ -1,6 +1,7 @@
 package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.EngineError;
+import oogasalad.model.engine.api.DefaultTag;
 
 /**
  * @author Xuye
@@ -18,9 +19,7 @@ public abstract class VehicleComponent extends DynamicComponent {
   }
 
   @Override
-  public String getTag() {
-    return "vehicle";
-  }
+  public String getTag() {return DefaultTag.VEHICLE.value();}
 
   public double getMaxHp() {return maxHp;}
   public void setMaxHp(double maxHp) {

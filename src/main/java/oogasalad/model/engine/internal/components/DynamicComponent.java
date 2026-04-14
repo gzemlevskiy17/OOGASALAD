@@ -1,4 +1,5 @@
 package oogasalad.model.engine.internal.components;
+import oogasalad.model.engine.api.DefaultTag;
 
 public abstract class DynamicComponent extends GameComponent {
   public DynamicComponent(double x, double y, double rotation, double mass, double friction) {
@@ -7,6 +8,6 @@ public abstract class DynamicComponent extends GameComponent {
 
   @Override
   public String getTag() {
-    return "dynamic";
+    return DefaultTag.DYNAMIC.value();
   }
 }

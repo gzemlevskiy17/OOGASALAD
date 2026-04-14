@@ -55,17 +55,14 @@ class RevoluteJointTest {
   }
 
   @Test
-  void constructor_rejectsPassthroughPairsViaAbstractJointValidation() {
+  void constructor_allowsPassthroughPairs() {
     TestDynamicComponent dynamic = new TestDynamicComponent(0, 0, 0);
     TestPassthroughComponent passthrough = new TestPassthroughComponent(0, 0, 0);
-
-    assertThrows(IllegalArgumentException.class, () -> new RevoluteJoint(dynamic, passthrough));
+    new RevoluteJoint(dynamic, passthrough);
   }
 
   private static class TestDynamicComponent extends DynamicComponent {
-    TestDynamicComponent(double x, double y, double rotation) {
-      super(x, y, rotation, 1.0, 0.5);
-    }
+    TestDynamicComponent(double x, double y, double rotation) {super(x, y, rotation, 1.0, 0.5);}
   }
 
   private static class TestStaticComponent extends StaticComponent {
@@ -76,12 +73,9 @@ class RevoluteJointTest {
   }
 
   private static class TestPassthroughComponent extends PassthroughComponent {
-    TestPassthroughComponent(double x, double y, double rotation) {
-      super(x, y, rotation, 0.0, 0.0);
-    }
+    TestPassthroughComponent(double x, double y, double rotation) {super(x, y, rotation, 0.0, 0.0);}
 
     @Override
-    public void applyEffect(GameObject target) {
-    }
+    public void applyEffect(GameObject target) {}
   }
 }

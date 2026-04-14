@@ -1,5 +1,5 @@
 package oogasalad.model.engine.internal.components;
-
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameObject;
 
 public abstract class PassthroughComponent extends GameComponent {
@@ -11,9 +11,7 @@ public abstract class PassthroughComponent extends GameComponent {
   }
 
   @Override
-  public String getTag() {
-    return "passthrough";
-  }
+  public String getTag() {return DefaultTag.PASSTHROUGH.value();}
 
   public abstract void applyEffect(GameObject target);
 }

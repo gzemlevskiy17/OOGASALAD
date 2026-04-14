@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
-import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
@@ -63,9 +63,7 @@ class WorldImplTest {
   @Test
   void destroyComponent_unregistersAndDeactivatesComponent() {
     world.addComponent(componentA);
-
     world.destroyComponent(componentA);
-
     assertFalse(componentA.isActive());
     assertTrue(world.getAllComponents().isEmpty());
     assertTrue(world.getActiveComponents().isEmpty());
@@ -77,9 +75,7 @@ class WorldImplTest {
     world.addComponent(componentA);
     world.addComponent(componentB);
     world.addJoint(new FakeJoint(componentA, componentB));
-
     world.clear();
-
     assertTrue(world.getAllComponents().isEmpty());
     assertTrue(world.getActiveComponents().isEmpty());
     assertTrue(world.getComponents().isEmpty());
@@ -90,20 +86,14 @@ class WorldImplTest {
   void getComponentsByTag_returnsRegisteredComponentsWithMatchingTagInOrder() {
     world.addComponent(componentA);
     world.addComponent(componentB);
-
-    assertIterableEquals(List.of(componentA, componentB), world.getComponentsByTag("terrain"));
-    assertTrue(world.getComponentsByTag("vehicle").isEmpty());
+    assertIterableEquals(List.of(componentA, componentB), world.getComponentsByTag(DefaultTag.TERRAIN.value()));
+    assertTrue(world.getComponentsByTag(DefaultTag.VEHICLE.value()).isEmpty());
   }
 
   private record FakeJoint(GameComponent objectA, GameComponent objectB) implements Joint {
     @Override
-    public GameComponent getComponentA() {
-      return objectA;
-    }
-
+    public GameComponent getComponentA() {return objectA;}
     @Override
-    public GameComponent getComponentB() {
-      return objectB;
-    }
+    public GameComponent getComponentB() {return objectB;}
   }
 }

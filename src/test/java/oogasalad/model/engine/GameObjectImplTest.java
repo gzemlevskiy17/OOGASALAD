@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Vector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +66,7 @@ class GameObjectImplTest {
 
   @Test
   void placeholderInterfaceMethods_matchCurrentImplementation() {
-    assertEquals("game-object", gameObject.getTag());
+    assertEquals(DefaultTag.GAME_OBJECT.value(), gameObject.getTag());
     assertNull(gameObject.getPolygon());
     assertEquals(0.0, gameObject.getFriction(), 1e-9);
     assertFalse(gameObject.isActive());

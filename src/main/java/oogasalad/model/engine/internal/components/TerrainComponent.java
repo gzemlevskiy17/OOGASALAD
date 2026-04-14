@@ -1,5 +1,5 @@
 package oogasalad.model.engine.internal.components;
-
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 
 /**
@@ -11,9 +11,7 @@ public abstract class TerrainComponent extends StaticComponent implements Author
   }
 
   @Override
-  public String getTag() {
-    return "terrain";
-  }
+  public String getTag() {return DefaultTag.TERRAIN.value();}
 
   public abstract double getWidth();
 
