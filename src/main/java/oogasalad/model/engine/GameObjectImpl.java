@@ -41,6 +41,11 @@ public class GameObjectImpl implements GameObject {
   private Vector force;
 
   @Override
+  public String getTag() {
+    return "game-object";
+  }
+
+  @Override
   public double getMass() {
     return mass;
   }

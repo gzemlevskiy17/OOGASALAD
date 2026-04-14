@@ -10,6 +10,11 @@ public abstract class TerrainComponent extends StaticComponent implements Author
     super(x, y, rotation, mass, friction);
   }
 
+  @Override
+  public String getTag() {
+    return "terrain";
+  }
+
   public abstract double getWidth();
 
   public abstract double getHeight();

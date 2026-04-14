@@ -51,6 +51,9 @@ public abstract class GameComponent implements GameObject {
   }
 
   @Override
+  public abstract String getTag();
+
+  @Override
   public double getMass() {return mass;}
 
   public void setMass(double mass) {

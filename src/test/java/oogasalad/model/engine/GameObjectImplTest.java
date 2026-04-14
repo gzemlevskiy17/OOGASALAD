@@ -66,6 +66,7 @@ class GameObjectImplTest {
 
   @Test
   void placeholderInterfaceMethods_matchCurrentImplementation() {
+    assertEquals("game-object", gameObject.getTag());
     assertNull(gameObject.getPolygon());
     assertEquals(0.0, gameObject.getFriction(), 1e-9);
     assertFalse(gameObject.isActive());

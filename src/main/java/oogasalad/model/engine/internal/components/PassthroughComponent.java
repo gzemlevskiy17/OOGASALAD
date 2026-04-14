@@ -10,5 +10,10 @@ public abstract class PassthroughComponent extends GameComponent {
     setAffectedByGravity(false);
   }
 
+  @Override
+  public String getTag() {
+    return "passthrough";
+  }
+
   public abstract void applyEffect(GameObject target);
 }

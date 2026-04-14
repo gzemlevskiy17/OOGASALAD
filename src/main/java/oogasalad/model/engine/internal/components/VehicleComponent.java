@@ -17,6 +17,11 @@ public abstract class VehicleComponent extends DynamicComponent {
     this.currentHp = maxHp;
   }
 
+  @Override
+  public String getTag() {
+    return "vehicle";
+  }
+
   public double getMaxHp() {return maxHp;}
   public void setMaxHp(double maxHp) {
     if (maxHp < 0) {throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());}

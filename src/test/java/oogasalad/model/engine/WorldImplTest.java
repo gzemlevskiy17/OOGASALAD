@@ -2,9 +2,11 @@ package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -82,6 +84,15 @@ class WorldImplTest {
     assertTrue(world.getActiveComponents().isEmpty());
     assertTrue(world.getComponents().isEmpty());
     assertTrue(world.getJoints().isEmpty());
+  }
+
+  @Test
+  void getComponentsByTag_returnsRegisteredComponentsWithMatchingTagInOrder() {
+    world.addComponent(componentA);
+    world.addComponent(componentB);
+
+    assertIterableEquals(List.of(componentA, componentB), world.getComponentsByTag("terrain"));
+    assertTrue(world.getComponentsByTag("vehicle").isEmpty());
   }
 
   private record FakeJoint(GameComponent objectA, GameComponent objectB) implements Joint {

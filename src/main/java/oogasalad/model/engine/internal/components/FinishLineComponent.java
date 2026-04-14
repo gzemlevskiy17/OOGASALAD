@@ -10,4 +10,9 @@ public abstract class FinishLineComponent extends PassthroughComponent {
     super(x, y, rotation, mass, friction);
     setTrigger(true);
   }
+
+  @Override
+  public String getTag() {
+    return "finish-line";
+  }
 }

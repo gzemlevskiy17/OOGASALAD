@@ -9,6 +9,8 @@ import oogasalad.view.core.api.Renderable; // Extends the view contract
  * Base entity for the simulation. Exposes physical properties.
  */
 public interface GameObject extends Renderable {
+  String getTag();
+
   //TODO: should these be returned immutably?
   double getMass();
 
