@@ -10,6 +10,7 @@ import oogasalad.view.core.api.Renderable; // Extends the view contract
  */
 public interface GameObject extends Renderable {
   String getTag();
+  void setTag(String tag);
 
   //TODO: should these be returned immutably?
   double getMass();

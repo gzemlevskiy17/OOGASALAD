@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Vector;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,5 +74,16 @@ class GameObjectImplTest {
     assertFalse(gameObject.isAffectedByGravity());
     assertFalse(gameObject.isTrigger());
     assertEquals(0.0, gameObject.getRotation(), 1e-9);
+  }
+
+  @Test
+  void tag_roundTripsThroughSetter() {
+    gameObject.setTag("custom-author-tag");
+    assertEquals("custom-author-tag", gameObject.getTag());
+  }
+
+  @Test
+  void setTag_rejectsNull() {
+    assertThrows(NullPointerException.class, () -> gameObject.setTag(null));
   }
 }

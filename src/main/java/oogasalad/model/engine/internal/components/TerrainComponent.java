@@ -8,10 +8,8 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
 public abstract class TerrainComponent extends StaticComponent implements AuthoringPlaceable {
   public TerrainComponent(double x, double y, double rotation, double mass, double friction) {
     super(x, y, rotation, mass, friction);
+    setTag(DefaultTag.TERRAIN.value());
   }
-
-  @Override
-  public String getTag() {return DefaultTag.TERRAIN.value();}
 
   public abstract double getWidth();
 
