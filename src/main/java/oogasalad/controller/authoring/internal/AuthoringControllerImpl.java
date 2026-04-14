@@ -53,6 +53,7 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   private AuthoringPlaceable selectedPlaceable;
   private Consumer<String> placementErrorHandler = message -> { };
+  private Consumer<ToolType> toolChangeListener;
   private int lastDragCol = -1;
   private int lastDragRow = -1;
 
@@ -80,6 +81,10 @@ public class AuthoringControllerImpl implements AuthoringController {
     }
   }
 
+  public void setToolChangeListener(Consumer<ToolType> listener) {
+    this.toolChangeListener = listener;
+  }
+
   public void setPlacementErrorHandler(Consumer<String> placementErrorHandler) {
     if (placementErrorHandler != null) {
       this.placementErrorHandler = placementErrorHandler;
@@ -101,6 +106,14 @@ public class AuthoringControllerImpl implements AuthoringController {
 
     root.setOnMousePressed(e -> startStrokeAt(e.getX(), e.getY()));
     root.setOnMouseDragged(e -> extendStrokeTo(e.getX(), e.getY()));
+    root.setOnMouseReleased(e -> {
+      if (toolSelector.getActiveTool() == ToolType.PAINT) {
+        toolSelector.setActiveTool(ToolType.DRAW);
+        if (toolChangeListener != null) {
+          toolChangeListener.accept(ToolType.DRAW);
+        }
+      }
+    });
 
     // Drag-and-drop from a palette item (separate event stream from the
     // mouse-press paint stroke above). ComponentPaletteImpl starts a Dragboard
@@ -149,6 +162,9 @@ public class AuthoringControllerImpl implements AuthoringController {
   }
 
   private void extendStrokeTo(double x, double y) {
+    if (toolSelector.getActiveTool() == ToolType.PAINT) {
+      return;
+    }
     double cellSize = canvas.getCellSize();
     int col = (int) Math.floor(x / cellSize);
     int row = (int) Math.floor(y / cellSize);
@@ -194,6 +210,8 @@ public class AuthoringControllerImpl implements AuthoringController {
         placeSelectedObject(col, row);
       } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
         eraseAt(col, row);
+      } else if (toolSelector.getActiveTool() == ToolType.PAINT) {
+        floodFillAt(col, row);
       }
     } catch (AuthoringPlacementException e) {
       placementErrorHandler.accept(e.getMessage());
@@ -265,12 +283,29 @@ public class AuthoringControllerImpl implements AuthoringController {
     AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
     OccupancyGrid grid = buildOccupancyGrid();
     if (placementValidator.overlapsExistingPlacement(placedObject, grid)) {
-      String message = MESSAGES.getString("placement.overlap");
-      LOG.warn(message);
-      throw new AuthoringPlacementException(message);
+      return null;
     }
     world.addObject((GameObject) placedObject);
     return (GameObject) placedObject;
+  }
+
+  private void floodFillAt(int col, int row) {
+    double cellSize = canvas.getCellSize();
+    OccupancyGrid grid = buildOccupancyGrid();
+    FillExecutor executor = new FillExecutor();
+    List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row);
+
+    TerrainPlaceable unitPlaceable = new TerrainPlaceable(
+        cellSize, cellSize,
+        selectedPlaceable.getColor(),
+        selectedPlaceable.getSprite(),
+        selectedPlaceable.isTiled(),
+        selectedPlaceable.getFriction());
+
+    for (int[] cell : cellsToFill) {
+      AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
+      world.addObject((GameObject) placed);
+    }
   }
 
   private OccupancyGrid buildOccupancyGrid() {
