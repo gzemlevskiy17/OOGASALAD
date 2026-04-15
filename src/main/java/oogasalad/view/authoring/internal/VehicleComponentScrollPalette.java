@@ -8,8 +8,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
+import javafx.scene.text.TextAlignment;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -17,51 +17,50 @@ import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.core.internal.SpriteCache;
 
 /**
- * Scrollable vehicle-component palette laid out in rows of equal-width cells.
+ * Scrollable vehicle-component palette displayed as one long horizontal row of component cells.
+ *
+ * @author Emilio Garcia
  */
 public class VehicleComponentScrollPalette implements ComponentPallete {
 
   private static final ResourceBundle PALETTE_CONFIG =
       ResourceBundle.getBundle("oogasalad.view.authoring.VehicleComponentPalette");
-  private static final ResourceBundle SCREEN_CONFIG =
-      ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringScreen");
 
   private final ScrollPane visualRoot;
   private final SpriteCache spriteCache = new SpriteCache();
 
+  /**
+   * Creates the vehicle component palette view.
+   *
+   * @author Emilio Garcia
+   */
   public VehicleComponentScrollPalette() {
-    int componentsPerRow = Integer.parseInt(PALETTE_CONFIG.getString("componentsPerRow"));
     double contentPadding = Double.parseDouble(PALETTE_CONFIG.getString("contentPadding"));
     String[] componentNames = PALETTE_CONFIG.getString("componentNames").split(",");
 
-    GridPane componentGrid = new GridPane();
-    componentGrid.setMaxWidth(Double.MAX_VALUE);
-    componentGrid.setPadding(new Insets(contentPadding));
+    HBox paletteContent = new HBox(Double.parseDouble(PALETTE_CONFIG.getString("itemSpacing")));
+    paletteContent.setPadding(new Insets(contentPadding));
+    paletteContent.setAlignment(Pos.CENTER);
+    paletteContent.getStyleClass().add("authoring-level-palette");
 
-    for (int i = 0; i < componentsPerRow; i++) {
-      ColumnConstraints constraints = new ColumnConstraints();
-      constraints.setPercentWidth(100.0 / componentsPerRow);
-      constraints.setHgrow(Priority.ALWAYS);
-      componentGrid.getColumnConstraints().add(constraints);
+    for (String componentName : componentNames) {
+      if (!componentName.isBlank()) {
+        paletteContent.getChildren().add(createComponentCell(componentName.trim()));
+      }
     }
 
-    for (int i = 0; i < componentNames.length; i++) {
-      int row = i / componentsPerRow;
-      int column = i % componentsPerRow;
-      componentGrid.add(createComponentCell(componentNames[i].trim()), column, row);
-    }
-
-    double paletteHeight = Double.parseDouble(SCREEN_CONFIG.getString("bottomRegionHeight"));
-    visualRoot = new ScrollPane(componentGrid);
-    componentGrid.setGridLinesVisible(true);
-    visualRoot.setFitToWidth(true);
-    visualRoot.setFitToHeight(false);
-    visualRoot.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-    visualRoot.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+    double paletteHeight = Double.parseDouble(PALETTE_CONFIG.getString("viewportHeight"));
+    visualRoot = new ScrollPane(paletteContent);
+    visualRoot.setFitToWidth(false);
+    visualRoot.setFitToHeight(true);
+    visualRoot.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    visualRoot.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    visualRoot.setPannable(true);
+    visualRoot.setPrefViewportHeight(paletteHeight);
     visualRoot.setPrefHeight(paletteHeight);
     visualRoot.setMinHeight(paletteHeight);
     visualRoot.setMaxHeight(paletteHeight);
-    visualRoot.getStyleClass().add("authoring-vehicle-palette");
+    visualRoot.getStyleClass().add("authoring-level-palette-scroll");
   }
 
   @Override
@@ -73,8 +72,11 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     Label label = new Label(componentName);
     label.setWrapText(true);
     label.setMaxWidth(Double.parseDouble(PALETTE_CONFIG.getString("cellLabelWrapWidth")));
+    label.setAlignment(Pos.CENTER);
+    label.setTextAlignment(TextAlignment.CENTER);
+    label.setStyle("-fx-font-size: 10px;");
 
-    VBox cellContent = new VBox(4);
+    VBox cellContent = new VBox(2);
     cellContent.setAlignment(Pos.CENTER);
 
     String key = componentName.replace(" ", "");
@@ -95,11 +97,18 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
 
     StackPane cell = new StackPane(cellContent);
     cell.setAlignment(Pos.CENTER);
+    double cellWidth = Double.parseDouble(PALETTE_CONFIG.getString("cellLabelWrapWidth"))
+        + 2 * Double.parseDouble(PALETTE_CONFIG.getString("cellInset"));
+    cell.setMinWidth(cellWidth);
+    cell.setPrefWidth(cellWidth);
     cell.setPrefHeight(Double.parseDouble(PALETTE_CONFIG.getString("cellPrefHeight")));
-    cell.setMaxWidth(Double.MAX_VALUE);
-    GridPane.setHgrow(cell, Priority.ALWAYS);
-    GridPane.setFillWidth(cell, true);
-    GridPane.setMargin(cell, new Insets(Double.parseDouble(PALETTE_CONFIG.getString("cellInset"))));
+    cell.setPadding(new Insets(Double.parseDouble(PALETTE_CONFIG.getString("cellInset"))));
+    cell.setStyle("""
+        -fx-border-color: #707070;
+        -fx-border-width: 1;
+        -fx-background-color: white;
+        """);
+    HBox.setHgrow(cell, Priority.NEVER);
     return cell;
   }
 }

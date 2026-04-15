@@ -305,8 +305,10 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
     bottomContentHost.getChildren().clear();
     Node paletteNode;
+    Pos alignment = Pos.TOP_LEFT;
     if (currentMode == AuthoringMode.VEHICLE) {
       paletteNode = vehiclePalette.getVisualRoot();
+      alignment = Pos.CENTER;
     } else {
       paletteNode = switch (currentLevelPaletteMode) {
         case TERRAIN -> terrainPalette.getVisualRoot();
@@ -316,7 +318,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
         case SETTINGS -> levelAttributesPanel.getVisualRoot();
       };
     }
-    StackPane.setAlignment(paletteNode, Pos.TOP_LEFT);
+    StackPane.setAlignment(paletteNode, alignment);
     bottomContentHost.getChildren().add(paletteNode);
   }
 
