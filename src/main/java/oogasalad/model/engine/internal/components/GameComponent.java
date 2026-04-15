@@ -2,8 +2,8 @@ package oogasalad.model.engine.internal.components;
 
 import java.util.Objects;
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.ObjectState;
 import oogasalad.model.engine.EngineError;
+import oogasalad.model.engine.ObjectState;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
@@ -59,80 +59,138 @@ public abstract class GameComponent implements GameObject {
   public void setTag(String tag) {this.tag = Objects.requireNonNull(tag);}
 
   @Override
+  public String getTag() {return tag;}
+
+  @Override
+  public void setTag(String tag) {this.tag = Objects.requireNonNull(tag);}
+
+  @Override
   public double getMass() {return mass;}
 
   public void setMass(double mass) {
-    if (mass < 0) {throw new IllegalArgumentException(EngineError.MASS_MUST_BE_NON_NEGATIVE.message());}
+    if (mass < 0) {
+      throw new IllegalArgumentException(EngineError.MASS_MUST_BE_NON_NEGATIVE.message());
+    }
     this.mass = mass;
   }
 
   @Override
-  public double getFriction() {return friction;}
+  public double getFriction() {
+    return friction;
+  }
 
   public void setFriction(double friction) {
-    if (friction < 0) {throw new IllegalArgumentException(EngineError.FRICTION_MUST_BE_NON_NEGATIVE.message());}
+    if (friction < 0) {
+      throw new IllegalArgumentException(EngineError.FRICTION_MUST_BE_NON_NEGATIVE.message());
+    }
     this.friction = friction;
   }
 
   @Override
-  public Vector getForce() {return force;}
+  public Vector getForce() {
+    return force;
+  }
 
   @Override
-  public void setForce(Vector force) {this.force = force;}
+  public void setForce(Vector force) {
+    this.force = force;
+  }
 
   @Override
-  public void addForce(Vector force) {this.force = this.force.add(force);}
+  public void addForce(Vector force) {
+    this.force = this.force.add(force);
+  }
 
   @Override
-  public ConvexPolygon getPolygon() {return polygon;}
+  public ConvexPolygon getPolygon() {
+    return polygon;
+  }
 
-  protected void setPolygon(ConvexPolygon polygon) {this.polygon = polygon;}
-
-  @Override
-  public ObjectState getState() {return state;}
-
-  @Override
-  public void setState(ObjectState state) {this.state = state;}
+  protected void setPolygon(ConvexPolygon polygon) {
+    this.polygon = polygon;
+  }
 
   @Override
-  public double getMomentOfInertia() {return momentOfInertia;}
+  public ObjectState getState() {
+    return state;
+  }
 
   @Override
-  public void setMomentOfInertia(double momentOfInertia) {this.momentOfInertia = momentOfInertia;}
+  public void setState(ObjectState state) {
+    this.state = state;
+  }
 
   @Override
-  public double getRestitution() {return restitution;}
+  public double getMomentOfInertia() {
+    return momentOfInertia;
+  }
 
   @Override
-  public void setRestitution(double restitution) {this.restitution = restitution;}
+  public void setMomentOfInertia(double momentOfInertia) {
+    this.momentOfInertia = momentOfInertia;
+  }
 
   @Override
-  public boolean isActive() {return active;}
+  public double getRestitution() {
+    return restitution;
+  }
 
   @Override
-  public boolean isAffectedByGravity() {return affectedByGravity;}
+  public void setRestitution(double restitution) {
+    this.restitution = restitution;
+  }
 
   @Override
-  public boolean isTrigger() {return trigger;}
-
-  public void activate() {active = true;}
-
-  public void deactivate() {active = false;}
-
-  public void destroy() {deactivate();}
-
-  public void setAffectedByGravity(boolean affectedByGravity) {this.affectedByGravity = affectedByGravity;}
-
-  protected void setTrigger(boolean trigger) {this.trigger = trigger;}
+  public boolean isActive() {
+    return active;
+  }
 
   @Override
-  public double getX() {return state.getLinearPosition().x();}
+  public boolean isAffectedByGravity() {
+    return affectedByGravity;
+  }
 
   @Override
-  public double getY() {return state.getLinearPosition().y();}
+  public boolean isTrigger() {
+    return trigger;
+  }
+
+  public void activate() {
+    active = true;
+  }
+
+  public void deactivate() {
+    active = false;
+  }
+
+  public void destroy() {
+    deactivate();
+  }
+
+  public void setAffectedByGravity(boolean affectedByGravity) {
+    this.affectedByGravity = affectedByGravity;
+  }
+
+  protected void setTrigger(boolean trigger) {
+    this.trigger = trigger;
+  }
 
   @Override
-  public double getRotation() {return state.getAngularPosition();}
+  public double getX() {
+    return state.getLinearPosition().x();
+  }
 
-  protected void resetForce() {this.force = new Vector(0, 0);}
+  @Override
+  public double getY() {
+    return state.getLinearPosition().y();
+  }
+
+  @Override
+  public double getRotation() {
+    return state.getAngularPosition();
+  }
+
+  protected void resetForce() {
+    this.force = new Vector(0, 0);
+  }
 }

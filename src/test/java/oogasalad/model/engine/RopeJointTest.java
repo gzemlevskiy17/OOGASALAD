@@ -99,12 +99,14 @@ class RopeJointTest {
   }
 
   private static class TestDynamicComponent extends DynamicComponent {
+
     TestDynamicComponent(double x, double y, double rotation) {
       super(x, y, rotation, 1.0, 0.5);
     }
   }
 
   private static class TestStaticComponent extends StaticComponent {
+
     TestStaticComponent(double x, double y, double rotation) {
       super(x, y, rotation, 0.0, 0.5);
       setAffectedByGravity(false);

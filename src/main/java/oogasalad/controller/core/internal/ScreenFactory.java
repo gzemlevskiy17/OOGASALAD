@@ -1,12 +1,12 @@
 package oogasalad.controller.core.internal;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
 import oogasalad.controller.accounts.internal.AuthControllerImpl;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.core.api.ScreenManager;
+import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
+import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.model.auth.api.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.view.accounts.internal.CreateAccountScreen;
@@ -15,14 +15,14 @@ import oogasalad.view.accounts.internal.ProfileScreen;
 import oogasalad.view.accounts.internal.UpdateProfileScreen;
 import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
-import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.core.api.GameMenuScreen;
-import oogasalad.view.player.internal.GamePlayAppScreen;
+import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
+import oogasalad.view.player.internal.WinAppScreen;
 
 /**
- * Creates and collects application screens for registration with the ScreenManager.
+ * Creates and registers all application screens with the ScreenManager.
  */
 public class ScreenFactory {
 
@@ -32,6 +32,8 @@ public class ScreenFactory {
   public static final String AUTHORING_SCREEN_KEY = "AUTHORING_SCREEN";
   public static final String VEHICLE_BUILDER_APP_SCREEN_KEY = "VEHICLE_BUILDER_SCREEN";
   public static final String GAMEPLAY_APP_SCREEN_KEY = "GAMEPLAY_SCREEN";
+  public static final String WIN_APP_SCREEN_KEY = "WIN_SCREEN";
+  public static final String LOSE_APP_SCREEN_KEY = "LOSE_SCREEN";
   public static final String LOGIN_SCREEN_KEY = "LOGIN";
   public static final String CREATE_ACCOUNT_SCREEN_KEY = "CREATE_ACCOUNT";
   public static final String PROFILE_SCREEN_KEY = "PROFILE";
@@ -60,22 +62,33 @@ public class ScreenFactory {
   }
 
   /**
-   *
+   * Creates all application screens and registers them with the ScreenManager.
    */
-  public Map<String, AppScreen> createScreens() {
-    Map<String, AppScreen> screens = new HashMap<>();
+  public void registerScreens() {
+    registerNonAuthScreens();
+    registerAuthScreens();
+  }
 
-    // Non-auth screens — menu gets a live isLoggedIn supplier, not the service itself
-    screens.put(MENU_SCREEN_KEY,
+  private void registerNonAuthScreens() {
+    screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authService.session()::isLoggedIn));
-    screens.put(AUTHORING_ENTRY_SCREEN_KEY, new AuthoringEntryScreenImpl(this::guardedOutcome));
-    screens.put(AUTHORING_SCREEN_KEY, new AuthoringScreenImpl(this::guardedOutcome));
-    screens.put(PLAYER_ENTRY_APP_SCREEN_KEY, new PlayerEntryAppScreen(this::guardedOutcome));
-    screens.put(VEHICLE_BUILDER_APP_SCREEN_KEY, new VehicleBuilderAppScreen(this::guardedOutcome));
-    screens.put(GAMEPLAY_APP_SCREEN_KEY, new GamePlayAppScreen(this::guardedOutcome));
+    screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
+        new AuthoringEntryScreenImpl(this::guardedOutcome));
+    screenManager.registerScreen(AUTHORING_SCREEN_KEY,
+        new AuthoringScreenImpl(this::guardedOutcome));
+    screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
+        new PlayerEntryAppScreen(this::guardedOutcome));
+    screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY,
+        new VehicleBuilderAppScreen(this::guardedOutcome));
+    screenManager.registerScreen(GAMEPLAY_APP_SCREEN_KEY,
+        new GamePlayScreenCoordinator(this::guardedOutcome, new GameplaySessionFactoryImpl()));
+    screenManager.registerScreen(WIN_APP_SCREEN_KEY, new WinAppScreen(this::guardedOutcome));
+    screenManager.registerScreen(LOSE_APP_SCREEN_KEY, new LoseAppScreen(this::guardedOutcome));
+  }
 
-    // Auth screens — each wraps the action consumer to bind its own error display before
-    // delegating to the controller, so handleAuthError reaches the right screen.
+  private void registerAuthScreens() {
+    // Each screen binds its own error display before delegating to the controller,
+    // so handleAuthError always reaches the screen that triggered the action.
     loginScreen = new LoginScreen(this::guardedOutcome, intent -> {
       activeErrorDisplay = loginScreen::displayError;
       authController.handle(intent);
@@ -90,18 +103,16 @@ public class ScreenFactory {
     });
 
     // ProfileScreen gets a live supplier for the current user — no direct model access in view
-    screens.put(PROFILE_SCREEN_KEY,
+    screenManager.registerScreen(PROFILE_SCREEN_KEY,
         new ProfileScreen(this::guardedOutcome, intent -> {
           activeErrorDisplay = msg -> {
           }; // profile screen has no error label; log only
           authController.handle(intent);
         }, authService.session()::currentUser));
 
-    screens.put(LOGIN_SCREEN_KEY, loginScreen);
-    screens.put(CREATE_ACCOUNT_SCREEN_KEY, createAccountScreen);
-    screens.put(UPDATE_PROFILE_SCREEN_KEY, updateProfileScreen);
-
-    return screens;
+    screenManager.registerScreen(LOGIN_SCREEN_KEY, loginScreen);
+    screenManager.registerScreen(CREATE_ACCOUNT_SCREEN_KEY, createAccountScreen);
+    screenManager.registerScreen(UPDATE_PROFILE_SCREEN_KEY, updateProfileScreen);
   }
 
   /**

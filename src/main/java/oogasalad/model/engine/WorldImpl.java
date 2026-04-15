@@ -19,7 +19,9 @@ public class WorldImpl implements World {
   private final List<GameComponent> activeComponents;
   private final List<Joint> joints;
 
-  /** Creates an empty world with no components or joints registered. */
+  /**
+   * Creates an empty world with no components or joints registered.
+   */
   public WorldImpl() {
     this.allComponents = new ArrayList<>();
     this.activeComponents = new ArrayList<>();
@@ -56,7 +58,9 @@ public class WorldImpl implements World {
   /** Adds the component if absent, then syncs its active membership. */
   @Override
   public void addComponent(GameComponent component) {
-    if (!allComponents.contains(component)) {allComponents.add(component);}
+    if (!allComponents.contains(component)) {
+      allComponents.add(component);
+    }
     synchronizeActiveMembership(component);
   }
 
@@ -72,7 +76,9 @@ public class WorldImpl implements World {
   /** Destroys the component and unregisters it when it is present in the world. */
   @Override
   public void destroyComponent(GameComponent component) {
-    if (!allComponents.contains(component)) {return;}
+    if (!allComponents.contains(component)) {
+      return;
+    }
     component.destroy();
     removeComponent(component);
   }
@@ -81,7 +87,9 @@ public class WorldImpl implements World {
   /** Marks a registered component active and syncs it into the active collection. */
   @Override
   public void activateComponent(GameComponent component) {
-    if (!allComponents.contains(component)) {return;}
+    if (!allComponents.contains(component)) {
+      return;
+    }
     component.activate();
     synchronizeActiveMembership(component);
   }
@@ -111,7 +119,8 @@ public class WorldImpl implements World {
   /** Deactivates every component and clears the active collection. */
   @Override
   public void deactivateAll() {
-    for (GameComponent component : new ArrayList<>(allComponents)) {component.deactivate();}
+    for (GameComponent component : new ArrayList<>(allComponents)) {
+      component.deactivate();}
     activeComponents.clear();
   }
 
@@ -127,16 +136,25 @@ public class WorldImpl implements World {
 
   /** Adds the joint if it is not already registered. */
   @Override
-  public void addJoint(Joint joint) {if (!joints.contains(joint)) {joints.add(joint);}}
+  public void addJoint(Joint joint) {
+    if (!joints.contains(joint)) {
+      joints.add(joint);
+    }
+  }
 
   /** Removes the joint if it is currently registered. */
   @Override
-  public void removeJoint(Joint joint) {joints.remove(joint);}
+  public void removeJoint(Joint joint) {
+    joints.remove(joint);
+  }
 
   /** Active state toggle, if object is in active list, delete it, if not add it to active list. */
   private void synchronizeActiveMembership(GameComponent component) {
     if (component.isActive()) {
-      if (!activeComponents.contains(component)) {activeComponents.add(component);}
-    } else {activeComponents.remove(component);}
+      if (!activeComponents.contains(component)) {
+        activeComponents.add(component);
+      }
+    } else {
+      activeComponents.remove(component);}
   }
 }

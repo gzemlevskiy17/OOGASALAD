@@ -4,10 +4,15 @@ import oogasalad.model.engine.internal.components.GameComponent;
 
 /** A physical connection holding two GameObjects together. */
 public interface Joint {
-  /** Returns the first endpoint attached to this joint. */
+
+  /**
+   * Returns the first endpoint attached to this joint.
+   */
   GameComponent getComponentA();
 
-  /** Returns the second endpoint attached to this joint. */
+  /**
+   * Returns the second endpoint attached to this joint.
+   */
   GameComponent getComponentB();
 
   /**

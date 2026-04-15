@@ -1,7 +1,5 @@
 package oogasalad.model.engine.api;
 
-import oogasalad.model.engine.EngineError;
-
 /**
  * Capability interface for components that can generate thrust when enabled.
  *

@@ -100,7 +100,9 @@ public interface World {
    */
   void clear();
 
-  /** Registers a joint with the world. */
+  /**
+   * Registers a joint with the world.
+   */
   void addJoint(Joint joint);
 
   /** Removes a joint from the world. */

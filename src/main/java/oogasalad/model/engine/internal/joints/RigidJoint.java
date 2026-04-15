@@ -8,7 +8,9 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public class RigidJoint extends DistanceJoint {
 
-  /** Creates a rigid joint that locks the initial anchor separation. */
+  /**
+   * Creates a rigid joint that locks the initial anchor separation.
+   */
   public RigidJoint(GameComponent objectA, GameComponent objectB) {
     super(objectA, objectB, 0.0, 0.0);
   }

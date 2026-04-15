@@ -41,8 +41,8 @@ class GameObjectImplTest {
         new Vector(-1.0, 4.0),
         new Vector(0.5, -0.25),
         0.75,
-        new Vector(2.0, 0.0),
-        new Vector(0.0, 1.0)
+        2.0,
+        1.0
     );
 
     gameObject.setState(state);
@@ -57,8 +57,8 @@ class GameObjectImplTest {
         new Vector(0.0, 0.0),
         new Vector(0.0, 0.0),
         1.5,
-        new Vector(0.0, 0.0),
-        new Vector(0.0, 0.0)
+        0.0,
+        0.0
     ));
 
     assertEquals(12.5, gameObject.getX(), 1e-9);

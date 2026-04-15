@@ -45,18 +45,27 @@ public abstract class AbstractJoint implements Joint {
   }
 
   @Override
-  public GameComponent getComponentA() {return objectA;}
+  public GameComponent getComponentA() {
+    return objectA;
+  }
   @Override
-  public GameComponent getComponentB() {return objectB;}
+  public GameComponent getComponentB() {
+    return objectB;
+  }
+
   /**
    * Returns the anchor stored in {@code objectA}'s local coordinate system.
    */
-  public oogasalad.model.engine.api.Vector getLocalAnchorA() {return localAnchorA;}
+  public oogasalad.model.engine.api.Vector getLocalAnchorA() {
+    return localAnchorA;
+  }
 
   /**
    * Returns the anchor stored in {@code objectB}'s local coordinate system.
    */
-  public oogasalad.model.engine.api.Vector getLocalAnchorB() {return localAnchorB;}
+  public oogasalad.model.engine.api.Vector getLocalAnchorB() {
+    return localAnchorB;
+  }
 
   /**
    * Resolves {@code objectA}'s local anchor into world-space coordinates.
@@ -117,20 +126,33 @@ public abstract class AbstractJoint implements Joint {
     double inverseMassB = inverseMass(objectB);
     double totalInverseMass = inverseMassA + inverseMassB;
 
-    if (totalInverseMass == 0.0) {return;}
+    if (totalInverseMass == 0.0) {
+      return;
+    }
     if (inverseMassA > 0.0) {
       objectA.getState().setLinearPosition(objectA.getState().getLinearPosition()
-              .add(correctionA.multiply(inverseMassA / totalInverseMass)));}
-    if (inverseMassB > 0.0) {objectB.getState().setLinearPosition(objectB.getState().getLinearPosition()
-              .add(correctionB.multiply(inverseMassB / totalInverseMass)));}
+          .add(correctionA.multiply(inverseMassA / totalInverseMass)));
+    }
+    if (inverseMassB > 0.0) {
+      objectB.getState().setLinearPosition(objectB.getState().getLinearPosition()
+          .add(correctionB.multiply(inverseMassB / totalInverseMass)));
+    }
   }
 
   /**
    * Applies equal-and-opposite linear forces to movable endpoints only.
    */
-  protected void applyLinearForce(oogasalad.model.engine.api.Vector forceA, oogasalad.model.engine.api.Vector forceB) {
-    if (inverseMass(objectA) > 0.0) {objectA.addForce(forceA);}
-    if (inverseMass(objectB) > 0.0) {objectB.addForce(forceB);}
+  protected void applyLinearForce(oogasalad.model.engine.api.Vector forceA,
+      oogasalad.model.engine.api.Vector forceB) {
+    if (inverseMass(objectA) > 0.0) {
+      objectA.addForce(forceA);
+    }
+    if (inverseMass(objectB) > 0.0) {
+      objectB.addForce(forceB);
+    }
   }
-  private double inverseMass(GameComponent component) {return component.getMass() > 0.0 ? 1.0 / component.getMass() : 0.0;}
+
+  private double inverseMass(GameComponent component) {
+    return component.getMass() > 0.0 ? 1.0 / component.getMass() : 0.0;
+  }
 }

@@ -2,21 +2,49 @@ package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.DefaultTag;
-
+import oogasalad.view.core.api.SpriteRenderable;
 /**
  * @author Xuye
  */
-public abstract class VehicleComponent extends DynamicComponent {
+public abstract class VehicleComponent extends DynamicComponent implements SpriteRenderable {
   private double maxHp;
   private double currentHp;
+  private final String displayName;
+  private final String spritePath;
+  private final double spriteWidth;
+  private final double spriteHeight;
 
   public VehicleComponent(double x, double y, double rotation, double mass, double friction,
-      double maxHp) {
+      double maxHp, String displayName, String spritePath, double spriteWidth,
+      double spriteHeight) {
     super(x, y, rotation, mass, friction);
     setTag(DefaultTag.VEHICLE.value());
     if (maxHp < 0) {throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());}
     this.maxHp = maxHp;
     this.currentHp = maxHp;
+    this.displayName = displayName;
+    this.spritePath = spritePath;
+    this.spriteWidth = spriteWidth;
+    this.spriteHeight = spriteHeight;
+  }
+
+  public String getDisplayName() {
+    return displayName;
+  }
+
+  @Override
+  public String getSpritePath() {
+    return spritePath;
+  }
+
+  @Override
+  public double getSpriteWidth() {
+    return spriteWidth;
+  }
+
+  @Override
+  public double getSpriteHeight() {
+    return spriteHeight;
   }
 
   public double getMaxHp() {return maxHp;}
