@@ -128,8 +128,8 @@ class WorldImplTest {
           new Vector(0, 0),
           new Vector(0, 0),
           0,
-          new Vector(0, 0),
-          new Vector(0, 0)
+          0.0,
+          0.0
       ));
       setTag(tag);
     }
