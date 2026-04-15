@@ -36,9 +36,8 @@ public abstract class GameComponent implements GameObject {
         new Vector(0, 0),
         new Vector(0, 0),
         rotation,
-        new Vector(0, 0),
-        new Vector(0, 0)
-    );
+        0.0,
+        0.0);
     setMass(mass);
     setFriction(friction);
     this.force = new Vector(0, 0);

@@ -25,7 +25,7 @@ import oogasalad.model.engine.api.Vector;
  * body.setMass(2.0);
  * body.setMomentOfInertia(1.5);
  * body.setRestitution(0.2);
- * body.setState(new ObjectState(pos, vel, 0.0, new Vector(0, 0)));
+ * body.setState(new ObjectState(pos, vel, new Vector(0, 0), 0.0, 0.0, 0.0));
  * }</pre>
  *
  * @author Georgiy Zemlevskiy
