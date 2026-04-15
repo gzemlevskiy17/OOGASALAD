@@ -7,6 +7,7 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
 public abstract class GameComponent implements GameObject {
+
   private ObjectState state;
   private double mass;
   private double momentOfInertia;
@@ -14,9 +15,9 @@ public abstract class GameComponent implements GameObject {
   private double friction;
   private ConvexPolygon polygon;
   private Vector force;
-  private boolean active;
+  private boolean active; //TODO: depends on how people up the stack implement it
   private boolean affectedByGravity;
-  private boolean trigger;
+  private boolean trigger; //TODO: not needed?
 
   /**
    *
@@ -25,17 +26,10 @@ public abstract class GameComponent implements GameObject {
    * @param rotation
    * @param mass
    * @param friction
-   * @author Xuye
-   * @author Georgiy Zemlevskiy
    */
   public GameComponent(double x, double y, double rotation, double mass, double friction) {
-    this.state = new ObjectState(
-        new Vector(x, y),
-        new Vector(0, 0),
-        new Vector(0, 0),
-        rotation,
-        new Vector(0, 0),
-        new Vector(0, 0)
+    this.state = new ObjectState(new Vector(x, y), new Vector(0, 0), new Vector(0, 0), rotation, 0,
+        0
     );
     setMass(mass);
     setFriction(friction);
@@ -138,9 +132,17 @@ public abstract class GameComponent implements GameObject {
     return affectedByGravity;
   }
 
+  public void setAffectedByGravity(boolean affectedByGravity) {
+    this.affectedByGravity = affectedByGravity;
+  }
+
   @Override
   public boolean isTrigger() {
     return trigger;
+  }
+
+  protected void setTrigger(boolean trigger) {
+    this.trigger = trigger;
   }
 
   public void activate() {
@@ -153,14 +155,6 @@ public abstract class GameComponent implements GameObject {
 
   public void destroy() {
     deactivate();
-  }
-
-  public void setAffectedByGravity(boolean affectedByGravity) {
-    this.affectedByGravity = affectedByGravity;
-  }
-
-  protected void setTrigger(boolean trigger) {
-    this.trigger = trigger;
   }
 
   @Override
