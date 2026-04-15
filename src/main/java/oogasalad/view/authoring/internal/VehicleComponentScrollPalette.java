@@ -1,8 +1,9 @@
 package oogasalad.view.authoring.internal;
 
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -17,6 +18,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.core.internal.SpriteCache;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Scrollable vehicle-component palette displayed as one long horizontal row of component cells.
@@ -25,6 +28,7 @@ import oogasalad.view.core.internal.SpriteCache;
  */
 public class VehicleComponentScrollPalette implements ComponentPallete {
 
+  private static final Logger LOG = LogManager.getLogger(VehicleComponentScrollPalette.class);
   private static final ResourceBundle PALETTE_CONFIG =
       ResourceBundle.getBundle("oogasalad.view.authoring.VehicleComponentPalette");
   private static final String UNSELECTED_CELL_STYLE = """
@@ -35,7 +39,10 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
 
   private final ScrollPane visualRoot;
   private final SpriteCache spriteCache = new SpriteCache();
-  private final Set<StackPane> selectedCells = new HashSet<>();
+  private final AuthoringAlertService alertService = new AuthoringAlertService();
+  private final Map<StackPane, String> selectedCells = new LinkedHashMap<>();
+  private Consumer<String> selectionSummaryHandler = summary -> {
+  };
 
   /**
    * Creates the vehicle component palette view.
@@ -69,11 +76,24 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     visualRoot.setMinHeight(paletteHeight);
     visualRoot.setMaxHeight(paletteHeight);
     visualRoot.getStyleClass().add("authoring-level-palette-scroll");
+    notifySelectionSummaryChanged();
   }
 
   @Override
   public Node getVisualRoot() {
     return visualRoot;
+  }
+
+  /**
+   * Registers a listener that is notified whenever the selected vehicle item summary changes.
+   *
+   * @param handler consumer that receives the formatted selected-items summary text
+   * @author Emilio Garcia
+   */
+  public void setSelectionSummaryHandler(Consumer<String> handler) {
+    selectionSummaryHandler = handler == null ? summary -> {
+    } : handler;
+    notifySelectionSummaryChanged();
   }
 
   /**
@@ -119,23 +139,47 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     cell.setPrefHeight(Double.parseDouble(PALETTE_CONFIG.getString("cellPrefHeight")));
     cell.setPadding(new Insets(Double.parseDouble(PALETTE_CONFIG.getString("cellInset"))));
     updateCellStyle(cell, false);
-    cell.setOnMouseClicked(event -> toggleSelection(cell));
+    cell.setOnMouseClicked(event -> {
+      try {
+        toggleSelection(cell, componentName);
+      } catch (VehicleSelectionLimitException e) {
+        LOG.warn("{}", e.getMessage());
+        alertService.showWarning(
+            PALETTE_CONFIG.getString("selectionLimitTitle"),
+            e.getMessage());
+      }
+    });
     HBox.setHgrow(cell, Priority.NEVER);
     return cell;
   }
 
-  private void toggleSelection(StackPane cell) {
-    if (selectedCells.contains(cell)) {
+  private void toggleSelection(StackPane cell, String componentName) {
+    if (selectedCells.containsKey(cell)) {
       selectedCells.remove(cell);
       updateCellStyle(cell, false);
+      notifySelectionSummaryChanged();
       return;
     }
+    validateSelectionCapacity();
+    selectedCells.put(cell, componentName);
+    updateCellStyle(cell, true);
+    notifySelectionSummaryChanged();
+  }
+
+  private void validateSelectionCapacity() {
     int maxSelectable = Integer.parseInt(PALETTE_CONFIG.getString("maxSelectableItems"));
     if (selectedCells.size() >= maxSelectable) {
+      throw new VehicleSelectionLimitException(
+          PALETTE_CONFIG.getString("selectionLimitMessage"));
+    }
+  }
+
+  private void notifySelectionSummaryChanged() {
+    if (selectedCells.isEmpty()) {
+      selectionSummaryHandler.accept(PALETTE_CONFIG.getString("selectionSummaryEmpty"));
       return;
     }
-    selectedCells.add(cell);
-    updateCellStyle(cell, true);
+    selectionSummaryHandler.accept(String.join(", ", selectedCells.values()));
   }
 
   private void updateCellStyle(StackPane cell, boolean selected) {

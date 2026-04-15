@@ -7,6 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -26,7 +27,6 @@ import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
-import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
@@ -52,7 +52,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
   private AuthoringControllerImpl controller;
   private StackPane canvasHost;
-  private ComponentPallete vehiclePalette;
+  private VehicleComponentScrollPalette vehiclePalette;
   private ComponentPaletteImpl terrainPalette;
   private ComponentPaletteImpl pigsPalette;
   private ComponentPaletteImpl levelItemsPalette;
@@ -68,6 +68,8 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private Button levelItemsPaletteButton;
   private Button customPaletteButton;
   private Button settingsPaletteButton;
+  private HBox levelPaletteTabs;
+  private Label selectedItemsLabel;
   private LevelAttributesPanel levelAttributesPanel;
   private LevelAttributes levelAttributes;
   private TerrainPropertiesPanel terrainPropertiesPanel;
@@ -144,6 +146,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
         levelAttributes, new ToolSelectorImpl(), canvas);
     alertService = new AuthoringAlertService();
     fileChooserService = new FileChooserService();
+    selectedItemsLabel = buildSelectedItemsLabel();
     controller.setPlacementErrorHandler(
         message -> alertService.showWarning(s("placementWarningTitle"), message));
     controller.initializeCanvasHandlers();
@@ -156,6 +159,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     canvasHost = new StackPane(canvasScrollPane);
 
     vehiclePalette = new VehicleComponentScrollPalette();
+    vehiclePalette.setSelectionSummaryHandler(this::updateSelectedItemsSummary);
     terrainPalette = new ComponentPaletteImpl();
     pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
     levelItemsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.LevelItemsPalette");
@@ -170,6 +174,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     levelItemsPaletteButton = createTabButton(s("levelItemsButtonText"));
     customPaletteButton = createTabButton(s("customButtonText"));
     settingsPaletteButton = createTabButton(s("settingsButtonText"));
+    levelPaletteTabs = buildLevelPaletteTabs();
     paletteModeRow = buildPaletteModeRow();
     bottomContentHost = new StackPane();
     levelModeButton = createTabButton(s("levelButtonText"));
@@ -275,13 +280,31 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     return row;
   }
 
-  private HBox buildPaletteModeRow() {
-    HBox row = new HBox(
+  private HBox buildLevelPaletteTabs() {
+    HBox tabs = new HBox(
         terrainPaletteButton,
         pigsPaletteButton,
         levelItemsPaletteButton,
         customPaletteButton,
         settingsPaletteButton);
+    tabs.setAlignment(Pos.CENTER_LEFT);
+    return tabs;
+  }
+
+  private Label buildSelectedItemsLabel() {
+    Label label = new Label();
+    label.getStyleClass().add("authoring-selection-summary");
+    label.setText(String.format(
+        s("selectedItemsSummaryFormat"),
+        s("selectedItemsNoneText")));
+    return label;
+  }
+
+  private HBox buildPaletteModeRow() {
+    Region spacer = new Region();
+    HBox.setHgrow(spacer, Priority.ALWAYS);
+
+    HBox row = new HBox(levelPaletteTabs, spacer, selectedItemsLabel);
     row.setAlignment(Pos.CENTER_LEFT);
     row.getStyleClass().add("authoring-palette-mode-row");
     return row;
@@ -300,8 +323,10 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
   private void refreshDisplayedMode() {
     boolean isLevelMode = currentMode == AuthoringMode.LEVEL;
-    paletteModeRow.setVisible(isLevelMode);
-    paletteModeRow.setManaged(isLevelMode);
+    levelPaletteTabs.setVisible(isLevelMode);
+    levelPaletteTabs.setManaged(isLevelMode);
+    selectedItemsLabel.setVisible(!isLevelMode);
+    selectedItemsLabel.setManaged(!isLevelMode);
 
     bottomContentHost.getChildren().clear();
     Node paletteNode;
@@ -320,6 +345,12 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     }
     StackPane.setAlignment(paletteNode, alignment);
     bottomContentHost.getChildren().add(paletteNode);
+  }
+
+  private void updateSelectedItemsSummary(String selectedItemsText) {
+    selectedItemsLabel.setText(String.format(
+        s("selectedItemsSummaryFormat"),
+        selectedItemsText));
   }
 
   private void handleSave(Window owner) {
