@@ -1,6 +1,8 @@
 package oogasalad.view.authoring.internal;
 
+import java.util.HashSet;
 import java.util.ResourceBundle;
+import java.util.Set;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -25,9 +27,15 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
 
   private static final ResourceBundle PALETTE_CONFIG =
       ResourceBundle.getBundle("oogasalad.view.authoring.VehicleComponentPalette");
+  private static final String UNSELECTED_CELL_STYLE = """
+      -fx-border-color: #707070;
+      -fx-border-width: 1;
+      -fx-background-color: white;
+      """;
 
   private final ScrollPane visualRoot;
   private final SpriteCache spriteCache = new SpriteCache();
+  private final Set<StackPane> selectedCells = new HashSet<>();
 
   /**
    * Creates the vehicle component palette view.
@@ -68,6 +76,13 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     return visualRoot;
   }
 
+  /**
+   * Builds one selectable component cell containing the sprite preview and component name.
+   *
+   * @param componentName display name for the component
+   * @return configured selectable palette cell
+   * @author Emilio Garcia
+   */
   private StackPane createComponentCell(String componentName) {
     Label label = new Label(componentName);
     label.setWrapText(true);
@@ -103,12 +118,35 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     cell.setPrefWidth(cellWidth);
     cell.setPrefHeight(Double.parseDouble(PALETTE_CONFIG.getString("cellPrefHeight")));
     cell.setPadding(new Insets(Double.parseDouble(PALETTE_CONFIG.getString("cellInset"))));
-    cell.setStyle("""
-        -fx-border-color: #707070;
-        -fx-border-width: 1;
-        -fx-background-color: white;
-        """);
+    updateCellStyle(cell, false);
+    cell.setOnMouseClicked(event -> toggleSelection(cell));
     HBox.setHgrow(cell, Priority.NEVER);
     return cell;
+  }
+
+  private void toggleSelection(StackPane cell) {
+    if (selectedCells.contains(cell)) {
+      selectedCells.remove(cell);
+      updateCellStyle(cell, false);
+      return;
+    }
+    int maxSelectable = Integer.parseInt(PALETTE_CONFIG.getString("maxSelectableItems"));
+    if (selectedCells.size() >= maxSelectable) {
+      return;
+    }
+    selectedCells.add(cell);
+    updateCellStyle(cell, true);
+  }
+
+  private void updateCellStyle(StackPane cell, boolean selected) {
+    if (!selected) {
+      cell.setStyle(UNSELECTED_CELL_STYLE);
+      return;
+    }
+    cell.setStyle("""
+        -fx-border-color: #e67e22;
+        -fx-border-width: 3;
+        -fx-background-color: white;
+        """);
   }
 }
