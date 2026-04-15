@@ -103,7 +103,6 @@ public class FillExecutor {
     boolean[][] visited = new boolean[grid.getCols()][grid.getRows()];
     Queue<int[]> queue = new LinkedList<>();
     List<int[]> result = new ArrayList<>();
-    boolean touchedEdge = false;
 
     visited[startCol][startRow] = true;
     queue.add(new int[]{startCol, startRow});
@@ -116,15 +115,9 @@ public class FillExecutor {
         return new FillResult(List.of(), FillStatus.TOO_LARGE);
       }
 
-      int c = cell[0];
-      int r = cell[1];
-      if (c == 0 || c == grid.getCols() - 1 || r == 0 || r == grid.getRows() - 1) {
-        touchedEdge = true;
-      }
-
       for (int[] dir : DIRECTIONS) {
-        int nc = c + dir[0];
-        int nr = r + dir[1];
+        int nc = cell[0] + dir[0];
+        int nr = cell[1] + dir[1];
         if (grid.isInBounds(nc, nr) && !visited[nc][nr] && !grid.isOccupied(nc, nr)) {
           visited[nc][nr] = true;
           queue.add(new int[]{nc, nr});
@@ -132,9 +125,6 @@ public class FillExecutor {
       }
     }
 
-    if (touchedEdge) {
-      return new FillResult(List.of(), FillStatus.NOT_ENCLOSED);
-    }
     return new FillResult(result, FillStatus.FILLED);
   }
 }
