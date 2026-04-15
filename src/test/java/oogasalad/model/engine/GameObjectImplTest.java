@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-
-import oogasalad.model.engine.api.Pose;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Vector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,9 +41,8 @@ class GameObjectImplTest {
         new Vector(-1.0, 4.0),
         new Vector(0.5, -0.25),
         0.75,
-        new Vector(2.0, 0.0),
-        new Vector(0.0, 1.0)
-    );
+        2.0,
+        1.0);
 
     gameObject.setState(state);
 
@@ -57,32 +56,32 @@ class GameObjectImplTest {
         new Vector(0.0, 0.0),
         new Vector(0.0, 0.0),
         1.5,
-        new Vector(0.0, 0.0),
-        new Vector(0.0, 0.0)
-    ));
+        0.0,
+        0.0));
 
     assertEquals(12.5, gameObject.getX(), 1e-9);
     assertEquals(-3.25, gameObject.getY(), 1e-9);
   }
 
   @Test
-  void unimplementedInterfaceMethods_returnCurrentPlaceholders() {
+  void placeholderInterfaceMethods_matchCurrentImplementation() {
+    assertEquals(DefaultTag.GAME_OBJECT.value(), gameObject.getTag());
     assertNull(gameObject.getPolygon());
     assertEquals(0.0, gameObject.getFriction(), 1e-9);
     assertFalse(gameObject.isActive());
     assertFalse(gameObject.isAffectedByGravity());
     assertFalse(gameObject.isTrigger());
-    assertNull(gameObject.getPose());
     assertEquals(0.0, gameObject.getRotation(), 1e-9);
   }
 
   @Test
-  void addForce_currentImplementationLeavesForceUnchanged() {
-    Vector force = new Vector(1.0, 2.0);
-    gameObject.setForce(force);
+  void tag_roundTripsThroughSetter() {
+    gameObject.setTag("custom-author-tag");
+    assertEquals("custom-author-tag", gameObject.getTag());
+  }
 
-    gameObject.addForce(new Vector(5.0, 6.0));
-
-    assertSame(force, gameObject.getForce());
+  @Test
+  void setTag_rejectsNull() {
+    assertThrows(NullPointerException.class, () -> gameObject.setTag(null));
   }
 }

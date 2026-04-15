@@ -6,23 +6,35 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.internal.SpriteCache;
 
 /**
  * Screen on which the player builds a vehicle
  * @author Iurii Beliaev
+ * @author Paulina Vvedenskaya
  */
 
 public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.VehicleBuilderAppScreen");
-
+  private static final ResourceBundle PALETTE_CONFIG = ResourceBundle.getBundle(
+      "oogasalad.view.authoring.VehicleComponentPalette");
+  private static final SpriteCache spriteCache = new SpriteCache();
   public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome) {
     super(onOutcome);
   }
@@ -68,6 +80,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     return container;
   }
 
+
   private VBox createComponentSection() {
     VBox container = new VBox(d("component.spacing"));
     container.setAlignment(Pos.CENTER);
@@ -75,32 +88,59 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     Text title = new Text(s("component.title.text"));
     title.getStyleClass().add("component-title");
 
-    GridPane componentGrid = createComponentGrid();
-    componentGrid.getStyleClass().add("component-grid");
-    componentGrid.setAlignment(Pos.CENTER);
+    FlowPane componentFlow = new FlowPane();
+    componentFlow.setHgap(8);
+    componentFlow.setVgap(8);
+    componentFlow.setAlignment(Pos.CENTER);
+    componentFlow.getStyleClass().add("component-grid");
 
-    container.getChildren().addAll(title, componentGrid);
+    for (String name : PALETTE_CONFIG.getString("componentNames").split(",")) {
+      componentFlow.getChildren().add(createDraggableComponentCell(name.trim()));
+    }
 
+    ScrollPane scroll = new ScrollPane(componentFlow);
+    scroll.setFitToWidth(true);
+    scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    scroll.setMinHeight(d("component.palette.height"));
+    VBox.setVgrow(scroll, Priority.ALWAYS);
+
+    container.getChildren().addAll(title, scroll);
     return container;
   }
 
-  private GridPane createComponentGrid() {
-    GridPane componentGrid = new GridPane();
-    componentGrid.getStyleClass().add("component-grid");
-    componentGrid.setAlignment(Pos.CENTER);
+  private Node createDraggableComponentCell(String componentName) {
+    VBox cell = new VBox(4);
+    cell.setAlignment(Pos.CENTER);
+    cell.getStyleClass().add("component-cell");
 
-    int cols = (int) d("componentGrid.columns");
-    int rows = (int) d("componentGrid.rows");
-
-    for (int row = 0; row < rows; row++) {
-      for (int col = 0; col < cols; col++) {
-        StackPane componentCell = new StackPane();
-        componentCell.getStyleClass().add("component-cell");
-        componentGrid.add(componentCell, col, row);
+    String spriteKey = componentName.replace(" ", "") + ".sprite";
+    if (PALETTE_CONFIG.containsKey(spriteKey)) {
+      Image img = spriteCache.get(PALETTE_CONFIG.getString(spriteKey));
+      if (img != null) {
+        double iconSize = Double.parseDouble(PALETTE_CONFIG.getString("cellIconSize"));
+        ImageView icon = new ImageView(img);
+        icon.setFitWidth(iconSize);
+        icon.setFitHeight(iconSize);
+        icon.setPreserveRatio(true);
+        cell.getChildren().add(icon);
       }
     }
 
-    return componentGrid;
+    Label label = new Label(componentName);
+    label.setWrapText(true);
+    label.setMaxWidth(Double.parseDouble(PALETTE_CONFIG.getString("cellLabelWrapWidth")));
+    cell.getChildren().add(label);
+
+    cell.setOnDragDetected(e -> {
+      Dragboard db = cell.startDragAndDrop(TransferMode.COPY);
+      ClipboardContent content = new ClipboardContent();
+      content.putString(componentName);
+      db.setContent(content);
+      e.consume();
+    });
+
+    return cell;
   }
 
   private GridPane createGridRegion() {
@@ -115,11 +155,63 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       for (int col = 0; col < cols; col++) {
         StackPane cell = new StackPane();
         cell.getStyleClass().add("grid-cell");
+        wireDropTarget(cell);
         grid.add(cell, col, row);
       }
     }
 
     return grid;
+  }
+
+  private void wireDropTarget(StackPane cell) {
+    cell.setOnDragOver(e -> {
+      if (e.getDragboard().hasString()) {
+        e.acceptTransferModes(TransferMode.COPY);
+      }
+      e.consume();
+    });
+
+    cell.setOnDragEntered(e -> {
+      if (e.getDragboard().hasString()) {
+        cell.getStyleClass().add("grid-cell-drag-hover");
+      }
+      e.consume();
+    });
+
+    cell.setOnDragExited(e -> {
+      cell.getStyleClass().remove("grid-cell-drag-hover");
+      e.consume();
+    });
+
+    cell.setOnDragDropped(e -> {
+      Dragboard db = e.getDragboard();
+      if (db.hasString()) {
+        placeComponentInCell(cell, db.getString());
+        e.setDropCompleted(true);
+      } else {
+        e.setDropCompleted(false);
+      }
+      e.consume();
+    });
+  }
+
+  private void placeComponentInCell(StackPane cell, String componentName) {
+    cell.getChildren().clear();
+
+    String spriteKey = componentName.replace(" ", "") + ".sprite";
+    if (PALETTE_CONFIG.containsKey(spriteKey)) {
+      Image img = spriteCache.get(PALETTE_CONFIG.getString(spriteKey));
+      if (img != null) {
+        double iconSize = Double.parseDouble(PALETTE_CONFIG.getString("cellIconSize"));
+        ImageView icon = new ImageView(img);
+        icon.setFitWidth(iconSize);
+        icon.setFitHeight(iconSize);
+        icon.setPreserveRatio(true);
+        cell.getChildren().add(icon);
+        return;
+      }
+    }
+    cell.getChildren().add(new Label(componentName));
   }
 
   private Node createBackButtonRegion() {

@@ -1,4 +1,4 @@
-package oogasalad.authoring.api;
+package oogasalad.model.authoring.api;
 
 import oogasalad.model.engine.api.World;
 

@@ -2,13 +2,16 @@ package oogasalad.model.engine.api;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.ObjectState;
-import oogasalad.view.core.api.Renderable; // Extends the view contract
+import oogasalad.view.core.api.Renderable;
 
 //TODO: complete comments
 /**
  * Base entity for the simulation. Exposes physical properties.
  */
 public interface GameObject extends Renderable {
+  String getTag();
+  void setTag(String tag);
+
   //TODO: should these be returned immutably?
   double getMass();
 
@@ -37,6 +40,5 @@ public interface GameObject extends Renderable {
   boolean isAffectedByGravity();
   boolean isTrigger();
 
-  Pose getPose();
   void addForce(Vector force);
 }

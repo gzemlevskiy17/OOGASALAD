@@ -2,10 +2,12 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 
@@ -76,12 +78,11 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
-//    for (Joint joint :  world.getJoints()) {
-//
-//    }
+    applyJointConstraints(elapsedTime);
 
     handleCollisions();
 
+    //TODO: do this only for dynamic objects
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
       gameObject.getState().integrateObjectState(elapsedTime);
     }
@@ -92,7 +93,7 @@ public class GameEngineImpl implements GameEngine {
 
   }
 
-
+  //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
     List<Collision> collisions = getCollisions();
 
@@ -103,11 +104,18 @@ public class GameEngineImpl implements GameEngine {
     solveCollisions(collisions);
   }
 
+  private void applyJointConstraints(double elapsedTime) {
+    for (Joint joint : world.getJoints()) {
+      joint.apply(elapsedTime);
+    }
+  }
+
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
     for (GameObject objectA : world.getObjects()) {
       for (GameObject objectB : world.getObjects()) {
-        collisions.add(collisionDetector.detectCollision(objectA, objectB));
+        Optional<Collision> collision = collisionDetector.detectCollision(objectA, objectB);
+        collision.ifPresent(collisions::add);
       }
     }
     return collisions;

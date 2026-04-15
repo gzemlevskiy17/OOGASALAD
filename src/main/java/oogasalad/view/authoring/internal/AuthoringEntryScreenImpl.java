@@ -29,43 +29,55 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
   @Override
   protected Parent createRoot() {
-    BorderPane root = new BorderPane();
-    root.getStylesheets().add(
-        getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
-    root.getStyleClass().add("screen-root");
-    root.setPadding(new Insets(d("rootPadding")));
+    BorderPane layout = buildRootPane();
+    layout.setCenter(buildCenterContent());
+    layout.setBottom(wrapBottomLeft(buildBackButton()));
+    return layout;
+  }
 
+  private BorderPane buildRootPane() {
+    BorderPane pane = new BorderPane();
+    pane.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
+    pane.getStyleClass().add("screen-root");
+    pane.setPadding(new Insets(d("rootPadding")));
+    return pane;
+  }
+
+  private VBox buildCenterContent() {
     Label title = new Label(s("titleText"));
     title.setFont(Font.font(d("titleFontSize")));
     title.getStyleClass().add("authoring-entry-title");
 
+    VBox centerContent = new VBox(d("titleSectionSpacing"), title, buildButtonRow());
+    centerContent.setAlignment(Pos.TOP_CENTER);
+    centerContent.getStyleClass().add("authoring-entry-center");
+    return centerContent;
+  }
+
+  private HBox buildButtonRow() {
     Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
-    createNewLevelButton.setOnAction(
-        event -> onOutcome.accept(Outcome.OPEN_AUTHORING));
+    createNewLevelButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_AUTHORING));
 
     Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
 
-    HBox buttonRegion = new HBox(
+    HBox buttonRow = new HBox(
         d("buttonRegionSpacing"),
-        createNewLevelButton, loadExistingLevelButton);
-    buttonRegion.setAlignment(Pos.CENTER);
-    buttonRegion.setPadding(new Insets(d("buttonRegionPadding")));
-    buttonRegion.getStyleClass().add("authoring-entry-button-row");
+        createNewLevelButton,
+        loadExistingLevelButton);
+    buttonRow.setAlignment(Pos.CENTER);
+    buttonRow.setPadding(new Insets(d("buttonRegionPadding")));
+    buttonRow.getStyleClass().add("authoring-entry-button-row");
+    return buttonRow;
+  }
 
-    VBox centerContent = new VBox(
-        d("titleSectionSpacing"), title, buttonRegion);
-    centerContent.setAlignment(Pos.TOP_CENTER);
-    centerContent.getStyleClass().add("authoring-entry-center");
-    root.setCenter(centerContent);
-
+  private Button buildBackButton() {
     Button backButton = new Button(s("backButtonText"));
     backButton.getStyleClass().add("authoring-entry-back");
     backButton.setOnAction(event -> onOutcome.accept(Outcome.BACK_TO_MENU));
-    root.setBottom(wrapBottomLeft(backButton));
-
-    return root;
+    return backButton;
   }
 
   private void configureActionButton(Button button) {

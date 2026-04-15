@@ -15,6 +15,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
+import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.Outcome;
@@ -114,11 +115,21 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     return layout;
   }
 
-  /** Clears all placed objects and resets the canvas for a fresh level. */
+  /**
+   * Clears all placed objects and resets the canvas for a fresh level.
+   */
   public void resetForNewLevel() {
     world.clear();
     terrainPropertiesPanel.hide();
     canvas.refreshGrid();
+  }
+
+  public void loadLevelFromPath(String path) {
+    try {
+      controller.loadLevel(path);
+    } catch (LevelLoadException e) {
+      alertService.showError(PROPS.getString("loadErrorTitle"), e.getMessage());
+    }
   }
 
   private void initializeAuthoringState() {
@@ -209,11 +220,28 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
         d("backButtonWidth"),
         d("backButtonHeight"));
     backButton.getStyleClass().add("authoring-back-button");
-    backButton.setOnAction(
-        event -> onOutcome.accept(Outcome.BACK_TO_AUTHORING_ENTRY));
+    backButton.setOnAction(event -> {
+      if (!world.getObjects().isEmpty()) {
+        boolean confirmed = alertService.showConfirmation(
+            s("leaveWarningTitle"),
+            s("leaveWarningMessage"));
+        if (!confirmed) {
+          return;
+        }
+      }
+      onOutcome.accept(Outcome.BACK_TO_AUTHORING_ENTRY);
+    });
 
     double actionWidth = d("topActionButtonWidth");
     double actionHeight = d("topActionButtonHeight");
+
+    Button drawButton = createSizedButton(s("drawButtonText"), actionWidth, actionHeight);
+    Button eraseButton = createSizedButton(s("eraseButtonText"), actionWidth, actionHeight);
+    drawButton.getStyleClass().add("authoring-action-button");
+    eraseButton.getStyleClass().add("authoring-action-button");
+    drawButton.setOnAction(event -> controller.setActiveTool(ToolType.DRAW));
+    eraseButton.setOnAction(event -> controller.setActiveTool(ToolType.ERASE));
+
     Button saveButton = createSizedButton(s("saveButtonText"), actionWidth, actionHeight);
     Button runButton = createSizedButton(s("runButtonText"), actionWidth, actionHeight);
     Button loadButton = createSizedButton(s("loadButtonText"), actionWidth, actionHeight);
@@ -224,6 +252,9 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     saveButton.setOnAction(event -> handleSave(saveButton.getScene().getWindow()));
     loadButton.setOnAction(event -> handleLoad(loadButton.getScene().getWindow()));
 
+    HBox toolButtons = new HBox(d("topBarSpacing"), drawButton, eraseButton);
+    toolButtons.setAlignment(Pos.CENTER_LEFT);
+
     HBox rightButtons = new HBox(
         d("topBarSpacing"), saveButton, runButton, loadButton);
     rightButtons.setAlignment(Pos.CENTER_RIGHT);
@@ -231,7 +262,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     Region spacer = new Region();
     HBox.setHgrow(spacer, Priority.ALWAYS);
 
-    HBox topBar = new HBox(backButton, spacer, rightButtons);
+    HBox topBar = new HBox(backButton, toolButtons, spacer, rightButtons);
     topBar.setAlignment(Pos.CENTER_LEFT);
     topBar.getStyleClass().add("authoring-top-bar");
     return topBar;
@@ -302,14 +333,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private void handleLoad(Window owner) {
     fileChooserService.chooseLoadFile(owner)
         .ifPresent(file -> loadLevelFromPath(file.getAbsolutePath()));
-  }
-
-  public void loadLevelFromPath(String path) {
-    try {
-      controller.loadLevel(path);
-    } catch (LevelLoadException e) {
-      alertService.showError(PROPS.getString("loadErrorTitle"), e.getMessage());
-    }
   }
 
   private Button createTabButton(String text) {
