@@ -207,6 +207,7 @@ public class AuthoringScreenImpl implements AppScreen {
   /** Clears all placed objects and resets the canvas for a fresh level. */
   public void resetForNewLevel() {
     world.clear();
+    controller.clearHistory();
     terrainPropertiesPanel.hide();
     canvas.refreshGrid();
   }
@@ -253,6 +254,19 @@ public class AuthoringScreenImpl implements AppScreen {
       updateToolButtonStyles(paintButton);
     });
 
+    Button undoButton = createSizedButton(s("undoButtonText"), actionWidth, actionHeight);
+    Button redoButton = createSizedButton(s("redoButtonText"), actionWidth, actionHeight);
+    undoButton.getStyleClass().add("authoring-action-button");
+    redoButton.getStyleClass().add("authoring-action-button");
+    undoButton.setOnAction(event -> {
+      controller.undo();
+      terrainPropertiesPanel.hide();
+    });
+    redoButton.setOnAction(event -> {
+      controller.redo();
+      terrainPropertiesPanel.hide();
+    });
+
     Button saveButton = createSizedButton(s("saveButtonText"), actionWidth, actionHeight);
     Button runButton = createSizedButton(s("runButtonText"), actionWidth, actionHeight);
     Button loadButton = createSizedButton(s("loadButtonText"), actionWidth, actionHeight);
@@ -267,7 +281,7 @@ public class AuthoringScreenImpl implements AppScreen {
     toolButtonBox.setAlignment(Pos.CENTER_LEFT);
 
     HBox rightButtons = new HBox(
-        d("topBarSpacing"), saveButton, runButton, loadButton);
+        d("topBarSpacing"), undoButton, redoButton, saveButton, runButton, loadButton);
     rightButtons.setAlignment(Pos.CENTER_RIGHT);
 
     Region spacer = new Region();

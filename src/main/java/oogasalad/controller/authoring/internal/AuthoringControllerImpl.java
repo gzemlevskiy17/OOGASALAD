@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.scene.Node;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import oogasalad.controller.authoring.api.AuthoringController;
@@ -50,6 +51,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
   private final PlacementValidator placementValidator;
+  private final CanvasActionHistory history;
 
   private AuthoringPlaceable selectedPlaceable;
   private Consumer<String> placementErrorHandler = message -> { };
@@ -66,6 +68,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.toolSelector = toolSelector;
     this.canvas = canvas;
     this.placementValidator = new PlacementValidator();
+    this.history = new CanvasActionHistory();
     double cellSize = canvas.getCellSize();
     this.selectedPlaceable = new TerrainPlaceable(
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
@@ -104,6 +107,21 @@ public class AuthoringControllerImpl implements AuthoringController {
 
     root.setOnMouseExited(e -> canvas.clearHoverPreview());
 
+    // Batch lifecycle runs as capture-phase filters so it fires even when a
+    // child (e.g. a placed block's Rectangle) consumes the MOUSE_PRESSED event
+    // for object selection. Without this, drags starting on top of an
+    // existing block would record each cell as its own undo step.
+    root.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
+      if (e.getButton() == MouseButton.PRIMARY) {
+        history.beginBatch();
+      }
+    });
+    root.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
+      if (e.getButton() == MouseButton.PRIMARY) {
+        history.endBatch();
+      }
+    });
+
     root.setOnMousePressed(e -> startStrokeAt(e.getX(), e.getY()));
     root.setOnMouseDragged(e -> extendStrokeTo(e.getX(), e.getY()));
     root.setOnMouseReleased(e -> {
@@ -140,7 +158,12 @@ public class AuthoringControllerImpl implements AuthoringController {
         int col = (int) Math.floor(e.getX() / cellSize);
         int row = (int) Math.floor(e.getY() / cellSize);
         if (canvas.isWithinBounds(col, row)) {
-          handleCellInteraction(col, row);
+          history.beginBatch();
+          try {
+            handleCellInteraction(col, row);
+          } finally {
+            history.endBatch();
+          }
           placed = true;
         }
       }
@@ -223,6 +246,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     OccupancyGrid grid = buildOccupancyGrid();
     AuthoringPlaceable target = grid.getObjectAt(col, row);
     if (target != null) {
+      history.record(CanvasAction.remove(target));
       world.removeObject((GameObject) target);
     }
   }
@@ -274,8 +298,64 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void loadLevel(String fileName) {
     world.clear();
     loader.loadLevel(fileName, world, null);
+    history.clear();
     canvas.refreshGrid();
     LOG.info("Loaded level from {}", fileName);
+  }
+
+  @Override
+  public void undo() {
+    history.undo().ifPresent(batch -> {
+      for (int i = batch.size() - 1; i >= 0; i--) {
+        applyInverse(batch.get(i));
+      }
+      canvas.refreshGrid();
+    });
+  }
+
+  @Override
+  public void redo() {
+    history.redo().ifPresent(batch -> {
+      for (CanvasAction action : batch) {
+        applyAction(action);
+      }
+      canvas.refreshGrid();
+    });
+  }
+
+  @Override
+  public void clearHistory() {
+    history.clear();
+  }
+
+  private void applyAction(CanvasAction action) {
+    switch (action.type()) {
+      case PLACE -> placeFromAction(action);
+      case REMOVE -> removePlaceableAt(action.col(), action.row());
+    }
+  }
+
+  private void applyInverse(CanvasAction action) {
+    switch (action.type()) {
+      case PLACE -> removePlaceableAt(action.col(), action.row());
+      case REMOVE -> placeFromAction(action);
+    }
+  }
+
+  private void placeFromAction(CanvasAction action) {
+    TerrainBlock block = new TerrainBlock(
+        action.col(), action.row(),
+        action.width(), action.height(),
+        action.sprite(), action.tiled(),
+        action.friction(), action.color());
+    world.addObject(block);
+  }
+
+  private void removePlaceableAt(int col, int row) {
+    AuthoringPlaceable target = buildOccupancyGrid().getObjectAt(col, row);
+    if (target != null) {
+      world.removeObject((GameObject) target);
+    }
   }
 
   GameObject placeSelectedObject(int col, int row) {
@@ -287,6 +367,7 @@ public class AuthoringControllerImpl implements AuthoringController {
       return null;
     }
     world.addObject((GameObject) placedObject);
+    history.record(CanvasAction.place(placedObject));
     return (GameObject) placedObject;
   }
 
@@ -303,9 +384,15 @@ public class AuthoringControllerImpl implements AuthoringController {
         selectedPlaceable.isTiled(),
         selectedPlaceable.getFriction());
 
-    for (int[] cell : cellsToFill) {
-      AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
-      world.addObject((GameObject) placed);
+    history.beginBatch();
+    try {
+      for (int[] cell : cellsToFill) {
+        AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
+        world.addObject((GameObject) placed);
+        history.record(CanvasAction.place(placed));
+      }
+    } finally {
+      history.endBatch();
     }
   }
 
@@ -340,9 +427,15 @@ public class AuthoringControllerImpl implements AuthoringController {
         selectedPlaceable.getSprite(),
         selectedPlaceable.isTiled(),
         selectedPlaceable.getFriction());
-    for (int[] cell : best.cells()) {
-      AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
-      world.addObject((GameObject) placed);
+    history.beginBatch();
+    try {
+      for (int[] cell : best.cells()) {
+        AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
+        world.addObject((GameObject) placed);
+        history.record(CanvasAction.place(placed));
+      }
+    } finally {
+      history.endBatch();
     }
   }
 
