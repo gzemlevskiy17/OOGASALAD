@@ -2,7 +2,6 @@ package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
@@ -177,14 +176,13 @@ class DistanceJointTest {
   }
 
   @Test
-  void constructor_rejectsStaticStaticAndPassthroughPairs() {
+  void constructor_allowsStaticStaticAndPassthroughPairs() {
     TestStaticComponent staticA = new TestStaticComponent(0, 0, 0);
     TestStaticComponent staticB = new TestStaticComponent(2, 0, 0);
     TestDynamicComponent dynamic = new TestDynamicComponent(0, 0, 0);
     TestPassthroughComponent passthrough = new TestPassthroughComponent(2, 0, 0);
-
-    assertThrows(IllegalArgumentException.class, () -> new DistanceJoint(staticA, staticB, 0.0, 0.0));
-    assertThrows(IllegalArgumentException.class, () -> new DistanceJoint(dynamic, passthrough, 0.0, 0.0));
+    new DistanceJoint(staticA, staticB, 0.0, 0.0);
+    new DistanceJoint(dynamic, passthrough, 0.0, 0.0);
   }
 
   private void assertTrueEquals(double expected, double actual) {

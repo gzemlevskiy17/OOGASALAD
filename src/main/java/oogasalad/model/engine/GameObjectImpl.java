@@ -1,5 +1,7 @@
 package oogasalad.model.engine;
 
+import java.util.Objects;
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
@@ -39,6 +41,15 @@ public class GameObjectImpl implements GameObject {
   private ConvexPolygon polygon;
 
   private Vector force;
+  private String tag = DefaultTag.GAME_OBJECT.value();
+
+  @Override
+  public String getTag() {return tag;}
+
+  @Override
+  public void setTag(String tag) {
+    this.tag = Objects.requireNonNull(tag);
+  }
 
   @Override
   public double getMass() {

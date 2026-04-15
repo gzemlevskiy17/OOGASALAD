@@ -2,10 +2,16 @@ package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import oogasalad.model.engine.api.DefaultTag;
+import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,9 +66,7 @@ class WorldImplTest {
   @Test
   void destroyComponent_unregistersAndDeactivatesComponent() {
     world.addComponent(componentA);
-
     world.destroyComponent(componentA);
-
     assertFalse(componentA.isActive());
     assertTrue(world.getAllComponents().isEmpty());
     assertTrue(world.getActiveComponents().isEmpty());
@@ -74,24 +78,60 @@ class WorldImplTest {
     world.addComponent(componentA);
     world.addComponent(componentB);
     world.addJoint(new FakeJoint(componentA, componentB));
-
     world.clear();
-
     assertTrue(world.getAllComponents().isEmpty());
     assertTrue(world.getActiveComponents().isEmpty());
     assertTrue(world.getComponents().isEmpty());
     assertTrue(world.getJoints().isEmpty());
   }
 
+  @Test
+  void getComponentsByTag_returnsRegisteredComponentsWithMatchingTagInOrder() {
+    world.addComponent(componentA);
+    world.addComponent(componentB);
+    assertIterableEquals(List.of(componentA, componentB), world.getComponentsByTag(DefaultTag.TERRAIN.value()));
+    assertTrue(world.getComponentsByTag(DefaultTag.VEHICLE.value()).isEmpty());
+  }
+
+  @Test
+  void getObjectsByTag_filtersMixedWorldUsingDefaultAndAuthoringTags() {
+    GameComponent terrain = new TerrainBlock(0, 0, 2, 1, "ground.png", true, 0.5);
+    GameComponent pig = new FakeComponent(1, 0, DefaultTag.DYNAMIC.value());
+    GameComponent checkpointA = new FakeComponent(2, 0, "checkpoint");
+    GameComponent checkpointB = new FakeComponent(3, 0, "checkpoint");
+    GameComponent hazard = new FakeComponent(4, 0, "hazard");
+
+    world.addComponent(terrain);
+    world.addComponent(pig);
+    world.addComponent(checkpointA);
+    world.addComponent(checkpointB);
+    world.addComponent(hazard);
+
+    assertIterableEquals(List.of(checkpointA, checkpointB), world.getObjectsByTag("checkpoint"));
+    assertIterableEquals(List.of(terrain), world.getObjectsByTag(DefaultTag.TERRAIN.value()));
+    assertIterableEquals(List.of(pig), world.getObjectsByTag(DefaultTag.DYNAMIC.value()));
+    assertTrue(world.getObjectsByTag("missing-tag").isEmpty());
+  }
+
   private record FakeJoint(GameComponent objectA, GameComponent objectB) implements Joint {
     @Override
-    public GameComponent getComponentA() {
-      return objectA;
-    }
-
+    public GameComponent getComponentA() {return objectA;}
     @Override
-    public GameComponent getComponentB() {
-      return objectB;
+    public GameComponent getComponentB() {return objectB;}
+  }
+
+  private static class FakeComponent extends DynamicComponent {
+    FakeComponent(double x, double y, String tag) {
+      super(x, y, 0, 1.0, 0.5);
+      setState(new ObjectState(
+          new Vector(x, y),
+          new Vector(0, 0),
+          new Vector(0, 0),
+          0,
+          new Vector(0, 0),
+          new Vector(0, 0)
+      ));
+      setTag(tag);
     }
   }
 }

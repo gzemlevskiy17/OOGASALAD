@@ -7,7 +7,7 @@ import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.api.World;
 
 /**
- * Stops the simulation, reloads the level into the World, and restarts.
+ * Resets the simulation, reloads the level into the World, and starts again.
  *
  * NOTE: World has no clear() method yet. Until it does, this action reloads
  * objects on top of existing ones. The team should add World.clear() so
