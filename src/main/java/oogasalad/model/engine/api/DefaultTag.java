@@ -9,6 +9,7 @@ public enum DefaultTag {
   PASSTHROUGH,
   TERRAIN,
   VEHICLE,
+  PIGS,
   FINISH_LINE;
 
   private static final ResourceBundle TAGS =
