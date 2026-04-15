@@ -283,6 +283,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
     OccupancyGrid grid = buildOccupancyGrid();
     if (placementValidator.overlapsExistingPlacement(placedObject, grid)) {
+      autoFillEnclosed(col, row, grid);
       return null;
     }
     world.addObject((GameObject) placedObject);
@@ -303,6 +304,43 @@ public class AuthoringControllerImpl implements AuthoringController {
         selectedPlaceable.getFriction());
 
     for (int[] cell : cellsToFill) {
+      AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
+      world.addObject((GameObject) placed);
+    }
+  }
+
+  private static final int[][] NEIGHBOR_DIRS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+  private void autoFillEnclosed(int col, int row, OccupancyGrid grid) {
+    FillExecutor executor = new FillExecutor();
+    FillExecutor.FillResult best = null;
+
+    for (int[] dir : NEIGHBOR_DIRS) {
+      int nc = col + dir[0];
+      int nr = row + dir[1];
+      if (!grid.isInBounds(nc, nr) || grid.isOccupied(nc, nr)) {
+        continue;
+      }
+      FillExecutor.FillResult result = executor.computeEnclosedRegion(grid, nc, nr);
+      if (result.status() == FillExecutor.FillStatus.FILLED) {
+        if (best == null || result.cells().size() < best.cells().size()) {
+          best = result;
+        }
+      }
+    }
+
+    if (best == null) {
+      return;
+    }
+
+    double cellSize = canvas.getCellSize();
+    TerrainPlaceable unitPlaceable = new TerrainPlaceable(
+        cellSize, cellSize,
+        selectedPlaceable.getColor(),
+        selectedPlaceable.getSprite(),
+        selectedPlaceable.isTiled(),
+        selectedPlaceable.getFriction());
+    for (int[] cell : best.cells()) {
       AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
       world.addObject((GameObject) placed);
     }
