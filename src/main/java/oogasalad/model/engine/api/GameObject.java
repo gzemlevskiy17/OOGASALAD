@@ -9,6 +9,9 @@ import oogasalad.view.core.api.Renderable;
  * Base entity for the simulation. Exposes physical properties.
  */
 public interface GameObject extends Renderable {
+  String getTag();
+  void setTag(String tag);
+
   //TODO: should these be returned immutably?
   double getMass();
 

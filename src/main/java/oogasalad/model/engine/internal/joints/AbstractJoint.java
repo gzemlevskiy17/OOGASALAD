@@ -5,8 +5,7 @@ import oogasalad.model.engine.internal.components.GameComponent;
 /**
  * Shared base for concrete joint implementations.
  *
- * <p>Stores the two endpoint components and centralizes validation of the minimal joint rules used
- * by the current engine: only dynamic-dynamic and dynamic-static pairs are supported.
+ * <p>Stores the two endpoint components plus shared anchor and correction logic.
  */
 public abstract class AbstractJoint implements Joint {
 

@@ -29,6 +29,16 @@ public interface World {
   List<GameComponent> getActiveComponents();
 
   /**
+   * Returns every registered component whose tag matches the requested tag, in registration order.
+   */
+  default List<GameComponent> getComponentsByTag(String tag) {
+    List<GameComponent> taggedComponents = new ArrayList<>();
+    for (GameComponent component : getAllComponents()) {
+      if (component.getTag().equals(tag)) {taggedComponents.add(component);}
+    }return List.copyOf(taggedComponents);
+  }
+
+  /**
    * Returns all joints currently registered with the world in registration order.
    */
   List<Joint> getJoints();
@@ -103,6 +113,13 @@ public interface World {
    */
   default List<GameObject> getObjects() {
     return new ArrayList<>(getComponents());
+  }
+
+  /**
+   * Compatibility alias for older code still using {@code GameObject} naming.
+   */
+  default List<GameObject> getObjectsByTag(String tag) {
+    return new ArrayList<>(getComponentsByTag(tag));
   }
 
   /**

@@ -1,5 +1,6 @@
 package oogasalad.model.engine.internal.components;
 
+import java.util.Objects;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.ObjectState;
@@ -18,6 +19,7 @@ public abstract class GameComponent implements GameObject {
   private boolean active; //TODO: depends on how people up the stack implement it
   private boolean affectedByGravity;
   private boolean trigger; //TODO: not needed?
+  private String tag;
 
   /**
    *
@@ -45,9 +47,19 @@ public abstract class GameComponent implements GameObject {
   }
 
   @Override
-  public double getMass() {
-    return mass;
-  }
+  public String getTag() {return tag;}
+
+  @Override
+  public void setTag(String tag) {this.tag = Objects.requireNonNull(tag);}
+
+  @Override
+  public String getTag() {return tag;}
+
+  @Override
+  public void setTag(String tag) {this.tag = Objects.requireNonNull(tag);}
+
+  @Override
+  public double getMass() {return mass;}
 
   public void setMass(double mass) {
     if (mass < 0) {
