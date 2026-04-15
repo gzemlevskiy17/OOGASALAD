@@ -17,14 +17,62 @@ import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
  * Entry screen for the authoring environment.
+ *
+ * @author Emilio Garcia
  */
 public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringEntry");
+  private static final ThreadLocal<Consumer<String>> PENDING_LOAD_HANDLER = new ThreadLocal<>();
+  private static final ThreadLocal<FileChooserService> PENDING_FILE_CHOOSER = new ThreadLocal<>();
 
+  private final Consumer<String> loadLevelHandler;
+  private final FileChooserService fileChooserService;
+
+  /**
+   * Creates the authoring entry screen with no-op load behavior.
+   *
+   * @param onOutcome callback used to request screen navigation
+   * @author Emilio Garcia
+   */
   public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome) {
-    super(onOutcome);
+    this(onOutcome, path -> {
+    });
+  }
+
+  /**
+   * Creates the authoring entry screen with a callback that will be invoked when the user selects
+   * an existing level file to load.
+   *
+   * @param onOutcome callback used to request screen navigation
+   * @param loadLevelHandler callback that receives the selected file path before opening authoring
+   * @author Emilio Garcia
+   */
+  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler) {
+    super(prepare(onOutcome, loadLevelHandler));
+    this.loadLevelHandler = consumeLoadHandler();
+    this.fileChooserService = consumeFileChooserService();
+  }
+
+  private static Consumer<Outcome> prepare(Consumer<Outcome> onOutcome,
+      Consumer<String> loadLevelHandler) {
+    PENDING_LOAD_HANDLER.set(loadLevelHandler);
+    PENDING_FILE_CHOOSER.set(new FileChooserService());
+    return onOutcome;
+  }
+
+  private static Consumer<String> consumeLoadHandler() {
+    Consumer<String> handler = PENDING_LOAD_HANDLER.get();
+    PENDING_LOAD_HANDLER.remove();
+    return handler == null ? path -> {
+    } : handler;
+  }
+
+  private static FileChooserService consumeFileChooserService() {
+    FileChooserService chooserService = PENDING_FILE_CHOOSER.get();
+    PENDING_FILE_CHOOSER.remove();
+    return chooserService == null ? new FileChooserService() : chooserService;
   }
 
   @Override
@@ -62,6 +110,12 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
     Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
+    loadExistingLevelButton.setOnAction(event -> fileChooserService
+        .chooseLoadFile(loadExistingLevelButton.getScene().getWindow())
+        .ifPresent(file -> {
+          loadLevelHandler.accept(file.getAbsolutePath());
+          onOutcome.accept(Outcome.OPEN_AUTHORING);
+        }));
 
     HBox buttonRow = new HBox(
         d("buttonRegionSpacing"),
