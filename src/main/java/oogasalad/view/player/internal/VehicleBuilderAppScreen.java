@@ -1,5 +1,9 @@
 package oogasalad.view.player.internal;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.geometry.Pos;
@@ -20,6 +24,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.model.player.api.PlacedComponent;
+import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.view.core.internal.AbstractAppScreen;
 import oogasalad.view.core.internal.SpriteCache;
 
@@ -35,8 +41,22 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private static final ResourceBundle PALETTE_CONFIG = ResourceBundle.getBundle(
       "oogasalad.view.authoring.VehicleComponentPalette");
   private static final SpriteCache spriteCache = new SpriteCache();
+
+  private final Map<String, String> gridState = new HashMap<>();
+
   public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome) {
     super(onOutcome);
+  }
+
+  public VehicleLayout getVehicleLayout() {
+    List<PlacedComponent> placements = new ArrayList<>();
+    for (Map.Entry<String, String> entry : gridState.entrySet()) {
+      String[] parts = entry.getKey().split(",");
+      int row = Integer.parseInt(parts[0]);
+      int col = Integer.parseInt(parts[1]);
+      placements.add(new PlacedComponent(row, col, entry.getValue()));
+    }
+    return new VehicleLayout(placements);
   }
 
   @Override
@@ -155,7 +175,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       for (int col = 0; col < cols; col++) {
         StackPane cell = new StackPane();
         cell.getStyleClass().add("grid-cell");
-        wireDropTarget(cell);
+        wireDropTarget(cell, row, col);
         grid.add(cell, col, row);
       }
     }
@@ -163,7 +183,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     return grid;
   }
 
-  private void wireDropTarget(StackPane cell) {
+  private void wireDropTarget(StackPane cell, int row, int col) {
     cell.setOnDragOver(e -> {
       if (e.getDragboard().hasString()) {
         e.acceptTransferModes(TransferMode.COPY);
@@ -186,7 +206,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     cell.setOnDragDropped(e -> {
       Dragboard db = e.getDragboard();
       if (db.hasString()) {
-        placeComponentInCell(cell, db.getString());
+        placeComponentInCell(cell, db.getString(), row, col);
         e.setDropCompleted(true);
       } else {
         e.setDropCompleted(false);
@@ -195,7 +215,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     });
   }
 
-  private void placeComponentInCell(StackPane cell, String componentName) {
+  private void placeComponentInCell(StackPane cell, String componentName, int row, int col) {
+    gridState.put(row + "," + col, componentName);
     cell.getChildren().clear();
 
     String spriteKey = componentName.replace(" ", "") + ".sprite";
