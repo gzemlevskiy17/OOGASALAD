@@ -86,6 +86,9 @@ public class CollisionDetectorImpl implements CollisionDetector {
     if (objectA.getPolygon() == null || objectB.getPolygon() == null) {
       return Optional.empty();
     }
+    if (objectA == objectB) {
+      return Optional.empty();
+    }
     Optional<Collision> collisionOnAxesOfA = penetrationDepthOnAxesOfA(objectA, objectB);
     if (collisionOnAxesOfA.isPresent()) {
       return collisionOnAxesOfA;
@@ -165,7 +168,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
 
     List<Vector> points = incidentPolygon.getPoints();
     for (int i = 0; i < points.size() - 1; i++) {
-      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize().rotateLeft();
+      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize().rotateRight();
       double dotWithIncident = penetrationNormal.dot(incidentNormal);
       if (dotWithIncident < minimumDotProduct) {
         minimumDotProduct = dotWithIncident;

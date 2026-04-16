@@ -79,7 +79,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
         referenceOutwardNormal);
     if (distanceFromRightPlane < 0) {
       ContactPointPhysics contactPointPhysics = new ContactPointPhysics(clippedIncidentEdge[1],
-          -distanceFromLeftPlane);
+          -distanceFromRightPlane);
       manifoldPoints.add(contactPointPhysics);
     }
 
@@ -225,6 +225,20 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       contactPoints.add(contactPointPhysics);
     }
 
+    if (totalDepth == 0 || contactPoints.isEmpty()) {
+      return;
+    }
+    // Only resolve if the pair is actually approaching along the normal.
+    // Otherwise the impulse would drag separating objects back together.
+    double approachSpeed = 0;
+    for (ContactPointPhysics contactPointPhysics : contactPoints) {
+      approachSpeed += contactPointPhysics.relativeVelocity.dot(referenceUnitNormal)
+          * (contactPointPhysics.depth / totalDepth);
+    }
+    if (approachSpeed >= 0) {
+      return;
+    }
+
     double impulseSum = 0;
     double referenceCrossProductSum = 0;
     double incidentCrossProductSum = 0;
@@ -235,7 +249,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       referenceCrossProductSum +=
           contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse; //TODO: make impulse vector?
-      referenceCrossProductSum +=
+      incidentCrossProductSum +=
           contactPointPhysics.positionFromIncident.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse;
     }
@@ -252,7 +266,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
     referenceObjectState.setLinearVelocity(referenceObjectState.getLinearVelocity()
         .subtract(referenceUnitNormal.multiply(impulseSum * invMass(referenceObject))));
     incidentObjectState.setLinearVelocity(incidentObjectState.getLinearVelocity()
-        .subtract(referenceUnitNormal.multiply(impulseSum * invMass(incidentObject))));
+        .add(referenceUnitNormal.multiply(impulseSum * invMass(incidentObject))));
   }
 
   /**
@@ -337,7 +351,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision detected collision pair
    */
   private void applyPositionalCorrection(Collision collision) {
-    double correctionFraction = 0.4; //TODO: put into properties file
+    double correctionFraction = 0.8; //TODO: put into properties file
+    double penetrationSlop = 0.01;
 
     GameObject referenceObject = collision.getReferenceObject();
     GameObject incidentObject = collision.getIncidentObject();
@@ -350,7 +365,11 @@ public class ImpulseCollisionSolver implements CollisionSolver {
     }
 
     Vector penetration = collision.getPenetration();
-    double magnitude = penetration.magnitude() * correctionFraction / totalInvMass;
+    double depth = penetration.magnitude();
+    if (depth <= penetrationSlop) {
+      return;
+    }
+    double magnitude = (depth - penetrationSlop) * correctionFraction / totalInvMass;
     Vector correction = penetration.normalize().multiply(magnitude);
 
     referenceObjectState.setLinearPosition(referenceObjectState.getLinearPosition()
