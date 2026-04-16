@@ -12,6 +12,7 @@ import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
@@ -82,9 +83,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     // Re-entry / retry can reuse the same view instance, so clear stale nodes from prior sessions.
     screen.getGameLayer().getChildren().clear();
 
-    World world = buildWorldForCurrentLevel();
-    GameEngine engine = buildEngine(world);
     GameConfig config = buildConfig();
+    World world = buildWorldForCurrentLevel(config);
+    GameEngine engine = buildEngine(world);
 
     WinConditionChecker winChecker = buildWinChecker();
     LossConditionChecker lossChecker = buildLossChecker();
@@ -147,24 +148,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new GameplaySession(controller);
   }
 
-  private World buildWorldForCurrentLevel() {
+  private World buildWorldForCurrentLevel(GameConfig config) {
     World world = new WorldImpl();
+    levelLoader.loadLevel(levelPath, world, config);
 
-
-
-    // Followed "player" ball (first object is used by resolveControlledPlayer)
-    world.addComponent(createMovingCircle(350, 300, 180, 120));
-
-    // Other moving balls
-    world.addComponent(createMovingCircle(900, 500, -140, 100));
-    world.addComponent(createMovingCircle(1500, 900, 160, -130));
-    world.addComponent(createMovingCircle(2100, 400, -120, -90));
-
-    // Idle balls (v=0) so camera motion is obvious
-    world.addComponent(createMovingCircle(200, 1200, 0, 0));
-    world.addComponent(createMovingCircle(1200, 200, 0, 0));
-    world.addComponent(createMovingCircle(2400, 1300, 0, 0));
-    world.addComponent(createMovingCircle(2500, 300, 0, 0));
     return world;
   }
 
@@ -217,7 +204,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
 
   private GameObject resolveControlledPlayer(World world) {
-    return world.getObjects().stream().findFirst().orElse(null);
+    return world.getObjectsByTag(DefaultTag.PIGS.value()).stream().findFirst().orElse(null);
   }
 
 }
