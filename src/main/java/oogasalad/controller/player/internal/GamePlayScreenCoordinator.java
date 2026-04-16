@@ -45,6 +45,11 @@ public class GamePlayScreenCoordinator implements AppScreen {
     view.setOnPause(() -> {
       if (session != null) session.pause();
     });
+    view.setOnResume(() -> {
+      if (session != null) {
+        session.start();
+      }
+    });
     view.setOnReset(() -> {
       if (session != null) session.reset();
     });
