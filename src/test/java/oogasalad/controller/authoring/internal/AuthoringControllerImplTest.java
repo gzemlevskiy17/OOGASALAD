@@ -1,6 +1,8 @@
 package oogasalad.controller.authoring.internal;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -125,16 +127,13 @@ class AuthoringControllerImplTest {
   @Test
   void clearLevel_emptyCanvas_remainsEmpty() {
     assertEquals(0, world.objectCount());
-
     controller.clearLevel();
-
     assertEquals(0, world.objectCount());
   }
 
   @Test
   void clearLevel_refreshesCanvas() {
     controller.clearLevel();
-
     assertTrue(canvas.refreshCalled);
   }
 
@@ -153,9 +152,7 @@ class AuthoringControllerImplTest {
   @Test
   void paint_onEmptyGrid_fillsAllConnectedCells() {
     toolSelector.setActiveTool(ToolType.PAINT);
-
     controller.handleGridInteraction(20.0, 20.0);
-
     assertEquals(100, world.objectCount());
   }
 
@@ -173,8 +170,6 @@ class AuthoringControllerImplTest {
 
   @Test
   void autoFill_closedShape_fillsSmallerInterior() {
-    // Build a 3x3 hollow rectangle whose interior is the single cell (2, 2).
-    // Perimeter cells: (1,1)(2,1)(3,1)(1,2)(3,2)(1,3)(2,3)(3,3) — 8 blocks.
     toolSelector.setActiveTool(ToolType.DRAW);
     controller.handleGridInteraction(40.0, 40.0);
     controller.handleGridInteraction(80.0, 40.0);
@@ -186,9 +181,6 @@ class AuthoringControllerImplTest {
     controller.handleGridInteraction(120.0, 120.0);
     assertEquals(8, world.objectCount());
 
-    // Drawing on occupied wall cell (2, 1) triggers overlap detection.
-    // The interior region (1 cell) is smaller than the exterior (91 cells),
-    // so auto-fill places a block in the interior only.
     controller.handleGridInteraction(80.0, 40.0);
 
     assertEquals(9, world.objectCount());
@@ -196,9 +188,6 @@ class AuthoringControllerImplTest {
 
   @Test
   void autoFill_noClosedShape_fillsEntireOpenRegion() {
-    // With only a single block placed, clicking on it triggers auto-fill.
-    // Since grid edges are treated as boundaries, the surrounding open region
-    // is considered "enclosed" and gets filled entirely.
     toolSelector.setActiveTool(ToolType.DRAW);
     controller.handleGridInteraction(200.0, 200.0);
     assertEquals(1, world.objectCount());
@@ -210,19 +199,107 @@ class AuthoringControllerImplTest {
 
   @Test
   void autoFill_unevenSides_fillsSmallerSide() {
-    // Vertical wall at column 3 divides the grid into a left region
-    // (3 cols x 10 rows = 30 cells) and a right region (6 cols x 10 rows = 60).
     toolSelector.setActiveTool(ToolType.DRAW);
     for (int r = 0; r < 10; r++) {
       controller.handleGridInteraction(140.0, r * 40.0 + 20.0);
     }
     assertEquals(10, world.objectCount());
 
-    // Drawing on the wall at (3, 5) triggers auto-fill. The smaller left
-    // region gets filled (30 cells), not the larger right region.
     controller.handleGridInteraction(140.0, 220.0);
 
     assertEquals(40, world.objectCount());
+  }
+
+  // --- Erase integration tests ---
+
+  @Test
+  void erase_placedBlock_worldIsEmpty() {
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+
+    toolSelector.setActiveTool(ToolType.ERASE);
+    controller.handleGridInteraction(20.0, 20.0);
+
+    assertEquals(0, world.objectCount());
+  }
+
+  @Test
+  void erase_onlyRemovesTargetBlock_notNeighbor() {
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);   // col=0
+    controller.handleGridInteraction(160.0, 20.0);  // col=4
+    assertEquals(2, world.objectCount());
+
+    toolSelector.setActiveTool(ToolType.ERASE);
+    controller.handleGridInteraction(20.0, 20.0);
+
+    assertEquals(1, world.objectCount());
+  }
+
+  @Test
+  void erase_emptyCell_worldUnchanged() {
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+
+    toolSelector.setActiveTool(ToolType.ERASE);
+    controller.handleGridInteraction(160.0, 20.0);
+
+    assertEquals(1, world.objectCount());
+  }
+
+  @Test
+  void drawThenEraseAll_worldIsEmpty() {
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+    controller.handleGridInteraction(160.0, 20.0);
+    controller.handleGridInteraction(20.0, 160.0);
+
+    toolSelector.setActiveTool(ToolType.ERASE);
+    controller.handleGridInteraction(20.0, 20.0);
+    controller.handleGridInteraction(160.0, 20.0);
+    controller.handleGridInteraction(20.0, 160.0);
+
+    assertEquals(0, world.objectCount());
+  }
+
+  // --- Infinite canvas expansion tests ---
+
+  @Test
+  void drawBeyondInitialBounds_canvasExpands() {
+    ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
+    AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
+        world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+
+    toolSelector.setActiveTool(ToolType.DRAW);
+    ctrl.handleGridInteraction(400.0, 20.0); // col=10, beyond initial maxCol of 5
+
+    assertTrue(expanding.wasExpanded);
+    assertEquals(1, world.objectCount());
+  }
+
+  @Test
+  void drawBeyondInitialBounds_blockIsStillPlaced() {
+    ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
+    AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
+        world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+
+    toolSelector.setActiveTool(ToolType.DRAW);
+    ctrl.handleGridInteraction(400.0, 400.0);
+    ctrl.handleGridInteraction(400.0, 400.0); // second draw — autoFill kicks in, block already there
+
+    assertTrue(world.objectCount() >= 1);
+  }
+
+  @Test
+  void drawWithinBounds_canvasDoesNotExpand() {
+    ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
+    AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
+        world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+
+    toolSelector.setActiveTool(ToolType.DRAW);
+    ctrl.handleGridInteraction(20.0, 20.0); // col=0, row=0 — within initial 5×5
+
+    assertFalse(expanding.wasExpanded);
   }
 
   // --- Test doubles ---
@@ -286,5 +363,35 @@ class AuthoringControllerImplTest {
     @Override public void showHoverPreview(int col, int row) {}
     @Override public void clearHoverPreview() {}
     @Override public void setOnObjectSelected(java.util.function.Consumer<AuthoringPlaceable> handler) {}
+    @Override public void setZoom(double factor) {}
+    @Override public double getZoom() { return 1.0; }
+  }
+
+  /**
+   * Canvas spy that mirrors the real AuthoringCanvasImpl auto-expansion logic,
+   * allowing tests to verify that drawing beyond the initial grid triggers expansion.
+   */
+  private static class ExpandingSpyCanvas extends SpyCanvas {
+    private int maxCol;
+    private int maxRow;
+    boolean wasExpanded = false;
+
+    ExpandingSpyCanvas(int initialCols, int initialRows) {
+      this.maxCol = initialCols;
+      this.maxRow = initialRows;
+    }
+
+    @Override
+    public boolean isWithinBounds(int col, int row) {
+      if (col < 0 || row < 0) {
+        return false;
+      }
+      if (col >= maxCol || row >= maxRow) {
+        maxCol = Math.max(maxCol, col + 1);
+        maxRow = Math.max(maxRow, row + 1);
+        wasExpanded = true;
+      }
+      return true;
+    }
   }
 }
