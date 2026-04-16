@@ -41,6 +41,12 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double BALL_RADIUS = 12.0;
   private static final double WORLD_WIDTH = 2600.0;
   private static final double WORLD_HEIGHT = 1600.0;
+  private static final double MIN_VIEWPORT_SIZE = 1.0;
+  private static final double DEFAULT_VIEW_WIDTH = 1280.0;
+  private static final double DEFAULT_VIEW_HEIGHT = 720.0;
+  private static final double ZOOM_STEP = 1.1;
+  private static final double MIN_ZOOM = 0.5;
+  private static final double MAX_ZOOM = 3.0;
 
   private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
     ImageView imageView = new ImageView(spriteCache.get(sr.getSpritePath()));
@@ -71,10 +77,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     LossConditionChecker lossChecker = buildLossChecker();
     InputRouter inputRouter = buildInputRouter();
 
-    double viewWidth = screen.getGameLayer().getPrefWidth();
-    double viewHeight = screen.getGameLayer().getPrefHeight();
-    if (viewWidth <= 0) viewWidth = 1280;
-    if (viewHeight <= 0) viewHeight = 720;
+    double viewWidth = screen.getGameLayer().getWidth();
+    double viewHeight = screen.getGameLayer().getHeight();
+    if (viewWidth <= 0) viewWidth = DEFAULT_VIEW_WIDTH;
+    if (viewHeight <= 0) viewHeight = DEFAULT_VIEW_HEIGHT;
 
     // World boundary overlay (drawn in world space, projected each frame)
     Rectangle worldBounds = new Rectangle(WORLD_WIDTH, WORLD_HEIGHT);
@@ -91,8 +97,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
     GameObject player = resolveControlledPlayer(world);
 
-    CameraBehavior behavior = new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight, 0, 0, 0.2);
+    CameraBehavior behavior = new FollowPlayerCameraBehavior(
+        () -> player, 0, 0, 0.2, WORLD_WIDTH, WORLD_HEIGHT);
     camera.setBehavior(behavior);
+    wireResponsiveCamera(screen, camera);
     SpriteCache spriteCache = new SpriteCache();
     Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
       if (r instanceof SpriteRenderable sr) {
@@ -126,6 +134,42 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     controller.setOnOutcome(onOutcome);
 
     return new GameplaySession(controller);
+  }
+
+  private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
+    final double[] baseWidth = {Math.max(DEFAULT_VIEW_WIDTH, screen.getGameLayer().getWidth())};
+    final double[] baseHeight = {Math.max(DEFAULT_VIEW_HEIGHT, screen.getGameLayer().getHeight())};
+    final double[] zoom = {1.0};
+
+    Runnable applyViewport = () -> {
+      double viewWidth = Math.max(MIN_VIEWPORT_SIZE, baseWidth[0] / zoom[0]);
+      double viewHeight = Math.max(MIN_VIEWPORT_SIZE, baseHeight[0] / zoom[0]);
+      camera.setViewBoundaries(viewWidth, viewHeight);
+    };
+
+    screen.getGameLayer().widthProperty().addListener((obs, oldVal, newVal) -> {
+      if (newVal.doubleValue() > 0) {
+        baseWidth[0] = newVal.doubleValue();
+        applyViewport.run();
+      }
+    });
+    screen.getGameLayer().heightProperty().addListener((obs, oldVal, newVal) -> {
+      if (newVal.doubleValue() > 0) {
+        baseHeight[0] = newVal.doubleValue();
+        applyViewport.run();
+      }
+    });
+    screen.getGameLayer().setOnScroll(event -> {
+      if (!event.isControlDown()) {
+        return;
+      }
+      zoom[0] = event.getDeltaY() > 0 ? zoom[0] * ZOOM_STEP : zoom[0] / ZOOM_STEP;
+      zoom[0] = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom[0]));
+      applyViewport.run();
+      event.consume();
+    });
+
+    applyViewport.run();
   }
 
   private World buildWorldForCurrentLevel() {
