@@ -1,5 +1,6 @@
 package oogasalad.view.authoring.internal;
 
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
@@ -25,6 +26,7 @@ import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
+import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.core.api.AppScreen;
 
@@ -75,6 +77,7 @@ public class AuthoringScreenImpl implements AppScreen {
   private final World world;
   private final AuthoringCanvasImpl canvas;
 
+  private List<Button> toolButtons;
   private AuthoringMode currentMode;
   private LevelPaletteMode currentLevelPaletteMode;
 
@@ -109,6 +112,12 @@ public class AuthoringScreenImpl implements AppScreen {
     this.root = buildLayout();
     wireButtonHandlers();
     refreshDisplayedMode();
+
+    controller.setToolChangeListener(type -> {
+      if (type == ToolType.DRAW) {
+        updateToolButtonStyles(toolButtons.get(0));
+      }
+    });
   }
 
   @Override
@@ -122,9 +131,8 @@ public class AuthoringScreenImpl implements AppScreen {
   }
 
   public void resetForNewLevel() {
-    world.clear();
+    controller.clearLevel();
     terrainPropertiesPanel.hide();
-    canvas.refreshGrid();
   }
 
   public void loadLevelFromPath(String path) {
@@ -218,12 +226,52 @@ public class AuthoringScreenImpl implements AppScreen {
 
     Button drawButton = createSizedButton(s("drawButtonText"), actionWidth, actionHeight);
     Button eraseButton = createSizedButton(s("eraseButtonText"), actionWidth, actionHeight);
+    Button paintButton = createSizedButton(s("paintButtonText"), actionWidth, actionHeight);
     drawButton.getStyleClass().add("authoring-action-button");
     eraseButton.getStyleClass().add("authoring-action-button");
-    drawButton.setOnAction(event ->
-        controller.setActiveTool(oogasalad.controller.authoring.api.ToolSelector.ToolType.DRAW));
-    eraseButton.setOnAction(event ->
-        controller.setActiveTool(oogasalad.controller.authoring.api.ToolSelector.ToolType.ERASE));
+    paintButton.getStyleClass().add("authoring-action-button");
+
+    toolButtons = List.of(drawButton, eraseButton, paintButton);
+    drawButton.getStyleClass().add("tool-active");
+
+    drawButton.setOnAction(event -> {
+      controller.setActiveTool(ToolType.DRAW);
+      updateToolButtonStyles(drawButton);
+    });
+    eraseButton.setOnAction(event -> {
+      controller.setActiveTool(ToolType.ERASE);
+      updateToolButtonStyles(eraseButton);
+    });
+    paintButton.setOnAction(event -> {
+      controller.setActiveTool(ToolType.PAINT);
+      updateToolButtonStyles(paintButton);
+    });
+
+    Button undoButton = createSizedButton(s("undoButtonText"), actionWidth, actionHeight);
+    Button redoButton = createSizedButton(s("redoButtonText"), actionWidth, actionHeight);
+    undoButton.getStyleClass().add("authoring-action-button");
+    redoButton.getStyleClass().add("authoring-action-button");
+    undoButton.setOnAction(event -> {
+      controller.undo();
+      terrainPropertiesPanel.hide();
+    });
+    redoButton.setOnAction(event -> {
+      controller.redo();
+      terrainPropertiesPanel.hide();
+    });
+
+    Button clearButton = createSizedButton(s("clearButtonText"), actionWidth, actionHeight);
+    clearButton.getStyleClass().add("authoring-action-button");
+    clearButton.setOnAction(event -> {
+      if (!world.getObjects().isEmpty()) {
+        boolean confirmed = alertService.showConfirmation(
+            s("clearWarningTitle"), s("clearWarningMessage"));
+        if (!confirmed) {
+          return;
+        }
+      }
+      resetForNewLevel();
+    });
 
     Button saveButton = createSizedButton(s("saveButtonText"), actionWidth, actionHeight);
     Button runButton = createSizedButton(s("runButtonText"), actionWidth, actionHeight);
@@ -234,16 +282,17 @@ public class AuthoringScreenImpl implements AppScreen {
     saveButton.setOnAction(event -> handleSave(saveButton.getScene().getWindow()));
     loadButton.setOnAction(event -> handleLoad(loadButton.getScene().getWindow()));
 
-    HBox toolButtons = new HBox(d("topBarSpacing"), drawButton, eraseButton);
-    toolButtons.setAlignment(Pos.CENTER_LEFT);
+    HBox toolButtonBox = new HBox(d("topBarSpacing"), drawButton, eraseButton, paintButton);
+    toolButtonBox.setAlignment(Pos.CENTER_LEFT);
 
-    HBox rightButtons = new HBox(d("topBarSpacing"), saveButton, runButton, loadButton);
+    HBox rightButtons = new HBox(
+        d("topBarSpacing"), undoButton, redoButton, clearButton, saveButton, runButton, loadButton);
     rightButtons.setAlignment(Pos.CENTER_RIGHT);
 
     Region spacer = new Region();
     HBox.setHgrow(spacer, Priority.ALWAYS);
 
-    HBox topBar = new HBox(backButton, toolButtons, spacer, rightButtons);
+    HBox topBar = new HBox(backButton, toolButtonBox, spacer, rightButtons);
     topBar.setAlignment(Pos.CENTER_LEFT);
     topBar.getStyleClass().add("authoring-top-bar");
     return topBar;
@@ -370,6 +419,13 @@ public class AuthoringScreenImpl implements AppScreen {
     button.setPrefHeight(height);
     button.getStyleClass().add("authoring-button");
     return button;
+  }
+
+  private void updateToolButtonStyles(Button activeButton) {
+    for (Button btn : toolButtons) {
+      btn.getStyleClass().remove("tool-active");
+    }
+    activeButton.getStyleClass().add("tool-active");
   }
 
   // ---------------------------------------------------------------------------

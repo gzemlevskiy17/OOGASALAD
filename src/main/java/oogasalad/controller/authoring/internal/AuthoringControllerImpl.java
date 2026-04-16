@@ -1,8 +1,10 @@
 package oogasalad.controller.authoring.internal;
 
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.scene.Node;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import oogasalad.controller.authoring.api.AuthoringController;
@@ -49,9 +51,11 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
   private final PlacementValidator placementValidator;
+  private final CanvasActionHistory history;
 
   private AuthoringPlaceable selectedPlaceable;
   private Consumer<String> placementErrorHandler = message -> { };
+  private Consumer<ToolType> toolChangeListener;
   private int lastDragCol = -1;
   private int lastDragRow = -1;
 
@@ -64,6 +68,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.toolSelector = toolSelector;
     this.canvas = canvas;
     this.placementValidator = new PlacementValidator();
+    this.history = new CanvasActionHistory();
     double cellSize = canvas.getCellSize();
     this.selectedPlaceable = new TerrainPlaceable(
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
@@ -77,6 +82,10 @@ public class AuthoringControllerImpl implements AuthoringController {
     if (placeable != null) {
       this.selectedPlaceable = placeable;
     }
+  }
+
+  public void setToolChangeListener(Consumer<ToolType> listener) {
+    this.toolChangeListener = listener;
   }
 
   public void setPlacementErrorHandler(Consumer<String> placementErrorHandler) {
@@ -98,8 +107,31 @@ public class AuthoringControllerImpl implements AuthoringController {
 
     root.setOnMouseExited(e -> canvas.clearHoverPreview());
 
+    // Batch lifecycle runs as capture-phase filters so it fires even when a
+    // child (e.g. a placed block's Rectangle) consumes the MOUSE_PRESSED event
+    // for object selection. Without this, drags starting on top of an
+    // existing block would record each cell as its own undo step.
+    root.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
+      if (e.getButton() == MouseButton.PRIMARY) {
+        history.beginBatch();
+      }
+    });
+    root.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
+      if (e.getButton() == MouseButton.PRIMARY) {
+        history.endBatch();
+      }
+    });
+
     root.setOnMousePressed(e -> startStrokeAt(e.getX(), e.getY()));
     root.setOnMouseDragged(e -> extendStrokeTo(e.getX(), e.getY()));
+    root.setOnMouseReleased(e -> {
+      if (toolSelector.getActiveTool() == ToolType.PAINT) {
+        toolSelector.setActiveTool(ToolType.DRAW);
+        if (toolChangeListener != null) {
+          toolChangeListener.accept(ToolType.DRAW);
+        }
+      }
+    });
 
     // Drag-and-drop from a palette item (separate event stream from the
     // mouse-press paint stroke above). ComponentPaletteImpl starts a Dragboard
@@ -126,7 +158,12 @@ public class AuthoringControllerImpl implements AuthoringController {
         int col = (int) Math.floor(e.getX() / cellSize);
         int row = (int) Math.floor(e.getY() / cellSize);
         if (canvas.isWithinBounds(col, row)) {
-          handleCellInteraction(col, row);
+          history.beginBatch();
+          try {
+            handleCellInteraction(col, row);
+          } finally {
+            history.endBatch();
+          }
           placed = true;
         }
       }
@@ -148,6 +185,9 @@ public class AuthoringControllerImpl implements AuthoringController {
   }
 
   private void extendStrokeTo(double x, double y) {
+    if (toolSelector.getActiveTool() == ToolType.PAINT) {
+      return;
+    }
     double cellSize = canvas.getCellSize();
     int col = (int) Math.floor(x / cellSize);
     int row = (int) Math.floor(y / cellSize);
@@ -193,6 +233,8 @@ public class AuthoringControllerImpl implements AuthoringController {
         placeSelectedObject(col, row);
       } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
         eraseAt(col, row);
+      } else if (toolSelector.getActiveTool() == ToolType.PAINT) {
+        floodFillAt(col, row);
       }
     } catch (AuthoringPlacementException e) {
       placementErrorHandler.accept(e.getMessage());
@@ -201,13 +243,12 @@ public class AuthoringControllerImpl implements AuthoringController {
   }
 
   private void eraseAt(int col, int row) {
-    world.getObjects().stream()
-        .filter(AuthoringPlaceable.class::isInstance)
-        .map(AuthoringPlaceable.class::cast)
-        .filter(p -> col >= p.left() && col < p.right()
-            && row >= p.top() && row < p.bottom())
-        .findFirst()
-        .ifPresent(p -> world.removeObject((GameObject) p));
+    OccupancyGrid grid = buildOccupancyGrid();
+    AuthoringPlaceable target = grid.getObjectAt(col, row);
+    if (target != null) {
+      history.record(CanvasAction.remove(target));
+      world.removeObject((GameObject) target);
+    }
   }
 
   /**
@@ -257,21 +298,159 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void loadLevel(String fileName) {
     world.clear();
     loader.loadLevel(fileName, world, null);
+    history.clear();
     canvas.refreshGrid();
     LOG.info("Loaded level from {}", fileName);
+  }
+
+  @Override
+  public void undo() {
+    history.undo().ifPresent(batch -> {
+      for (int i = batch.size() - 1; i >= 0; i--) {
+        applyInverse(batch.get(i));
+      }
+      canvas.refreshGrid();
+    });
+  }
+
+  @Override
+  public void redo() {
+    history.redo().ifPresent(batch -> {
+      for (CanvasAction action : batch) {
+        applyAction(action);
+      }
+      canvas.refreshGrid();
+    });
+  }
+
+  @Override
+  public void clearHistory() {
+    history.clear();
+  }
+
+  @Override
+  public void clearLevel() {
+    world.clear();
+    history.clear();
+    canvas.refreshGrid();
+  }
+
+  private void applyAction(CanvasAction action) {
+    switch (action.type()) {
+      case PLACE -> placeFromAction(action);
+      case REMOVE -> removePlaceableAt(action.col(), action.row());
+    }
+  }
+
+  private void applyInverse(CanvasAction action) {
+    switch (action.type()) {
+      case PLACE -> removePlaceableAt(action.col(), action.row());
+      case REMOVE -> placeFromAction(action);
+    }
+  }
+
+  private void placeFromAction(CanvasAction action) {
+    TerrainBlock block = new TerrainBlock(
+        action.col(), action.row(),
+        action.width(), action.height(),
+        action.sprite(), action.tiled(),
+        action.friction(), action.color());
+    world.addObject(block);
+  }
+
+  private void removePlaceableAt(int col, int row) {
+    AuthoringPlaceable target = buildOccupancyGrid().getObjectAt(col, row);
+    if (target != null) {
+      world.removeObject((GameObject) target);
+    }
   }
 
   GameObject placeSelectedObject(int col, int row) {
     double cellSize = canvas.getCellSize();
     AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
-    if (placementValidator.overlapsExistingPlacement(
-        placedObject,
-        world.getObjects().stream().map(AuthoringPlaceable.class::cast).toList())) {
-      String message = MESSAGES.getString("placement.overlap");
-      LOG.warn(message);
-      throw new AuthoringPlacementException(message);
+    OccupancyGrid grid = buildOccupancyGrid();
+    if (placementValidator.overlapsExistingPlacement(placedObject, grid)) {
+      autoFillEnclosed(col, row, grid);
+      return null;
     }
     world.addObject((GameObject) placedObject);
+    history.record(CanvasAction.place(placedObject));
     return (GameObject) placedObject;
+  }
+
+  private void floodFillAt(int col, int row) {
+    double cellSize = canvas.getCellSize();
+    OccupancyGrid grid = buildOccupancyGrid();
+    FillExecutor executor = new FillExecutor();
+    List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row);
+
+    TerrainPlaceable unitPlaceable = new TerrainPlaceable(
+        cellSize, cellSize,
+        selectedPlaceable.getColor(),
+        selectedPlaceable.getSprite(),
+        selectedPlaceable.isTiled(),
+        selectedPlaceable.getFriction());
+
+    history.beginBatch();
+    try {
+      for (int[] cell : cellsToFill) {
+        AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
+        world.addObject((GameObject) placed);
+        history.record(CanvasAction.place(placed));
+      }
+    } finally {
+      history.endBatch();
+    }
+  }
+
+  private static final int[][] NEIGHBOR_DIRS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+  private void autoFillEnclosed(int col, int row, OccupancyGrid grid) {
+    FillExecutor executor = new FillExecutor();
+    FillExecutor.FillResult best = null;
+
+    for (int[] dir : NEIGHBOR_DIRS) {
+      int nc = col + dir[0];
+      int nr = row + dir[1];
+      if (!grid.isInBounds(nc, nr) || grid.isOccupied(nc, nr)) {
+        continue;
+      }
+      FillExecutor.FillResult result = executor.computeEnclosedRegion(grid, nc, nr);
+      if (result.status() == FillExecutor.FillStatus.FILLED) {
+        if (best == null || result.cells().size() < best.cells().size()) {
+          best = result;
+        }
+      }
+    }
+
+    if (best == null) {
+      return;
+    }
+
+    double cellSize = canvas.getCellSize();
+    TerrainPlaceable unitPlaceable = new TerrainPlaceable(
+        cellSize, cellSize,
+        selectedPlaceable.getColor(),
+        selectedPlaceable.getSprite(),
+        selectedPlaceable.isTiled(),
+        selectedPlaceable.getFriction());
+    history.beginBatch();
+    try {
+      for (int[] cell : best.cells()) {
+        AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
+        world.addObject((GameObject) placed);
+        history.record(CanvasAction.place(placed));
+      }
+    } finally {
+      history.endBatch();
+    }
+  }
+
+  private OccupancyGrid buildOccupancyGrid() {
+    List<AuthoringPlaceable> placeables = world.getObjects().stream()
+        .filter(AuthoringPlaceable.class::isInstance)
+        .map(AuthoringPlaceable.class::cast)
+        .toList();
+    return new OccupancyGrid(placeables, canvas.getGridCols(), canvas.getGridRows());
   }
 }

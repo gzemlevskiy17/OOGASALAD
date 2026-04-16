@@ -95,6 +95,16 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   @Override
+  public int getGridCols() {
+    return gridCols;
+  }
+
+  @Override
+  public int getGridRows() {
+    return gridRows;
+  }
+
+  @Override
   public Node getVisualRoot() {
     return root;
   }
