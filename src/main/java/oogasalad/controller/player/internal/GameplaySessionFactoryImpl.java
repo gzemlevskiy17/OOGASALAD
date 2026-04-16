@@ -55,13 +55,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
    * @param levelLoader loads JSON level data into the world
    * @param levelPath filesystem path passed to LevelLoader
    */
-  public GameplaySessionFactoryImpl(LevelLoader levelLoader, Supplier<String> levelPathSupplier,
-      VehicleAssemblyProvider vehicleAssemblyProvider, VehicleFactory vehicleFactory) {if (levelLoader == null) throw new IllegalArgumentException("levelLoader must not be null");
+  public GameplaySessionFactoryImpl(
+      LevelLoader levelLoader,
+      Supplier<String> levelPathSupplier,
+      VehicleAssemblyProvider vehicleAssemblyProvider,
+      VehicleFactory vehicleFactory
+  ) {
 
+    if (levelLoader == null) throw new IllegalArgumentException("levelLoader must not be null");
     if (levelPathSupplier == null) throw new IllegalArgumentException("levelPathSupplier must not be null");
-
     if (vehicleAssemblyProvider == null) throw new IllegalArgumentException("vehicleAssemblyProvider must not be null");
-
     if (vehicleFactory == null) throw new IllegalArgumentException("vehicleFactory must not be null");
 
     this.levelLoader = levelLoader;
@@ -158,6 +161,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private World buildWorldForCurrentLevel(GameConfig config, VehicleAssembly vehicle) {
     World world = new WorldImpl();
+
+    String levelPath = levelPathSupplier.get();
+    if (levelPath == null || levelPath.isBlank()) {
+      throw new IllegalStateException("No level path selected");
+    }
     levelLoader.loadLevel(levelPath, world, config);
 
     VehicleAssembly assembly = vehicleAssemblyProvider.getCurrentAssembly();
@@ -168,7 +176,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     for (Joint joint : build.joints()) {
       world.addJoint(joint);
     }
-    return world
+    return world;q
   }
 
   private GameComponent createMovingCircle(double x, double y, double vx, double vy) {
