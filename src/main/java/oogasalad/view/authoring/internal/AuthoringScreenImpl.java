@@ -3,12 +3,16 @@ package oogasalad.view.authoring.internal;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -76,6 +80,7 @@ public class AuthoringScreenImpl implements AppScreen {
   private final TerrainPropertiesPanel terrainPropertiesPanel;
   private final World world;
   private final AuthoringCanvasImpl canvas;
+  private ScrollPane canvasScrollPane;
 
   private List<Button> toolButtons;
   private AuthoringMode currentMode;
@@ -128,6 +133,7 @@ public class AuthoringScreenImpl implements AppScreen {
   @Override
   public void onEnter() {
     resetForNewLevel();
+    canvas.setZoom(1.0);
   }
 
   public void resetForNewLevel() {
@@ -160,12 +166,87 @@ public class AuthoringScreenImpl implements AppScreen {
   }
 
   private StackPane buildCanvasHost() {
-    ScrollPane scroll = new ScrollPane(canvas.getVisualRoot());
-    scroll.setFitToWidth(false);
-    scroll.setFitToHeight(false);
-    scroll.setPannable(true);
-    scroll.getStyleClass().add("authoring-canvas-scroll");
-    return new StackPane(scroll);
+    canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
+    canvasScrollPane.setFitToWidth(false);
+    canvasScrollPane.setFitToHeight(false);
+    canvasScrollPane.setPannable(true);
+    canvasScrollPane.getStyleClass().add("authoring-canvas-scroll");
+    wireEdgePan(canvasScrollPane);
+    wireZoomScroll(canvasScrollPane);
+    return new StackPane(canvasScrollPane);
+  }
+
+  private void wireEdgePan(ScrollPane scroll) {
+    double threshold = d("edgePanThreshold");
+    double speed = d("edgePanSpeed");
+    double[] vel = {0, 0};
+
+    // MOUSE_MOVED fires when hovering; MOUSE_DRAGGED fires while drawing (button held).
+    // Both must be tracked so edge pan works during active block placement.
+    javafx.event.EventHandler<MouseEvent> edgeDetect = e -> {
+      double vw = scroll.getViewportBounds().getWidth();
+      double vh = scroll.getViewportBounds().getHeight();
+      vel[0] = edgeVelocity(e.getX(), vw, threshold, speed);
+      vel[1] = edgeVelocity(e.getY(), vh, threshold, speed);
+    };
+    scroll.addEventFilter(MouseEvent.MOUSE_MOVED, edgeDetect);
+    scroll.addEventFilter(MouseEvent.MOUSE_DRAGGED, edgeDetect);
+    scroll.addEventFilter(MouseEvent.MOUSE_EXITED, e -> {
+      vel[0] = 0;
+      vel[1] = 0;
+    });
+
+    new AnimationTimer() {
+      @Override
+      public void handle(long now) {
+        if (vel[0] != 0) {
+          scroll.setHvalue(clamp01(scroll.getHvalue() + vel[0]));
+        }
+        if (vel[1] != 0) {
+          scroll.setVvalue(clamp01(scroll.getVvalue() + vel[1]));
+        }
+      }
+    }.start();
+  }
+
+  private void wireZoomScroll(ScrollPane scroll) {
+    scroll.addEventFilter(ScrollEvent.SCROLL, e -> {
+      if (e.isControlDown()) {
+        double step = d("zoomStep");
+        double next = e.getDeltaY() > 0
+            ? canvas.getZoom() * step
+            : canvas.getZoom() / step;
+        canvas.setZoom(next);
+        e.consume();
+      }
+    });
+  }
+
+  private static double edgeVelocity(double pos, double size, double threshold, double speed) {
+    if (pos < threshold && threshold > 0) {
+      return -speed * (1 - pos / threshold);
+    }
+    if (pos > size - threshold && threshold > 0) {
+      return speed * (1 - (size - pos) / threshold);
+    }
+    return 0;
+  }
+
+  private static double clamp01(double v) {
+    return Math.max(0, Math.min(1, v));
+  }
+
+  private void fitCanvasToViewport() {
+    Platform.runLater(() -> {
+      if (canvasScrollPane == null) {
+        return;
+      }
+      double viewportWidth = canvasScrollPane.getViewportBounds().getWidth();
+      double canvasWidth = canvas.getVisualRoot().getBoundsInLocal().getWidth();
+      if (viewportWidth > 0 && canvasWidth > 0) {
+        canvas.setZoom(Math.min(1.0, viewportWidth / canvasWidth));
+      }
+    });
   }
 
   private void wirePaletteSubscriptions() {
@@ -273,6 +354,17 @@ public class AuthoringScreenImpl implements AppScreen {
       resetForNewLevel();
     });
 
+    double zoomButtonWidth = d("zoomButtonWidth");
+    Button zoomInButton = createSizedButton(s("zoomInButtonText"), zoomButtonWidth, actionHeight);
+    Button zoomOutButton = createSizedButton(s("zoomOutButtonText"), zoomButtonWidth, actionHeight);
+    Button fitButton = createSizedButton(s("fitButtonText"), zoomButtonWidth * 1.5, actionHeight);
+    zoomInButton.getStyleClass().add("authoring-action-button");
+    zoomOutButton.getStyleClass().add("authoring-action-button");
+    fitButton.getStyleClass().add("authoring-action-button");
+    zoomInButton.setOnAction(event -> canvas.setZoom(canvas.getZoom() * d("zoomStep")));
+    zoomOutButton.setOnAction(event -> canvas.setZoom(canvas.getZoom() / d("zoomStep")));
+    fitButton.setOnAction(event -> fitCanvasToViewport());
+
     Button saveButton = createSizedButton(s("saveButtonText"), actionWidth, actionHeight);
     Button runButton = createSizedButton(s("runButtonText"), actionWidth, actionHeight);
     Button loadButton = createSizedButton(s("loadButtonText"), actionWidth, actionHeight);
@@ -282,7 +374,8 @@ public class AuthoringScreenImpl implements AppScreen {
     saveButton.setOnAction(event -> handleSave(saveButton.getScene().getWindow()));
     loadButton.setOnAction(event -> handleLoad(loadButton.getScene().getWindow()));
 
-    HBox toolButtonBox = new HBox(d("topBarSpacing"), drawButton, eraseButton, paintButton);
+    HBox toolButtonBox = new HBox(d("topBarSpacing"),
+        drawButton, eraseButton, paintButton, zoomOutButton, zoomInButton, fitButton);
     toolButtonBox.setAlignment(Pos.CENTER_LEFT);
 
     HBox rightButtons = new HBox(
