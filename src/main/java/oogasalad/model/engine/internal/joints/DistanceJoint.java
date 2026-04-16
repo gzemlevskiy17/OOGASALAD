@@ -106,8 +106,9 @@ public class DistanceJoint extends AbstractJoint {
     if (Math.abs(displacement) < 1e-9) {
       return;
     }
-    Vector relativeVelocity = getComponentB().getState().getLinearVelocity()
-        .subtract(getComponentA().getState().getLinearVelocity());
+    //TODO: double dispatch
+    Vector relativeVelocity = getComponentB().getDynamicState().getLinearVelocity()
+        .subtract(getComponentA().getDynamicState().getLinearVelocity());
     double dampingForceMagnitude = relativeVelocity.dot(direction) * damping;
     double springForceMagnitude = (stiffness * displacement) + dampingForceMagnitude;
     Vector springForce = direction.multiply(springForceMagnitude);

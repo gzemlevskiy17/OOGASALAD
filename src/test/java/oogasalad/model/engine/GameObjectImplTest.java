@@ -1,10 +1,9 @@
 package oogasalad.model.engine;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Vector;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +35,7 @@ class GameObjectImplTest {
 
   @Test
   void state_roundTripsThroughSetterAndGetter() {
-    ObjectState state = new ObjectState(
+    DynamicState state = new DynamicState(
         new Vector(7.0, 11.0),
         new Vector(-1.0, 4.0),
         new Vector(0.5, -0.25),
@@ -51,7 +50,7 @@ class GameObjectImplTest {
 
   @Test
   void renderCoordinates_reflectLinearPositionStoredInState() {
-    gameObject.setState(new ObjectState(
+    gameObject.setState(new DynamicState(
         new Vector(12.5, -3.25),
         new Vector(0.0, 0.0),
         new Vector(0.0, 0.0),

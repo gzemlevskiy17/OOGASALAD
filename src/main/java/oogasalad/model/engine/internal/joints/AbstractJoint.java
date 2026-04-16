@@ -1,7 +1,9 @@
 package oogasalad.model.engine.internal.joints;
 
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.GameComponent;
+
 /**
  * Shared base for concrete joint implementations.
  *
@@ -48,6 +50,7 @@ public abstract class AbstractJoint implements Joint {
   public GameComponent getComponentA() {
     return objectA;
   }
+
   @Override
   public GameComponent getComponentB() {
     return objectB;
@@ -71,14 +74,16 @@ public abstract class AbstractJoint implements Joint {
    * Resolves {@code objectA}'s local anchor into world-space coordinates.
    */
   public oogasalad.model.engine.api.Vector getWorldAnchorA() {
-    return objectA.getState().getLinearPosition().add(localAnchorA.rotate(objectA.getRotation()));
+    return objectA.getStaticState().getLinearPosition()
+        .add(localAnchorA.rotate(objectA.getRotation()));
   }
 
   /**
    * Resolves {@code objectB}'s local anchor into world-space coordinates.
    */
   public oogasalad.model.engine.api.Vector getWorldAnchorB() {
-    return objectB.getState().getLinearPosition().add(localAnchorB.rotate(objectB.getRotation()));
+    return objectB.getStaticState().getLinearPosition()
+        .add(localAnchorB.rotate(objectB.getRotation()));
   }
 
   /**
@@ -91,12 +96,16 @@ public abstract class AbstractJoint implements Joint {
   /**
    * Returns the current distance between the two resolved world anchors.
    */
-  protected double getCurrentDistance() {return getAnchorDelta().magnitude();}
+  protected double getCurrentDistance() {
+    return getAnchorDelta().magnitude();
+  }
 
   /**
    * Returns the anchor-to-anchor distance captured when the joint was created.
    */
-  protected double getRestDistance() {return restDistance;}
+  protected double getRestDistance() {
+    return restDistance;
+  }
 
   /**
    * Resolves a scalar distance error into equal-and-opposite positional corrections along the
@@ -130,20 +139,20 @@ public abstract class AbstractJoint implements Joint {
       return;
     }
     if (inverseMassA > 0.0) {
-      objectA.getState().setLinearPosition(objectA.getState().getLinearPosition()
+      objectA.getStaticState().setLinearPosition(objectA.getStaticState().getLinearPosition()
           .add(correctionA.multiply(inverseMassA / totalInverseMass)));
     }
     if (inverseMassB > 0.0) {
-      objectB.getState().setLinearPosition(objectB.getState().getLinearPosition()
+      objectB.getStaticState().setLinearPosition(objectB.getStaticState().getLinearPosition()
           .add(correctionB.multiply(inverseMassB / totalInverseMass)));
     }
   }
 
+  //TODO: double dispatch
   /**
    * Applies equal-and-opposite linear forces to movable endpoints only.
    */
-  protected void applyLinearForce(oogasalad.model.engine.api.Vector forceA,
-      oogasalad.model.engine.api.Vector forceB) {
+  protected void applyLinearForce(Vector forceA, Vector forceB) {
     if (inverseMass(objectA) > 0.0) {
       objectA.addForce(forceA);
     }
