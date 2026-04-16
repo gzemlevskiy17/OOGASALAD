@@ -23,11 +23,14 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         ScreenManager screenManager = new ScreenManagerImpl(stage);
-        ScreenFactory screenFactory = new ScreenFactory(screenManager);
+
+        VehicleAssemblyProvider vehicleAssemblyProvider = new VehicleAssemblyProviderImpl();
+        VehicleFactory vehicleFactory = new VehicleFactoryImpl();
+
+        ScreenFactory screenFactory =
+            new ScreenFactory(screenManager, vehicleAssemblyProvider, vehicleFactory);
         screenFactory.registerScreens();
-
         screenManager.switchScreen(ScreenFactory.LOGIN_SCREEN_KEY);
-
         stage.setTitle("Good Piggies");
         stage.show();
         stage.setMaximized(true);
