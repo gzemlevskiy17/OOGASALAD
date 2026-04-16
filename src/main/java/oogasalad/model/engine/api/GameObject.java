@@ -41,4 +41,6 @@ public interface GameObject extends Renderable {
   boolean isTrigger();
 
   void addForce(Vector force);
+
+  default void updatePolygon() {}
 }

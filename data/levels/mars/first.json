@@ -2,50 +2,371 @@
   "level": {
     "terrain": [
       {
-        "position": { "x": 260, "y": 421 },
-        "size": { "width": 60, "height": 2 },
+        "position": {
+          "x": -800,
+          "y": 1125
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
         "properties": {
           "texture": "assets/terrain/grass.png",
           "tile_texture": true,
-          "friction": 0.50
+          "friction": 0.4
         }
       },
       {
-        "position": { "x": 320, "y": 419 },
-        "size": { "width": 50, "height": 2 },
+        "position": {
+          "x": -400,
+          "y": 1140
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
         "properties": {
           "texture": "assets/terrain/grass.png",
           "tile_texture": true,
-          "friction": 0.48
+          "friction": 0.41
         }
       },
       {
-        "position": { "x": 370, "y": 417 },
-        "size": { "width": 55, "height": 2 },
+        "position": {
+          "x": 0,
+          "y": 1165
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
         "properties": {
           "texture": "assets/terrain/grass.png",
           "tile_texture": true,
-          "friction": 0.47
+          "friction": 0.42
         }
       },
       {
-        "position": { "x": 425, "y": 415 },
-        "size": { "width": 55, "height": 2 },
+        "position": {
+          "x": 400,
+          "y": 1155
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
         "properties": {
           "texture": "assets/terrain/grass.png",
           "tile_texture": true,
-          "friction": 0.48
+          "friction": 0.43
         }
       },
       {
-        "position": { "x": 480, "y": 417 },
-        "size": { "width": 60, "height": 2 },
+        "position": {
+          "x": 800,
+          "y": 1135
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
         "properties": {
           "texture": "assets/terrain/grass.png",
           "tile_texture": true,
-          "friction": 0.50
+          "friction": 0.44
+        }
+      },
+      {
+        "position": {
+          "x": 1200,
+          "y": 1175
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.45
+        }
+      },
+      {
+        "position": {
+          "x": 1600,
+          "y": 1160
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.44
+        }
+      },
+      {
+        "position": {
+          "x": 2000,
+          "y": 1145
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.43
+        }
+      },
+      {
+        "position": {
+          "x": 2400,
+          "y": 1180
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.42
+        }
+      },
+      {
+        "position": {
+          "x": 2800,
+          "y": 1150
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.41
+        }
+      },
+      {
+        "position": {
+          "x": 3200,
+          "y": 1130
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.4
+        }
+      },
+      {
+        "position": {
+          "x": 3600,
+          "y": 1168
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.41
+        }
+      },
+      {
+        "position": {
+          "x": 4000,
+          "y": 1185
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.42
+        }
+      },
+      {
+        "position": {
+          "x": 4400,
+          "y": 1170
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.43
+        }
+      },
+      {
+        "position": {
+          "x": 4800,
+          "y": 1148
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.44
+        }
+      },
+      {
+        "position": {
+          "x": 5200,
+          "y": 1128
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.45
+        }
+      },
+      {
+        "position": {
+          "x": 5600,
+          "y": 1158
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.44
+        }
+      },
+      {
+        "position": {
+          "x": 6000,
+          "y": 1178
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.43
+        }
+      },
+      {
+        "position": {
+          "x": 6400,
+          "y": 1162
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.42
+        }
+      },
+      {
+        "position": {
+          "x": 6800,
+          "y": 1138
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.41
+        }
+      },
+      {
+        "position": {
+          "x": 7200,
+          "y": 1152
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.4
+        }
+      },
+      {
+        "position": {
+          "x": 7600,
+          "y": 1182
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.41
+        }
+      },
+      {
+        "position": {
+          "x": 8000,
+          "y": 1168
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.42
+        }
+      },
+      {
+        "position": {
+          "x": 8400,
+          "y": 1142
+        },
+        "size": {
+          "width": 400,
+          "height": 120
+        },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.43
         }
       }
-    ]
+    ],
+    "finish_line": {
+      "x": 8200,
+      "y": 742,
+      "width": 20,
+      "height": 400
+    }
   }
 }

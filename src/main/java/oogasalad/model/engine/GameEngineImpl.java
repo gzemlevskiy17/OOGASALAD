@@ -83,6 +83,10 @@ public class GameEngineImpl implements GameEngine {
   public void step(double elapsedTime) {
     applyJointConstraints(elapsedTime);
 
+    for (GameObject gameObject : world.getObjects()) {
+      gameObject.updatePolygon();
+    }
+
     handleCollisions();
 
     //TODO: do this only for dynamic objects
@@ -133,11 +137,28 @@ public class GameEngineImpl implements GameEngine {
     }
   }
 
+  private static final String VEHICLE_TAG = "vehicle";
+
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
-    for (GameObject objectA : world.getObjects()) {
-      for (GameObject objectB : world.getObjects()) {
-        Optional<Collision> collision = collisionDetector.detectCollision(objectA, objectB);
+    List<GameObject> objects = world.getObjects();
+    for (int i = 0; i < objects.size(); i++) {
+      GameObject a = objects.get(i);
+      if (a.isTrigger()) {
+        continue;
+      }
+      for (int j = i + 1; j < objects.size(); j++) {
+        GameObject b = objects.get(j);
+        if (b.isTrigger()) {
+          continue;
+        }
+        if (a.getMass() == 0 && b.getMass() == 0) {
+          continue;
+        }
+        if (VEHICLE_TAG.equals(a.getTag()) && VEHICLE_TAG.equals(b.getTag())) {
+          continue;
+        }
+        Optional<Collision> collision = collisionDetector.detectCollision(a, b);
         collision.ifPresent(collisions::add);
       }
     }

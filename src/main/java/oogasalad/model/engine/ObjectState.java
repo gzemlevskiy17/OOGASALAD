@@ -124,8 +124,14 @@ public class ObjectState {
    *
    * @param elapsedTime simulation time step in seconds
    */
+  private static final double MAX_SPEED = 600.0;
+
   public void integrateObjectState(double elapsedTime) {
     linearVelocity = integrateVector(linearVelocity, linearAcceleration, elapsedTime);
+    double speed = linearVelocity.magnitude();
+    if (speed > MAX_SPEED) {
+      linearVelocity = linearVelocity.multiply(MAX_SPEED / speed);
+    }
     linearPosition = integrateVector(linearPosition, linearVelocity, elapsedTime);
 
     angularVelocity = integrateScalar(angularVelocity, angularAcceleration, elapsedTime);
