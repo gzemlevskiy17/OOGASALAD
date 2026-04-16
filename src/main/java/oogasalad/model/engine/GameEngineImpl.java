@@ -1,7 +1,9 @@
 package oogasalad.model.engine;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
@@ -11,6 +13,8 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.VehicleComponent;
 
 /**
  * Main physics-step orchestrator for simulation updates in a world.
@@ -42,9 +46,8 @@ import oogasalad.model.engine.api.World;
 public class GameEngineImpl implements GameEngine {
 
   private static final double GRAVITY = 400.0;
-  private static final int PHYSICS_SUBSTEPS = 4;
-  private static final int COLLISION_RESOLUTION_ITERATIONS = 6;
-  private static final int POST_INTEGRATION_STABILIZATION_PASSES = 3;
+  private static final int PHYSICS_SUBSTEPS = 2;
+  private static final int COLLISION_RESOLUTION_ITERATIONS = 1;
 
   private final World world;
   private final CollisionDetector collisionDetector;
@@ -93,6 +96,7 @@ public class GameEngineImpl implements GameEngine {
       }
 
       handleCollisions();
+      clampWheelsToTerrain();
 
       for (GameObject gameObject : world.getObjects()) {
         accumulateForces(gameObject);
@@ -101,13 +105,7 @@ public class GameEngineImpl implements GameEngine {
         gameObject.setForce(new Vector(0, 0));
       }
 
-      for (int p = 0; p < POST_INTEGRATION_STABILIZATION_PASSES; p++) {
-        applyJointConstraints(subStep);
-        for (GameObject gameObject : world.getObjects()) {
-          gameObject.updatePolygon();
-        }
-        handleCollisions();
-      }
+      clampWheelsToTerrain();
     }
   }
 
@@ -145,6 +143,7 @@ public class GameEngineImpl implements GameEngine {
   }
 
   private List<Collision> getCollisions() {
+    JointConnectivity jointConnectivity = JointConnectivity.fromJoints(world.getJoints());
     List<Collision> collisions = new ArrayList<>();
     List<GameObject> objects = world.getObjects();
     for (int i = 0; i < objects.size(); i++) {
@@ -157,6 +156,15 @@ public class GameEngineImpl implements GameEngine {
         if (!objectB.isActive()) {
           continue;
         }
+        if (objectA == objectB) {
+          continue;
+        }
+        if (jointConnectivity.inSameAssembly(objectA, objectB)) {
+          continue;
+        }
+        if (shouldSkipCollisionSolverForWheelTerrain(objectA, objectB)) {
+          continue;
+        }
         Optional<Collision> collision = collisionDetector.detectCollision(objectA, objectB);
         collision.ifPresent(collisions::add);
       }
@@ -167,6 +175,124 @@ public class GameEngineImpl implements GameEngine {
   private void solveCollisions(List<Collision> collisions) {
     for (Collision collision : collisions) {
       collisionSolver.solve(collision);
+    }
+  }
+
+  /**
+   * Wheel–terrain contact is handled by {@link #clampWheelsToTerrain()} (AABB floor clamp) instead
+   * of SAT + impulse to avoid lag; same rectangle overlap test as JavaFX {@code Bounds.intersects}
+   * for axis-aligned nodes.
+   */
+  private boolean shouldSkipCollisionSolverForWheelTerrain(GameObject a, GameObject b) {
+    return (isWheel(a) && b instanceof TerrainBlock) || (isWheel(b) && a instanceof TerrainBlock);
+  }
+
+  private static boolean isWheel(GameObject o) {
+    return o instanceof VehicleComponent vc && vc.isWheel();
+  }
+
+  /**
+   * Keeps wheel hitboxes from intersecting terrain from above: if rectangles overlap and the wheel
+   * extends past the terrain's top edge, move the wheel up and remove downward velocity (y grows
+   * downward, matching JavaFX).
+   */
+  private void clampWheelsToTerrain() {
+    List<GameObject> objects = world.getObjects();
+    List<TerrainBlock> terrains = new ArrayList<>();
+    for (GameObject o : objects) {
+      if (o instanceof TerrainBlock tb && o.isActive()) {
+        terrains.add(tb);
+      }
+    }
+    if (terrains.isEmpty()) {
+      return;
+    }
+    for (GameObject o : objects) {
+      if (!(o instanceof VehicleComponent wheel) || !wheel.isWheel() || !o.isActive()) {
+        continue;
+      }
+      double wx = wheel.getX();
+      double wy = wheel.getY();
+      double ww = wheel.getSpriteWidth();
+      double wh = wheel.getSpriteHeight();
+      double wheelBottom = wy + wh;
+
+      for (TerrainBlock t : terrains) {
+        double tx = t.getX();
+        double ty = t.getY();
+        double tw = t.getWidth();
+        double th = t.getHeight();
+
+        if (!axisAlignedRectsIntersect(wx, wy, ww, wh, tx, ty, tw, th)) {
+          continue;
+        }
+        double terrainBottom = ty + th;
+        if (wheelBottom <= ty || wy >= terrainBottom) {
+          continue;
+        }
+        double penetration = wheelBottom - ty;
+        if (penetration <= 0) {
+          continue;
+        }
+        wy -= penetration;
+        wheelBottom = wy + wh;
+        wheel.getState().setLinearPosition(new Vector(wx, wy));
+        Vector v = wheel.getState().getLinearVelocity();
+        if (v.y() > 0) {
+          wheel.getState().setLinearVelocity(new Vector(v.x(), 0));
+        }
+      }
+      wheel.updatePolygon();
+    }
+  }
+
+  /** Same predicate as two JavaFX {@code Bounds} for min/max layout rects. */
+  private static boolean axisAlignedRectsIntersect(
+      double ax, double ay, double aw, double ah,
+      double bx, double by, double bw, double bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  /**
+   * Union-find over joint endpoints: every body linked by the world's joints is one assembly.
+   * Skipping collision for pairs in the same assembly avoids impulses fighting {@link Joint}s.
+   */
+  private static final class JointConnectivity {
+
+    private final Map<GameObject, GameObject> parent = new IdentityHashMap<>();
+
+    static JointConnectivity fromJoints(List<Joint> joints) {
+      JointConnectivity jc = new JointConnectivity();
+      for (Joint joint : joints) {
+        jc.union(joint.getComponentA(), joint.getComponentB());
+      }
+      return jc;
+    }
+
+    private GameObject find(GameObject o) {
+      GameObject p = parent.get(o);
+      if (p == null) {
+        parent.put(o, o);
+        return o;
+      }
+      if (p != o) {
+        GameObject root = find(p);
+        parent.put(o, root);
+        return root;
+      }
+      return o;
+    }
+
+    private void union(GameObject a, GameObject b) {
+      GameObject ra = find(a);
+      GameObject rb = find(b);
+      if (ra != rb) {
+        parent.put(ra, rb);
+      }
+    }
+
+    boolean inSameAssembly(GameObject a, GameObject b) {
+      return find(a) == find(b);
     }
   }
 }

@@ -43,6 +43,9 @@ public class CollisionDetectorImpl implements CollisionDetector {
    */
   @Override
   public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
+    if (objectA == objectB) {
+      return Optional.empty();
+    }
     return findSatCollision(objectA, objectB);
   }
 

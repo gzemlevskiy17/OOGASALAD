@@ -1,5 +1,6 @@
 package oogasalad.model.engine.internal.components;
 
+import java.util.Set;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.DefaultTag;
@@ -8,6 +9,9 @@ import oogasalad.view.core.api.SpriteRenderable;
  * @author Xuye
  */
 public abstract class VehicleComponent extends DynamicComponent implements SpriteRenderable {
+  private static final Set<String> WHEEL_DISPLAY_NAMES = Set.of(
+      "Wheel", "Small Wheel", "Large Wheel");
+
   private double maxHp;
   private double currentHp;
   private final String displayName;
@@ -31,6 +35,11 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
 
   public String getDisplayName() {
     return displayName;
+  }
+
+  /** True for wheel parts; used for cheap wheel–terrain support in the engine. */
+  public boolean isWheel() {
+    return WHEEL_DISPLAY_NAMES.contains(displayName);
   }
 
   @Override
