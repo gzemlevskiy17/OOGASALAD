@@ -43,6 +43,9 @@ public class ScreenFactory {
   private final AuthService authService = AuthFactory.createService();
   private final AuthController authController;
 
+  // Player screens stored as fields so the vehicle layout can be read before gameplay starts
+  private VehicleBuilderAppScreen vehicleBuilderScreen;
+
   // Auth screens stored as fields so lambdas can reference them after construction
   private LoginScreen loginScreen;
   private CreateAccountScreen createAccountScreen;
@@ -78,10 +81,11 @@ public class ScreenFactory {
         new AuthoringScreenImpl(this::guardedOutcome));
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome));
-    screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY,
-        new VehicleBuilderAppScreen(this::guardedOutcome));
+    vehicleBuilderScreen = new VehicleBuilderAppScreen(this::guardedOutcome);
+    screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);
     screenManager.registerScreen(GAMEPLAY_APP_SCREEN_KEY,
-        new GamePlayScreenCoordinator(this::guardedOutcome, new GameplaySessionFactoryImpl()));
+        new GamePlayScreenCoordinator(this::guardedOutcome, new GameplaySessionFactoryImpl(),
+            vehicleBuilderScreen::getVehicleLayout));
     screenManager.registerScreen(WIN_APP_SCREEN_KEY, new WinAppScreen(this::guardedOutcome));
     screenManager.registerScreen(LOSE_APP_SCREEN_KEY, new LoseAppScreen(this::guardedOutcome));
   }
