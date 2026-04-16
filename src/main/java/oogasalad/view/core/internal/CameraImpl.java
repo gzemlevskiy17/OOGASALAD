@@ -32,6 +32,16 @@ public class CameraImpl implements Camera {
     return this.y;
   }
 
+  @Override
+  public double getViewWidth() {
+    return viewWidth;
+  }
+
+  @Override
+  public double getViewHeight() {
+    return viewHeight;
+  }
+
   @Override public void setPosition(double x, double y) {
     this.x = x;
     this.y = y;
