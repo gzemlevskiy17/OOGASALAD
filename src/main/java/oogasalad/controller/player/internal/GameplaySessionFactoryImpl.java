@@ -24,11 +24,15 @@ import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.VehicleComponent;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
+import oogasalad.model.player.internal.FallOffWorldLossChecker;
+import oogasalad.model.player.internal.FinishLineWinChecker;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderer;
@@ -50,14 +54,19 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   // Constants for a demonstration
   private static final double BALL_RADIUS = 12.0;
-  private static final double WORLD_WIDTH = 2600.0;
-  private static final double WORLD_HEIGHT = 1600.0;
   private static final double MIN_VIEWPORT_SIZE = 1.0;
   private static final double DEFAULT_VIEW_WIDTH = 1280.0;
   private static final double DEFAULT_VIEW_HEIGHT = 720.0;
   private static final double ZOOM_STEP = 1.1;
   private static final double MIN_ZOOM = 0.5;
   private static final double MAX_ZOOM = 3.0;
+  private static final double BOUNDS_PADDING = 400.0;
+  private static final double FALLBACK_WORLD_WIDTH = 2600.0;
+  private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
+
+  private record LevelBounds(double width, double height) {}
+
+  private record BuiltWorld(World world, LevelBounds bounds) {}
 
   private final VehicleFactory vehicleFactory = new VehicleFactory();
   private final LevelLoader levelLoader;
@@ -102,12 +111,14 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     screen.getGameLayer().getChildren().clear();
 
     GameConfig config = buildConfig();
-    World world = buildWorld(config, layout);
+    BuiltWorld built = buildWorld(config, layout);
+    World world = built.world();
+    LevelBounds bounds = built.bounds();
     GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl(),
         new ImpulseCollisionSolver());
 
     WinConditionChecker winChecker = buildWinChecker();
-    LossConditionChecker lossChecker = buildLossChecker();
+    LossConditionChecker lossChecker = buildLossChecker(bounds.height());
     InputRouter inputRouter = buildInputRouter();
 
     bindDriveActions(inputRouter, world);
@@ -118,7 +129,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     if (viewHeight <= 0) viewHeight = DEFAULT_VIEW_HEIGHT;
 
     // World boundary overlay (drawn in world space, projected each frame)
-    Rectangle worldBounds = new Rectangle(WORLD_WIDTH, WORLD_HEIGHT);
+    Rectangle worldBounds = new Rectangle(bounds.width(), bounds.height());
     worldBounds.setManaged(false);
     worldBounds.setFill(Color.TRANSPARENT);
     worldBounds.setStroke(Color.LIMEGREEN);
@@ -133,11 +144,23 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     GameObject player = resolveControlledPlayer(world);
 
     CameraBehavior behavior = new FollowPlayerCameraBehavior(
-        () -> player, 0, 0, 0.2, WORLD_WIDTH, WORLD_HEIGHT);
+        () -> player, 0, 0, 0.2, bounds.width(), bounds.height());
     camera.setBehavior(behavior);
     wireResponsiveCamera(screen, camera);
     SpriteCache spriteCache = new SpriteCache();
     Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
+      if (r instanceof GoalLineComponent gl) {
+        Rectangle rect = new Rectangle(gl.getSpriteWidth(), gl.getSpriteHeight());
+        rect.setManaged(false);
+        rect.setFill(Color.rgb(0, 200, 0, 0.4));
+        rect.setStroke(Color.LIMEGREEN);
+        rect.setStrokeWidth(2.0);
+        rect.getStrokeDashArray().addAll(8.0, 6.0);
+        rect.setTranslateX(-gl.getSpriteWidth() / 2);
+        rect.setTranslateY(-gl.getSpriteHeight() / 2);
+        return rect;
+      }
+
       if (r instanceof SpriteRenderable sr) {
         return createImageView(sr, spriteCache);
       }
@@ -248,7 +271,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     }
   }
 
-  private World buildWorld(GameConfig config, VehicleLayout layout) {
+  private BuiltWorld buildWorld(GameConfig config, VehicleLayout layout) {
     World world = new WorldImpl();
 
     String levelPath = levelPathSupplier.get();
@@ -256,8 +279,26 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       levelLoader.loadLevel(levelPath, world, config);
     }
 
+    LevelBounds bounds = computeLevelBounds(world);
     vehicleFactory.buildVehicle(layout, world, 350, 300);
-    return world;
+    return new BuiltWorld(world, bounds);
+  }
+
+  private LevelBounds computeLevelBounds(World world) {
+    double maxX = 0;
+    double maxY = 0;
+    for (GameComponent c : world.getAllComponents()) {
+      if (c instanceof TerrainBlock tb) {
+        maxX = Math.max(maxX, tb.getX() + tb.getWidth());
+        maxY = Math.max(maxY, tb.getY() + tb.getHeight());
+      } else if (c instanceof GoalLineComponent gl) {
+        maxX = Math.max(maxX, gl.getX() + gl.getSpriteWidth());
+        maxY = Math.max(maxY, gl.getY() + gl.getSpriteHeight());
+      }
+    }
+    double width = maxX > 0 ? maxX + BOUNDS_PADDING : FALLBACK_WORLD_WIDTH;
+    double height = maxY > 0 ? maxY + BOUNDS_PADDING : FALLBACK_WORLD_HEIGHT;
+    return new LevelBounds(width, height);
   }
 
   private GameConfig buildConfig() {
@@ -270,9 +311,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     };
   }
 
-  private WinConditionChecker buildWinChecker() { return world -> false; }
+  private WinConditionChecker buildWinChecker() { return new FinishLineWinChecker(); }
 
-  private LossConditionChecker buildLossChecker() { return world -> false; }
+  private LossConditionChecker buildLossChecker(double worldHeight) {
+    return new FallOffWorldLossChecker(worldHeight);
+  }
 
   private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
 
