@@ -1,6 +1,7 @@
 package oogasalad.controller.player.internal;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -46,7 +47,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double WORLD_HEIGHT = 1600.0;
 
   private final LevelLoader levelLoader;
-  private final String levelPath;
+  private final Supplier<String> levelPathSupplier;
   private final VehicleAssemblyProvider vehicleAssemblyProvider;
   private final VehicleFactory vehicleFactory;
 
@@ -54,22 +55,17 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
    * @param levelLoader loads JSON level data into the world
    * @param levelPath filesystem path passed to LevelLoader
    */
-  public GameplaySessionFactoryImpl(LevelLoader levelLoader, String levelPath,
-      VehicleAssemblyProvider vehicleAssemblyProvider, VehicleFactory vehicleFactory) {
-    if (levelLoader == null) {
-      throw new IllegalArgumentException("levelLoader must not be null");
-    }
-    if (levelPath == null) {
-      throw new IllegalArgumentException("levelPath must not be null");
-    }
-    if (vehicleAssemblyProvider == null) {
-      throw new IllegalArgumentException("vehicleAssemblyProvider must not be null");
-    }
-    if (vehicleFactory == null) {
-      throw new IllegalArgumentException("vehicleFactory must not be null");
-    }
+  public GameplaySessionFactoryImpl(LevelLoader levelLoader, Supplier<String> levelPathSupplier,
+      VehicleAssemblyProvider vehicleAssemblyProvider, VehicleFactory vehicleFactory) {if (levelLoader == null) throw new IllegalArgumentException("levelLoader must not be null");
+
+    if (levelPathSupplier == null) throw new IllegalArgumentException("levelPathSupplier must not be null");
+
+    if (vehicleAssemblyProvider == null) throw new IllegalArgumentException("vehicleAssemblyProvider must not be null");
+
+    if (vehicleFactory == null) throw new IllegalArgumentException("vehicleFactory must not be null");
+
     this.levelLoader = levelLoader;
-    this.levelPath = levelPath;
+    this.levelPathSupplier = levelPathSupplier;
     this.vehicleAssemblyProvider = vehicleAssemblyProvider;
     this.vehicleFactory = vehicleFactory;
   }
