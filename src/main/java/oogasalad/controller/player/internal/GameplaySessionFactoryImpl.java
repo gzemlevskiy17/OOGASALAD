@@ -46,20 +46,31 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private final LevelLoader levelLoader;
   private final String levelPath;
+  private final VehicleAssemblyProvider vehicleAssemblyProvider;
+  private final VehicleFactory vehicleFactory;
 
   /**
    * @param levelLoader loads JSON level data into the world
    * @param levelPath filesystem path passed to LevelLoader
    */
-  public GameplaySessionFactoryImpl(LevelLoader levelLoader, String levelPath) {
+  public GameplaySessionFactoryImpl(LevelLoader levelLoader, String levelPath,
+      VehicleAssemblyProvider vehicleAssemblyProvider, VehicleFactory vehicleFactory) {
     if (levelLoader == null) {
       throw new IllegalArgumentException("levelLoader must not be null");
     }
     if (levelPath == null) {
       throw new IllegalArgumentException("levelPath must not be null");
     }
+    if (vehicleAssemblyProvider == null) {
+      throw new IllegalArgumentException("vehicleAssemblyProvider must not be null");
+    }
+    if (vehicleFactory == null) {
+      throw new IllegalArgumentException("vehicleFactory must not be null");
+    }
     this.levelLoader = levelLoader;
     this.levelPath = levelPath;
+    this.vehicleAssemblyProvider = vehicleAssemblyProvider;
+    this.vehicleFactory = vehicleFactory;
   }
 
   private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
@@ -148,9 +159,17 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new GameplaySession(controller);
   }
 
-  private World buildWorldForCurrentLevel(GameConfig config) {
+  private World buildWorldForCurrentLevel(GameConfig config, VehicleAssembly vehicle) {
     World world = new WorldImpl();
     levelLoader.loadLevel(levelPath, world, config);
+
+    double spawnX = 100; // hardcoded for now
+    double spawnY = 100; // hardcoded for now
+
+    for (GameComponent part : vehicleFactory.build(vehicle, spawnX, spawnY)) {
+      world.addComponent(part);
+    }
+    return world;
 
     return world;
   }
