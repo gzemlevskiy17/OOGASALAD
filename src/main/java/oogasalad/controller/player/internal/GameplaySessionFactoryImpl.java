@@ -10,6 +10,7 @@ import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
@@ -41,6 +42,24 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double BALL_RADIUS = 12.0;
   private static final double WORLD_WIDTH = 2600.0;
   private static final double WORLD_HEIGHT = 1600.0;
+
+  private final LevelLoader levelLoader;
+  private final String levelPath;
+
+  /**
+   * @param levelLoader loads JSON level data into the world
+   * @param levelPath filesystem path passed to LevelLoader
+   */
+  public GameplaySessionFactoryImpl(LevelLoader levelLoader, String levelPath) {
+    if (levelLoader == null) {
+      throw new IllegalArgumentException("levelLoader must not be null");
+    }
+    if (levelPath == null) {
+      throw new IllegalArgumentException("levelPath must not be null");
+    }
+    this.levelLoader = levelLoader;
+    this.levelPath = levelPath;
+  }
 
   private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
     ImageView imageView = new ImageView(spriteCache.get(sr.getSpritePath()));
@@ -130,6 +149,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private World buildWorldForCurrentLevel() {
     World world = new WorldImpl();
+
+
 
     // Followed "player" ball (first object is used by resolveControlledPlayer)
     world.addComponent(createMovingCircle(350, 300, 180, 120));
