@@ -15,6 +15,7 @@ import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
@@ -163,15 +164,15 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     World world = new WorldImpl();
     levelLoader.loadLevel(levelPath, world, config);
 
-    double spawnX = 100; // hardcoded for now
-    double spawnY = 100; // hardcoded for now
-
-    for (GameComponent part : vehicleFactory.build(vehicle, spawnX, spawnY)) {
+    VehicleAssembly assembly = vehicleAssemblyProvider.getCurrentAssembly();
+    VehicleBuild build = vehicleFactory.build(assembly, 100.0, 100.0); // spawn placeholders for now
+    for (GameComponent part : build.components()) {
       world.addComponent(part);
     }
-    return world;
-
-    return world;
+    for (Joint joint : build.joints()) {
+      world.addJoint(joint);
+    }
+    return world
   }
 
   private GameComponent createMovingCircle(double x, double y, double vx, double vy) {
