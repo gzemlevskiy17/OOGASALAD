@@ -1,31 +1,52 @@
 package oogasalad.model.engine.api;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Objects;
+import java.util.List;
+import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.internal.components.GameComponent;
 
-/** Memory container for all simulation components and physical joints. */
+/**
+ * Memory container for simulation components and physical joints.
+ *
+ * <p>A world tracks all registered components, the subset that is currently active, and every
+ * joint participating in constraint solving.
+ */
 public interface World {
   /**
-   * Returns the active components currently exposed to simulation and rendering.
+   * Returns the active components currently exposed to simulation and rendering in registration
+   * order.
    */
-  Collection<GameComponent> getComponents();
+  List<GameComponent> getComponents();
 
   /**
-   * Returns every registered component, including inactive ones.
+   * Returns every registered component, including inactive ones, in registration order.
    */
-  Collection<GameComponent> getAllComponents();
+  List<GameComponent> getAllComponents();
 
   /**
-   * Returns every registered component whose active flag is currently true.
+   * Returns every registered component whose active flag is currently true, in registration order.
    */
-  Collection<GameComponent> getActiveComponents();
+  List<GameComponent> getActiveComponents();
 
-  Collection<Joint> getJoints();
+  /**
+   * Returns every registered component whose tag matches the requested tag, in registration order.
+   */
+  default List<GameComponent> getComponentsByTag(String tag) {
+    List<GameComponent> taggedComponents = new ArrayList<>();
+    for (GameComponent component : getAllComponents()) {
+      if (component.getTag().equals(tag)) {taggedComponents.add(component);}
+    }return List.copyOf(taggedComponents);
+  }
+
+  /**
+   * Returns all joints currently registered with the world in registration order.
+   */
+  List<Joint> getJoints();
 
   /**
    * Registers a component with the world.
+   *
+   * <p>Implementations may choose whether duplicate registrations are ignored or replaced.
    */
   void addComponent(GameComponent component);
 
@@ -38,7 +59,7 @@ public interface World {
    * Destroys and unregisters a component from the world.
    */
   default void destroyComponent(GameComponent component) {
-    Objects.requireNonNull(component).destroy();
+    component.destroy();
     removeComponent(component);
   }
 
@@ -46,14 +67,14 @@ public interface World {
    * Activates a registered component.
    */
   default void activateComponent(GameComponent component) {
-    Objects.requireNonNull(component).activate();
+    component.activate();
   }
 
   /**
    * Deactivates a registered component.
    */
   default void deactivateComponent(GameComponent component) {
-    Objects.requireNonNull(component).deactivate();
+    component.deactivate();
   }
 
   /**
@@ -79,29 +100,42 @@ public interface World {
    */
   void clear();
 
+  /**
+   * Registers a joint with the world.
+   */
   void addJoint(Joint joint);
 
+  /** Removes a joint from the world. */
   void removeJoint(Joint joint);
 
   /**
-   * Compatibility alias for older code still using GameObject naming.
+   * Compatibility alias for older code still using {@code GameObject} naming.
    */
-  default Collection<GameObject> getObjects() {
+  default List<GameObject> getObjects() {
     return new ArrayList<>(getComponents());
   }
 
   /**
-   * Compatibility alias for older code still using GameObject naming.
+   * Compatibility alias for older code still using {@code GameObject} naming.
+   */
+  default List<GameObject> getObjectsByTag(String tag) {
+    return new ArrayList<>(getComponentsByTag(tag));
+  }
+
+  /**
+   * Compatibility alias for older code still using {@code GameObject} naming.
+   *
+   * <p>Only {@link GameComponent} instances are supported by this world abstraction.
    */
   default void addObject(GameObject object) {
-    if (!(Objects.requireNonNull(object) instanceof GameComponent component)) {
-      throw new IllegalArgumentException("World only supports GameComponent objects");
+    if (!(object instanceof GameComponent component)) {
+      throw new IllegalArgumentException(EngineError.WORLD_ONLY_SUPPORTS_GAME_COMPONENTS.message());
     }
     addComponent(component);
   }
 
   /**
-   * Compatibility alias for older code still using GameObject naming.
+   * Compatibility alias for older code still using {@code GameObject} naming.
    */
   default void removeObject(GameObject object) {
     if (object instanceof GameComponent component) {
@@ -110,7 +144,7 @@ public interface World {
   }
 
   /**
-   * Compatibility alias for older code still using GameObject naming.
+   * Compatibility alias for older code still using {@code GameObject} naming.
    */
   default void destroyObject(GameObject object) {
     if (object instanceof GameComponent component) {

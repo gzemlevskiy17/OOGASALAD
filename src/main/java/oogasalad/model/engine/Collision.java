@@ -28,9 +28,8 @@ import oogasalad.model.engine.api.Vector;
  */
 public class Collision {
 
-  private GameObject objectA;
-  private GameObject objectB;
-  private boolean collided;
+  private GameObject referenceObject;
+  private GameObject incidentObject;
   private Vector penetration;
   private Vector[] referenceEdge;
   private Vector[] incidentEdge;
@@ -38,33 +37,20 @@ public class Collision {
   /**
    * Creates a collision record for two objects.
    *
-   * @param objectA first colliding object
-   * @param objectB second colliding object
-   * @param collided whether overlap was detected
-   * @param penetration penetration vector (direction and magnitude); often zero when no overlap
+   * @param referenceObject first colliding object
+   * @param incidentObject  second colliding object
    */
-  public Collision(GameObject objectA, GameObject objectB, boolean collided, Vector penetration) {
-    this.objectA = objectA;
-    this.objectB = objectB;
-    this.collided = collided;
-    this.penetration = penetration;
+  public Collision(GameObject referenceObject, GameObject incidentObject) {
+    this.referenceObject = referenceObject;
+    this.incidentObject = incidentObject;
   }
 
-  public boolean isCollided() {
-    return collided;
+  public GameObject getReferenceObject() {
+    return referenceObject;
   }
 
-  public void setCollided(boolean collided) {
-    this.collided = collided;
-  }
-
-  //TODO: rename to incident & reference objects?
-  public GameObject getObjectA() {
-    return objectA;
-  }
-
-  public GameObject getObjectB() {
-    return objectB;
+  public GameObject getIncidentObject() {
+    return incidentObject;
   }
 
   public Vector getPenetration() {
@@ -87,7 +73,6 @@ public class Collision {
     return incidentEdge;
   }
 
-  //TODO: actually use and move into constructor
   public void setIncidentEdge(Vector[] incidentEdge) {
     this.incidentEdge = incidentEdge;
   }

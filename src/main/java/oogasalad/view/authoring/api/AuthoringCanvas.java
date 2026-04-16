@@ -35,8 +35,23 @@ public interface AuthoringCanvas {
    */
   void clearHoverPreview();
 
+  /** @return the number of columns in the grid. */
+  int getGridCols();
+
+  /** @return the number of rows in the grid. */
+  int getGridRows();
+
   /**
    * Registers a callback invoked when the user clicks a placed object on the canvas.
    */
   void setOnObjectSelected(java.util.function.Consumer<AuthoringPlaceable> handler);
+
+  /**
+   * Sets the visual zoom level (1.0 = 100%). Grid coordinates are unaffected.
+   * Clamped to [0.25, 4.0].
+   */
+  void setZoom(double factor);
+
+  /** @return the current zoom factor. */
+  double getZoom();
 }

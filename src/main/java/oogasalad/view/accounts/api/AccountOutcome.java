@@ -5,7 +5,8 @@ package oogasalad.view.accounts.api;
  */
 public sealed interface AccountOutcome
     permits AccountOutcome.LoginRequested, AccountOutcome.RegisterRequested,
-    AccountOutcome.LogoutRequested, AccountOutcome.UpdateAvatarRequested {
+    AccountOutcome.LogoutRequested, AccountOutcome.UpdateAvatarRequested,
+    AccountOutcome.UpdateUsernameRequested, AccountOutcome.UpdatePasswordRequested {
 
   record LoginRequested(String user, String pass) implements AccountOutcome {
 
@@ -20,6 +21,14 @@ public sealed interface AccountOutcome
   }
 
   record UpdateAvatarRequested(String path) implements AccountOutcome {
+
+  }
+
+  record UpdateUsernameRequested(String newUsername) implements AccountOutcome {
+
+  }
+
+  record UpdatePasswordRequested(String newPassword) implements AccountOutcome {
 
   }
 }

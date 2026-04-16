@@ -1,9 +1,11 @@
 package oogasalad.controller.player.internal;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javafx.scene.Parent;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameplaySessionFactory;
+import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.player.internal.GamePlayAppScreen;
 
@@ -13,6 +15,7 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  * actions while exposing a single {@link AppScreen} to the screen manager.
  *
  * @author Iurii Beliaev
+ * @author Paulina Vvedenskaya
  */
 
 // Keep GamePlayAppScreen view-only
@@ -20,6 +23,7 @@ public class GamePlayScreenCoordinator implements AppScreen {
 
   private final Consumer<Outcome> onOutcome;
   private final GameplaySessionFactory sessionFactory;
+  private final Supplier<VehicleLayout> vehicleLayoutSupplier;
   private final GamePlayAppScreen view;
 
   private GameplaySession session;
@@ -29,17 +33,35 @@ public class GamePlayScreenCoordinator implements AppScreen {
    *
    * @param onOutcome callback invoked when gameplay emits a terminal navigation/result outcome
    * @param sessionFactory factory that assembles a new gameplay session on screen entry
+   * @param vehicleLayoutSupplier called on screen entry to get the current vehicle layout
    */
-  public GamePlayScreenCoordinator(Consumer<Outcome> onOutcome, GameplaySessionFactory sessionFactory) {
+  public GamePlayScreenCoordinator(Consumer<Outcome> onOutcome,
+      GameplaySessionFactory sessionFactory, Supplier<VehicleLayout> vehicleLayoutSupplier) {
     this.onOutcome = onOutcome;
     this.sessionFactory = sessionFactory;
+    this.vehicleLayoutSupplier = vehicleLayoutSupplier;
     this.view = new GamePlayAppScreen(this::handleOutcome); // In the future could be replaced with the GamePlayView abstraction@
 
     view.setOnPause(() -> {
       if (session != null) session.pause();
     });
+    view.setOnResume(() -> {
+      if (session != null) {
+        session.start();
+      }
+    });
     view.setOnReset(() -> {
       if (session != null) session.reset();
+    });
+    view.setOnToolActivated(buttonId -> {
+      if (session != null) {
+        session.handleButtonPress(buttonId);
+      }
+    });
+    view.setOnToolDeactivated(buttonId -> {
+      if (session != null) {
+        session.handleButtonPress(buttonId);
+      }
     });
   }
 
@@ -58,7 +80,8 @@ public class GamePlayScreenCoordinator implements AppScreen {
    */
   @Override
   public void onEnter() {
-    session = sessionFactory.create(view, this::handleOutcome);
+    VehicleLayout layout = vehicleLayoutSupplier.get();
+    session = sessionFactory.create(view, this::handleOutcome, layout);
     session.start();
   }
 

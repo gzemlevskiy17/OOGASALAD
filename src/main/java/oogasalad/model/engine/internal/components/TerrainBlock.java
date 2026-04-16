@@ -1,6 +1,6 @@
 package oogasalad.model.engine.internal.components;
 
-import oogasalad.model.engine.api.Pose;
+import oogasalad.model.engine.ConvexPolygon;
 
 /**
  * Concrete static terrain object (ground, ramp, wall) created by LevelLoaderImpl
@@ -36,7 +36,9 @@ public class TerrainBlock extends TerrainComponent {
    */
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction) {
+
     this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR);
+    setPolygon(ConvexPolygon.axisAlignedBox(x, y, width, height));
   }
 
   /**
@@ -44,7 +46,7 @@ public class TerrainBlock extends TerrainComponent {
    */
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction, String color) {
-    super(new Pose(x, y, 0), 0, friction);
+    super(x, y, 0, 0, friction);
     setAffectedByGravity(false);
     this.width = width;
     this.height = height;

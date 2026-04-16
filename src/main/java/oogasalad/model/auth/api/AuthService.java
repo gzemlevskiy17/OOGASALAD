@@ -18,6 +18,16 @@ public interface AuthService {
   AuthResult updateAvatar(String newAvatarPath);
 
   /**
+   * Changes the username for the currently logged-in player.
+   */
+  AuthResult updateUsername(String newUsername);
+
+  /**
+   * Changes the password for the currently logged-in player.
+   */
+  AuthResult updatePassword(String newPassword);
+
+  /**
    * Ends the current session. The player will need to log in again.
    */
   void logout();

@@ -30,4 +30,14 @@ public interface UserRepository {
    * Updates the avatar path for an existing account.
    */
   void updateAvatarPath(String username, String avatarPath);
+
+  /**
+   * Renames an existing account from {@code oldUsername} to {@code newUsername}.
+   */
+  void updateUsername(String oldUsername, String newUsername);
+
+  /**
+   * Updates the password hash and salt for an existing account.
+   */
+  void updatePassword(String username, String passwordHash, String salt);
 }

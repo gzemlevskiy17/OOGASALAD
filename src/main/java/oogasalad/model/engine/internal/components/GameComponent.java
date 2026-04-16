@@ -2,13 +2,13 @@ package oogasalad.model.engine.internal.components;
 
 import java.util.Objects;
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.ObjectState;
 import oogasalad.model.engine.EngineError;
+import oogasalad.model.engine.ObjectState;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 
 public abstract class GameComponent implements GameObject {
+
   private ObjectState state;
   private double mass;
   private double momentOfInertia;
@@ -16,27 +16,22 @@ public abstract class GameComponent implements GameObject {
   private double friction;
   private ConvexPolygon polygon;
   private Vector force;
-  private boolean active;
+  private boolean active; //TODO: depends on how people up the stack implement it
   private boolean affectedByGravity;
-  private boolean trigger;
+  private boolean trigger; //TODO: not needed?
+  private String tag;
 
   /**
    *
-   * @param pose
+   * @param x
+   * @param y
+   * @param rotation
    * @param mass
    * @param friction
-   * @author Xuye
-   * @author Georgiy Zemlevskiy
    */
-  public GameComponent(Pose pose, double mass, double friction) {
-    Pose initialPose = Objects.requireNonNull(pose, EngineError.NULL_POSE.message());
-    this.state = new ObjectState(
-        new Vector(initialPose.x(), initialPose.y()),
-        new Vector(0, 0),
-        new Vector(0, 0),
-        initialPose.rotation(),
-        new Vector(0, 0),
-        new Vector(0, 0)
+  public GameComponent(double x, double y, double rotation, double mass, double friction) {
+    this.state = new ObjectState(new Vector(x, y), new Vector(0, 0), new Vector(0, 0), rotation, 0,
+        0
     );
     setMass(mass);
     setFriction(friction);
@@ -46,21 +41,19 @@ public abstract class GameComponent implements GameObject {
     this.trigger = false;
   }
 
-  @Override
-  public Pose getPose() {
-    return new Pose(getX(), getY(), getRotation());
-  }
-
-  public void setPosition(Pose position) {
-    Pose newPose = Objects.requireNonNull(position, EngineError.NULL_POSE.message());
-    state.setLinearPosition(new Vector(newPose.x(), newPose.y()));
-    state.setAngularPosition(newPose.rotation());
+  public void setPosition(double x, double y, double rotation) {
+    state.setLinearPosition(new Vector(x, y));
+    state.setAngularPosition(rotation);
   }
 
   @Override
-  public double getMass() {
-    return mass;
-  }
+  public String getTag() {return tag;}
+
+  @Override
+  public void setTag(String tag) {this.tag = Objects.requireNonNull(tag);}
+
+  @Override
+  public double getMass() {return mass;}
 
   public void setMass(double mass) {
     if (mass < 0) {
@@ -88,12 +81,12 @@ public abstract class GameComponent implements GameObject {
 
   @Override
   public void setForce(Vector force) {
-    this.force = Objects.requireNonNull(force, EngineError.NULL_VECTOR.message());
+    this.force = force;
   }
 
   @Override
   public void addForce(Vector force) {
-    this.force = this.force.add(Objects.requireNonNull(force, EngineError.NULL_VECTOR.message()));
+    this.force = this.force.add(force);
   }
 
   @Override
@@ -112,7 +105,7 @@ public abstract class GameComponent implements GameObject {
 
   @Override
   public void setState(ObjectState state) {
-    this.state = Objects.requireNonNull(state, EngineError.NULL_OBJECT_STATE.message());
+    this.state = state;
   }
 
   @Override
@@ -145,9 +138,17 @@ public abstract class GameComponent implements GameObject {
     return affectedByGravity;
   }
 
+  public void setAffectedByGravity(boolean affectedByGravity) {
+    this.affectedByGravity = affectedByGravity;
+  }
+
   @Override
   public boolean isTrigger() {
     return trigger;
+  }
+
+  protected void setTrigger(boolean trigger) {
+    this.trigger = trigger;
   }
 
   public void activate() {
@@ -160,14 +161,6 @@ public abstract class GameComponent implements GameObject {
 
   public void destroy() {
     deactivate();
-  }
-
-  public void setAffectedByGravity(boolean affectedByGravity) {
-    this.affectedByGravity = affectedByGravity;
-  }
-
-  protected void setTrigger(boolean trigger) {
-    this.trigger = trigger;
   }
 
   @Override

@@ -2,8 +2,10 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
+import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
@@ -39,9 +41,11 @@ import oogasalad.model.engine.api.World;
  */
 public class GameEngineImpl implements GameEngine {
 
-  private World world;
-  private CollisionDetector collisionDetector;
-  private CollisionSolver collisionSolver;
+  private static final double GRAVITY = 400.0;
+
+  private final World world;
+  private final CollisionDetector collisionDetector;
+  private final CollisionSolver collisionSolver;
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -79,10 +83,18 @@ public class GameEngineImpl implements GameEngine {
   public void step(double elapsedTime) {
     applyJointConstraints(elapsedTime);
 
+    for (GameObject gameObject : world.getObjects()) {
+      gameObject.updatePolygon();
+    }
+
     handleCollisions();
 
+    //TODO: do this only for dynamic objects
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
+      accumulateForces(gameObject);
+      applyForcesToAcceleration(gameObject);
       gameObject.getState().integrateObjectState(elapsedTime);
+      gameObject.setForce(new Vector(0, 0));
     }
 
 //    for (Constraint constraint : constraings) {
@@ -91,7 +103,24 @@ public class GameEngineImpl implements GameEngine {
 
   }
 
+  private void accumulateForces(GameObject obj) {
+    if (obj.isAffectedByGravity()) {
+      obj.addForce(new Vector(0, GRAVITY * obj.getMass()));
+    }
+    if (obj instanceof Driveable driveable) {
+      obj.addForce(driveable.getDriveForce());
+    }
+  }
 
+  private void applyForcesToAcceleration(GameObject obj) {
+    double mass = obj.getMass();
+    if (mass > 0) {
+      Vector acc = obj.getForce().multiply(1.0 / mass);
+      obj.getState().setLinearAcceleration(acc);
+    }
+  }
+
+  //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
     List<Collision> collisions = getCollisions();
 
@@ -108,11 +137,29 @@ public class GameEngineImpl implements GameEngine {
     }
   }
 
+  private static final String VEHICLE_TAG = "vehicle";
+
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
-    for (GameObject objectA : world.getObjects()) {
-      for (GameObject objectB : world.getObjects()) {
-        collisions.add(collisionDetector.detectCollision(objectA, objectB));
+    List<GameObject> objects = world.getObjects();
+    for (int i = 0; i < objects.size(); i++) {
+      GameObject a = objects.get(i);
+      if (a.isTrigger()) {
+        continue;
+      }
+      for (int j = i + 1; j < objects.size(); j++) {
+        GameObject b = objects.get(j);
+        if (b.isTrigger()) {
+          continue;
+        }
+        if (a.getMass() == 0 && b.getMass() == 0) {
+          continue;
+        }
+        if (VEHICLE_TAG.equals(a.getTag()) && VEHICLE_TAG.equals(b.getTag())) {
+          continue;
+        }
+        Optional<Collision> collision = collisionDetector.detectCollision(a, b);
+        collision.ifPresent(collisions::add);
       }
     }
     return collisions;

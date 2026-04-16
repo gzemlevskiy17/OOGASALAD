@@ -9,17 +9,16 @@ import oogasalad.model.engine.api.Vector;
 /**
  * Impulse-based collision response implementation for a single collision pair.
  *
- * <p>Use this solver when a collision has already been detected and you want physically motivated
- * velocity updates (and optional overlap correction) driven by contact geometry and material
- * properties.
+ * <p>Use this solver after collision detection to update linear and angular motion using contact
+ * geometry, mass properties, and restitution.
  *
  * <p><strong>Assumptions:</strong> Incoming {@link Collision} objects reference valid objects and
- * states, polygon winding is consistent with helper expectations, and mass/inertia values are
- * non-negative. Degenerate geometry or missing manifold data can cause the solver to no-op.
+ * states, polygon winding is consistent with helper expectations, and mass and moment-of-inertia
+ * values are non-negative. Degenerate geometry or missing manifold data can cause the solver to
+ * skip useful work.
  *
  * <p><strong>Dependencies:</strong> Relies on {@link Collision}, {@link ObjectState},
- * {@link ConvexPolygon}, {@link GameObject}, {@link Vector}, and the {@link CollisionSolver}
- * interface contract.
+ * {@link GameObject}, {@link Vector}, and the {@link CollisionSolver} interface contract.
  *
  * <p><strong>Example:</strong>
  *
@@ -35,8 +34,6 @@ import oogasalad.model.engine.api.Vector;
  */
 public class ImpulseCollisionSolver implements CollisionSolver {
 
-  public final static int MAX_CONTACT_POINTS = 2;
-
   /**
    * Resolves one collision using the impulse solver pipeline.
    *
@@ -50,232 +47,367 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    */
   @Override
   public void solve(Collision collision) {
-
+    List<ContactPointPhysics> collisionManifold = computeCollisionManifold(collision);
+    resolveImpulseAtContacts(collision, collisionManifold);
+    applyPositionalCorrection(collision);
   }
 
   /**
-   * Builds up to two contact points by clipping the incident edge against the reference edge side
-   * planes and then filtering against the reference face plane.
+   * Clips the incident edge against the reference edge and keeps the contact points that lie inside
+   * the reference face.
+   *
+   * <p>Assumes at least one endpoint of the incident edge is inside the reference polygon and that
+   * the reference edge preserves clockwise ordering.
+   *
+   * @param clippedIncidentEdge incident edge after side clipping
+   * @param referenceEdge       reference edge used to compute contact depth
+   * @return contact points that lie behind the reference edge
    */
-  private Vector[] computeCollisionManifold(Collision collision, Vector refNormal) {
+  private List<ContactPointPhysics> faceClip(Vector[] clippedIncidentEdge, Vector[] referenceEdge) {
+    Vector referenceOutwardNormal = referenceEdge[1].subtract(referenceEdge[0]).normalize()
+        .rotateLeft();
+    List<ContactPointPhysics> manifoldPoints = new ArrayList<>();
+    double distanceFromLeftPlane = distanceFromPlane(clippedIncidentEdge[0], referenceEdge[0],
+        referenceOutwardNormal);
+    if (distanceFromLeftPlane < 0) {
+      ContactPointPhysics contactPointPhysics = new ContactPointPhysics(clippedIncidentEdge[0],
+          -distanceFromLeftPlane);
+      manifoldPoints.add(contactPointPhysics);
+    }
+
+    double distanceFromRightPlane = distanceFromPlane(clippedIncidentEdge[1], referenceEdge[0],
+        referenceOutwardNormal);
+    if (distanceFromRightPlane < 0) {
+      ContactPointPhysics contactPointPhysics = new ContactPointPhysics(clippedIncidentEdge[1],
+          -distanceFromRightPlane);
+      manifoldPoints.add(contactPointPhysics);
+    }
+
+    return manifoldPoints;
+  }
+
+  /**
+   * Computes the signed distance of a point from a plane defined by a point and normal.
+   *
+   * @param point       point being tested
+   * @param planePoint  point on the plane
+   * @param planeNormal outward normal of the plane
+   * @return signed distance from the plane
+   */
+  private double distanceFromPlane(Vector point, Vector planePoint, Vector planeNormal) {
+    return point.subtract(planePoint).dot(planeNormal);
+  }
+
+
+  /**
+   * Builds the contact manifold for the detected collision.
+   *
+   * <p>The method clips the incident edge against the reference edge before keeping only points
+   * that lie inside the reference face.
+   * <p>
+   * hand-tested: clippedIncidentEdge = [(0, 1), (8, 9)] referenceEdge = [(0, 5), (8, 5)]
+   * referenceOutwardNormal = (0, 1): only adds (0, 1) to manifold, not (8, 9), which is not in the
+   * reference polygon.
+   *
+   * @param collision detected collision pair
+   * @return contact points suitable for impulse resolution
+   */
+  private List<ContactPointPhysics> computeCollisionManifold(Collision collision) {
     Vector[] incidentEdge = collision.getIncidentEdge();
     Vector[] referenceEdge = collision.getReferenceEdge();
-    if (incidentEdge == null || referenceEdge == null) {
-      return new Vector[MAX_CONTACT_POINTS];
-    }
-
-    Vector referenceStart = referenceEdge[0];
-    Vector referenceEnd = referenceEdge[1];
-    Vector tangent = referenceEnd.subtract(referenceStart).normalize();
-    double leftOffset = tangent.dot(referenceStart);
-    double rightOffset = tangent.multiply(-1).dot(referenceEnd);
-
-    List<Vector> leftClip = clipToHalfSpace(incidentEdge, tangent, leftOffset);
-    if (leftClip.size() < 2) {
-      return new Vector[MAX_CONTACT_POINTS];
-    }
-
-    Vector[] leftClippedEdge = new Vector[]{leftClip.get(0), leftClip.get(1)};
-    List<Vector> sideClip = clipToHalfSpace(leftClippedEdge, tangent.multiply(-1), rightOffset);
-
-    Vector[] finalManifold = new Vector[MAX_CONTACT_POINTS];
-    int manifoldCount = 0;
-    double faceOffset = refNormal.dot(referenceStart);
-    for (Vector vector : sideClip) {
-      double separation = refNormal.dot(vector) - faceOffset;
-      if (separation <= 0 && manifoldCount < MAX_CONTACT_POINTS) {
-        finalManifold[manifoldCount++] = vector;
-      }
-    }
-
-    return finalManifold;
+    Vector[] clippedIncidentEdge = clipToReferenceEdge(incidentEdge, referenceEdge);
+    return faceClip(clippedIncidentEdge, referenceEdge);
   }
 
+
   /**
-   * Selects the incident edge whose normal is most anti-parallel to the penetration normal.
+   * Clips the incident edge against the side planes of the reference edge.
    *
-   * <p>Assumes clockwise polygon point order and a repeated final point for edge iteration.
+   * <p>The result preserves the portion of the incident edge that lies between the reference edge
+   * endpoints.
+   *
+   * @param incidentEdge  edge from the incident polygon
+   * @param referenceEdge edge from the reference polygon
+   * @return the incident edge clipped to the reference edge extents
    */
-  private Vector[] incidentEdge(ConvexPolygon incidentPolygon, Vector penetrationNormal) {
-    //TODO: confirm direction of normals
-    Vector[] incidentEdge = new Vector[2];
-    double minimumDotProduct = Double.MAX_VALUE;
+  private Vector[] clipToReferenceEdge(Vector[] incidentEdge, Vector[] referenceEdge) {
+    // 4 situations: incident edge has both, either, or no endpoints outside of reference edge.
+    // Assuming that the incident edge will intersect the reference edge, and at least some part of
+    // the incident edge is within the reference edge endpoints
+    Vector sideANormal = referenceEdge[0].subtract(referenceEdge[1]);
+    Vector sideBNormal = referenceEdge[1].subtract(referenceEdge[0]);
 
-    List<Vector> points = incidentPolygon.getPoints();
-    for (int i = 0; i < points.size() - 1; i++) {
-      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize().rotateLeft();
-      double dotWithIncident = penetrationNormal.dot(incidentNormal);
-      if (dotWithIncident < minimumDotProduct) {
-        minimumDotProduct = dotWithIncident;
-        incidentEdge[0] = points.get(i);
-        incidentEdge[1] = points.get(i + 1);
-      }
+    //find where the endpoints of the incident edge are relative to the planes
+    Vector unclippedSideAEndpoint = null;
+    Vector unclippedSideBEndpoint = null;
+    if (incidentEdge[0].subtract(referenceEdge[0]).dot(sideANormal) > incidentEdge[1].subtract(
+        referenceEdge[0]).dot(
+        sideANormal)) { //the more positive dot product with the outward A normal, the farthest that point is in the outward direction
+      unclippedSideAEndpoint = incidentEdge[0];
+      unclippedSideBEndpoint = incidentEdge[1];
+    } else {
+      unclippedSideAEndpoint = incidentEdge[1];
+      unclippedSideBEndpoint = incidentEdge[0];
+    }
+    Vector clippedIncidentAEndpoint = unclippedSideAEndpoint;
+    if (distanceFromPlane(unclippedSideAEndpoint, referenceEdge[0], sideANormal) > 0) {
+      //compute the point of intersection of the incident edge and the side A plane
+      clippedIncidentAEndpoint = computeLineIntersection(incidentEdge, referenceEdge[0],
+          sideANormal);
     }
 
-    return incidentEdge;
+    Vector clippedIncidentBEndpoint = unclippedSideBEndpoint;
+    if (distanceFromPlane(unclippedSideBEndpoint, referenceEdge[1], sideBNormal) > 0) {
+      //compute the point of intersection of the incident edge and the side B plane
+      clippedIncidentBEndpoint = computeLineIntersection(incidentEdge, referenceEdge[1],
+          sideBNormal);
+    }
+
+    return new Vector[]{clippedIncidentAEndpoint, clippedIncidentBEndpoint};
   }
 
   /**
-   * Clips a segment against a single half-space defined by
-   * {@code dot(planeNormal, p) >= planeOffset}.
+   * Computes the intersection point between an incident edge and a clipping plane.
+   *
+   * <p>Assumes the incident edge is not parallel to the plane normal and intersects with the
+   * reference edge.
+   * <p>
+   * hand-tested: incidentEdge = [(-1, 0), (9, 10)] referencePlaneIntersection = (0, 5)
+   * outwardPlaneNormal = (-1, 0) returns (1, 0)
+   *
+   * @param incidentEdge               edge being clipped
+   * @param referencePlaneIntersection point on the clipping plane
+   * @param outwardPlaneNormal         clipping plane normal
+   * @return intersection point along the incident edge
    */
-  private List<Vector> clipToHalfSpace(Vector[] incidentEdge, Vector planeNormal,
-      double planeOffset) {
+  private Vector computeLineIntersection(Vector[] incidentEdge, Vector referencePlaneIntersection,
+      Vector outwardPlaneNormal) {
+    //TODO: referencePlaneIntersection should be an endpoint of the reference edge? put in documentation
+    Vector edgeDirection = incidentEdge[1].subtract(incidentEdge[0]);
+    double edgeLengthInPlaneNormalDirection = edgeDirection.dot(outwardPlaneNormal);
+    double fractionAlongIncidentEdge = (referencePlaneIntersection.subtract(incidentEdge[0])).dot(
+        outwardPlaneNormal) / edgeLengthInPlaneNormalDirection; //
 
-    //TODO: potentially refactor into one clip from both sides, or to return a clipped line segment out of which a manifold is constructed
-    Vector incidentStart = incidentEdge[0];
-    Vector incidentEnd = incidentEdge[1];
-
-    List<Vector> result = new ArrayList<>();
-    double distanceFromIncidentStart = planeNormal.dot(incidentStart) - planeOffset;
-    double distanceFromIncidentEnd = planeNormal.dot(incidentEnd) - planeOffset;
-
-    if (distanceFromIncidentStart >= 0.0) {
-      addCandidatePointToManifold(result, incidentStart);
-    }
-    if (distanceFromIncidentEnd >= 0.0) {
-      addCandidatePointToManifold(result, incidentEnd);
-    }
-
-    if (distanceFromIncidentStart * distanceFromIncidentEnd < 0.0) {
-      double fractionOfIncidentEdge =
-          distanceFromIncidentStart / (distanceFromIncidentStart - distanceFromIncidentEnd);
-      Vector intersection = incidentStart.add(
-          incidentEnd.subtract(incidentStart).multiply(fractionOfIncidentEdge));
-      addCandidatePointToManifold(result, intersection);
-    }
-
-    return result;
-  }
-
-  private void addCandidatePointToManifold(List<Vector> points, Vector point) {
-    if (points.size() < MAX_CONTACT_POINTS) {
-      points.add(point);
-    }
+    return incidentEdge[0].add(edgeDirection.multiply(fractionAlongIncidentEdge));
   }
 
   /**
-   * Applies impulse-based collision response at each manifold contact, updating linear and angular
-   * velocities in-place on both colliding object states.
+   * Applies impulse-based collision response at each manifold contact.
+   *
+   * <p>This updates linear and angular velocities in-place on both colliding object states.
+   *
+   * @param collision         detected collision pair
+   * @param collisionManifold contact points derived from the collision geometry
    */
-  private void resolveImpulseAtContacts(
-      Collision collision,
-      Vector normal,
-      Vector[] contactPoints,
-      int contactCount) {
+  private void resolveImpulseAtContacts(Collision collision,
+      List<ContactPointPhysics> collisionManifold) {
 
     //TODO: refactor
-    GameObject objectA = collision.getObjectA();
-    GameObject objectB = collision.getObjectB();
-    ObjectState stateA = objectA.getState();
-    ObjectState stateB = objectB.getState();
+    GameObject referenceObject = collision.getReferenceObject();
+    GameObject incidentObject = collision.getIncidentObject();
+    ObjectState referenceObjectState = referenceObject.getState();
+    ObjectState incidentObjectState = incidentObject.getState();
+    Vector referenceUnitNormal = collision.getPenetration().normalize();
 
-    Vector velocityA = stateA.getLinearVelocity();
-    Vector velocityB = stateB.getLinearVelocity();
-    double angVelocityA = stateA.getAngularVelocity().x();
-    double angVelocityB = stateB.getAngularVelocity().x();
+    double totalDepth = 0;
+    List<ContactPointPhysics> contactPoints = new ArrayList<>();
+    for (ContactPointPhysics contactPointPhysics : collisionManifold) {
+      //TODO: should this method behavior be consistent
+      setRelativePositions(contactPointPhysics, incidentObjectState, referenceObjectState);
 
-    double invMassA = inverseOrZero(objectA.getMass());
-    double invMassB = inverseOrZero(objectB.getMass());
-    double invInertiaA = inverseOrZero(objectA.getMomentOfInertia());
-    double invInertiaB = inverseOrZero(objectB.getMomentOfInertia());
-    double restitution = Math.min(objectA.getRestitution(), objectB.getRestitution());
+      contactPointPhysics.relativeVelocity = computeRelativeVelocity(contactPointPhysics,
+          incidentObjectState,
+          referenceObjectState);
+      contactPointPhysics.impulse = computeImpulse(contactPointPhysics, incidentObject,
+          referenceObject, referenceUnitNormal);
 
-    int effectiveContactCount = Math.min(contactCount, contactPoints.length);
-    if (effectiveContactCount <= 0) {
+      totalDepth += contactPointPhysics.depth;
+      contactPoints.add(contactPointPhysics);
+    }
+
+    if (totalDepth == 0 || contactPoints.isEmpty()) {
+      return;
+    }
+    // Only resolve if the pair is actually approaching along the normal.
+    // Otherwise the impulse would drag separating objects back together.
+    double approachSpeed = 0;
+    for (ContactPointPhysics contactPointPhysics : contactPoints) {
+      approachSpeed += contactPointPhysics.relativeVelocity.dot(referenceUnitNormal)
+          * (contactPointPhysics.depth / totalDepth);
+    }
+    if (approachSpeed >= 0) {
       return;
     }
 
-    for (int i = 0; i < effectiveContactCount; i++) {
-      Vector contactPoint = contactPoints[i];
-      if (contactPoint == null) {
-        continue;
-      }
+    double impulseSum = 0;
+    double referenceCrossProductSum = 0;
+    double incidentCrossProductSum = 0;
+    for (ContactPointPhysics contactPointPhysics : contactPoints) {
+      contactPointPhysics.impulse *= contactPointPhysics.depth / totalDepth;
 
-      Vector ra = contactPoint.subtract(stateA.getLinearPosition());
-      Vector rb = contactPoint.subtract(stateB.getLinearPosition());
-
-      Vector combinedVelocityA = velocityA.add(ra.rotateLeft().multiply(angVelocityA));
-      Vector combinedVelocityB = velocityB.add(rb.rotateLeft().multiply(angVelocityB));
-      Vector relativeVelocity = combinedVelocityB.subtract(combinedVelocityA);
-
-      double contactVelocity = relativeVelocity.dot(normal);
-      if (contactVelocity > 0.0) {
-        continue;
-      }
-
-      double raCrossN = ra.cross(normal);
-      double rbCrossN = rb.cross(normal);
-      double denominator = invMassA + invMassB
-          + (raCrossN * raCrossN * invInertiaA)
-          + (rbCrossN * rbCrossN * invInertiaB);
-      if (denominator == 0.0) {
-        continue;
-      }
-
-      double impulseScalar = -(1.0 + restitution) * contactVelocity;
-      impulseScalar /= denominator * effectiveContactCount;
-      Vector impulse = normal.multiply(impulseScalar);
-
-      velocityA = velocityA.subtract(impulse.multiply(invMassA));
-      angVelocityA -= raCrossN * impulseScalar * invInertiaA;
-      velocityB = velocityB.add(impulse.multiply(invMassB));
-      angVelocityB += rbCrossN * impulseScalar * invInertiaB;
+      impulseSum += contactPointPhysics.impulse;
+      referenceCrossProductSum +=
+          contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
+              * contactPointPhysics.impulse; //TODO: make impulse vector?
+      incidentCrossProductSum +=
+          contactPointPhysics.positionFromIncident.crossWithVector(referenceUnitNormal)
+              * contactPointPhysics.impulse;
     }
 
-    stateA.setLinearVelocity(velocityA);
-    stateB.setLinearVelocity(velocityB);
+    if (invMOI(referenceObject) != 0) {
+      referenceObjectState.setAngularVelocity(referenceObjectState.getAngularVelocity()
+          - referenceCrossProductSum * invMOI(referenceObject));
+    }
+    if (invMOI(incidentObject) != 0) {
+      incidentObjectState.setAngularVelocity(incidentObjectState.getAngularVelocity()
+          + incidentCrossProductSum * invMOI(incidentObject));
+    }
 
-    stateA.setAngularVelocity(new Vector(angVelocityA, 0));
-    stateB.setAngularVelocity(new Vector(angVelocityB, 0));
+    referenceObjectState.setLinearVelocity(referenceObjectState.getLinearVelocity()
+        .subtract(referenceUnitNormal.multiply(impulseSum * invMass(referenceObject))));
+    incidentObjectState.setLinearVelocity(incidentObjectState.getLinearVelocity()
+        .add(referenceUnitNormal.multiply(impulseSum * invMass(incidentObject))));
   }
 
-  //TODO: add formula to comment
+  /**
+   * Computes the contact-relative positions from each object's center of mass.
+   *
+   * @param contactPointPhysics  contact data to update
+   * @param incidentObjectState  incident object state
+   * @param referenceObjectState reference object state
+   */
+  private void setRelativePositions(ContactPointPhysics contactPointPhysics,
+      ObjectState incidentObjectState, ObjectState referenceObjectState) {
+    Vector incidentPoint = contactPointPhysics.contactPoint.subtract(
+        incidentObjectState.getLinearPosition());
+    Vector referencePoint = contactPointPhysics.contactPoint.subtract(
+        referenceObjectState.getLinearPosition());
+    contactPointPhysics.positionFromIncident = incidentPoint;
+    contactPointPhysics.positionFromReference = referencePoint;
+  }
 
   /**
-   * Moves objects out of overlap according to {formula}.
+   * Computes the scalar impulse magnitude for a single contact. Uses the formula (-1+e) * v_rel * n
+   * / (1/m_reference + 1/m_incident + (r_reference x n)^2/I_reference + (r_incident x
+   * n)^2/I_incident). e is the average coefficient of restitution of the two objects.
+   *
+   * @param contactPointPhysics contact data with relative velocity and offsets
+   * @param incidentObject      incident object
+   * @param referenceObject     reference object
+   * @param referenceUnitNormal collision normal used for the impulse calculation
+   * @return impulse magnitude along the collision normal
    */
-  private void applyPositionalCorrection(
-      Collision collision,
-      Vector normal,
-      double[] depths,
-      int contactCount) {
+  private double computeImpulse(ContactPointPhysics contactPointPhysics, GameObject incidentObject,
+      GameObject referenceObject, Vector referenceUnitNormal) {
+    double restitution = (incidentObject.getRestitution() + referenceObject.getRestitution()) / 2;
+    double velocity =
+        -(1 + restitution) * contactPointPhysics.relativeVelocity.dot(referenceUnitNormal);
 
-    //TODO: refactor
-    final double percent = 0.4;
-    final double slop = 0.01;
+    double incidentPointMomentum = contactPointPhysics.positionFromIncident.crossWithVector(
+        referenceUnitNormal);
+    double referencePointMomentum = contactPointPhysics.positionFromReference.crossWithVector(
+        referenceUnitNormal);
+    double inverseMass = invMass(referenceObject) + invMass(incidentObject)
+        + Math.pow(incidentPointMomentum, 2) * invMOI(incidentObject)
+        + Math.pow(referencePointMomentum, 2) * invMOI(referenceObject);
 
-    GameObject objectA = collision.getObjectA();
-    GameObject objectB = collision.getObjectB();
-    ObjectState stateA = objectA.getState();
-    ObjectState stateB = objectB.getState();
+    return velocity / inverseMass;
+  }
 
-    double invMassA = inverseOrZero(objectA.getMass());
-    double invMassB = inverseOrZero(objectB.getMass());
-    double inverseMassSum = invMassA + invMassB;
-    if (inverseMassSum == 0.0 || contactCount <= 0 || depths.length == 0) {
+  /**
+   * Computes the relative velocity of the incident object with respect to the reference object at a
+   * contact point. Uses the formula: v_rel = (v_incident + w_incident x r_incident) - (v_reference
+   * + w_reference x r_reference).
+   *
+   * @param contactPointPhysics  contact data to evaluate
+   * @param incidentObjectState  incident object state
+   * @param referenceObjectState reference object state
+   * @return relative point velocity at the contact
+   */
+  private Vector computeRelativeVelocity(ContactPointPhysics contactPointPhysics,
+      ObjectState incidentObjectState,
+      ObjectState referenceObjectState) {
+    Vector crossWithIncident = contactPointPhysics.positionFromIncident.crossWithScalar(
+        incidentObjectState.getAngularVelocity());
+    Vector incidentPointVelocity = incidentObjectState.getLinearVelocity().add(crossWithIncident);
+
+    Vector crossWithReference = contactPointPhysics.positionFromReference.crossWithScalar(
+        referenceObjectState.getAngularVelocity());
+    Vector referencePointVelocity = referenceObjectState.getLinearVelocity()
+        .add(crossWithReference);
+
+    return incidentPointVelocity.subtract(referencePointVelocity);
+  }
+
+  /**
+   * Moves objects out of overlap.
+   *
+   * <p>
+   * Move incident polygon by the vector d/2 * (m_Reference/(m_A + m_B)) * B. Move reference polygon
+   * by the vector -d/2 * (m_Incident/(m_A + m_B)) * B. B is a number between 0 and 1. In one step,
+   * the collision is thus not fully resolved, but only partly. This method will be called multiple
+   * times so that the resolution is visually smooth.
+   *
+   * @param collision detected collision pair
+   */
+  private void applyPositionalCorrection(Collision collision) {
+    double correctionFraction = 0.8; //TODO: put into properties file
+    double penetrationSlop = 0.01;
+
+    GameObject referenceObject = collision.getReferenceObject();
+    GameObject incidentObject = collision.getIncidentObject();
+    ObjectState referenceObjectState = referenceObject.getState();
+    ObjectState incidentObjectState = incidentObject.getState();
+
+    double totalInvMass = invMass(referenceObject) + invMass(incidentObject);
+    if (totalInvMass == 0) {
       return;
     }
 
-    int effectiveContactCount = Math.min(contactCount, depths.length);
-    double maxDepth = 0.0;
-    for (int i = 0; i < effectiveContactCount; i++) {
-      maxDepth = Math.max(maxDepth, depths[i]);
+    Vector penetration = collision.getPenetration();
+    double depth = penetration.magnitude();
+    if (depth <= penetrationSlop) {
+      return;
     }
+    double magnitude = (depth - penetrationSlop) * correctionFraction / totalInvMass;
+    Vector correction = penetration.normalize().multiply(magnitude);
 
-    double correctionMagnitude = Math.max(maxDepth - slop, 0.0);
-    correctionMagnitude = (correctionMagnitude / inverseMassSum) * percent;
-    Vector correction = normal.multiply(correctionMagnitude);
-
-    stateA.setLinearPosition(stateA.getLinearPosition().subtract(correction.multiply(invMassA)));
-    stateB.setLinearPosition(stateB.getLinearPosition().add(correction.multiply(invMassB)));
+    referenceObjectState.setLinearPosition(referenceObjectState.getLinearPosition()
+        .subtract(correction.multiply(invMass(referenceObject))));
+    incidentObjectState.setLinearPosition(incidentObjectState.getLinearPosition()
+        .add(correction.multiply(invMass(incidentObject))));
   }
 
-  //TODO: is this needed?
-  private double inverseOrZero(double value) {
-    if (value <= 0.0) {
-      return 0.0;
+  private static double invMass(GameObject obj) {
+    return obj.getMass() == 0 ? 0.0 : 1.0 / obj.getMass();
+  }
+
+  private static double invMOI(GameObject obj) {
+    return obj.getMomentOfInertia() == 0 ? 0.0 : 1.0 / obj.getMomentOfInertia();
+  }
+
+  /**
+   * Physics data for a contact point in a collision manifold used while resolving a single
+   * collision.
+   */
+  class ContactPointPhysics {
+
+    Vector contactPoint;
+    Vector positionFromIncident;
+    Vector positionFromReference;
+    Vector relativeVelocity;
+    double depth;
+    double impulse;
+
+    /**
+     * Creates contact data for a clipped collision point.
+     *
+     * @param contactPoint world-space contact point
+     * @param depth        penetration depth at the contact point
+     */
+    public ContactPointPhysics(Vector contactPoint, double depth) {
+      this.contactPoint = contactPoint;
+      this.depth = depth;
     }
-    return 1.0 / value;
   }
 }

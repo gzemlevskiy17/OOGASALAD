@@ -89,6 +89,48 @@ public class LocalAuthService implements AuthService {
   }
 
   /**
+   * Renames the currently logged-in player. Returns a failure if no player is logged in, the new
+   * username is blank, or the new username is already taken.
+   */
+  @Override
+  public AuthResult updateUsername(String newUsername) {
+    if (loggedInUser == null) {
+      return new AuthResult.Failure("Not logged in");
+    }
+    if (isBlank(newUsername)) {
+      return new AuthResult.Failure("Username is required");
+    }
+    String trimmed = newUsername.trim();
+    if (trimmed.equals(loggedInUser.username())) {
+      return new AuthResult.Success(loggedInUser);
+    }
+    if (repo.usernameExists(trimmed)) {
+      return new AuthResult.Failure("Username already taken");
+    }
+    repo.updateUsername(loggedInUser.username(), trimmed);
+    loggedInUser = new ProfileRecord(trimmed, loggedInUser.avatarPath());
+    return new AuthResult.Success(loggedInUser);
+  }
+
+  /**
+   * Updates the password for the currently logged-in player. The new password is salted and hashed
+   * before storage. Returns a failure if no player is logged in or the password is blank.
+   */
+  @Override
+  public AuthResult updatePassword(String newPassword) {
+    if (loggedInUser == null) {
+      return new AuthResult.Failure("Not logged in");
+    }
+    if (isBlank(newPassword)) {
+      return new AuthResult.Failure("Password is required");
+    }
+    String salt = PasswordHasher.generateSalt();
+    String hash = PasswordHasher.hash(newPassword, salt);
+    repo.updatePassword(loggedInUser.username(), hash, salt);
+    return new AuthResult.Success(loggedInUser);
+  }
+
+  /**
    * Clears the current session. The player will need to log in again after this.
    */
   @Override

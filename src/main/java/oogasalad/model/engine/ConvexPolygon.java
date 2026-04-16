@@ -33,6 +33,16 @@ public class ConvexPolygon {
     this.points = points;
   }
 
+  public static ConvexPolygon axisAlignedBox(double x, double y, double w, double h) {
+    return new ConvexPolygon(List.of(
+        new Vector(x,     y),
+        new Vector(x + w, y),
+        new Vector(x + w, y + h),
+        new Vector(x,     y + h),
+        new Vector(x,     y)
+    ));
+  }
+
   public List<Vector> getPoints() { //in CW order
     return Collections.unmodifiableList(points);
   }
