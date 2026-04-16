@@ -57,10 +57,10 @@ public class RendererImpl implements Renderer {
         continue;
       }
 
-      if (!camera.isVisible(object)) {
-        removeNode(object);
-        continue;
-      }
+//      if (!camera.isVisible(object)) {
+//        removeNode(object);
+//        continue;
+//      }
 
       seenThisFrame.add(object);
       renderObject(object, camera);

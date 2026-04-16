@@ -22,6 +22,7 @@ import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.VehicleComponent;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.VehicleLayout;
@@ -116,6 +117,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
       if (r instanceof SpriteRenderable sr) {
         return createImageView(sr, spriteCache);
+      }
+      if (r instanceof TerrainBlock tb) {
+        Rectangle rect = new Rectangle(tb.getWidth(), tb.getHeight());
+        rect.setFill(Color.DARKGREEN);
+        return rect;
       }
       Circle c = new Circle(BALL_RADIUS);
       if (r == player) {
