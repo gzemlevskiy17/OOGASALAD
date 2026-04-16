@@ -124,8 +124,10 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     pauseBtn.setOnAction(e -> {
       if (pauseBtn.isSelected()) {
         onPause.run();
+        pauseBtn.setText(s("button.resume"));
       } else {
         onResume.run();
+        pauseBtn.setText(s("button.pause"));
       }
     });
     pauseBtn.getStyleClass().add("sys-button");

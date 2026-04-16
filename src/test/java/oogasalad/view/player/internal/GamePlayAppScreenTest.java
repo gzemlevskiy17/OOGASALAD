@@ -59,7 +59,7 @@ class GamePlayAppScreenTest extends DukeApplicationTest {
     assertEquals(1, pauses.get(), "First toggle should pause");
     assertEquals(0, resumes.get());
 
-    clickOn("Pause");
+    clickOn("Resume");
     assertEquals(1, pauses.get());
     assertEquals(1, resumes.get(), "Second toggle should resume");
   }
