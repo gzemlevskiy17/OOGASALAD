@@ -48,6 +48,10 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  public void setOnResume(Runnable onResume) {
+
+  }
+
   public void setOnReset(Runnable onReset) {
     if (onReset == null) {
       this.onReset = () -> { };
