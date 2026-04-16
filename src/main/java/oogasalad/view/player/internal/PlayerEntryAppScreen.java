@@ -77,11 +77,12 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   private VBox createStartBadPiggiesContentRegion() {
     startButton = new Button(s("start.button.text"));
     startButton.getStyleClass().add("start-button");
-
-    // Disabled until both selections exist
     startButton.setDisable(true);
 
-    startButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER));
+    startButton.setOnAction(event -> {
+      onSelectionConfirmed.accept(selectedWorldKey, selectedLevelKey);
+      onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER);
+    });
 
     VBox container = new VBox(startButton);
     container.getStyleClass().add("selection-region");
@@ -99,9 +100,19 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
       btn.getStyleClass().add("world-" + world);
       worldBox.getChildren().add(btn);
 
-      btn.setOnAction(e -> selectWorld(btn));
+      btn.setOnAction(e -> selectWorld(btn, world));
     }
     return worldBox;
+  }
+
+  private void selectWorld(Button btn, String worldKey) {
+    if (selectedWorldButton != null) {
+      selectedWorldButton.getStyleClass().remove("world-selected");
+    }
+    selectedWorldButton = btn;
+    selectedWorldKey = worldKey;
+    selectedWorldButton.getStyleClass().add("world-selected");
+    updateStartButtonState();
   }
 
   private void selectWorld(Button btn) {
@@ -129,15 +140,13 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
       Button btn = new Button(s("level.button." + level));
       btn.getStyleClass().add("level-button");
 
-      // Levels not yet open
       if (lockedLevels.contains(level)) {
         btn.getStyleClass().add("locked-level");
         btn.setDisable(true);
-      };
+      }
 
-      // Allow level selection only for the open buttons
       if (!lockedLevels.contains(level)) {
-        btn.setOnAction(e -> selectLevel(btn));
+        btn.setOnAction(e -> selectLevel(btn, level));
       }
 
       levelBox.getChildren().add(btn);
@@ -145,11 +154,12 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     return levelBox;
   }
 
-  private void selectLevel(Button btn) {
+  private void selectLevel(Button btn, String levelKey) {
     if (selectedLevelButton != null) {
       selectedLevelButton.getStyleClass().remove("level-selected");
     }
     selectedLevelButton = btn;
+    selectedLevelKey = levelKey;
     selectedLevelButton.getStyleClass().add("level-selected");
     updateStartButtonState();
   }
