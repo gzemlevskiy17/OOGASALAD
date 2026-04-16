@@ -1,6 +1,7 @@
 package oogasalad.controller.core.internal;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
 import oogasalad.controller.accounts.internal.AuthControllerImpl;
@@ -8,6 +9,8 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
+import oogasalad.data.api.LevelLoader;
+import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.model.auth.api.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.view.accounts.internal.CreateAccountScreen;
@@ -60,12 +63,15 @@ public class ScreenFactory {
 
   // LEVEL PATH MAP
   private static final Map<String, String> LEVEL_PATHS = Map.of(
-      "forest_first", "oogasalad_team03/data/forest/first.json",
-      "desert_first", "oogasalad_team03/data/desert/first.json",
-      "moon_first", "oogasalad_team03/data/moon/first.json",
-      "glacier_first", "oogasalad_team03/data/glacier/first.json",
-      "mars_first", "oogasalad_team03/data/mars/first.json"
+      "forest_first", "data/levels/forest/first.json",
+      "desert_first", "data/levels/desert/first.json",
+      "moon_first", "data/levels/moon/first.json",
+      "glacier_first", "data/levels/glacier/first.json",
+      "mars_first", "data/levels/mars/first.json"
   );
+
+  private final AtomicReference<String> selectedLevelPath =
+      new AtomicReference<>(LEVEL_PATHS.get("forest_first"));
 
   public ScreenFactory(ScreenManager screenManager) {
     this.screenManager = screenManager;
@@ -74,6 +80,15 @@ public class ScreenFactory {
         this::guardedOutcome,
         this::handleAuthError
     );
+  }
+
+  private void onLevelSelected(String worldKey, String levelKey) {
+    String mapKey = worldKey + "_" + levelKey;
+    String levelPath = LEVEL_PATHS.get(mapKey);
+    if (levelPath == null) {
+      throw new IllegalArgumentException("No level file mapped for: " + mapKey);
+    }
+    selectedLevelPath.set(levelPath);
   }
 
   /**
@@ -91,13 +106,23 @@ public class ScreenFactory {
         new AuthoringEntryScreenImpl(this::guardedOutcome));
     screenManager.registerScreen(AUTHORING_SCREEN_KEY,
         new AuthoringScreenImpl(this::guardedOutcome));
+
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
-        new PlayerEntryAppScreen(this::guardedOutcome));
+        new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected));
+
     vehicleBuilderScreen = new VehicleBuilderAppScreen(this::guardedOutcome);
     screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);
+
+    LevelLoader levelLoader = new LevelLoaderImpl();
+    GameplaySessionFactoryImpl sessionFactory = new GameplaySessionFactoryImpl(
+        levelLoader,
+        selectedLevelPath::get
+    );
+
     screenManager.registerScreen(GAMEPLAY_APP_SCREEN_KEY,
-        new GamePlayScreenCoordinator(this::guardedOutcome, new GameplaySessionFactoryImpl(),
+        new GamePlayScreenCoordinator(this::guardedOutcome, sessionFactory,
             vehicleBuilderScreen::getVehicleLayout));
+
     screenManager.registerScreen(WIN_APP_SCREEN_KEY, new WinAppScreen(this::guardedOutcome));
     screenManager.registerScreen(LOSE_APP_SCREEN_KEY, new LoseAppScreen(this::guardedOutcome));
   }

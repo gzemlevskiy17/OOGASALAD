@@ -1,6 +1,7 @@
 package oogasalad.controller.player.internal;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -10,6 +11,7 @@ import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
 import oogasalad.model.engine.ImpulseCollisionSolver;
@@ -20,6 +22,7 @@ import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.VehicleComponent;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
@@ -47,6 +50,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double WORLD_HEIGHT = 1600.0;
 
   private final VehicleFactory vehicleFactory = new VehicleFactory();
+  private final LevelLoader levelLoader;
+  private final Supplier<String> levelPathSupplier;
+
+  public GameplaySessionFactoryImpl(
+      LevelLoader levelLoader,
+      Supplier<String> levelPathSupplier
+  ) {
+    this.levelLoader = levelLoader;
+    this.levelPathSupplier = levelPathSupplier;
+  }
 
   private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
     ImageView imageView = new ImageView(spriteCache.get(sr.getSpritePath()));
@@ -65,10 +78,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       VehicleLayout layout) {
     screen.getGameLayer().getChildren().clear();
 
-    World world = buildWorldForCurrentLevel(layout);
+    GameConfig config = buildConfig();
+    World world = buildWorld(config, layout);
     GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl(),
         new ImpulseCollisionSolver());
-    GameConfig config = buildConfig();
 
     WinConditionChecker winChecker = buildWinChecker();
     LossConditionChecker lossChecker = buildLossChecker();
@@ -81,6 +94,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     if (viewWidth <= 0) viewWidth = 1280;
     if (viewHeight <= 0) viewHeight = 720;
 
+    // World boundary overlay (drawn in world space, projected each frame)
     Rectangle worldBounds = new Rectangle(WORLD_WIDTH, WORLD_HEIGHT);
     worldBounds.setManaged(false);
     worldBounds.setFill(Color.TRANSPARENT);
@@ -88,6 +102,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     worldBounds.setStrokeWidth(2.0);
     worldBounds.getStrokeDashArray().addAll(10.0, 8.0);
 
+    // keep the world boundary behind balls
     screen.getGameLayer().getChildren().add(worldBounds);
     worldBounds.toBack();
 
@@ -118,6 +133,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     Renderer renderer = (cameraRef, objects) -> {
       objectRenderer.render(cameraRef, objects);
+
+      // project world border into viewport using camera transform
       worldBounds.setLayoutX(-cameraRef.getX());
       worldBounds.setLayoutY(-cameraRef.getY());
     };
@@ -145,7 +162,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       }
 
       String id = obj.getTag();
-      if (obj instanceof oogasalad.model.engine.internal.components.VehicleComponent vc) {
+      if (obj instanceof VehicleComponent vc) {
         id = vc.getDisplayName().toLowerCase();
       }
 
@@ -161,8 +178,14 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     }
   }
 
-  private World buildWorldForCurrentLevel(VehicleLayout layout) {
+  private World buildWorld(GameConfig config, VehicleLayout layout) {
     World world = new WorldImpl();
+
+    String levelPath = levelPathSupplier.get();
+    if (levelPath != null && !levelPath.isBlank()) {
+      levelLoader.loadLevel(levelPath, world, config);
+    }
+
     vehicleFactory.buildVehicle(layout, world, 350, 300);
     return world;
   }
@@ -183,6 +206,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
 
+  // Hierarchy of objects to follow
   private GameObject resolveControlledPlayer(World world) {
     GameObject pig = world.getObjectsByTag(DefaultTag.PIGS.value()).stream().findFirst()
         .orElse(null);
