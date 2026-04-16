@@ -18,29 +18,22 @@ class FollowPlayerCameraBehaviorTest {
 
   @Test
   void constructor_nullPlayerSupplier_throws() {
-    assertThrows(IllegalArgumentException.class,
-        () -> new FollowPlayerCameraBehavior(null, 100, 100));
+    assertThrows(IllegalArgumentException.class, () -> new FollowPlayerCameraBehavior(null));
   }
 
   @Test
-  void constructor_zeroViewWidth_throws() {
+  void constructor_nullPlayerSupplier_withOffsetsAndSmoothing_throws() {
     assertThrows(IllegalArgumentException.class,
-        () -> new FollowPlayerCameraBehavior(() -> makePlayer(0, 0), 0, 100));
+        () -> new FollowPlayerCameraBehavior(null, 0, 0, 1.0));
   }
 
   // ── centering logic (smoothing = 1.0 → instant movement) ──────────────────
 
   @Test
-  void constructor_negativeViewHeight_throws() {
-    assertThrows(IllegalArgumentException.class,
-        () -> new FollowPlayerCameraBehavior(() -> makePlayer(0, 0), 100, -1));
-  }
-
-  @Test
   void update_centersOnPlayer_noOffset() {
     CameraImpl camera = new CameraImpl(0, 0, 100, 100);
     FollowPlayerCameraBehavior behavior =
-        new FollowPlayerCameraBehavior(() -> makePlayer(200, 300), 100, 100, 0, 0, 1.0);
+        new FollowPlayerCameraBehavior(() -> makePlayer(200, 300), 0, 0, 1.0);
 
     behavior.update(camera);
 
@@ -54,7 +47,7 @@ class FollowPlayerCameraBehaviorTest {
   void update_appliesXOffset() {
     CameraImpl camera = new CameraImpl(0, 0, 100, 100);
     FollowPlayerCameraBehavior behavior =
-        new FollowPlayerCameraBehavior(() -> makePlayer(100, 100), 100, 100, 20, 0, 1.0);
+        new FollowPlayerCameraBehavior(() -> makePlayer(100, 100), 20, 0, 1.0);
 
     behavior.update(camera);
 
@@ -66,7 +59,7 @@ class FollowPlayerCameraBehaviorTest {
   void update_appliesYOffset() {
     CameraImpl camera = new CameraImpl(0, 0, 100, 100);
     FollowPlayerCameraBehavior behavior =
-        new FollowPlayerCameraBehavior(() -> makePlayer(100, 100), 100, 100, 0, -15, 1.0);
+        new FollowPlayerCameraBehavior(() -> makePlayer(100, 100), 0, -15, 1.0);
 
     behavior.update(camera);
 
@@ -74,13 +67,11 @@ class FollowPlayerCameraBehaviorTest {
     assertEquals(35.0, camera.getY(), EPS);
   }
 
-  // ── null player ───────────────────────────────────────────────────────────
-
   @Test
   void update_playerAtOrigin_centersOnOrigin() {
     CameraImpl camera = new CameraImpl(999, 999, 200, 150);
     FollowPlayerCameraBehavior behavior =
-        new FollowPlayerCameraBehavior(() -> makePlayer(0, 0), 200, 150, 0, 0, 1.0);
+        new FollowPlayerCameraBehavior(() -> makePlayer(0, 0), 0, 0, 1.0);
 
     behavior.update(camera);
 
@@ -88,13 +79,13 @@ class FollowPlayerCameraBehaviorTest {
     assertEquals(-75.0, camera.getY(), EPS);   // 0 - 150/2 = -75
   }
 
-  // ── smoothing ─────────────────────────────────────────────────────────────
+  // ── null player ───────────────────────────────────────────────────────────
 
   @Test
   void update_nullPlayer_keepsCameraAtCurrentPosition() {
     CameraImpl camera = new CameraImpl(42.0, 77.0, 100, 100);
     FollowPlayerCameraBehavior behavior =
-        new FollowPlayerCameraBehavior(() -> null, 100, 100, 0, 0, 1.0);
+        new FollowPlayerCameraBehavior(() -> null, 0, 0, 1.0);
 
     behavior.update(camera);
 
@@ -102,12 +93,13 @@ class FollowPlayerCameraBehaviorTest {
     assertEquals(77.0, camera.getY(), EPS);
   }
 
+  // ── smoothing ─────────────────────────────────────────────────────────────
+
   @Test
   void update_smoothingZero_cameraDoesNotMove() {
-    // smoothing = 0 → lerp(from, to, 0) = from → camera never moves
     CameraImpl camera = new CameraImpl(10.0, 20.0, 100, 100);
     FollowPlayerCameraBehavior behavior =
-        new FollowPlayerCameraBehavior(() -> makePlayer(500, 500), 100, 100, 0, 0, 0.0);
+        new FollowPlayerCameraBehavior(() -> makePlayer(500, 500), 0, 0, 0.0);
 
     behavior.update(camera);
 
@@ -115,28 +107,51 @@ class FollowPlayerCameraBehaviorTest {
     assertEquals(20.0, camera.getY(), EPS);
   }
 
-  // ── clamping (via parent constructor) ────────────────────────────────────
-
   @Test
   void update_smoothingHalf_cameraMidway() {
-    // Camera at (0,0), target at (100,100) → after one step with t=0.5 → (50,50)
     CameraImpl camera = new CameraImpl(0.0, 0.0, 100, 100);
-    // Player at (150,150) → desired = 150 - 50 = 100 on each axis
     FollowPlayerCameraBehavior behavior =
-        new FollowPlayerCameraBehavior(() -> makePlayer(150, 150), 100, 100, 0, 0, 0.5);
+        new FollowPlayerCameraBehavior(() -> makePlayer(150, 150), 0, 0, 0.5);
 
     behavior.update(camera);
 
-    // lerp(0, 100, 0.5) = 50
+    // desired = 150 - 50 = 100 on each axis; lerp(0, 100, 0.5) = 50
     assertEquals(50.0, camera.getX(), EPS);
     assertEquals(50.0, camera.getY(), EPS);
   }
 
+  // ── world clamping (finite world width/height on behavior) ─────────────────
+
+  @Test
+  void update_finiteWorld_clampsDesiredXToMaxScroll() {
+    CameraImpl camera = new CameraImpl(0, 0, 100, 100);
+    FollowPlayerCameraBehavior behavior = new FollowPlayerCameraBehavior(
+        () -> makePlayer(300, 100), 0, 0, 1.0, 200, Double.POSITIVE_INFINITY);
+
+    behavior.update(camera);
+
+    // unclamped desired X = 250; maxX = 200 - 100 = 100
+    assertEquals(100.0, camera.getX(), EPS);
+    assertEquals(50.0, camera.getY(), EPS);
+  }
+
+  @Test
+  void update_finiteWorld_clampsDesiredToZeroWhenPlayerWouldLeaveTopLeft() {
+    CameraImpl camera = new CameraImpl(50, 50, 100, 100);
+    FollowPlayerCameraBehavior behavior =
+        new FollowPlayerCameraBehavior(() -> makePlayer(0, 0), 0, 0, 1.0, 200, 200);
+
+    behavior.update(camera);
+
+    assertEquals(0.0, camera.getX(), EPS);
+    assertEquals(0.0, camera.getY(), EPS);
+  }
+
+  // ── AbstractCameraBehavior validation (base class, not FollowPlayer-specific)
+
   @Test
   void abstractBehavior_invalidClampBounds_throws() {
-    // minX > maxX → should throw on construction
     assertThrows(IllegalArgumentException.class, () ->
-        // Use an anonymous subclass to test AbstractCameraBehavior clamp validation directly
         new AbstractCameraBehavior(1.0, true, 100, 50, 0, 100) {
           @Override
           protected double desiredX(oogasalad.view.core.api.Camera c) {
@@ -182,12 +197,10 @@ class FollowPlayerCameraBehaviorTest {
         });
   }
 
-  // ── helper ───────────────────────────────────────────────────────────────
-
   @Test
   void abstractBehavior_nullCamera_throws() {
     FollowPlayerCameraBehavior behavior =
-        new FollowPlayerCameraBehavior(() -> makePlayer(0, 0), 100, 100);
+        new FollowPlayerCameraBehavior(() -> makePlayer(0, 0));
     assertThrows(IllegalArgumentException.class, () -> behavior.update(null));
   }
 }
