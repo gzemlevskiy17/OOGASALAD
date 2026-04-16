@@ -51,16 +51,6 @@ class AuthoringControllerImplTest {
   }
 
   @Test
-  void handleGridInteraction_drawTool_occupiedCell_doesNotAddDuplicate() {
-    toolSelector.setActiveTool(ToolType.DRAW);
-
-    controller.handleGridInteraction(20.0, 20.0);
-    controller.handleGridInteraction(20.0, 20.0);
-
-    assertEquals(1, world.objectCount());
-  }
-
-  @Test
   void handleGridInteraction_anyTool_alwaysRefreshesCanvas() {
     toolSelector.setActiveTool(ToolType.DRAW);
 
@@ -160,6 +150,81 @@ class AuthoringControllerImplTest {
     controller.clearLevel();
 
     assertEquals(0, world.objectCount());
+  }
+
+  @Test
+  void paint_onEmptyGrid_fillsAllConnectedCells() {
+    toolSelector.setActiveTool(ToolType.PAINT);
+
+    controller.handleGridInteraction(20.0, 20.0);
+
+    assertEquals(100, world.objectCount());
+  }
+
+  @Test
+  void paint_onOccupiedCell_doesNothing() {
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+    assertEquals(1, world.objectCount());
+
+    toolSelector.setActiveTool(ToolType.PAINT);
+    controller.handleGridInteraction(20.0, 20.0);
+
+    assertEquals(1, world.objectCount());
+  }
+
+  @Test
+  void autoFill_closedShape_fillsSmallerInterior() {
+    // Build a 3x3 hollow rectangle whose interior is the single cell (2, 2).
+    // Perimeter cells: (1,1)(2,1)(3,1)(1,2)(3,2)(1,3)(2,3)(3,3) — 8 blocks.
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(40.0, 40.0);
+    controller.handleGridInteraction(80.0, 40.0);
+    controller.handleGridInteraction(120.0, 40.0);
+    controller.handleGridInteraction(40.0, 80.0);
+    controller.handleGridInteraction(120.0, 80.0);
+    controller.handleGridInteraction(40.0, 120.0);
+    controller.handleGridInteraction(80.0, 120.0);
+    controller.handleGridInteraction(120.0, 120.0);
+    assertEquals(8, world.objectCount());
+
+    // Drawing on occupied wall cell (2, 1) triggers overlap detection.
+    // The interior region (1 cell) is smaller than the exterior (91 cells),
+    // so auto-fill places a block in the interior only.
+    controller.handleGridInteraction(80.0, 40.0);
+
+    assertEquals(9, world.objectCount());
+  }
+
+  @Test
+  void autoFill_noClosedShape_fillsEntireOpenRegion() {
+    // With only a single block placed, clicking on it triggers auto-fill.
+    // Since grid edges are treated as boundaries, the surrounding open region
+    // is considered "enclosed" and gets filled entirely.
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(200.0, 200.0);
+    assertEquals(1, world.objectCount());
+
+    controller.handleGridInteraction(200.0, 200.0);
+
+    assertEquals(100, world.objectCount());
+  }
+
+  @Test
+  void autoFill_unevenSides_fillsSmallerSide() {
+    // Vertical wall at column 3 divides the grid into a left region
+    // (3 cols x 10 rows = 30 cells) and a right region (6 cols x 10 rows = 60).
+    toolSelector.setActiveTool(ToolType.DRAW);
+    for (int r = 0; r < 10; r++) {
+      controller.handleGridInteraction(140.0, r * 40.0 + 20.0);
+    }
+    assertEquals(10, world.objectCount());
+
+    // Drawing on the wall at (3, 5) triggers auto-fill. The smaller left
+    // region gets filled (30 cells), not the larger right region.
+    controller.handleGridInteraction(140.0, 220.0);
+
+    assertEquals(40, world.objectCount());
   }
 
   // --- Test doubles ---
