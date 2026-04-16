@@ -225,8 +225,17 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       contactPoints.add(contactPointPhysics);
     }
 
-    if (contactPoints.isEmpty() || totalDepth <= 1e-9) {
-      applyPositionalCorrection(collision);
+    if (totalDepth == 0 || contactPoints.isEmpty()) {
+      return;
+    }
+    // Only resolve if the pair is actually approaching along the normal.
+    // Otherwise the impulse would drag separating objects back together.
+    double approachSpeed = 0;
+    for (ContactPointPhysics contactPointPhysics : contactPoints) {
+      approachSpeed += contactPointPhysics.relativeVelocity.dot(referenceUnitNormal)
+          * (contactPointPhysics.depth / totalDepth);
+    }
+    if (approachSpeed >= 0) {
       return;
     }
 
@@ -240,7 +249,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       referenceCrossProductSum +=
           contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse; //TODO: make impulse vector?
-      referenceCrossProductSum +=
+      incidentCrossProductSum +=
           contactPointPhysics.positionFromIncident.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse;
     }
@@ -257,7 +266,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
     referenceObjectState.setLinearVelocity(referenceObjectState.getLinearVelocity()
         .subtract(referenceUnitNormal.multiply(impulseSum * invMass(referenceObject))));
     incidentObjectState.setLinearVelocity(incidentObjectState.getLinearVelocity()
-        .subtract(referenceUnitNormal.multiply(impulseSum * invMass(incidentObject))));
+        .add(referenceUnitNormal.multiply(impulseSum * invMass(incidentObject))));
   }
 
   /**
@@ -342,33 +351,31 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision detected collision pair
    */
   private void applyPositionalCorrection(Collision collision) {
+    double correctionFraction = 0.8; //TODO: put into properties file
+    double penetrationSlop = 0.01;
+
     GameObject referenceObject = collision.getReferenceObject();
     GameObject incidentObject = collision.getIncidentObject();
     ObjectState referenceObjectState = referenceObject.getState();
     ObjectState incidentObjectState = incidentObject.getState();
 
-    double invRef = invMass(referenceObject);
-    double invInc = invMass(incidentObject);
-    double totalInvMass = invRef + invInc;
+    double totalInvMass = invMass(referenceObject) + invMass(incidentObject);
     if (totalInvMass == 0) {
       return;
     }
 
-    // Full separation against static/infinite-mass bodies; softer correction dynamic–dynamic.
-    double correctionFraction = (invRef == 0 || invInc == 0) ? 1.0 : 0.4;
-
     Vector penetration = collision.getPenetration();
-    double penLen = penetration.magnitude();
-    if (penLen <= 1e-9) {
+    double depth = penetration.magnitude();
+    if (depth <= penetrationSlop) {
       return;
     }
-    double magnitude = penLen * correctionFraction / totalInvMass;
+    double magnitude = (depth - penetrationSlop) * correctionFraction / totalInvMass;
     Vector correction = penetration.normalize().multiply(magnitude);
 
     referenceObjectState.setLinearPosition(referenceObjectState.getLinearPosition()
-        .subtract(correction.multiply(invRef)));
+        .subtract(correction.multiply(invMass(referenceObject))));
     incidentObjectState.setLinearPosition(incidentObjectState.getLinearPosition()
-        .add(correction.multiply(invInc)));
+        .add(correction.multiply(invMass(incidentObject))));
   }
 
   private static double invMass(GameObject obj) {

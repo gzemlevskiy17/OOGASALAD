@@ -8,6 +8,7 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,6 +53,7 @@ public class LevelLoaderImpl implements LevelLoader {
     VALIDATOR.validate(root);
 
     loadTerrain(root.path("level").path("terrain"), world, fileName);
+    loadFinishLine(root.path("level").path("finish_line"), world);
     LOG.info("Level loaded from {}", fileName);
   }
 
@@ -71,6 +73,17 @@ public class LevelLoaderImpl implements LevelLoader {
     for (JsonNode entry : terrainArray) {
       world.addObject(parseTerrain(entry));
     }
+  }
+
+  private void loadFinishLine(JsonNode node, World world) {
+    if (node.isMissingNode()) {
+      return;
+    }
+    double x = node.path("x").asDouble(0);
+    double y = node.path("y").asDouble(0);
+    double width = node.path("width").asDouble(20);
+    double height = node.path("height").asDouble(400);
+    world.addObject(new GoalLineComponent(x, y, width, height));
   }
 
   private TerrainBlock parseTerrain(JsonNode entry) {
