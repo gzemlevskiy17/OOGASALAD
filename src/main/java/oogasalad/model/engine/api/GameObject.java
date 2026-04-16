@@ -1,44 +1,32 @@
 package oogasalad.model.engine.api;
 
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.ObjectState;
+import oogasalad.model.engine.StaticState;
+import oogasalad.model.engine.internal.components.DynamicComponent;
+import oogasalad.model.engine.internal.components.StaticComponent;
 import oogasalad.view.core.api.Renderable;
 
-//TODO: complete comments
+//TODO: is the interface needed?
+//TODO: more detailed comments
+
 /**
  * Base entity for the simulation. Exposes physical properties.
  */
 public interface GameObject extends Renderable {
+
   String getTag();
+
   void setTag(String tag);
-
-  //TODO: should these be returned immutably?
-  double getMass();
-
-  Vector getForce();
-
-  void setForce(Vector force);
-
-  void setMass(double mass);
 
   ConvexPolygon getPolygon();
 
-  ObjectState getState();
+  StaticState getStaticState();
 
-  void setState(ObjectState state);
+  void setStaticState(StaticState state);
 
-  double getMomentOfInertia();
+  void collideWith(GameObject other);
 
-  void setMomentOfInertia(double momentOfInertia);
+  void handleCollision(StaticComponent component);
 
-  double getRestitution();
-
-  void setRestitution(double restitution);
-
-  double getFriction();
-  boolean isActive();
-  boolean isAffectedByGravity();
-  boolean isTrigger();
-
-  void addForce(Vector force);
+  void handleCollision(DynamicComponent component);
 }
