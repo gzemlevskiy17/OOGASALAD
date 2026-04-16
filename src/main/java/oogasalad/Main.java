@@ -24,6 +24,7 @@ public class Main extends Application {
     public void start(Stage stage) {
         ScreenManager screenManager = new ScreenManagerImpl(stage);
 
+        // Temporary
         VehicleAssemblyProvider vehicleAssemblyProvider = new VehicleAssemblyProviderImpl();
         VehicleFactory vehicleFactory = new VehicleFactoryImpl();
 
