@@ -169,7 +169,7 @@ public class AuthoringScreenImpl implements AppScreen {
     canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
     canvasScrollPane.setFitToWidth(false);
     canvasScrollPane.setFitToHeight(false);
-    canvasScrollPane.setPannable(true);
+    canvasScrollPane.setPannable(false);
     canvasScrollPane.getStyleClass().add("authoring-canvas-scroll");
     wireEdgePan(canvasScrollPane);
     wireZoomScroll(canvasScrollPane);
