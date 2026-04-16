@@ -2,6 +2,7 @@ package oogasalad.controller.player.internal;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -70,12 +71,25 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     this.levelPathSupplier = levelPathSupplier;
   }
 
-  private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
-    ImageView imageView = new ImageView(spriteCache.get(sr.getSpritePath()));
-    imageView.setFitWidth(sr.getSpriteWidth());
-    imageView.setFitHeight(sr.getSpriteHeight());
-    imageView.setTranslateX(-sr.getSpriteWidth() / 2);
-    imageView.setTranslateY(-sr.getSpriteHeight() / 2);
+  private static Node createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
+    javafx.scene.image.Image image = spriteCache.get(sr.getSpritePath());
+    double w = sr.getSpriteWidth();
+    double h = sr.getSpriteHeight();
+    if (image == null) {
+      Rectangle rect = new Rectangle(w, h);
+      rect.setManaged(false);
+      rect.setFill(Color.DODGERBLUE);
+      rect.setStroke(Color.BLACK);
+      rect.setStrokeWidth(1.0);
+      rect.setTranslateX(-w / 2);
+      rect.setTranslateY(-h / 2);
+      return rect;
+    }
+    ImageView imageView = new ImageView(image);
+    imageView.setFitWidth(w);
+    imageView.setFitHeight(h);
+    imageView.setTranslateX(-w / 2);
+    imageView.setTranslateY(-h / 2);
     return imageView;
   }
 
