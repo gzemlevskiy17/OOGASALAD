@@ -190,6 +190,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     final double maxY = WORLD_HEIGHT - BALL_RADIUS;
 
     return elapsedTime -> {
+      for (Joint joint : world.getJoints()) {
+        joint.apply(elapsedTime);
+      }
       for (GameObject obj : world.getObjects()) {
         obj.getState().integrateObjectState(elapsedTime);
         double x = obj.getState().getLinearPosition().x();
