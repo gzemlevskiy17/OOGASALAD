@@ -96,7 +96,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     screen.getGameLayer().getChildren().clear();
 
     GameConfig config = buildConfig();
-    World world = buildWorldForCurrentLevel(config);
+    World world = buildWorldForCurrentLevel(config, buildWorldForCurrentLevel(config, vehicleAssemblyProvider.getCurrentAssembly()));
     GameEngine engine = buildEngine(world);
 
     WinConditionChecker winChecker = buildWinChecker();
