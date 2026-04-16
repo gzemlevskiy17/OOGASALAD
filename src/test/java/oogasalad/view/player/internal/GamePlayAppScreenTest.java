@@ -39,20 +39,6 @@ class GamePlayAppScreenTest extends DukeApplicationTest {
   }
 
   @Test
-  void tempWinButton_invokesGameWon() {
-    clickOn("TEMP WIN");
-    assertEquals(1, capturedOutcomes.size());
-    assertEquals(Outcome.GAME_WON, capturedOutcomes.get(0));
-  }
-
-  @Test
-  void tempLoseButton_invokesGameLost() {
-    clickOn("TEMP LOSE");
-    assertEquals(1, capturedOutcomes.size());
-    assertEquals(Outcome.GAME_LOST, capturedOutcomes.get(0));
-  }
-
-  @Test
   void resetButton_invokesOnReset() {
     AtomicInteger resets = new AtomicInteger();
     runAsJFXAction(() -> screen.setOnReset(resets::incrementAndGet));
