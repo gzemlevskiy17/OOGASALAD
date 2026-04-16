@@ -226,8 +226,18 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
 
+  // Hierararchy of objects to follow
   private GameObject resolveControlledPlayer(World world) {
-    return world.getObjectsByTag(DefaultTag.PIGS.value()).stream().findFirst().orElse(null);
+    GameObject pig = world.getObjectsByTag(DefaultTag.PIGS.value()).stream().findFirst().orElse(null);
+    if (pig != null) return pig;
+
+    GameObject vehicle = world.getObjectsByTag(DefaultTag.VEHICLE.value()).stream().findFirst().orElse(null);
+    if (vehicle != null) return vehicle;
+
+    GameObject dynamic = world.getObjectsByTag(DefaultTag.DYNAMIC.value()).stream().findFirst().orElse(null);
+    if (dynamic != null) return dynamic;
+
+    return world.getObjects().stream().findFirst().orElse(null);
   }
 
 }
