@@ -10,6 +10,7 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  * Factory contract for creating one gameplay session bound to a gameplay screen.
  *
  * @author Iurii Beliaev
+ * @author Paulina Vvedenskaya
  */
 public interface GameplaySessionFactory {
 

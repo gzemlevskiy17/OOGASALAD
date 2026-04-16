@@ -33,9 +33,11 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  * renderer, input, win/loss checks, and controller) for one playable session.
  *
  * @author Iurii Beliaev
+ * @author Paulina Vvedenskaya
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
+  private static final double BALL_RADIUS = 12.0;
   private static final double WORLD_WIDTH = 2600.0;
   private static final double WORLD_HEIGHT = 1600.0;
 

@@ -48,6 +48,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     super(onOutcome);
   }
 
+  /**
+   * Reads the current grid state and returns it as a VehicleLayout. Called by the gameplay factory
+   * just before the session starts.
+   */
   public VehicleLayout getVehicleLayout() {
     List<PlacedComponent> placements = new ArrayList<>();
     for (Map.Entry<String, String> entry : gridState.entrySet()) {

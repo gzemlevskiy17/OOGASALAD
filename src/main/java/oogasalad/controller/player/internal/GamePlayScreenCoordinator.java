@@ -15,6 +15,7 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  * actions while exposing a single {@link AppScreen} to the screen manager.
  *
  * @author Iurii Beliaev
+ * @author Paulina Vvedenskaya
  */
 
 // Keep GamePlayAppScreen view-only
