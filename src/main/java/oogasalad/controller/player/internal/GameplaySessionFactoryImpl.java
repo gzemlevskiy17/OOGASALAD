@@ -179,14 +179,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return world;q
   }
 
-  private GameComponent createMovingCircle(double x, double y, double vx, double vy) {
-    DynamicComponent c = new DynamicComponent(x, y, 0, 1.0, 0.1) {
-    };
-    c.setAffectedByGravity(false);
-    c.getState().setLinearVelocity(new Vector(vx, vy));
-    return c;
-  }
-
   private GameEngine buildEngine(World world) {
     final double minX = BALL_RADIUS;
     final double maxX = WORLD_WIDTH - BALL_RADIUS;
