@@ -1,5 +1,6 @@
 package oogasalad.controller.core.internal;
 
+import java.util.Map;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
 import oogasalad.controller.accounts.internal.AuthControllerImpl;
@@ -56,6 +57,15 @@ public class ScreenFactory {
   // Routes auth errors to whichever screen triggered the action
   private Consumer<String> activeErrorDisplay = msg -> {
   };
+
+  // LEVEL PATH MAP
+  private static final Map<String, String> LEVEL_PATHS = Map.of(
+      "forest_first", "oogasalad_team03/data/forest/first.json",
+      "desert_first", "oogasalad_team03/data/desert/first.json",
+      "moon_first", "oogasalad_team03/data/moon/first.json",
+      "glacier_first", "oogasalad_team03/data/glacier/first.json",
+      "mars_first", "oogasalad_team03/data/mars/first.json"
+  );
 
   public ScreenFactory(ScreenManager screenManager) {
     this.screenManager = screenManager;

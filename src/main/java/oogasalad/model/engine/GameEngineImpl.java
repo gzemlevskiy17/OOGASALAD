@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
+import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
@@ -40,9 +41,11 @@ import oogasalad.model.engine.api.World;
  */
 public class GameEngineImpl implements GameEngine {
 
-  private World world;
-  private CollisionDetector collisionDetector;
-  private CollisionSolver collisionSolver;
+  private static final double GRAVITY = 400.0;
+
+  private final World world;
+  private final CollisionDetector collisionDetector;
+  private final CollisionSolver collisionSolver;
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -84,13 +87,33 @@ public class GameEngineImpl implements GameEngine {
 
     //TODO: do this only for dynamic objects
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
+      accumulateForces(gameObject);
+      applyForcesToAcceleration(gameObject);
       gameObject.getState().integrateObjectState(elapsedTime);
+      gameObject.setForce(new Vector(0, 0));
     }
 
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
 //    }
 
+  }
+
+  private void accumulateForces(GameObject obj) {
+    if (obj.isAffectedByGravity()) {
+      obj.addForce(new Vector(0, GRAVITY * obj.getMass()));
+    }
+    if (obj instanceof Driveable driveable) {
+      obj.addForce(driveable.getDriveForce());
+    }
+  }
+
+  private void applyForcesToAcceleration(GameObject obj) {
+    double mass = obj.getMass();
+    if (mass > 0) {
+      Vector acc = obj.getForce().multiply(1.0 / mass);
+      obj.getState().setLinearAcceleration(acc);
+    }
   }
 
   //TODO: implement solving of collisions in multiple small steps

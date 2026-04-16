@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DriveComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -68,7 +69,11 @@ public class VehicleFactory {
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
     if (WHEEL_TYPES.contains(typeA) || WHEEL_TYPES.contains(typeB)) {
-      return new RevoluteJoint(a, b);
+      Vector posA = a.getState().getLinearPosition();
+      Vector posB = b.getState().getLinearPosition();
+      Vector localAnchorA = posB.subtract(posA).multiply(0.5);
+      Vector localAnchorB = posA.subtract(posB).multiply(0.5);
+      return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
     }
     return new RigidJoint(a, b);
   }

@@ -48,6 +48,16 @@ public class GamePlayScreenCoordinator implements AppScreen {
     view.setOnReset(() -> {
       if (session != null) session.reset();
     });
+    view.setOnToolActivated(buttonId -> {
+      if (session != null) {
+        session.handleButtonPress(buttonId);
+      }
+    });
+    view.setOnToolDeactivated(buttonId -> {
+      if (session != null) {
+        session.handleButtonPress(buttonId);
+      }
+    });
   }
 
   /**

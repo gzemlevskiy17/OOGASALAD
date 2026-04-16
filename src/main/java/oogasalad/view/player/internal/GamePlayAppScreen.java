@@ -27,6 +27,10 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private Pane gameLayer;
   private Runnable onPause = () -> { };
   private Runnable onReset = () -> { };
+  private java.util.function.Consumer<String> onToolActivated = id -> {
+  };
+  private java.util.function.Consumer<String> onToolDeactivated = id -> {
+  };
 
   public GamePlayAppScreen(Consumer<Outcome> onOutcome) {
     super(onOutcome);
@@ -50,6 +54,16 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     } else {
       this.onReset = onReset;
     }
+  }
+
+  public void setOnToolActivated(java.util.function.Consumer<String> onToolActivated) {
+    this.onToolActivated = onToolActivated != null ? onToolActivated : id -> {
+    };
+  }
+
+  public void setOnToolDeactivated(java.util.function.Consumer<String> onToolDeactivated) {
+    this.onToolDeactivated = onToolDeactivated != null ? onToolDeactivated : id -> {
+    };
   }
 
   @Override
@@ -129,7 +143,11 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
       toolBtn.getStyleClass().add("tool-button");
 
       toolBtn.setOnAction(e -> {
-        // TODO: Update GameController
+        if (toolBtn.isSelected()) {
+          onToolActivated.accept(tool);
+        } else {
+          onToolDeactivated.accept(tool);
+        }
       });
 
       container.getChildren().add(toolBtn);
