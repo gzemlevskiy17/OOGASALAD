@@ -15,9 +15,8 @@ import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.components.DynamicComponent;
-import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.player.api.LossConditionChecker;
+import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
@@ -37,8 +36,6 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
-  // Constants for a demonstration
-  private static final double BALL_RADIUS = 12.0;
   private static final double WORLD_WIDTH = 2600.0;
   private static final double WORLD_HEIGHT = 1600.0;
 
@@ -59,11 +56,12 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
    * @return fully assembled gameplay session ready to start
    */
   @Override
-  public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome) {
+  public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome,
+      VehicleLayout layout) {
     // Re-entry / retry can reuse the same view instance, so clear stale nodes from prior sessions.
     screen.getGameLayer().getChildren().clear();
 
-    World world = buildWorldForCurrentLevel();
+    World world = buildWorldForCurrentLevel(layout);
     GameEngine engine = buildEngine(world);
     GameConfig config = buildConfig();
 
@@ -128,31 +126,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new GameplaySession(controller);
   }
 
-  private World buildWorldForCurrentLevel() {
+  private World buildWorldForCurrentLevel(VehicleLayout layout) {
     World world = new WorldImpl();
-
-    // Followed "player" ball (first object is used by resolveControlledPlayer)
-    world.addComponent(createMovingCircle(350, 300, 180, 120));
-
-    // Other moving balls
-    world.addComponent(createMovingCircle(900, 500, -140, 100));
-    world.addComponent(createMovingCircle(1500, 900, 160, -130));
-    world.addComponent(createMovingCircle(2100, 400, -120, -90));
-
-    // Idle balls (v=0) so camera motion is obvious
-    world.addComponent(createMovingCircle(200, 1200, 0, 0));
-    world.addComponent(createMovingCircle(1200, 200, 0, 0));
-    world.addComponent(createMovingCircle(2400, 1300, 0, 0));
-    world.addComponent(createMovingCircle(2500, 300, 0, 0));
+    new VehicleFactory().buildVehicle(layout, world, 350, 300);
     return world;
-  }
-
-  private GameComponent createMovingCircle(double x, double y, double vx, double vy) {
-    DynamicComponent c = new DynamicComponent(x, y, 0, 1.0, 0.1) {
-    };
-    c.setAffectedByGravity(false);
-    c.getState().setLinearVelocity(new Vector(vx, vy));
-    return c;
   }
 
   private GameEngine buildEngine(World world) {

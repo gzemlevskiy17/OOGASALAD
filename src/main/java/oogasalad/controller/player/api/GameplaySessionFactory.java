@@ -3,6 +3,7 @@ package oogasalad.controller.player.api;
 import java.util.function.Consumer;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.internal.GameplaySession;
+import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.view.player.internal.GamePlayAppScreen;
 
 /**
@@ -19,5 +20,6 @@ public interface GameplaySessionFactory {
    * @param onOutcome callback for terminal gameplay outcomes
    * @return a new gameplay session
    */
-  GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome);
+  GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome,
+      VehicleLayout layout);
 }
