@@ -3,6 +3,7 @@ package oogasalad.view.player.internal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -25,13 +26,17 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.PlayerEntryScreen");
 
-  public PlayerEntryAppScreen(Consumer<Outcome> onOutcome) {
-    super(onOutcome);
-  }
-
+  private final BiConsumer<String, String> onSelectionConfirmed;
   private Button selectedWorldButton;
   private Button selectedLevelButton;
   private Button startButton;
+  private String selectedWorldKey;
+  private String selectedLevelKey;
+
+  public PlayerEntryAppScreen(Consumer<Outcome> onOutcome, BiConsumer<String, String> onSelectionConfirmed) {
+    super(onOutcome);
+    this.onSelectionConfirmed = onSelectionConfirmed;
+  }
 
   @Override
   protected BorderPane createRoot() {
