@@ -79,7 +79,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
         referenceOutwardNormal);
     if (distanceFromRightPlane < 0) {
       ContactPointPhysics contactPointPhysics = new ContactPointPhysics(clippedIncidentEdge[1],
-          -distanceFromLeftPlane);
+          -distanceFromRightPlane);
       manifoldPoints.add(contactPointPhysics);
     }
 
@@ -225,6 +225,11 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       contactPoints.add(contactPointPhysics);
     }
 
+    if (contactPoints.isEmpty() || totalDepth <= 1e-9) {
+      applyPositionalCorrection(collision);
+      return;
+    }
+
     double impulseSum = 0;
     double referenceCrossProductSum = 0;
     double incidentCrossProductSum = 0;
@@ -337,26 +342,33 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision detected collision pair
    */
   private void applyPositionalCorrection(Collision collision) {
-    double correctionFraction = 0.4; //TODO: put into properties file
-
     GameObject referenceObject = collision.getReferenceObject();
     GameObject incidentObject = collision.getIncidentObject();
     ObjectState referenceObjectState = referenceObject.getState();
     ObjectState incidentObjectState = incidentObject.getState();
 
-    double totalInvMass = invMass(referenceObject) + invMass(incidentObject);
+    double invRef = invMass(referenceObject);
+    double invInc = invMass(incidentObject);
+    double totalInvMass = invRef + invInc;
     if (totalInvMass == 0) {
       return;
     }
 
+    // Full separation against static/infinite-mass bodies; softer correction dynamic–dynamic.
+    double correctionFraction = (invRef == 0 || invInc == 0) ? 1.0 : 0.4;
+
     Vector penetration = collision.getPenetration();
-    double magnitude = penetration.magnitude() * correctionFraction / totalInvMass;
+    double penLen = penetration.magnitude();
+    if (penLen <= 1e-9) {
+      return;
+    }
+    double magnitude = penLen * correctionFraction / totalInvMass;
     Vector correction = penetration.normalize().multiply(magnitude);
 
     referenceObjectState.setLinearPosition(referenceObjectState.getLinearPosition()
-        .subtract(correction.multiply(invMass(referenceObject))));
+        .subtract(correction.multiply(invRef)));
     incidentObjectState.setLinearPosition(incidentObjectState.getLinearPosition()
-        .add(correction.multiply(invMass(incidentObject))));
+        .add(correction.multiply(invInc)));
   }
 
   private static double invMass(GameObject obj) {

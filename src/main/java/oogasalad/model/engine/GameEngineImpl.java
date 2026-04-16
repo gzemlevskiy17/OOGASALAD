@@ -42,6 +42,9 @@ import oogasalad.model.engine.api.World;
 public class GameEngineImpl implements GameEngine {
 
   private static final double GRAVITY = 400.0;
+  private static final int PHYSICS_SUBSTEPS = 4;
+  private static final int COLLISION_RESOLUTION_ITERATIONS = 6;
+  private static final int POST_INTEGRATION_STABILIZATION_PASSES = 3;
 
   private final World world;
   private final CollisionDetector collisionDetector;
@@ -81,26 +84,31 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
-    applyJointConstraints(elapsedTime);
+    double subStep = elapsedTime / PHYSICS_SUBSTEPS;
+    for (int s = 0; s < PHYSICS_SUBSTEPS; s++) {
+      applyJointConstraints(subStep);
 
-    for (GameObject gameObject : world.getObjects()) {
-      gameObject.updatePolygon();
+      for (GameObject gameObject : world.getObjects()) {
+        gameObject.updatePolygon();
+      }
+
+      handleCollisions();
+
+      for (GameObject gameObject : world.getObjects()) {
+        accumulateForces(gameObject);
+        applyForcesToAcceleration(gameObject);
+        gameObject.getState().integrateObjectState(subStep);
+        gameObject.setForce(new Vector(0, 0));
+      }
+
+      for (int p = 0; p < POST_INTEGRATION_STABILIZATION_PASSES; p++) {
+        applyJointConstraints(subStep);
+        for (GameObject gameObject : world.getObjects()) {
+          gameObject.updatePolygon();
+        }
+        handleCollisions();
+      }
     }
-
-    handleCollisions();
-
-    //TODO: do this only for dynamic objects
-    for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
-      accumulateForces(gameObject);
-      applyForcesToAcceleration(gameObject);
-      gameObject.getState().integrateObjectState(elapsedTime);
-      gameObject.setForce(new Vector(0, 0));
-    }
-
-//    for (Constraint constraint : constraings) {
-//      enforceConstraint(constraint);
-//    }
-
   }
 
   private void accumulateForces(GameObject obj) {
@@ -122,13 +130,12 @@ public class GameEngineImpl implements GameEngine {
 
   //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
-    List<Collision> collisions = getCollisions();
-
-//    Map<String, String> solverMap = {
-//        {}
-//    }
-
-    solveCollisions(collisions);
+    for (int i = 0; i < COLLISION_RESOLUTION_ITERATIONS; i++) {
+      for (GameObject gameObject : world.getObjects()) {
+        gameObject.updatePolygon();
+      }
+      solveCollisions(getCollisions());
+    }
   }
 
   private void applyJointConstraints(double elapsedTime) {
@@ -139,8 +146,17 @@ public class GameEngineImpl implements GameEngine {
 
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
-    for (GameObject objectA : world.getObjects()) {
-      for (GameObject objectB : world.getObjects()) {
+    List<GameObject> objects = world.getObjects();
+    for (int i = 0; i < objects.size(); i++) {
+      GameObject objectA = objects.get(i);
+      if (!objectA.isActive()) {
+        continue;
+      }
+      for (int j = i + 1; j < objects.size(); j++) {
+        GameObject objectB = objects.get(j);
+        if (!objectB.isActive()) {
+          continue;
+        }
         Optional<Collision> collision = collisionDetector.detectCollision(objectA, objectB);
         collision.ifPresent(collisions::add);
       }
