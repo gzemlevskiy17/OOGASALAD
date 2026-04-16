@@ -1,12 +1,12 @@
 package oogasalad.model.engine.internal.components;
-
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Pose;
 
 public abstract class PassthroughComponent extends GameComponent {
 
-  public PassthroughComponent(Pose pose, double mass, double friction) {
-    super(pose, mass, friction);
+  public PassthroughComponent(double x, double y, double rotation, double mass, double friction) {
+    super(x, y, rotation, mass, friction);
+    setTag(DefaultTag.PASSTHROUGH.value());
     setTrigger(true);
     setAffectedByGravity(false);
   }

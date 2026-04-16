@@ -1,6 +1,7 @@
 package oogasalad.controller.player.internal;
 
 import java.util.function.Consumer;
+import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
@@ -12,7 +13,6 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Pose;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
@@ -22,9 +22,11 @@ import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderer;
+import oogasalad.view.core.api.SpriteRenderable;
 import oogasalad.view.core.internal.CameraImpl;
 import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
 import oogasalad.view.core.internal.RendererImpl;
+import oogasalad.view.core.internal.SpriteCache;
 import oogasalad.view.player.internal.GamePlayAppScreen;
 
 /**
@@ -39,6 +41,15 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double BALL_RADIUS = 12.0;
   private static final double WORLD_WIDTH = 2600.0;
   private static final double WORLD_HEIGHT = 1600.0;
+
+  private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
+    ImageView imageView = new ImageView(spriteCache.get(sr.getSpritePath()));
+    imageView.setFitWidth(sr.getSpriteWidth());
+    imageView.setFitHeight(sr.getSpriteHeight());
+    imageView.setTranslateX(-sr.getSpriteWidth() / 2);
+    imageView.setTranslateY(-sr.getSpriteHeight() / 2);
+    return imageView;
+  }
 
   /**
    * Builds and wires one gameplay session using the supplied screen and outcome callback.
@@ -82,8 +93,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     CameraBehavior behavior = new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight, 0, 0, 0.2);
     camera.setBehavior(behavior);
-
+    SpriteCache spriteCache = new SpriteCache();
     Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
+      if (r instanceof SpriteRenderable sr) {
+        return createImageView(sr, spriteCache);
+      }
       Circle c = new Circle(BALL_RADIUS);
       if (r == player) {
         c.setRadius(BALL_RADIUS + 3);
@@ -134,7 +148,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private GameComponent createMovingCircle(double x, double y, double vx, double vy) {
-    DynamicComponent c = new DynamicComponent(new Pose(x, y, 0), 1.0, 0.1) {};
+    DynamicComponent c = new DynamicComponent(x, y, 0, 1.0, 0.1) {
+    };
     c.setAffectedByGravity(false);
     c.getState().setLinearVelocity(new Vector(vx, vy));
     return c;
