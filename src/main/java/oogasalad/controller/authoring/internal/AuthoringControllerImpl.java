@@ -328,6 +328,13 @@ public class AuthoringControllerImpl implements AuthoringController {
     history.clear();
   }
 
+  @Override
+  public void clearLevel() {
+    world.clear();
+    history.clear();
+    canvas.refreshGrid();
+  }
+
   private void applyAction(CanvasAction action) {
     switch (action.type()) {
       case PLACE -> placeFromAction(action);

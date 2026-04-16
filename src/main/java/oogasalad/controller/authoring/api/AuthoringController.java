@@ -26,4 +26,7 @@ public interface AuthoringController {
 
   /** Clears the undo/redo history. */
   void clearHistory();
+
+  /** Clears all placed objects, resets history, and refreshes the canvas. */
+  void clearLevel();
 }

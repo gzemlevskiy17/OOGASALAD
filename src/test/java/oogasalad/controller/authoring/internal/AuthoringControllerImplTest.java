@@ -122,6 +122,46 @@ class AuthoringControllerImplTest {
     assertEquals(ToolType.DRAW, toolSelector.getActiveTool());
   }
 
+  @Test
+  void clearLevel_removesAllPlacedObjects() {
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+    controller.handleGridInteraction(60.0, 60.0);
+    assertEquals(2, world.objectCount());
+
+    controller.clearLevel();
+
+    assertEquals(0, world.objectCount());
+  }
+
+  @Test
+  void clearLevel_emptyCanvas_remainsEmpty() {
+    assertEquals(0, world.objectCount());
+
+    controller.clearLevel();
+
+    assertEquals(0, world.objectCount());
+  }
+
+  @Test
+  void clearLevel_refreshesCanvas() {
+    controller.clearLevel();
+
+    assertTrue(canvas.refreshCalled);
+  }
+
+  @Test
+  void clearLevel_afterLoad_removesLoadedObjects() {
+    controller.loadLevel("input.json");
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+    assertEquals(1, world.objectCount());
+
+    controller.clearLevel();
+
+    assertEquals(0, world.objectCount());
+  }
+
   // --- Test doubles ---
 
   private static class FakeWorld implements World {
