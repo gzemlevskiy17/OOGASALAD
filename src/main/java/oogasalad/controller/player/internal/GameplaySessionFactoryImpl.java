@@ -4,6 +4,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import oogasalad.controller.core.api.Outcome;
@@ -118,11 +119,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       if (r instanceof SpriteRenderable sr) {
         return createImageView(sr, spriteCache);
       }
+
       if (r instanceof TerrainBlock tb) {
         Rectangle rect = new Rectangle(tb.getWidth(), tb.getHeight());
-        rect.setFill(Color.DARKGREEN);
+        rect.setManaged(false);
+        rect.setStrokeWidth(0.5);
+        rect.setStroke(Color.BLACK);
+        rect.setFill(Paint.valueOf(tb.getColor())); // visible even if texture missing
         return rect;
       }
+
       Circle c = new Circle(BALL_RADIUS);
       if (r == player) {
         c.setRadius(BALL_RADIUS + 3);
