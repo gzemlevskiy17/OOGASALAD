@@ -104,4 +104,29 @@ public class SqliteUserRepo implements UserRepository {
       throw new RuntimeException("Failed to update avatar for: " + username, e);
     }
   }
+
+  @Override
+  public void updateUsername(String oldUsername, String newUsername) {
+    try (PreparedStatement ps = connection.prepareStatement(
+        "UPDATE users SET username = ? WHERE username = ?")) {
+      ps.setString(1, newUsername);
+      ps.setString(2, oldUsername);
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new RuntimeException("Failed to rename user: " + oldUsername, e);
+    }
+  }
+
+  @Override
+  public void updatePassword(String username, String passwordHash, String salt) {
+    try (PreparedStatement ps = connection.prepareStatement(
+        "UPDATE users SET password_hash = ?, salt = ? WHERE username = ?")) {
+      ps.setString(1, passwordHash);
+      ps.setString(2, salt);
+      ps.setString(3, username);
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new RuntimeException("Failed to update password for: " + username, e);
+    }
+  }
 }

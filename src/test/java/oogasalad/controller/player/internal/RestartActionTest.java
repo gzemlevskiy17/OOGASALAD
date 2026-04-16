@@ -37,11 +37,11 @@ class RestartActionTest {
   }
 
   @Test
-  void execute_callsStopThenLoadThenStart_inOrder() {
+  void execute_callsResetThenLoadThenStart_inOrder() {
     restartAction.execute();
 
     InOrder order = inOrder(controller, levelLoader);
-    order.verify(controller).stopSimulation();
+    order.verify(controller).resetSimulation();
     order.verify(levelLoader).loadLevel(LEVEL_PATH, world, config);
     order.verify(controller).startSimulation();
   }
