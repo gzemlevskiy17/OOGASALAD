@@ -95,7 +95,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     screen.getGameLayer().getChildren().clear();
 
     GameConfig config = buildConfig();
-    World world = buildWorldForCurrentLevel(config, buildWorldForCurrentLevel(config, vehicleAssemblyProvider.getCurrentAssembly()));
+    World world = buildWorldForCurrentLevel(config, vehicleAssemblyProvider.getCurrentAssembly());
     GameEngine engine = buildEngine(world);
 
     WinConditionChecker winChecker = buildWinChecker();
@@ -159,7 +159,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new GameplaySession(controller);
   }
 
-  private World buildWorldForCurrentLevel(GameConfig config, VehicleAssembly vehicle) {
+  private World buildWorldForCurrentLevel(GameConfig config, VehicleAssembly assembly) {
     World world = new WorldImpl();
 
     String levelPath = levelPathSupplier.get();
@@ -168,15 +168,14 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     }
     levelLoader.loadLevel(levelPath, world, config);
 
-    VehicleAssembly assembly = vehicleAssemblyProvider.getCurrentAssembly();
-    VehicleBuild build = vehicleFactory.build(assembly, 100.0, 100.0); // spawn placeholders for now
+    VehicleBuild build = vehicleFactory.build(assembly, 100.0, 100.0);
     for (GameComponent part : build.components()) {
       world.addComponent(part);
     }
     for (Joint joint : build.joints()) {
       world.addJoint(joint);
     }
-    return world;q
+    return world;
   }
 
   private GameEngine buildEngine(World world) {
