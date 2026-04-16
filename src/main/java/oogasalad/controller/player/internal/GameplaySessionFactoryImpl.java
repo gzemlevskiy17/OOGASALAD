@@ -10,7 +10,12 @@ import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
+import oogasalad.model.engine.CollisionDetectorImpl;
+import oogasalad.model.engine.GameEngineImpl;
+import oogasalad.model.engine.ImpulseCollisionSolver;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.DefaultTag;
+import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
@@ -41,6 +46,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double WORLD_WIDTH = 2600.0;
   private static final double WORLD_HEIGHT = 1600.0;
 
+  private final VehicleFactory vehicleFactory = new VehicleFactory();
+
   private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
     ImageView imageView = new ImageView(spriteCache.get(sr.getSpritePath()));
     imageView.setFitWidth(sr.getSpriteWidth());
@@ -52,31 +59,28 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   /**
    * Builds and wires one gameplay session using the supplied screen and outcome callback.
-   *
-   * @param screen gameplay view implementation used for render-layer attachment and sizing
-   * @param onOutcome callback fired when controller detects terminal game outcomes
-   * @return fully assembled gameplay session ready to start
    */
   @Override
   public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome,
       VehicleLayout layout) {
-    // Re-entry / retry can reuse the same view instance, so clear stale nodes from prior sessions.
     screen.getGameLayer().getChildren().clear();
 
     World world = buildWorldForCurrentLevel(layout);
-    GameEngine engine = buildEngine(world);
+    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl(),
+        new ImpulseCollisionSolver());
     GameConfig config = buildConfig();
 
     WinConditionChecker winChecker = buildWinChecker();
     LossConditionChecker lossChecker = buildLossChecker();
     InputRouter inputRouter = buildInputRouter();
 
+    bindDriveActions(inputRouter, world);
+
     double viewWidth = screen.getGameLayer().getPrefWidth();
     double viewHeight = screen.getGameLayer().getPrefHeight();
     if (viewWidth <= 0) viewWidth = 1280;
     if (viewHeight <= 0) viewHeight = 720;
 
-    // World boundary overlay (drawn in world space, projected each frame)
     Rectangle worldBounds = new Rectangle(WORLD_WIDTH, WORLD_HEIGHT);
     worldBounds.setManaged(false);
     worldBounds.setFill(Color.TRANSPARENT);
@@ -84,14 +88,14 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     worldBounds.setStrokeWidth(2.0);
     worldBounds.getStrokeDashArray().addAll(10.0, 8.0);
 
-    // keep the world boundary behind balls
     screen.getGameLayer().getChildren().add(worldBounds);
     worldBounds.toBack();
 
     Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
     GameObject player = resolveControlledPlayer(world);
 
-    CameraBehavior behavior = new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight, 0, 0, 0.2);
+    CameraBehavior behavior = new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight,
+        0, 0, 0.2);
     camera.setBehavior(behavior);
     SpriteCache spriteCache = new SpriteCache();
     Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
@@ -101,11 +105,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       Circle c = new Circle(BALL_RADIUS);
       if (r == player) {
         c.setRadius(BALL_RADIUS + 3);
-        c.setFill(Color.ORANGE); // followed ball
+        c.setFill(Color.ORANGE);
       } else if (r instanceof GameObject go) {
         Vector v = go.getState().getLinearVelocity();
         boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
-        c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY); // moving vs idle
+        c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY);
       } else {
         c.setFill(Color.DODGERBLUE);
       }
@@ -114,8 +118,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     Renderer renderer = (cameraRef, objects) -> {
       objectRenderer.render(cameraRef, objects);
-
-      // project world border into viewport using camera transform
       worldBounds.setLayoutX(-cameraRef.getX());
       worldBounds.setLayoutY(-cameraRef.getY());
     };
@@ -128,34 +130,41 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new GameplaySession(controller);
   }
 
-  private World buildWorldForCurrentLevel(VehicleLayout layout) {
-    World world = new WorldImpl();
-    new VehicleFactory().buildVehicle(layout, world, 350, 300);
-    return world;
+  /**
+   * Binds the on-screen tool button IDs to actions that activate or deactivate all matching
+   * Driveable components in the world. A button whose ID matches a component's display name
+   * (case-insensitive) toggles that component's drive state.
+   */
+  private void bindDriveActions(InputRouter inputRouter, World world) {
+    for (GameObject obj : world.getObjects()) {
+      if (!(obj instanceof Driveable driveable)) {
+        continue;
+      }
+      if (!driveable.isPlayerControllable()) {
+        continue;
+      }
+
+      String id = obj.getTag();
+      if (obj instanceof oogasalad.model.engine.internal.components.VehicleComponent vc) {
+        id = vc.getDisplayName().toLowerCase();
+      }
+
+      final Driveable target = driveable;
+      final String buttonId = id;
+      inputRouter.bind(buttonId, () -> {
+        if (target.isDriveEnabled()) {
+          target.deactivateDrive();
+        } else {
+          target.activateDrive();
+        }
+      });
+    }
   }
 
-  private GameEngine buildEngine(World world) {
-    final double minX = BALL_RADIUS;
-    final double maxX = WORLD_WIDTH - BALL_RADIUS;
-    final double minY = BALL_RADIUS;
-    final double maxY = WORLD_HEIGHT - BALL_RADIUS;
-
-    return elapsedTime -> {
-      for (GameObject obj : world.getObjects()) {
-        obj.getState().integrateObjectState(elapsedTime);
-        double x = obj.getState().getLinearPosition().x();
-        double y = obj.getState().getLinearPosition().y();
-        double vx = obj.getState().getLinearVelocity().x();
-        double vy = obj.getState().getLinearVelocity().y();
-        if (x < minX || x > maxX) vx = -vx;
-        if (y < minY || y > maxY) vy = -vy;
-        obj.getState().setLinearPosition(new Vector(
-            Math.max(minX, Math.min(maxX, x)),
-            Math.max(minY, Math.min(maxY, y))
-        ));
-        obj.getState().setLinearVelocity(new Vector(vx, vy));
-      }
-    };
+  private World buildWorldForCurrentLevel(VehicleLayout layout) {
+    World world = new WorldImpl();
+    vehicleFactory.buildVehicle(layout, world, 350, 300);
+    return world;
   }
 
   private GameConfig buildConfig() {
@@ -175,7 +184,24 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
 
   private GameObject resolveControlledPlayer(World world) {
+    GameObject pig = world.getObjectsByTag(DefaultTag.PIGS.value()).stream().findFirst()
+        .orElse(null);
+    if (pig != null) {
+      return pig;
+    }
+
+    GameObject vehicle = world.getObjectsByTag(DefaultTag.VEHICLE.value()).stream().findFirst()
+        .orElse(null);
+    if (vehicle != null) {
+      return vehicle;
+    }
+
+    GameObject dynamic = world.getObjectsByTag(DefaultTag.DYNAMIC.value()).stream().findFirst()
+        .orElse(null);
+    if (dynamic != null) {
+      return dynamic;
+    }
+
     return world.getObjects().stream().findFirst().orElse(null);
   }
-
 }
