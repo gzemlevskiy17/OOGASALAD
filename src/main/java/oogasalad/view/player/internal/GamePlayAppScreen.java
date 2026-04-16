@@ -26,6 +26,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
   private Pane gameLayer;
   private Runnable onPause = () -> { };
+  private Runnable onResume = () -> { };
   private Runnable onReset = () -> { };
   private java.util.function.Consumer<String> onToolActivated = id -> {
   };
@@ -49,7 +50,11 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   }
 
   public void setOnResume(Runnable onResume) {
-
+    if (onResume == null) {
+      this.onResume = () -> { };
+    } else {
+      this.onResume = onResume;
+    }
   }
 
   public void setOnReset(Runnable onReset) {
@@ -115,8 +120,16 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
     container.setPickOnBounds(false);
 
-    Button pauseBtn = new Button(s("button.pause"));
-    pauseBtn.setOnAction(e -> onPause.run());
+    ToggleButton pauseBtn = new ToggleButton(s("button.pause"));
+    pauseBtn.setOnAction(e -> {
+      if (pauseBtn.isSelected()) {
+        onPause.run();
+        pauseBtn.setText(s("button.resume"));
+      } else {
+        onResume.run();
+        pauseBtn.setText(s("button.pause"));
+      }
+    });
     pauseBtn.getStyleClass().add("sys-button");
 
     Button resetBtn = new Button(s("button.reset"));
