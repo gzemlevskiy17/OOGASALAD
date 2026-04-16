@@ -1,0 +1,51 @@
+{
+  "level": {
+    "terrain": [
+      {
+        "position": { "x": 260, "y": 420 },
+        "size": { "width": 60, "height": 2 },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.62
+        }
+      },
+      {
+        "position": { "x": 320, "y": 418 },
+        "size": { "width": 50, "height": 2 },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.62
+        }
+      },
+      {
+        "position": { "x": 370, "y": 416 },
+        "size": { "width": 55, "height": 2 },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.60
+        }
+      },
+      {
+        "position": { "x": 425, "y": 414 },
+        "size": { "width": 55, "height": 2 },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.60
+        }
+      },
+      {
+        "position": { "x": 480, "y": 416 },
+        "size": { "width": 60, "height": 2 },
+        "properties": {
+          "texture": "assets/terrain/grass.png",
+          "tile_texture": true,
+          "friction": 0.58
+        }
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 package oogasalad.view.core.internal;
 
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
@@ -71,14 +72,23 @@ public class CameraImpl implements Camera {
   public boolean isVisible(Renderable object) {
     if (object == null) return false;
 
-    double objectX = object.getX();
-    double objectY = object.getY();
-
     double left = x;
     double right = x + viewWidth;
     double top = y;
     double bottom = y + viewHeight;
 
+    if (object instanceof TerrainBlock tb) {
+      double objLeft = tb.getX();
+      double objRight = tb.getX() + tb.getWidth();
+      double objTop = tb.getY();
+      double objBottom = tb.getY() + tb.getHeight();
+
+      return objRight >= left && objLeft <= right
+          && objBottom >= top && objTop <= bottom;
+    }
+
+    double objectX = object.getX();
+    double objectY = object.getY();
     return objectX >= left && objectX <= right && objectY >= top && objectY <= bottom;
   }
 }

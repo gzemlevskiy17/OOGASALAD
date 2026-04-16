@@ -3,6 +3,7 @@ package oogasalad.view.player.internal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -25,13 +26,18 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.PlayerEntryScreen");
 
-  public PlayerEntryAppScreen(Consumer<Outcome> onOutcome) {
-    super(onOutcome);
-  }
-
+  private final BiConsumer<String, String> onSelectionConfirmed;
   private Button selectedWorldButton;
   private Button selectedLevelButton;
   private Button startButton;
+  private String selectedWorldKey;
+  private String selectedLevelKey;
+
+  public PlayerEntryAppScreen(Consumer<Outcome> onOutcome,
+      BiConsumer<String, String> onSelectionConfirmed) {
+    super(onOutcome);
+    this.onSelectionConfirmed = onSelectionConfirmed;
+  }
 
   @Override
   protected BorderPane createRoot() {
@@ -72,11 +78,12 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   private VBox createStartBadPiggiesContentRegion() {
     startButton = new Button(s("start.button.text"));
     startButton.getStyleClass().add("start-button");
-
-    // Disabled until both selections exist
     startButton.setDisable(true);
 
-    startButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER));
+    startButton.setOnAction(event -> {
+      onSelectionConfirmed.accept(selectedWorldKey, selectedLevelKey);
+      onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER);
+    });
 
     VBox container = new VBox(startButton);
     container.getStyleClass().add("selection-region");
@@ -94,16 +101,17 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
       btn.getStyleClass().add("world-" + world);
       worldBox.getChildren().add(btn);
 
-      btn.setOnAction(e -> selectWorld(btn));
+      btn.setOnAction(e -> selectWorld(btn, world));
     }
     return worldBox;
   }
 
-  private void selectWorld(Button btn) {
+  private void selectWorld(Button btn, String worldKey) {
     if (selectedWorldButton != null) {
       selectedWorldButton.getStyleClass().remove("world-selected");
     }
     selectedWorldButton = btn;
+    selectedWorldKey = worldKey;
     selectedWorldButton.getStyleClass().add("world-selected");
     updateStartButtonState();
   }
@@ -124,15 +132,13 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
       Button btn = new Button(s("level.button." + level));
       btn.getStyleClass().add("level-button");
 
-      // Levels not yet open
       if (lockedLevels.contains(level)) {
         btn.getStyleClass().add("locked-level");
         btn.setDisable(true);
-      };
+      }
 
-      // Allow level selection only for the open buttons
       if (!lockedLevels.contains(level)) {
-        btn.setOnAction(e -> selectLevel(btn));
+        btn.setOnAction(e -> selectLevel(btn, level));
       }
 
       levelBox.getChildren().add(btn);
@@ -140,11 +146,12 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     return levelBox;
   }
 
-  private void selectLevel(Button btn) {
+  private void selectLevel(Button btn, String levelKey) {
     if (selectedLevelButton != null) {
       selectedLevelButton.getStyleClass().remove("level-selected");
     }
     selectedLevelButton = btn;
+    selectedLevelKey = levelKey;
     selectedLevelButton.getStyleClass().add("level-selected");
     updateStartButtonState();
   }
