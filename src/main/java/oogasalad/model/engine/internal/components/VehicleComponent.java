@@ -1,5 +1,6 @@
 package oogasalad.model.engine.internal.components;
 
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.view.core.api.SpriteRenderable;
@@ -35,6 +36,11 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
   @Override
   public String getSpritePath() {
     return spritePath;
+  }
+
+  @Override
+  public void updatePolygon() {
+    setPolygon(ConvexPolygon.axisAlignedBox(getX(), getY(), spriteWidth, spriteHeight));
   }
 
   @Override

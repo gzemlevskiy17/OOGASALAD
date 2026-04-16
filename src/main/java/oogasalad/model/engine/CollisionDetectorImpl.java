@@ -139,6 +139,11 @@ public class CollisionDetectorImpl implements CollisionDetector {
         minReferenceEdge[1] = point2;
       }
     }
+
+    if (penetration == null) {
+      return Optional.empty();
+    }
+
     collision.setPenetration(penetration);
     collision.setReferenceEdge(minReferenceEdge);
     collision.setIncidentEdge(findIncidentEdge(incidentPolygon, penetration));

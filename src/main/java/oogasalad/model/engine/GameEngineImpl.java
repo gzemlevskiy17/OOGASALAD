@@ -83,6 +83,10 @@ public class GameEngineImpl implements GameEngine {
   public void step(double elapsedTime) {
     applyJointConstraints(elapsedTime);
 
+    for (GameObject gameObject : world.getObjects()) {
+      gameObject.updatePolygon();
+    }
+
     handleCollisions();
 
     //TODO: do this only for dynamic objects
