@@ -1,6 +1,7 @@
 package oogasalad.controller.player.internal;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -31,7 +32,7 @@ public class VehicleFactory {
   private static final double CELL_SIZE = 60.0;
   private static final double DEFAULT_FRICTION = 0.3;
   private static final double DEFAULT_MASS_PIG = 2.0;
-  private static final double DEFAULT_MASS_DRIVE = 0.8;
+  private static final double DEFAULT_MASS_DRIVE = 20.0;
   private static final double DEFAULT_MASS_STRUCTURAL = 1.5;
   private static final double DEFAULT_MAX_HP = 100.0;
 
@@ -41,30 +42,35 @@ public class VehicleFactory {
 
   public void buildVehicle(VehicleLayout layout, World world, double startX, double startY) {
     Map<String, GameComponent> placed = new HashMap<>();
+    Map<String, String> placedTypes = new HashMap<>();
 
     for (PlacedComponent p : layout.placements()) {
       double worldX = startX + p.col() * CELL_SIZE;
       double worldY = startY + p.row() * CELL_SIZE;
       GameComponent component = createComponent(p.componentType(), worldX, worldY);
       world.addComponent(component);
-      placed.put(p.row() + "," + p.col(), component);
+      String key = toKey(p.row(), p.col());
+      placed.put(key, component);
+      placedTypes.put(key, p.componentType());
     }
 
     for (PlacedComponent p : layout.placements()) {
-      GameComponent current = placed.get(p.row() + "," + p.col());
+      GameComponent current = placed.get(toKey(p.row(), p.col()));
 
-      GameComponent right = placed.get(p.row() + "," + (p.col() + 1));
+      GameComponent right = placed.get(toKey(p.row(), p.col() + 1));
       if (right != null) {
         world.addJoint(buildJoint(current, right, p.componentType(),
             layout.getComponentAtIndex(p.row(), p.col() + 1).orElse("")));
       }
 
-      GameComponent below = placed.get((p.row() + 1) + "," + p.col());
+      GameComponent below = placed.get(toKey(p.row() + 1, p.col()));
       if (below != null) {
         world.addJoint(buildJoint(current, below, p.componentType(),
             layout.getComponentAtIndex(p.row() + 1, p.col()).orElse("")));
       }
     }
+
+    addAntiRotationJoints(layout, world, placed, placedTypes);
   }
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
@@ -76,6 +82,65 @@ public class VehicleFactory {
       return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
     }
     return new RigidJoint(a, b);
+  }
+
+  private void addAntiRotationJoints(VehicleLayout layout, World world, Map<String, GameComponent> placed,
+      Map<String, String> placedTypes) {
+    Set<String> createdPairs = new HashSet<>();
+    int[][] offsets = {{0, 2}, {2, 0}, {1, 1}, {1, -1}};
+
+    for (PlacedComponent component : layout.placements()) {
+      for (int[] offset : offsets) {
+        int targetRow = component.row() + offset[0];
+        int targetCol = component.col() + offset[1];
+        String startKey = toKey(component.row(), component.col());
+        String targetKey = toKey(targetRow, targetCol);
+        if (!placed.containsKey(targetKey) || !isNonWheelPair(placedTypes, startKey, targetKey)) {
+          continue;
+        }
+        if (!hasSupportCell(component.row(), component.col(), targetRow, targetCol, placedTypes)) {
+          continue;
+        }
+        String pairKey = canonicalPairKey(startKey, targetKey);
+        if (createdPairs.add(pairKey)) {
+          world.addJoint(new RigidJoint(placed.get(startKey), placed.get(targetKey)));
+        }
+      }
+    }
+  }
+
+  private boolean hasSupportCell(int rowA, int colA, int rowB, int colB, Map<String, String> placedTypes) {
+    int rowDelta = Math.abs(rowA - rowB);
+    int colDelta = Math.abs(colA - colB);
+
+    if (rowDelta == 2 && colDelta == 0) {
+      return isNonWheelCell(placedTypes, toKey((rowA + rowB) / 2, colA));
+    }
+    if (rowDelta == 0 && colDelta == 2) {
+      return isNonWheelCell(placedTypes, toKey(rowA, (colA + colB) / 2));
+    }
+    if (rowDelta == 1 && colDelta == 1) {
+      return isNonWheelCell(placedTypes, toKey(rowA, colB))
+          || isNonWheelCell(placedTypes, toKey(rowB, colA));
+    }
+    return false;
+  }
+
+  private boolean isNonWheelPair(Map<String, String> placedTypes, String keyA, String keyB) {
+    return isNonWheelCell(placedTypes, keyA) && isNonWheelCell(placedTypes, keyB);
+  }
+
+  private boolean isNonWheelCell(Map<String, String> placedTypes, String key) {
+    String type = placedTypes.get(key);
+    return type != null && !WHEEL_TYPES.contains(type);
+  }
+
+  private String canonicalPairKey(String keyA, String keyB) {
+    return keyA.compareTo(keyB) < 0 ? keyA + "|" + keyB : keyB + "|" + keyA;
+  }
+
+  private String toKey(int row, int col) {
+    return row + "," + col;
   }
 
   private GameComponent createComponent(String componentType, double x, double y) {
