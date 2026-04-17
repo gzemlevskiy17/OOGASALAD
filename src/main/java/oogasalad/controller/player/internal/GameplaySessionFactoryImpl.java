@@ -103,7 +103,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
         c.setRadius(BALL_RADIUS + 3);
         c.setFill(Color.ORANGE); // followed ball
       } else if (r instanceof GameObject go) {
-        Vector v = go.getState().getLinearVelocity();
+        //TODO: need to ensure this is a dynamic object
+        Vector v = go.getDynamicState().getLinearVelocity();
         boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
         c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY); // moving vs idle
       } else {
@@ -151,7 +152,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     DynamicComponent c = new DynamicComponent(x, y, 0, 1.0, 0.1) {
     };
     c.setAffectedByGravity(false);
-    c.getState().setLinearVelocity(new Vector(vx, vy));
+    c.getStaticState().setLinearVelocity(new Vector(vx, vy));
     return c;
   }
 
@@ -163,18 +164,18 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     return elapsedTime -> {
       for (GameObject obj : world.getObjects()) {
-        obj.getState().integrateObjectState(elapsedTime);
-        double x = obj.getState().getLinearPosition().x();
-        double y = obj.getState().getLinearPosition().y();
-        double vx = obj.getState().getLinearVelocity().x();
-        double vy = obj.getState().getLinearVelocity().y();
+        obj.getStaticState().integrateObjectState(elapsedTime);
+        double x = obj.getStaticState().getLinearPosition().x();
+        double y = obj.getStaticState().getLinearPosition().y();
+        double vx = obj.getStaticState().getLinearVelocity().x();
+        double vy = obj.getStaticState().getLinearVelocity().y();
         if (x < minX || x > maxX) vx = -vx;
         if (y < minY || y > maxY) vy = -vy;
-        obj.getState().setLinearPosition(new Vector(
+        obj.getStaticState().setLinearPosition(new Vector(
             Math.max(minX, Math.min(maxX, x)),
             Math.max(minY, Math.min(maxY, y))
         ));
-        obj.getState().setLinearVelocity(new Vector(vx, vy));
+        obj.getStaticState().setLinearVelocity(new Vector(vx, vy));
       }
     };
   }

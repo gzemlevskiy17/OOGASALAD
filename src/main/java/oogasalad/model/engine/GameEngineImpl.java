@@ -2,7 +2,6 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameEngine;
@@ -22,7 +21,7 @@ import oogasalad.model.engine.api.World;
  * contracts. Invalid or partial state data may cause no-op updates or runtime exceptions.
  *
  * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link CollisionDetector},
- * {@link CollisionSolver}, {@link GameObject}, {@link ObjectState}, {@link Collision}, and
+ * {@link CollisionSolver}, {@link GameObject}, {@link StaticState}, {@link DynamicState}, {@link Collision}, and
  * {@link Vector}.
  *
  * <p><strong>Example:</strong>
@@ -61,9 +60,6 @@ public class GameEngineImpl implements GameEngine {
     this.collisionSolver = collisionSolver;
   }
 
-  //TODO: implement collision detection for all world objects
-  //TODO: implement application of forces
-
   /**
    * Advances the simulation by one time step.
    *
@@ -74,7 +70,6 @@ public class GameEngineImpl implements GameEngine {
    * are valid for integration.
    *
    * @param elapsedTime simulation delta time in seconds
-   * @throws NullPointerException if world/object state references are null
    */
   @Override
   public void step(double elapsedTime) {
@@ -84,7 +79,7 @@ public class GameEngineImpl implements GameEngine {
 
     //TODO: do this only for dynamic objects
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
-      gameObject.getState().integrateObjectState(elapsedTime);
+//      gameObject.getStaticState().integrateObjectState(elapsedTime);
     }
 
 //    for (Constraint constraint : constraings) {
@@ -93,15 +88,28 @@ public class GameEngineImpl implements GameEngine {
 
   }
 
+  //TODO: implement collision detection for all world objects
+  //TODO: implement application of forces
+
   //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
-    List<Collision> collisions = getCollisions();
-
-//    Map<String, String> solverMap = {
-//        {}
-//    }
+    List<CollisionPair> collisions = getCollisions();
 
     solveCollisions(collisions);
+  }
+
+  private List<CollisionPair> getCollisions() {
+    List<CollisionPair> collisions = new ArrayList<>();
+    for (GameObject objectA : world.getObjects()) {
+      for (GameObject objectB : world.getObjects()) {
+        if (collisionDetector.detectCollision(objectA, objectB)) {
+          collisions.add(new CollisionPair(objectA, objectB));
+        }
+
+//        collision.ifPresent(collisions::add);
+      }
+    }
+    return collisions;
   }
 
   private void applyJointConstraints(double elapsedTime) {
@@ -110,15 +118,15 @@ public class GameEngineImpl implements GameEngine {
     }
   }
 
-  private List<Collision> getCollisions() {
-    List<Collision> collisions = new ArrayList<>();
-    for (GameObject objectA : world.getObjects()) {
-      for (GameObject objectB : world.getObjects()) {
-        Optional<Collision> collision = collisionDetector.detectCollision(objectA, objectB);
-        collision.ifPresent(collisions::add);
-      }
+  class CollisionPair {
+
+    GameObject objectA;
+    GameObject objectB;
+
+    public CollisionPair(GameObject objectA, GameObject objectB) {
+      this.objectA = objectA;
+      this.objectB = objectB;
     }
-    return collisions;
   }
 
   private void solveCollisions(List<Collision> collisions) {

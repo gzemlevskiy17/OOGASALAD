@@ -42,7 +42,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * the shapes do not overlap
    */
   @Override
-  public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
+  public boolean detectCollision(GameObject objectA, GameObject objectB) {
     return findSatCollision(objectA, objectB);
   }
 
@@ -83,6 +83,8 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @return a collision record when all axes overlap, otherwise {@link Optional#empty()}
    */
   private Optional<Collision> findSatCollision(GameObject objectA, GameObject objectB) {
+    if ()
+
     Optional<Collision> collisionOnAxesOfA = penetrationDepthOnAxesOfA(objectA, objectB);
     if (collisionOnAxesOfA.isPresent()) {
       return collisionOnAxesOfA;
@@ -117,12 +119,13 @@ public class CollisionDetectorImpl implements CollisionDetector {
       Vector point1 = referencePolygon.getPoints().get(i);
       Vector point2 = referencePolygon.getPoints().get(i + 1);
       Vector tangent = point2.subtract(point1).normalize();
-      Vector normal = tangent.rotateRight(); //Find the inward normal along which to compute the penetration depth
+      Vector inwardUnitNormal = tangent.rotateRight(); //Find the inward normal along which to compute the penetration depth
 
-      double[] projectionA = projectPolygonAlongVector(referencePolygon, normal);
-      double[] projectionB = projectPolygonAlongVector(incidentPolygon, normal);
-      boolean shadowsOverlap = projectionA[1] <= projectionB[0] || projectionB[1] <= projectionA[0];
-      if (shadowsOverlap) { //if the shadows don't overlap in at least one axis, there is no collision by the SAT
+      double[] projectionA = projectPolygonAlongVector(referencePolygon, inwardUnitNormal);
+      double[] projectionB = projectPolygonAlongVector(incidentPolygon, inwardUnitNormal);
+      boolean noOverlap =
+          projectionA[1] <= projectionB[0] || projectionB[1] <= projectionA[0]; //TODO: clean logic
+      if (!noOverlap) { //if the shadows don't overlap in at least one axis, there is no collision by the SAT
         return Optional.empty();
       }
 
@@ -130,7 +133,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
           Math.min(projectionA[1], projectionB[1]) - Math.max(projectionA[0],
               projectionB[0]);
       if (currentPenetrationDepth < minPenetrationDepth) {
-        penetration = normal.multiply(currentPenetrationDepth);
+        penetration = inwardUnitNormal.multiply(currentPenetrationDepth);
         minPenetrationDepth = currentPenetrationDepth;
         minReferenceEdge[0] = point1;
         minReferenceEdge[1] = point2;

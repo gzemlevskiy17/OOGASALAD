@@ -17,7 +17,7 @@ import oogasalad.model.engine.api.Vector;
  * values are non-negative. Degenerate geometry or missing manifold data can cause the solver to
  * skip useful work.
  *
- * <p><strong>Dependencies:</strong> Relies on {@link Collision}, {@link ObjectState},
+ * <p><strong>Dependencies:</strong> Relies on {@link Collision}, {@link DynamicState},
  * {@link GameObject}, {@link Vector}, and the {@link CollisionSolver} interface contract.
  *
  * <p><strong>Example:</strong>
@@ -27,8 +27,7 @@ import oogasalad.model.engine.api.Vector;
  * solver.solve(collision);
  * }</pre>
  *
- * <p><strong>Details:</strong> This class resolves one pair at a time. Pair scheduling and
- * iteration order are handled by the engine, not by this solver.
+ * <p><strong>Details:</strong> Code and formulas borrowed from https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/,https://en.wikipedia.org/wiki/Collision_response#Impulse-based_reaction_model.
  *
  * @author Georgiy Zemlevskiy
  */
@@ -205,19 +204,22 @@ public class ImpulseCollisionSolver implements CollisionSolver {
     //TODO: refactor
     GameObject referenceObject = collision.getReferenceObject();
     GameObject incidentObject = collision.getIncidentObject();
-    ObjectState referenceObjectState = referenceObject.getState();
-    ObjectState incidentObjectState = incidentObject.getState();
+    StaticState referenceStaticState = referenceObject.getStaticState();
+    StaticState incidentStaticState = incidentObject.getStaticState();
+    DynamicState referenceDynamicState = referenceObject.getDynamicState();
+    DynamicState incidentDynamicState = referenceObject.getDynamicState();
+
     Vector referenceUnitNormal = collision.getPenetration().normalize();
 
     double totalDepth = 0;
     List<ContactPointPhysics> contactPoints = new ArrayList<>();
     for (ContactPointPhysics contactPointPhysics : collisionManifold) {
       //TODO: should this method behavior be consistent
-      setRelativePositions(contactPointPhysics, incidentObjectState, referenceObjectState);
+      setRelativePositions(contactPointPhysics, incidentStaticState, referenceStaticState);
 
       contactPointPhysics.relativeVelocity = computeRelativeVelocity(contactPointPhysics,
-          incidentObjectState,
-          referenceObjectState);
+          incidentDynamicState,
+          referenceDynamicState);
       contactPointPhysics.impulse = computeImpulse(contactPointPhysics, incidentObject,
           referenceObject, referenceUnitNormal);
 
@@ -240,36 +242,36 @@ public class ImpulseCollisionSolver implements CollisionSolver {
               * contactPointPhysics.impulse;
     }
 
-    double newReferenceAngularVelocity = referenceObjectState.getAngularVelocity()
+    double newReferenceAngularVelocity = referenceDynamicState.getAngularVelocity()
         - referenceCrossProductSum / referenceObject.getMomentOfInertia();
-    referenceObjectState.setAngularVelocity(newReferenceAngularVelocity);
+    referenceDynamicState.setAngularVelocity(newReferenceAngularVelocity);
 
-    double newIncidentAngularVelocity = incidentObjectState.getAngularVelocity()
+    double newIncidentAngularVelocity = incidentDynamicState.getAngularVelocity()
         + incidentCrossProductSum / incidentObject.getMomentOfInertia();
-    incidentObjectState.setAngularVelocity(newIncidentAngularVelocity);
+    incidentDynamicState.setAngularVelocity(newIncidentAngularVelocity);
 
-    Vector newReferenceLinearVelocity = referenceObjectState.getLinearVelocity()
+    Vector newReferenceLinearVelocity = referenceDynamicState.getLinearVelocity()
         .subtract(referenceUnitNormal.multiply(impulseSum / referenceObject.getMass()));
-    referenceObjectState.setLinearVelocity(newReferenceLinearVelocity);
+    referenceDynamicState.setLinearVelocity(newReferenceLinearVelocity);
 
-    Vector newIncidentLinearVelocity = incidentObjectState.getLinearVelocity()
+    Vector newIncidentLinearVelocity = incidentDynamicState.getLinearVelocity()
         .subtract(referenceUnitNormal.multiply(impulseSum / incidentObject.getMass()));
-    incidentObjectState.setLinearVelocity(newIncidentLinearVelocity);
+    incidentDynamicState.setLinearVelocity(newIncidentLinearVelocity);
   }
 
   /**
    * Computes the contact-relative positions from each object's center of mass.
    *
    * @param contactPointPhysics  contact data to update
-   * @param incidentObjectState  incident object state
-   * @param referenceObjectState reference object state
+   * @param incidentStaticState  incident object state
+   * @param referenceStaticState reference object state
    */
   private void setRelativePositions(ContactPointPhysics contactPointPhysics,
-      ObjectState incidentObjectState, ObjectState referenceObjectState) {
+      StaticState incidentStaticState, StaticState referenceStaticState) {
     Vector incidentPoint = contactPointPhysics.contactPoint.subtract(
-        incidentObjectState.getLinearPosition());
+        incidentStaticState.getLinearPosition());
     Vector referencePoint = contactPointPhysics.contactPoint.subtract(
-        referenceObjectState.getLinearPosition());
+        referenceStaticState.getLinearPosition());
     contactPointPhysics.positionFromIncident = incidentPoint;
     contactPointPhysics.positionFromReference = referencePoint;
   }
@@ -308,20 +310,20 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * + w_reference x r_reference).
    *
    * @param contactPointPhysics  contact data to evaluate
-   * @param incidentObjectState  incident object state
-   * @param referenceObjectState reference object state
+   * @param incidentDynamicState  incident object state
+   * @param referenceDynamicState reference object state
    * @return relative point velocity at the contact
    */
   private Vector computeRelativeVelocity(ContactPointPhysics contactPointPhysics,
-      ObjectState incidentObjectState,
-      ObjectState referenceObjectState) {
+      DynamicState incidentDynamicState,
+      DynamicState referenceDynamicState) {
     Vector crossWithIncident = contactPointPhysics.positionFromIncident.crossWithScalar(
-        incidentObjectState.getAngularVelocity());
-    Vector incidentPointVelocity = incidentObjectState.getLinearVelocity().add(crossWithIncident);
+        incidentDynamicState.getAngularVelocity());
+    Vector incidentPointVelocity = incidentDynamicState.getLinearVelocity().add(crossWithIncident);
 
     Vector crossWithReference = contactPointPhysics.positionFromReference.crossWithScalar(
-        referenceObjectState.getAngularVelocity());
-    Vector referencePointVelocity = referenceObjectState.getLinearVelocity()
+        referenceDynamicState.getAngularVelocity());
+    Vector referencePointVelocity = referenceDynamicState.getLinearVelocity()
         .add(crossWithReference);
 
     return incidentPointVelocity.subtract(referencePointVelocity);
@@ -343,8 +345,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
 
     GameObject referenceObject = collision.getReferenceObject();
     GameObject incidentObject = collision.getIncidentObject();
-    ObjectState referenceObjectState = referenceObject.getState();
-    ObjectState incidentObjectState = incidentObject.getState();
+    StaticState referenceStaticState = referenceObject.getStaticState();
+    StaticState incidentStaticState = incidentObject.getStaticState();
 
     double massSum = incidentObject.getMass() + referenceObject.getMass();
 
@@ -352,13 +354,13 @@ public class ImpulseCollisionSolver implements CollisionSolver {
     double correctionMagnitude = (penetration.magnitude() / (2 * massSum)) * correctionFraction;
     Vector correction = penetration.normalize().multiply(correctionMagnitude);
 
-    Vector newReferenceObjectState = referenceObjectState.getLinearPosition()
+    Vector newReferenceObjectState = referenceStaticState.getLinearPosition()
         .subtract(correction.multiply(incidentObject.getMass()));
-    referenceObjectState.setLinearPosition(newReferenceObjectState);
+    referenceStaticState.setLinearPosition(newReferenceObjectState);
 
-    Vector newIncidentObjectState = incidentObjectState.getLinearPosition()
+    Vector newIncidentObjectState = incidentStaticState.getLinearPosition()
         .add(correction.multiply(referenceObject.getMass()));
-    incidentObjectState.setLinearPosition(newIncidentObjectState);
+    incidentStaticState.setLinearPosition(newIncidentObjectState);
   }
 
   /**

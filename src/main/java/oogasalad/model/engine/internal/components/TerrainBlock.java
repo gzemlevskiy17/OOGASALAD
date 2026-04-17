@@ -1,7 +1,6 @@
 package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.api.GameObject;
 
 /**
  * Concrete static terrain object (ground, ramp, wall) created by LevelLoaderImpl and placed by the
@@ -46,29 +45,5 @@ public class TerrainBlock extends TerrainComponent {
   @Override
   public boolean isTiled() {
     return tiled;
-  }
-
-  /**
-   * @param other
-   */
-  @Override
-  public void collideWith(GameObject other) {
-
-  }
-
-  /**
-   * @param component
-   */
-  @Override
-  public void handleCollision(StaticComponent component) {
-
-  }
-
-  /**
-   * @param component
-   */
-  @Override
-  public void handleCollision(DynamicComponent component) {
-
   }
 }
