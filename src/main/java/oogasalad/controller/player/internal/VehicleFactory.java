@@ -98,6 +98,14 @@ public class VehicleFactory {
         return new DriveComponent(x, y, 0, DEFAULT_MASS_DRIVE, DEFAULT_FRICTION,
             DEFAULT_MAX_HP, componentType, sprite, width, height);
       default:
+        if (WHEEL_TYPES.contains(componentType)) {
+          String hubSprite = PALETTE.containsKey(key + ".hubSprite")
+              ? PALETTE.getString(key + ".hubSprite") : null;
+          String wheelSprite = PALETTE.containsKey(key + ".wheelSprite")
+              ? PALETTE.getString(key + ".wheelSprite") : null;
+          return new StructuralComponent(x, y, 0, DEFAULT_MASS_STRUCTURAL, DEFAULT_FRICTION,
+              DEFAULT_MAX_HP, componentType, sprite, hubSprite, wheelSprite, width, height);
+        }
         return new StructuralComponent(x, y, 0, DEFAULT_MASS_STRUCTURAL, DEFAULT_FRICTION,
             DEFAULT_MAX_HP, componentType, sprite, width, height);
     }
