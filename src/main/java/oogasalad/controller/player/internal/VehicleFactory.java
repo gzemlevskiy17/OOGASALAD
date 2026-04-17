@@ -38,9 +38,7 @@ public class VehicleFactory {
   private static final double DEFAULT_MASS_STRUCTURAL = 1.5;
   private static final double DEFAULT_MAX_HP = 100.0;
 
-  private static final Set<String> WHEEL_TYPES = Set.of(
-      "Wheel", "Small Wheel", "Large Wheel"
-  );
+  private static final Set<String> WHEEL_TYPES = Set.of("Wheel", "Small Wheel", "Large Wheel");
 
   public void buildVehicle(VehicleLayout layout, World world, double startX, double startY) {
     List<PlacedComponent> resolvedPlacements = compactVerticalGaps(layout);
@@ -65,15 +63,12 @@ public class VehicleFactory {
         world.addJoint(buildJoint(current, right, p.componentType(),
             placedTypes.getOrDefault(toKey(p.row(), p.col() + 1), "")));
       }
-
       GameComponent below = placed.get(toKey(p.row() + 1, p.col()));
       if (below != null) {
         world.addJoint(buildJoint(current, below, p.componentType(),
             placedTypes.getOrDefault(toKey(p.row() + 1, p.col()), "")));
       }
-    }
-
-    addAntiRotationJoints(resolvedPlacements, world, placed, placedTypes);
+    }addAntiRotationJoints(resolvedPlacements, world, placed, placedTypes);
   }
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
@@ -153,8 +148,7 @@ public class VehicleFactory {
         compacted.add(new PlacedComponent(targetRow, placement.col(), placement.componentType()));
         targetRow--;
       }
-    }
-    return compacted;
+    }return compacted;
   }
 
   private GameComponent createComponent(String componentType, double x, double y) {
