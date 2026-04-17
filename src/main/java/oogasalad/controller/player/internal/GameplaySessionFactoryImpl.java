@@ -2,6 +2,7 @@ package oogasalad.controller.player.internal;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
@@ -81,9 +82,18 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private static Node createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
-    javafx.scene.image.Image image = spriteCache.get(sr.getSpritePath());
     double w = sr.getSpriteWidth();
     double h = sr.getSpriteHeight();
+
+    javafx.scene.image.Image wheelImage = loadOrNull(sr.getWheelSpritePath(), spriteCache);
+    javafx.scene.image.Image hubImage = loadOrNull(sr.getHubSpritePath(), spriteCache);
+    if (wheelImage != null && hubImage != null) {
+      Group group = new Group(buildImageView(wheelImage, w, h), buildImageView(hubImage, w, h));
+      group.setManaged(false);
+      return group;
+    }
+
+    javafx.scene.image.Image image = spriteCache.get(sr.getSpritePath());
     if (image == null) {
       Rectangle rect = new Rectangle(w, h);
       rect.setManaged(false);
@@ -94,12 +104,23 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       rect.setTranslateY(-h / 2);
       return rect;
     }
+    return buildImageView(image, w, h);
+  }
+
+  private static ImageView buildImageView(javafx.scene.image.Image image, double w, double h) {
     ImageView imageView = new ImageView(image);
     imageView.setFitWidth(w);
     imageView.setFitHeight(h);
     imageView.setTranslateX(-w / 2);
     imageView.setTranslateY(-h / 2);
     return imageView;
+  }
+
+  private static javafx.scene.image.Image loadOrNull(String path, SpriteCache spriteCache) {
+    if (path == null || path.isBlank()) {
+      return null;
+    }
+    return spriteCache.get(path);
   }
 
   /**
