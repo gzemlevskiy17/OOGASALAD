@@ -2,7 +2,6 @@ package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.view.core.api.SpriteRenderable;
 
 /**
  * A visible finish-line column placed in the world. The pig wins when it reaches this zone.
@@ -11,7 +10,7 @@ import oogasalad.view.core.api.SpriteRenderable;
  *
  * @author Paulina Vvedenskaya
  */
-public class GoalLineComponent extends FinishLineComponent implements SpriteRenderable {
+public class GoalLineComponent extends FinishLineComponent {
 
   private final double width;
   private final double height;
@@ -33,17 +32,10 @@ public class GoalLineComponent extends FinishLineComponent implements SpriteRend
     // win detection is handled by FinishLineWinChecker, not by the component itself
   }
 
-  @Override
-  public String getSpritePath() {
-    return "";
-  }
-
-  @Override
   public double getSpriteWidth() {
     return width;
   }
 
-  @Override
   public double getSpriteHeight() {
     return height;
   }
