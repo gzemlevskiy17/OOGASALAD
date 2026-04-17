@@ -139,26 +139,20 @@ public class GameEngineImpl implements GameEngine {
 
   private void applyAllJointConstraints(double elapsedTime, int iterations) {
     for (int i = 0; i < iterations; i++) {
-      for (Joint joint : world.getJoints()) {
-        joint.apply(elapsedTime);
-      }
+      for (Joint joint : world.getJoints()) {joint.apply(elapsedTime);}
     }
   }
 
   private void applyPositionJointConstraints(double elapsedTime, int iterations) {
     for (int i = 0; i < iterations; i++) {
       for (Joint joint : world.getJoints()) {
-        if (isPositionConstraintJoint(joint)) {
-          joint.apply(elapsedTime);
-        }
+        if (isPositionConstraintJoint(joint)) {joint.apply(elapsedTime);}
       }
     }
   }
 
   private boolean isPositionConstraintJoint(Joint joint) {
-    if (joint instanceof RevoluteJoint) {
-      return true;
-    }
+    if (joint instanceof RevoluteJoint) {return true;}
     return joint instanceof DistanceJoint distanceJoint && distanceJoint.isRigid();
   }
 
