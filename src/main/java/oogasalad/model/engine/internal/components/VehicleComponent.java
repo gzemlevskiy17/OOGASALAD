@@ -16,12 +16,21 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
   private double currentHp;
   private final String displayName;
   private final String spritePath;
+  private final String hubSpritePath;
+  private final String wheelSpritePath;
   private final double spriteWidth;
   private final double spriteHeight;
 
   public VehicleComponent(double x, double y, double rotation, double mass, double friction,
       double maxHp, String displayName, String spritePath, double spriteWidth,
       double spriteHeight) {
+    this(x, y, rotation, mass, friction, maxHp, displayName, spritePath, null, null,
+        spriteWidth, spriteHeight);
+  }
+
+  public VehicleComponent(double x, double y, double rotation, double mass, double friction,
+      double maxHp, String displayName, String spritePath, String hubSpritePath,
+      String wheelSpritePath, double spriteWidth, double spriteHeight) {
     super(x, y, rotation, mass, friction);
     setTag(DefaultTag.VEHICLE.value());
     if (maxHp < 0) {throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());}
@@ -29,6 +38,8 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
     this.currentHp = maxHp;
     this.displayName = displayName;
     this.spritePath = spritePath;
+    this.hubSpritePath = hubSpritePath;
+    this.wheelSpritePath = wheelSpritePath;
     this.spriteWidth = spriteWidth;
     this.spriteHeight = spriteHeight;
   }
@@ -45,6 +56,16 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
   @Override
   public String getSpritePath() {
     return spritePath;
+  }
+
+  @Override
+  public String getHubSpritePath() {
+    return hubSpritePath;
+  }
+
+  @Override
+  public String getWheelSpritePath() {
+    return wheelSpritePath;
   }
 
   @Override

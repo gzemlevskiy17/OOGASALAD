@@ -7,4 +7,12 @@ public interface SpriteRenderable extends Renderable {
   double getSpriteWidth();
 
   double getSpriteHeight();
+
+  default String getHubSpritePath() {
+    return null;
+  }
+
+  default String getWheelSpritePath() {
+    return null;
+  }
 }
