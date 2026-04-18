@@ -20,9 +20,13 @@ import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
 
 /**
- * Translates a VehicleLayout into GameComponent instances and RigidJoints in the World. Each filled
- * grid cell becomes one component positioned in world space. Adjacent filled cells are connected
- * with a RigidJoint so the vehicle moves as one body.
+ * Translates a VehicleLayout into GameComponent instances and joints in the World. Cardinal
+ * neighbors (right / below) get {@link RevoluteJoint} (wheels) or {@link RigidJoint} (non-wheels).
+ *
+ * <p>Where two perpendicular cardinal neighbors of the same cell are both rigid links,
+ * {@link #addRightAngleRigidChords} invokes {@link RigidJoint}'s triangle registration with stable
+ * grid keys and {@link java.util.Set}-based edge deduplication so the cardinal pass and chord pass
+ * share one physical edge set. {@link #addAntiRotationJoints} still adds longer braces where supported.
  *
  * @author Paulina Vvedenskaya
  */
@@ -55,6 +59,7 @@ public class VehicleFactory {
       placedTypes.put(key, p.componentType());
     }
 
+    Set<String> edgeKeys = new HashSet<>();
     for (PlacedComponent p : resolvedPlacements) {
       GameComponent current = placed.get(toKey(p.row(), p.col()));
 
@@ -62,13 +67,17 @@ public class VehicleFactory {
       if (right != null) {
         world.addJoint(buildJoint(current, right, p.componentType(),
             placedTypes.getOrDefault(toKey(p.row(), p.col() + 1), "")));
+        edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row(), p.col() + 1)));
       }
       GameComponent below = placed.get(toKey(p.row() + 1, p.col()));
       if (below != null) {
         world.addJoint(buildJoint(current, below, p.componentType(),
             placedTypes.getOrDefault(toKey(p.row() + 1, p.col()), "")));
+        edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row() + 1, p.col())));
       }
-    }addAntiRotationJoints(resolvedPlacements, world, placed, placedTypes);
+    }
+    addRightAngleRigidChords(resolvedPlacements, world, placed, placedTypes, edgeKeys);
+    addAntiRotationJoints(resolvedPlacements, world, placed, placedTypes, edgeKeys);
   }
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
@@ -82,10 +91,57 @@ public class VehicleFactory {
     return new RigidJoint(a, b);
   }
 
+  /**
+   * For each filled cell, if two perpendicular cardinal neighbors exist and both arms use rigid
+   * distance joints (no wheel on either side of that arm), adds the closing joint between the two
+   * outer cells — the hypotenuse of the isosceles right triangle.
+   */
+  private void addRightAngleRigidChords(List<PlacedComponent> placements, World world,
+      Map<String, GameComponent> placed, Map<String, String> placedTypes,
+      Set<String> edgeKeys) {
+    for (PlacedComponent p : placements) {
+      int r = p.row();
+      int c = p.col();
+      tryAddRigidTriangleChord(r, c, r, c + 1, r + 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c - 1, r + 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c + 1, r - 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c - 1, r - 1, c, placed, placedTypes, world,
+          edgeKeys);
+    }
+  }
+
+  private void tryAddRigidTriangleChord(int cornerR, int cornerC, int n1r, int n1c, int n2r, int n2c,
+      Map<String, GameComponent> placed, Map<String, String> placedTypes, World world,
+      Set<String> edgeKeys) {
+    String kCorner = toKey(cornerR, cornerC);
+    String k1 = toKey(n1r, n1c);
+    String k2 = toKey(n2r, n2c);
+    if (!placed.containsKey(k1) || !placed.containsKey(k2)) {
+      return;
+    }
+    String tCorner = placedTypes.get(kCorner);
+    String t1 = placedTypes.get(k1);
+    String t2 = placedTypes.get(k2);
+    if (tCorner == null || t1 == null || t2 == null) {
+      return;
+    }
+    if (!isRigidCardinalPair(tCorner, t1) || !isRigidCardinalPair(tCorner, t2)) {
+      return;
+    }
+    RigidJoint.registerRigidTriangle(world, placed.get(kCorner), placed.get(k1), placed.get(k2),
+        edgeKeys, kCorner, k1, k2);
+  }
+
+  private boolean isRigidCardinalPair(String typeA, String typeB) {
+    return !WHEEL_TYPES.contains(typeA) && !WHEEL_TYPES.contains(typeB);
+  }
+
   private void addAntiRotationJoints(List<PlacedComponent> placements, World world,
       Map<String, GameComponent> placed,
-      Map<String, String> placedTypes) {
-    Set<String> createdPairs = new HashSet<>();
+      Map<String, String> placedTypes, Set<String> edgeKeys) {
     int[][] offsets = {{0, 2}, {2, 0}, {1, 1}, {1, -1}};
 
     for (PlacedComponent component : placements) {
@@ -101,9 +157,10 @@ public class VehicleFactory {
           continue;
         }
         String pairKey = canonicalPairKey(startKey, targetKey);
-        if (createdPairs.add(pairKey)) {
-          world.addJoint(new RigidJoint(placed.get(startKey), placed.get(targetKey)));
+        if (!edgeKeys.add(pairKey)) {
+          continue;
         }
+        world.addJoint(new RigidJoint(placed.get(startKey), placed.get(targetKey)));
       }
     }
   }
@@ -148,7 +205,8 @@ public class VehicleFactory {
         compacted.add(new PlacedComponent(targetRow, placement.col(), placement.componentType()));
         targetRow--;
       }
-    }return compacted;
+    }
+    return compacted;
   }
 
   private GameComponent createComponent(String componentType, double x, double y) {
