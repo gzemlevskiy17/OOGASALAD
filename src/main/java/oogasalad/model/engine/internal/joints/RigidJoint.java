@@ -3,6 +3,7 @@ package oogasalad.model.engine.internal.joints;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -56,10 +57,10 @@ public class RigidJoint extends DistanceJoint {
    * @param c     third vertex
    */
   public static void registerRigidTriangle(World world, GameComponent a, GameComponent b, GameComponent c) {
-    Objects.requireNonNull(world, "world");
-    Objects.requireNonNull(a, "a");
-    Objects.requireNonNull(b, "b");
-    Objects.requireNonNull(c, "c");
+    Objects.requireNonNull(world, EngineError.NULL_PARAMETER.format("world"));
+    Objects.requireNonNull(a, EngineError.NULL_PARAMETER.format("a"));
+    Objects.requireNonNull(b, EngineError.NULL_PARAMETER.format("b"));
+    Objects.requireNonNull(c, EngineError.NULL_PARAMETER.format("c"));
     world.addJoint(new RigidJoint(a, b));
     world.addJoint(new RigidJoint(b, c));
     world.addJoint(new RigidJoint(a, c));
@@ -72,9 +73,11 @@ public class RigidJoint extends DistanceJoint {
    * @throws IllegalArgumentException if the list size is not exactly 3
    */
   public static void registerRigidTriangle(World world, List<GameComponent> abc) {
-    Objects.requireNonNull(abc, "abc");
+    Objects.requireNonNull(abc, EngineError.NULL_PARAMETER.format("abc"));
     if (abc.size() != 3) {
-      throw new IllegalArgumentException("Expected exactly 3 components, got " + abc.size());}
+      throw new IllegalArgumentException(
+          EngineError.RIGID_TRIANGLE_LIST_SIZE.format(abc.size()));
+    }
     registerRigidTriangle(world, abc.get(0), abc.get(1), abc.get(2));
   }
 
@@ -92,14 +95,15 @@ public class RigidJoint extends DistanceJoint {
   public static void registerRigidTriangle(World world, GameComponent a, GameComponent b,
       GameComponent c, Set<String> existingCanonicalPairKeys, String keyA, String keyB,
       String keyC) {
-    Objects.requireNonNull(world, "world");
-    Objects.requireNonNull(a, "a");
-    Objects.requireNonNull(b, "b");
-    Objects.requireNonNull(c, "c");
-    Objects.requireNonNull(existingCanonicalPairKeys, "existingCanonicalPairKeys");
-    Objects.requireNonNull(keyA, "keyA");
-    Objects.requireNonNull(keyB, "keyB");
-    Objects.requireNonNull(keyC, "keyC");
+    Objects.requireNonNull(world, EngineError.NULL_PARAMETER.format("world"));
+    Objects.requireNonNull(a, EngineError.NULL_PARAMETER.format("a"));
+    Objects.requireNonNull(b, EngineError.NULL_PARAMETER.format("b"));
+    Objects.requireNonNull(c, EngineError.NULL_PARAMETER.format("c"));
+    Objects.requireNonNull(existingCanonicalPairKeys,
+        EngineError.NULL_PARAMETER.format("existingCanonicalPairKeys"));
+    Objects.requireNonNull(keyA, EngineError.NULL_PARAMETER.format("keyA"));
+    Objects.requireNonNull(keyB, EngineError.NULL_PARAMETER.format("keyB"));
+    Objects.requireNonNull(keyC, EngineError.NULL_PARAMETER.format("keyC"));
     tryRegisterRigidBar(world, a, b, existingCanonicalPairKeys, keyA, keyB);
     tryRegisterRigidBar(world, b, c, existingCanonicalPairKeys, keyB, keyC);
     tryRegisterRigidBar(world, a, c, existingCanonicalPairKeys, keyA, keyC);
