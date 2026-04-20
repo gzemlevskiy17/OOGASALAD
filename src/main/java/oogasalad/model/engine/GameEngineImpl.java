@@ -84,6 +84,8 @@ public class GameEngineImpl implements GameEngine {
     
     applyForces(world.getObjects());
 
+    applyForcesToAcceleration(world.getObjects());
+
     handleCollisions();
 
     //TODO: do this only for dynamic objects
@@ -95,6 +97,14 @@ public class GameEngineImpl implements GameEngine {
 //      enforceConstraint(constraint);
 //    }
 
+  }
+
+  private void applyForcesToAcceleration(Collection<GameObject> objects) {
+    for (GameObject object : objects) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.applyForceToAcceleration();
+      }
+    }
   }
 
   private void applyForces(Collection<GameObject> objects) {

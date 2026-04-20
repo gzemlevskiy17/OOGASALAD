@@ -148,4 +148,21 @@ public abstract class DynamicComponent extends GameComponent {
   private double integrateScalar(double previousValue, double integrandValue, double elapsedTime) {
     return previousValue + integrandValue * elapsedTime;
   }
+
+  public void applyForceToAcceleration() {
+    double m = getMass();
+    if (m <= 0) {
+      dynamicState.setLinearAcceleration(new Vector(0, 0));
+      return;
+    }
+
+    Vector net = getForce();
+
+    if (net == null) {
+      dynamicState.setLinearAcceleration(new Vector(0, 0));
+      return;
+    }
+
+    dynamicState.setLinearAcceleration(net.multiply(1.0 / m));
+  }
 }
