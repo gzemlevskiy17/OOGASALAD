@@ -35,6 +35,12 @@ public abstract class DynamicComponent extends GameComponent {
     this.restitution = restitution;
     this.momentOfInertia = momentOfInertia;
     this.affectedByGravity = affectedByGravity;
+    this.force = new Vector(0, 0);
+  }
+
+  /** Exposes mutable linear/angular state for integration and tests. */
+  public DynamicState getDynamicState() {
+    return dynamicState;
   }
 
   public Vector getForce() {
