@@ -1,14 +1,17 @@
 package oogasalad.model.engine;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
+import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 
 /**
  * Main physics-step orchestrator for simulation updates in a world.
@@ -73,7 +76,11 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
+    resetForces(world.getObjects());
+    
     applyJointConstraints(elapsedTime);
+    
+    applyForces(world.getObjects());
 
     handleCollisions();
 
@@ -86,6 +93,29 @@ public class GameEngineImpl implements GameEngine {
 //      enforceConstraint(constraint);
 //    }
 
+  }
+
+  private void applyForces(Collection<GameObject> objects) {
+    for (GameObject object : objects) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        if (dynamicComponent.isAffectedByGravity()) {
+          dynamicComponent.addForce(gravityVector.multiply(dynamicComponent.getMass()));
+        }
+
+        if (object instanceof Driveable driveable) {
+          dynamicComponent.addForce(driveable.getDriveForce());
+        }
+      }
+    }
+
+  }
+
+  private void resetForces(Collection<GameObject> objects) {
+    for (GameObject object : objects) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.resetForce();
+      }
+    }
   }
 
   //TODO: implement collision detection for all world objects
