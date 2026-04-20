@@ -46,7 +46,7 @@ public class GameEngineImpl implements GameEngine {
   private CollisionDetector collisionDetector;
   private CollisionSolver collisionSolver;
 
-  private final Vector gravityVector = new Vector(0, -9.8); // Change in the future
+  private final Vector gravityVector = new Vector(0, -9.8); // Change in the future (inject levelAttributes)
 
   /**
    * Creates an engine with explicit simulation dependencies.
