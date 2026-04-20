@@ -2,6 +2,7 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
@@ -45,7 +46,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision pairwise collision record to resolve
    */
   @Override
-  public void solve(Collision collision) {
+  public void solve(Optional<Collision> collision) {
     List<ContactPointPhysics> collisionManifold = computeCollisionManifold(collision);
     resolveImpulseAtContacts(collision, collisionManifold);
     applyPositionalCorrection(collision);
@@ -111,7 +112,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision detected collision pair
    * @return contact points suitable for impulse resolution
    */
-  private List<ContactPointPhysics> computeCollisionManifold(Collision collision) {
+  private List<ContactPointPhysics> computeCollisionManifold(
+      @org.jetbrains.annotations.UnknownNullability Optional<Collision> collision) {
     Vector[] incidentEdge = collision.getIncidentEdge();
     Vector[] referenceEdge = collision.getReferenceEdge();
     Vector[] clippedIncidentEdge = clipToReferenceEdge(incidentEdge, referenceEdge);
@@ -198,7 +200,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision         detected collision pair
    * @param collisionManifold contact points derived from the collision geometry
    */
-  private void resolveImpulseAtContacts(Collision collision,
+  private void resolveImpulseAtContacts(
+      @org.jetbrains.annotations.UnknownNullability Optional<Collision> collision,
       List<ContactPointPhysics> collisionManifold) {
 
     //TODO: refactor
@@ -340,7 +343,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    *
    * @param collision detected collision pair
    */
-  private void applyPositionalCorrection(Collision collision) {
+  private void applyPositionalCorrection(
+      @org.jetbrains.annotations.UnknownNullability Optional<Collision> collision) {
     double correctionFraction = 0.4; //TODO: put into properties file
 
     GameObject referenceObject = collision.getReferenceObject();

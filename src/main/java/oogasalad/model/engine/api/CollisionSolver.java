@@ -1,5 +1,6 @@
 package oogasalad.model.engine.api;
 
+import java.util.Optional;
 import oogasalad.model.engine.Collision;
 
 /**
@@ -41,6 +42,6 @@ public interface CollisionSolver {
    *
    * @param collision collision data for one object pair at the current simulation step
    */
-  void solve(Collision collision);
+  void solve(Optional<Collision> collision);
   //TODO: is it best that this mutates, or returns new object state?
 }

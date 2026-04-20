@@ -3,6 +3,7 @@ package oogasalad.model.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import javafx.scene.paint.Paint;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
@@ -136,18 +137,16 @@ public class GameEngineImpl implements GameEngine {
 
   //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
-    List<CollisionPair> collisions = getCollisions();
+    List<Optional<Collision>> collisions = getCollisions();
 
     solveCollisions(collisions);
   }
 
-  private List<CollisionPair> getCollisions() {
-    List<CollisionPair> collisions = new ArrayList<>();
+  private List<Optional<Collision>> getCollisions() {
+    List<Optional<Collision>> collisions = new ArrayList<>();
     for (GameObject objectA : world.getObjects()) {
       for (GameObject objectB : world.getObjects()) {
-        if (collisionDetector.detectCollision(objectA, objectB)) {
-          collisions.add(new CollisionPair(objectA, objectB));
-        }
+        collisions.add(collisionDetector.detectCollision(objectA, objectB));
 
 //        collision.ifPresent(collisions::add);
       }
@@ -172,8 +171,8 @@ public class GameEngineImpl implements GameEngine {
     }
   }
 
-  private void solveCollisions(List<Collision> collisions) {
-    for (Collision collision : collisions) {
+  private void solveCollisions(List<Optional<Collision>> collisions) {
+    for (Optional<Collision> collision : collisions) {
       collisionSolver.solve(collision);
     }
   }

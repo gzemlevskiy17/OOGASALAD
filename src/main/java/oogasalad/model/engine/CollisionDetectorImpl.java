@@ -42,7 +42,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * the shapes do not overlap
    */
   @Override
-  public boolean detectCollision(GameObject objectA, GameObject objectB) {
+  public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
     return findSatCollision(objectA, objectB);
   }
 
