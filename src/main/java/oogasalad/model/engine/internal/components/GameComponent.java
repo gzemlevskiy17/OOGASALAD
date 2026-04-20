@@ -64,7 +64,6 @@ public abstract class GameComponent implements GameObject {
   }
 
 
-
   public boolean isActive() {
     return active;
   }
