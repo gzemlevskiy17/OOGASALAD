@@ -1,22 +1,25 @@
 package oogasalad.controller.player.internal;
 
+import java.util.List;
 import java.util.function.Consumer;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
+import oogasalad.model.engine.CollisionDetectorImpl;
+import oogasalad.model.engine.ConvexPolygon;
+import oogasalad.model.engine.DynamicPassthroughSolver;
+import oogasalad.model.engine.GameEngineImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
-import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.view.core.api.Camera;
@@ -33,14 +36,18 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  * Default factory that assembles the full gameplay runtime graph (world, engine, camera,
  * renderer, input, win/loss checks, and controller) for one playable session.
  *
+ * <p>Uses {@link GameEngineImpl} (forces, integration, collisions) with rectangular
+ * {@link DynamicComponent} bodies — no circular placeholders.
+ *
  * @author Iurii Beliaev
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
-  // Constants for a demonstration
-  private static final double BALL_RADIUS = 12.0;
   private static final double WORLD_WIDTH = 2600.0;
   private static final double WORLD_HEIGHT = 1600.0;
+  /** Default axis-aligned box size (world units) for demo bodies. */
+  private static final double BOX_W = 48.0;
+  private static final double BOX_H = 48.0;
 
   private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
     ImageView imageView = new ImageView(spriteCache.get(sr.getSpritePath()));
@@ -51,16 +58,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return imageView;
   }
 
-  /**
-   * Builds and wires one gameplay session using the supplied screen and outcome callback.
-   *
-   * @param screen gameplay view implementation used for render-layer attachment and sizing
-   * @param onOutcome callback fired when controller detects terminal game outcomes
-   * @return fully assembled gameplay session ready to start
-   */
   @Override
   public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome) {
-    // Re-entry / retry can reuse the same view instance, so clear stale nodes from prior sessions.
     screen.getGameLayer().getChildren().clear();
 
     World world = buildWorldForCurrentLevel();
@@ -73,10 +72,13 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     double viewWidth = screen.getGameLayer().getPrefWidth();
     double viewHeight = screen.getGameLayer().getPrefHeight();
-    if (viewWidth <= 0) viewWidth = 1280;
-    if (viewHeight <= 0) viewHeight = 720;
+    if (viewWidth <= 0) {
+      viewWidth = 1280;
+    }
+    if (viewHeight <= 0) {
+      viewHeight = 720;
+    }
 
-    // World boundary overlay (drawn in world space, projected each frame)
     Rectangle worldBounds = new Rectangle(WORLD_WIDTH, WORLD_HEIGHT);
     worldBounds.setManaged(false);
     worldBounds.setFill(Color.TRANSPARENT);
@@ -84,46 +86,60 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     worldBounds.setStrokeWidth(2.0);
     worldBounds.getStrokeDashArray().addAll(10.0, 8.0);
 
-    // keep the world boundary behind balls
     screen.getGameLayer().getChildren().add(worldBounds);
     worldBounds.toBack();
 
     Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
     GameObject player = resolveControlledPlayer(world);
 
-    CameraBehavior behavior = new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight, 0, 0, 0.2);
+    CameraBehavior behavior =
+        new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight, 0, 0, 0.2);
     camera.setBehavior(behavior);
     SpriteCache spriteCache = new SpriteCache();
-    Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
-      if (r instanceof SpriteRenderable sr) {
-        return createImageView(sr, spriteCache);
-      }
-      Circle c = new Circle(BALL_RADIUS);
-      if (r == player) {
-        c.setRadius(BALL_RADIUS + 3);
-        c.setFill(Color.ORANGE); // followed ball
-      } else if (r instanceof GameObject go) {
-        //TODO: need to ensure this is a dynamic object
-        Vector v = go.getDynamicState().getLinearVelocity();
-        boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
-        c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY); // moving vs idle
-      } else {
-        c.setFill(Color.DODGERBLUE);
-      }
-      return c;
-    });
+    Renderer objectRenderer =
+        new RendererImpl(
+            screen.getGameLayer(),
+            r -> {
+              if (r instanceof SpriteRenderable sr) {
+                return createImageView(sr, spriteCache);
+              }
+              if (r instanceof DynamicComponent dc) {
+                double[] wh = axisAlignedSize(dc.getPolygon());
+                Rectangle rect = new Rectangle(wh[0], wh[1]);
+                Vector v = dc.getDynamicState().getLinearVelocity();
+                boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
+                if (r == player) {
+                  rect.setFill(Color.ORANGE);
+                  rect.setStroke(Color.DARKORANGE);
+                  rect.setStrokeWidth(1.5);
+                } else {
+                  rect.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY);
+                }
+                return rect;
+              }
+              Rectangle fallback = new Rectangle(BOX_W, BOX_H);
+              fallback.setFill(Color.DODGERBLUE);
+              return fallback;
+            });
 
-    Renderer renderer = (cameraRef, objects) -> {
-      objectRenderer.render(cameraRef, objects);
+    Renderer renderer =
+        (cameraRef, objects) -> {
+          objectRenderer.render(cameraRef, objects);
+          worldBounds.setLayoutX(-cameraRef.getX());
+          worldBounds.setLayoutY(-cameraRef.getY());
+        };
 
-      // project world border into viewport using camera transform
-      worldBounds.setLayoutX(-cameraRef.getX());
-      worldBounds.setLayoutY(-cameraRef.getY());
-    };
-
-    GameController controller = new GameControllerImpl(
-        engine, world, renderer, camera, behavior, winChecker, lossChecker, inputRouter, config
-    );
+    GameController controller =
+        new GameControllerImpl(
+            engine,
+            world,
+            renderer,
+            camera,
+            behavior,
+            winChecker,
+            lossChecker,
+            inputRouter,
+            config);
     controller.setOnOutcome(onOutcome);
 
     return new GameplaySession(controller);
@@ -132,72 +148,139 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private World buildWorldForCurrentLevel() {
     World world = new WorldImpl();
 
-    // Followed "player" ball (first object is used by resolveControlledPlayer)
-    world.addComponent(createMovingCircle(350, 300, 180, 120));
+    world.addComponent(createBox(350, 300, BOX_W, BOX_H, 180, 120, false, 1.0));
 
-    // Other moving balls
-    world.addComponent(createMovingCircle(900, 500, -140, 100));
-    world.addComponent(createMovingCircle(1500, 900, 160, -130));
-    world.addComponent(createMovingCircle(2100, 400, -120, -90));
+    world.addComponent(createBox(900, 500, BOX_W, BOX_H, -140, 100, false, 1.0));
+    world.addComponent(createBox(1500, 900, BOX_W, BOX_H, 160, -130, false, 1.0));
+    world.addComponent(createBox(2100, 400, BOX_W, BOX_H, -120, -90, false, 1.0));
 
-    // Idle balls (v=0) so camera motion is obvious
-    world.addComponent(createMovingCircle(200, 1200, 0, 0));
-    world.addComponent(createMovingCircle(1200, 200, 0, 0));
-    world.addComponent(createMovingCircle(2400, 1300, 0, 0));
-    world.addComponent(createMovingCircle(2500, 300, 0, 0));
+    world.addComponent(createBox(200, 1200, BOX_W, BOX_H, 0, 0, false, 1.0));
+    world.addComponent(createBox(1200, 200, BOX_W, BOX_H, 0, 0, false, 1.0));
+    world.addComponent(createBox(2400, 1300, BOX_W, BOX_H, 0, 0, false, 1.0));
+    world.addComponent(createBox(2500, 300, BOX_W, BOX_H, 0, 0, false, 1.0));
+
     return world;
   }
 
-  private GameComponent createMovingCircle(double x, double y, double vx, double vy) {
-    DynamicComponent c = new DynamicComponent(x, y, 0, 1.0, 0.1) {
-    };
-    c.setAffectedByGravity(false);
-    c.getStaticState().setLinearVelocity(new Vector(vx, vy));
-    return c;
+  /**
+   * Axis-aligned box in local space from (0,0) to (w,h); {@code (x,y)} is the top-left in world
+   * space (rotation 0).
+   */
+  private DynamicComponent createBox(
+      double x,
+      double y,
+      double w,
+      double h,
+      double vx,
+      double vy,
+      boolean affectedByGravity,
+      double mass) {
+    ConvexPolygon poly =
+        new ConvexPolygon(
+            List.of(
+                new Vector(0, 0),
+                new Vector(w, 0),
+                new Vector(w, h),
+                new Vector(0, h)));
+    DynamicComponent body =
+        new DynamicComponent(x, y, 0, poly, "box", 0, mass, 1, 0.5, affectedByGravity) {};
+    body.activate();
+    body.getDynamicState().setLinearVelocity(new Vector(vx, vy));
+    return body;
   }
 
   private GameEngine buildEngine(World world) {
-    final double minX = BALL_RADIUS;
-    final double maxX = WORLD_WIDTH - BALL_RADIUS;
-    final double minY = BALL_RADIUS;
-    final double maxY = WORLD_HEIGHT - BALL_RADIUS;
-
-    return elapsedTime -> {
-      for (GameObject obj : world.getObjects()) {
-        obj.getStaticState().integrateObjectState(elapsedTime);
-        double x = obj.getStaticState().getLinearPosition().x();
-        double y = obj.getStaticState().getLinearPosition().y();
-        double vx = obj.getStaticState().getLinearVelocity().x();
-        double vy = obj.getStaticState().getLinearVelocity().y();
-        if (x < minX || x > maxX) vx = -vx;
-        if (y < minY || y > maxY) vy = -vy;
-        obj.getStaticState().setLinearPosition(new Vector(
-            Math.max(minX, Math.min(maxX, x)),
-            Math.max(minY, Math.min(maxY, y))
-        ));
-        obj.getStaticState().setLinearVelocity(new Vector(vx, vy));
-      }
+    GameEngineImpl physics =
+        new GameEngineImpl(
+            world, new CollisionDetectorImpl(), new DynamicPassthroughSolver());
+    return elapsed -> {
+      physics.step(elapsed);
+      clampDynamicsToWorldBounds(world);
     };
+  }
+
+  /**
+   * Keeps axis-aligned boxes (rotation 0, polygon with min at origin) inside the world rectangle and
+   * reflects linear velocity on impact — same role as the old demo bounce bounds.
+   */
+  private void clampDynamicsToWorldBounds(World world) {
+    for (GameObject go : world.getObjects()) {
+      if (!(go instanceof DynamicComponent dc)) {
+        continue;
+      }
+      double[] wh = axisAlignedSize(dc.getPolygon());
+      double w = wh[0];
+      double h = wh[1];
+
+      var st = dc.getStaticState();
+      var dyn = dc.getDynamicState();
+      double x = st.getLinearPosition().x();
+      double y = st.getLinearPosition().y();
+      double vx = dyn.getLinearVelocity().x();
+      double vy = dyn.getLinearVelocity().y();
+
+      double nx = x;
+      double ny = y;
+      double nvx = vx;
+      double nvy = vy;
+
+      if (nx < 0) {
+        nvx = -nvx;
+        nx = 0;
+      } else if (nx + w > WORLD_WIDTH) {
+        nvx = -nvx;
+        nx = WORLD_WIDTH - w;
+      }
+
+      if (ny < 0) {
+        nvy = -nvy;
+        ny = 0;
+      } else if (ny + h > WORLD_HEIGHT) {
+        nvy = -nvy;
+        ny = WORLD_HEIGHT - h;
+      }
+
+      st.setLinearPosition(new Vector(nx, ny));
+      dyn.setLinearVelocity(new Vector(nvx, nvy));
+    }
+  }
+
+  private static double[] axisAlignedSize(ConvexPolygon poly) {
+    List<Vector> pts = poly.getPoints();
+    double minX = pts.stream().mapToDouble(Vector::x).min().orElse(0);
+    double maxX = pts.stream().mapToDouble(Vector::x).max().orElse(BOX_W);
+    double minY = pts.stream().mapToDouble(Vector::y).min().orElse(0);
+    double maxY = pts.stream().mapToDouble(Vector::y).max().orElse(BOX_H);
+    return new double[] {maxX - minX, maxY - minY};
   }
 
   private GameConfig buildConfig() {
     return new GameConfig() {
       @Override
-      public String getSetting(String key) { return ""; }
+      public String getSetting(String key) {
+        return "";
+      }
 
       @Override
-      public double getNumericSetting(String key) { return 0.0; }
+      public double getNumericSetting(String key) {
+        return 0.0;
+      }
     };
   }
 
-  private WinConditionChecker buildWinChecker() { return world -> false; }
+  private WinConditionChecker buildWinChecker() {
+    return world -> false;
+  }
 
-  private LossConditionChecker buildLossChecker() { return world -> false; }
+  private LossConditionChecker buildLossChecker() {
+    return world -> false;
+  }
 
-  private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
+  private InputRouterImpl buildInputRouter() {
+    return new InputRouterImpl();
+  }
 
   private GameObject resolveControlledPlayer(World world) {
     return world.getObjects().stream().findFirst().orElse(null);
   }
-
 }
