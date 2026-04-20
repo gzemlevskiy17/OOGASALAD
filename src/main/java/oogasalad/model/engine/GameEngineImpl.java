@@ -137,21 +137,26 @@ public class GameEngineImpl implements GameEngine {
 
   //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
-    List<Optional<Collision>> collisions = getCollisions();
-
+    List<Collision> collisions = getCollisions();
     solveCollisions(collisions);
   }
 
-  private List<Optional<Collision>> getCollisions() {
-    List<Optional<Collision>> collisions = new ArrayList<>();
+  private List<Collision> getCollisions() {
+    List<Collision> collisions = new ArrayList<>();
     for (GameObject objectA : world.getObjects()) {
       for (GameObject objectB : world.getObjects()) {
-        collisions.add(collisionDetector.detectCollision(objectA, objectB));
-
-//        collision.ifPresent(collisions::add);
+        if (objectA == objectB) {
+          continue;
+        }
+        collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
       }
     }
     return collisions;
+  }
+  private void solveCollisions(List<Collision> collisions) {
+    for (Collision collision : collisions) {
+      collisionSolver.solve(collision);
+    }
   }
 
   private void applyJointConstraints(double elapsedTime) {
@@ -168,12 +173,6 @@ public class GameEngineImpl implements GameEngine {
     public CollisionPair(GameObject objectA, GameObject objectB) {
       this.objectA = objectA;
       this.objectB = objectB;
-    }
-  }
-
-  private void solveCollisions(List<Optional<Collision>> collisions) {
-    for (Optional<Collision> collision : collisions) {
-      collisionSolver.solve(collision);
     }
   }
 }

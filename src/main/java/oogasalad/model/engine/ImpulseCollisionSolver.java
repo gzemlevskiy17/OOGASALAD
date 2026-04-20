@@ -46,7 +46,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision pairwise collision record to resolve
    */
   @Override
-  public void solve(Optional<Collision> collision) {
+  public void solve(Collision collision) {
     List<ContactPointPhysics> collisionManifold = computeCollisionManifold(collision);
     resolveImpulseAtContacts(collision, collisionManifold);
     applyPositionalCorrection(collision);
@@ -112,7 +112,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision detected collision pair
    * @return contact points suitable for impulse resolution
    */
-  private List<ContactPointPhysics> computeCollisionManifold(Optional<Collision> collision) {
+  private List<ContactPointPhysics> computeCollisionManifold(Collision collision) {
     Vector[] incidentEdge = collision.getIncidentEdge();
     Vector[] referenceEdge = collision.getReferenceEdge();
     Vector[] clippedIncidentEdge = clipToReferenceEdge(incidentEdge, referenceEdge);
@@ -200,7 +200,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collisionManifold contact points derived from the collision geometry
    */
   private void resolveImpulseAtContacts(
-      @org.jetbrains.annotations.UnknownNullability Optional<Collision> collision,
+      @org.jetbrains.annotations.UnknownNullability Collision collision,
       List<ContactPointPhysics> collisionManifold) {
 
     //TODO: refactor
@@ -343,7 +343,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision detected collision pair
    */
   private void applyPositionalCorrection(
-      @org.jetbrains.annotations.UnknownNullability Optional<Collision> collision) {
+      @org.jetbrains.annotations.UnknownNullability Collision collision) {
     double correctionFraction = 0.4; //TODO: put into properties file
 
     GameObject referenceObject = collision.getReferenceObject();

@@ -6,7 +6,7 @@ import oogasalad.model.engine.api.CollisionSolver;
 public class DynamicPassthroughSolver implements CollisionSolver {
 
   @Override
-  public void solve(Optional<Collision> collision) {
+  public void solve(Collision collision) {
 
   }
 }

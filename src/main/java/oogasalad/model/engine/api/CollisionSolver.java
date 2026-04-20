@@ -42,6 +42,6 @@ public interface CollisionSolver {
    *
    * @param collision collision data for one object pair at the current simulation step
    */
-  void solve(Optional<Collision> collision);
+  void solve(Collision collision);
   //TODO: is it best that this mutates, or returns new object state?
 }
