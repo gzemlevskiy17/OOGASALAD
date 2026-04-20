@@ -3,8 +3,6 @@ package oogasalad.model.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import javafx.scene.paint.Paint;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.Driveable;
@@ -46,25 +44,31 @@ public class GameEngineImpl implements GameEngine {
 
   private World world;
   private CollisionDetector collisionDetector;
-  private CollisionSolver collisionSolver;
+  private CollisionDispatcher collisionDispatcher;
 
   private final Vector gravityVector = new Vector(0, -9.8); // Change in the future (inject levelAttributes)
 
   /**
    * Creates an engine with explicit simulation dependencies.
    *
+   * <p><strong>Purpose:</strong> Initializes the physics engine with a world instance and
+   * collision detector. The engine internally creates a {@link CollisionDispatcher} to route
+   * collisions to appropriate solvers based on object type pairs.
+   *
    * <p><strong>Assumptions:</strong> All arguments are non-null and remain valid for the engine
-   * lifetime.
+   * lifetime. The provided world and detector follow their interface contracts.
+   *
+   * <p><strong>Dependencies:</strong> Requires {@link World} and {@link CollisionDetector}
+   * implementations. Uses {@link CollisionDispatcher} and {@link ImpulseCollisionSolver}
+   * internally.
    *
    * @param world             world that stores active simulation objects
    * @param collisionDetector pairwise detector used to build collision records
-   * @param collisionSolver   solver used to resolve detected collisions
    */
-  public GameEngineImpl(World world, CollisionDetector collisionDetector,
-      CollisionSolver collisionSolver) {
+  public GameEngineImpl(World world, CollisionDetector collisionDetector) {
     this.world = world;
     this.collisionDetector = collisionDetector;
-    this.collisionSolver = collisionSolver;
+    this.collisionDispatcher = new CollisionDispatcher();
   }
 
   /**
@@ -81,13 +85,14 @@ public class GameEngineImpl implements GameEngine {
   @Override
   public void step(double elapsedTime) {
     resetForces(world.getObjects());
-    
+
     applyJointConstraints(elapsedTime);
-    
+
     applyForces(world.getObjects());
 
     applyForcesToAcceleration(world.getObjects());
 
+    //TODO: store dynamic/static components in world and only loop over dynamics to integrate
     for (GameObject gameObject : world.getObjects()) {
         if (gameObject instanceof DynamicComponent dynamicComponent) {
           dynamicComponent.integrateObjectState(elapsedTime);
@@ -155,24 +160,16 @@ public class GameEngineImpl implements GameEngine {
   }
   private void solveCollisions(List<Collision> collisions) {
     for (Collision collision : collisions) {
-      collisionSolver.solve(collision);
+      CollisionPair collisionPair = new CollisionPair(collision.getReferenceObject().getClass(),
+          collision.getIncidentObject().getClass());
+      collisionDispatcher.getSolverMap().get(collisionPair)
+          .solve(collision.getReferenceObject(), collision.getIncidentObject(), collision);
     }
   }
 
   private void applyJointConstraints(double elapsedTime) {
     for (Joint joint : world.getJoints()) {
       joint.apply(elapsedTime);
-    }
-  }
-
-  class CollisionPair {
-
-    GameObject objectA;
-    GameObject objectB;
-
-    public CollisionPair(GameObject objectA, GameObject objectB) {
-      this.objectA = objectA;
-      this.objectB = objectB;
     }
   }
 }

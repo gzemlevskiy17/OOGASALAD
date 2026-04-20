@@ -16,7 +16,6 @@ public abstract class DynamicComponent extends GameComponent {
   private Vector force;
   private boolean affectedByGravity;
 
-
   /**
    *
    * @param x
