@@ -86,12 +86,12 @@ public class GameEngineImpl implements GameEngine {
 
     applyForcesToAcceleration(world.getObjects());
 
-    handleCollisions();
-
     //TODO: do this only for dynamic objects
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
 //      gameObject.getStaticState().integrateObjectState(elapsedTime);
     }
+
+    handleCollisions();
 
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
@@ -131,7 +131,6 @@ public class GameEngineImpl implements GameEngine {
   }
 
   //TODO: implement collision detection for all world objects
-  //TODO: implement application of forces
 
   //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
