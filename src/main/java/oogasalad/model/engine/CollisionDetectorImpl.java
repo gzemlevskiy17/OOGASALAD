@@ -83,7 +83,9 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @return a collision record when all axes overlap, otherwise {@link Optional#empty()}
    */
   private Optional<Collision> findSatCollision(GameObject objectA, GameObject objectB) {
-    if ()
+    if (objectA == null || objectB == null || objectA == objectB) {
+      return Optional.empty();
+    }
 
     Optional<Collision> collisionOnAxesOfA = penetrationDepthOnAxesOfA(objectA, objectB);
     if (collisionOnAxesOfA.isPresent()) {

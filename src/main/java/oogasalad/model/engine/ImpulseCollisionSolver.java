@@ -112,8 +112,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision detected collision pair
    * @return contact points suitable for impulse resolution
    */
-  private List<ContactPointPhysics> computeCollisionManifold(
-      @org.jetbrains.annotations.UnknownNullability Optional<Collision> collision) {
+  private List<ContactPointPhysics> computeCollisionManifold(Optional<Collision> collision) {
     Vector[] incidentEdge = collision.getIncidentEdge();
     Vector[] referenceEdge = collision.getReferenceEdge();
     Vector[] clippedIncidentEdge = clipToReferenceEdge(incidentEdge, referenceEdge);
