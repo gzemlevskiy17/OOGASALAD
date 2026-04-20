@@ -3,6 +3,7 @@ package oogasalad.model.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javafx.scene.paint.Paint;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.Driveable;
@@ -86,9 +87,10 @@ public class GameEngineImpl implements GameEngine {
 
     applyForcesToAcceleration(world.getObjects());
 
-    //TODO: do this only for dynamic objects
-    for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
-//      gameObject.getStaticState().integrateObjectState(elapsedTime);
+    for (GameObject gameObject : world.getObjects()) {
+        if (gameObject instanceof DynamicComponent dynamicComponent) {
+          dynamicComponent.integrateObjectState(elapsedTime);
+      }
     }
 
     handleCollisions();
