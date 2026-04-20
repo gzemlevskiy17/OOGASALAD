@@ -2,6 +2,7 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
@@ -198,7 +199,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision         detected collision pair
    * @param collisionManifold contact points derived from the collision geometry
    */
-  private void resolveImpulseAtContacts(Collision collision,
+  private void resolveImpulseAtContacts(
+      @org.jetbrains.annotations.UnknownNullability Collision collision,
       List<ContactPointPhysics> collisionManifold) {
 
     //TODO: refactor
@@ -340,7 +342,8 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    *
    * @param collision detected collision pair
    */
-  private void applyPositionalCorrection(Collision collision) {
+  private void applyPositionalCorrection(
+      @org.jetbrains.annotations.UnknownNullability Collision collision) {
     double correctionFraction = 0.4; //TODO: put into properties file
 
     GameObject referenceObject = collision.getReferenceObject();

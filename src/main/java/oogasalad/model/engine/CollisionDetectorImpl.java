@@ -42,7 +42,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * the shapes do not overlap
    */
   @Override
-  public boolean detectCollision(GameObject objectA, GameObject objectB) {
+  public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
     return findSatCollision(objectA, objectB);
   }
 
@@ -83,7 +83,9 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @return a collision record when all axes overlap, otherwise {@link Optional#empty()}
    */
   private Optional<Collision> findSatCollision(GameObject objectA, GameObject objectB) {
-    if ()
+    if (objectA == null || objectB == null || objectA == objectB) {
+      return Optional.empty();
+    }
 
     Optional<Collision> collisionOnAxesOfA = penetrationDepthOnAxesOfA(objectA, objectB);
     if (collisionOnAxesOfA.isPresent()) {

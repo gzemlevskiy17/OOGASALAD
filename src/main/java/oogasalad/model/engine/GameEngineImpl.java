@@ -1,14 +1,19 @@
 package oogasalad.model.engine;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import javafx.scene.paint.Paint;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
+import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 
 /**
  * Main physics-step orchestrator for simulation updates in a world.
@@ -43,6 +48,8 @@ public class GameEngineImpl implements GameEngine {
   private CollisionDetector collisionDetector;
   private CollisionSolver collisionSolver;
 
+  private final Vector gravityVector = new Vector(0, -9.8); // Change in the future (inject levelAttributes)
+
   /**
    * Creates an engine with explicit simulation dependencies.
    *
@@ -73,14 +80,21 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
+    resetForces(world.getObjects());
+    
     applyJointConstraints(elapsedTime);
+    
+    applyForces(world.getObjects());
+
+    applyForcesToAcceleration(world.getObjects());
+
+    for (GameObject gameObject : world.getObjects()) {
+        if (gameObject instanceof DynamicComponent dynamicComponent) {
+          dynamicComponent.integrateObjectState(elapsedTime);
+      }
+    }
 
     handleCollisions();
-
-    //TODO: do this only for dynamic objects
-    for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
-//      gameObject.getStaticState().integrateObjectState(elapsedTime);
-    }
 
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
@@ -88,28 +102,61 @@ public class GameEngineImpl implements GameEngine {
 
   }
 
+  private void applyForcesToAcceleration(Collection<GameObject> objects) {
+    for (GameObject object : objects) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.applyForceToAcceleration();
+      }
+    }
+  }
+
+  private void applyForces(Collection<GameObject> objects) {
+    for (GameObject object : objects) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        if (dynamicComponent.isAffectedByGravity()) {
+          dynamicComponent.addForce(gravityVector.multiply(dynamicComponent.getMass()));
+        }
+
+        if (object instanceof Driveable driveable) {
+          dynamicComponent.addForce(driveable.getDriveForce());
+        }
+      }
+    }
+
+  }
+
+  private void resetForces(Collection<GameObject> objects) {
+    for (GameObject object : objects) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.resetForce();
+      }
+    }
+  }
+
   //TODO: implement collision detection for all world objects
-  //TODO: implement application of forces
 
   //TODO: implement solving of collisions in multiple small steps
   private void handleCollisions() {
-    List<CollisionPair> collisions = getCollisions();
-
+    List<Collision> collisions = getCollisions();
     solveCollisions(collisions);
   }
 
-  private List<CollisionPair> getCollisions() {
-    List<CollisionPair> collisions = new ArrayList<>();
+  private List<Collision> getCollisions() {
+    List<Collision> collisions = new ArrayList<>();
     for (GameObject objectA : world.getObjects()) {
       for (GameObject objectB : world.getObjects()) {
-        if (collisionDetector.detectCollision(objectA, objectB)) {
-          collisions.add(new CollisionPair(objectA, objectB));
+        if (objectA == objectB) {
+          continue;
         }
-
-//        collision.ifPresent(collisions::add);
+        collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
       }
     }
     return collisions;
+  }
+  private void solveCollisions(List<Collision> collisions) {
+    for (Collision collision : collisions) {
+      collisionSolver.solve(collision);
+    }
   }
 
   private void applyJointConstraints(double elapsedTime) {
@@ -126,12 +173,6 @@ public class GameEngineImpl implements GameEngine {
     public CollisionPair(GameObject objectA, GameObject objectB) {
       this.objectA = objectA;
       this.objectB = objectB;
-    }
-  }
-
-  private void solveCollisions(List<Collision> collisions) {
-    for (Collision collision : collisions) {
-      collisionSolver.solve(collision);
     }
   }
 }
