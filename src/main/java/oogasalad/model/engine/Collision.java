@@ -1,5 +1,6 @@
 package oogasalad.model.engine;
 
+import java.util.Map;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
@@ -33,6 +34,7 @@ public class Collision {
   private Vector penetration;
   private Vector[] referenceEdge;
   private Vector[] incidentEdge;
+  private Map<Vector, Double> collisionManifold;
 
   /**
    * Creates a collision record for two objects.
@@ -75,5 +77,13 @@ public class Collision {
 
   public void setIncidentEdge(Vector[] incidentEdge) {
     this.incidentEdge = incidentEdge;
+  }
+
+  public Map<Vector, Double> getCollisionManifold() {
+    return collisionManifold;
+  }
+
+  public void setManifold(Map<Vector, Double> collisionManifold) {
+    this.collisionManifold = collisionManifold;
   }
 }

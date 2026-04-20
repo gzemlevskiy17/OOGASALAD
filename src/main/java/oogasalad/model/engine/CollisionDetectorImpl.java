@@ -1,6 +1,8 @@
 package oogasalad.model.engine;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.GameObject;
@@ -43,7 +45,9 @@ public class CollisionDetectorImpl implements CollisionDetector {
    */
   @Override
   public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
-    return findSatCollision(objectA, objectB);
+    Optional<Collision> collision = findSatCollision(objectA, objectB);
+    collision.ifPresent(this::addManifold);
+    return collision;
   }
 
   /**
@@ -83,11 +87,11 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @return a collision record when all axes overlap, otherwise {@link Optional#empty()}
    */
   private Optional<Collision> findSatCollision(GameObject objectA, GameObject objectB) {
-    Optional<Collision> collisionOnAxesOfA = penetrationDepthOnAxesOfA(objectA, objectB);
+    Optional<Collision> collisionOnAxesOfA = buildCollision(objectA, objectB);
     if (collisionOnAxesOfA.isPresent()) {
       return collisionOnAxesOfA;
     }
-    return penetrationDepthOnAxesOfA(objectB, objectA);
+    return buildCollision(objectB, objectA);
   }
 
   /**
@@ -102,7 +106,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @param incidentObject  object projected against those axes
    * @return a collision record when projections overlap on every tested axis, otherwise empty
    */
-  private Optional<Collision> penetrationDepthOnAxesOfA(GameObject referenceObject,
+  private Optional<Collision> buildCollision(GameObject referenceObject,
       GameObject incidentObject) {
     //TODO: rename method (setters in the end)
     ConvexPolygon referencePolygon = referenceObject.getPolygon();
@@ -167,5 +171,140 @@ public class CollisionDetectorImpl implements CollisionDetector {
       }
     }
     return incidentEdge;
+  }
+
+  /**
+   * Clips the incident edge against the reference edge and keeps the contact points that lie inside
+   * the reference face.
+   *
+   * <p>Assumes at least one endpoint of the incident edge is inside the reference polygon and that
+   * the reference edge preserves clockwise ordering.
+   *
+   * @param clippedIncidentEdge incident edge after side clipping
+   * @param referenceEdge       reference edge used to compute contact depth
+   * @return contact points that lie behind the reference edge
+   */
+  private Map<Vector, Double> faceClip(Vector[] clippedIncidentEdge, Vector[] referenceEdge) {
+    Vector referenceOutwardNormal = referenceEdge[1].subtract(referenceEdge[0]).normalize()
+        .rotateLeft();
+    Map<Vector, Double> manifoldPoints = new HashMap<>();
+    double distanceFromLeftPlane = distanceFromPlane(clippedIncidentEdge[0], referenceEdge[0],
+        referenceOutwardNormal);
+    if (distanceFromLeftPlane < 0) {
+      manifoldPoints.put(clippedIncidentEdge[0], -distanceFromLeftPlane);
+    }
+
+    double distanceFromRightPlane = distanceFromPlane(clippedIncidentEdge[1], referenceEdge[0],
+        referenceOutwardNormal);
+    if (distanceFromRightPlane < 0) {
+      manifoldPoints.put(clippedIncidentEdge[1], -distanceFromRightPlane);
+    }
+
+    return manifoldPoints;
+  }
+
+  /**
+   * Computes the signed distance of a point from a plane defined by a point and normal.
+   *
+   * @param point       point being tested
+   * @param planePoint  point on the plane
+   * @param planeNormal outward normal of the plane
+   * @return signed distance from the plane
+   */
+  private double distanceFromPlane(Vector point, Vector planePoint, Vector planeNormal) {
+    return point.subtract(planePoint).dot(planeNormal);
+  }
+
+
+  /**
+   * Builds the contact manifold for the detected collision.
+   *
+   * <p>The method clips the incident edge against the reference edge before keeping only points
+   * that lie inside the reference face.
+   * <p>
+   * hand-tested: clippedIncidentEdge = [(0, 1), (8, 9)] referenceEdge = [(0, 5), (8, 5)]
+   * referenceOutwardNormal = (0, 1): only adds (0, 1) to manifold, not (8, 9), which is not in the
+   * reference polygon.
+   *
+   * @param collision detected collision pair
+   * @return contact points suitable for impulse resolution
+   */
+  private void addManifold(Collision collision) {
+    Vector[] incidentEdge = collision.getIncidentEdge();
+    Vector[] referenceEdge = collision.getReferenceEdge();
+    Vector[] clippedIncidentEdge = clipToReferenceEdge(incidentEdge, referenceEdge);
+    collision.setManifold(faceClip(clippedIncidentEdge, referenceEdge));
+  }
+
+
+  /**
+   * Clips the incident edge against the side planes of the reference edge.
+   *
+   * <p>The result preserves the portion of the incident edge that lies between the reference edge
+   * endpoints.
+   *
+   * @param incidentEdge  edge from the incident polygon
+   * @param referenceEdge edge from the reference polygon
+   * @return the incident edge clipped to the reference edge extents
+   */
+  private Vector[] clipToReferenceEdge(Vector[] incidentEdge, Vector[] referenceEdge) {
+    // 4 situations: incident edge has both, either, or no endpoints outside of reference edge.
+    // Assuming that the incident edge will intersect the reference edge, and at least some part of
+    // the incident edge is within the reference edge endpoints
+    Vector sideANormal = referenceEdge[0].subtract(referenceEdge[1]);
+    Vector sideBNormal = referenceEdge[1].subtract(referenceEdge[0]);
+
+    //find where the endpoints of the incident edge are relative to the planes
+    Vector unclippedSideAEndpoint = null;
+    Vector unclippedSideBEndpoint = null;
+    if (incidentEdge[0].subtract(referenceEdge[0]).dot(sideANormal) > incidentEdge[1].subtract(
+        referenceEdge[0]).dot(
+        sideANormal)) { //the more positive dot product with the outward A normal, the farthest that point is in the outward direction
+      unclippedSideAEndpoint = incidentEdge[0];
+      unclippedSideBEndpoint = incidentEdge[1];
+    } else {
+      unclippedSideAEndpoint = incidentEdge[1];
+      unclippedSideBEndpoint = incidentEdge[0];
+    }
+    Vector clippedIncidentAEndpoint = unclippedSideAEndpoint;
+    if (distanceFromPlane(unclippedSideAEndpoint, referenceEdge[0], sideANormal) > 0) {
+      //compute the point of intersection of the incident edge and the side A plane
+      clippedIncidentAEndpoint = computeLineIntersection(incidentEdge, referenceEdge[0],
+          sideANormal);
+    }
+
+    Vector clippedIncidentBEndpoint = unclippedSideBEndpoint;
+    if (distanceFromPlane(unclippedSideBEndpoint, referenceEdge[1], sideBNormal) > 0) {
+      //compute the point of intersection of the incident edge and the side B plane
+      clippedIncidentBEndpoint = computeLineIntersection(incidentEdge, referenceEdge[1],
+          sideBNormal);
+    }
+
+    return new Vector[]{clippedIncidentAEndpoint, clippedIncidentBEndpoint};
+  }
+
+  /**
+   * Computes the intersection point between an incident edge and a clipping plane.
+   *
+   * <p>Assumes the incident edge is not parallel to the plane normal and intersects with the
+   * reference edge.
+   * <p>
+   * hand-tested: incidentEdge = [(-1, 0), (9, 10)] referencePlaneIntersection = (0, 5)
+   * outwardPlaneNormal = (-1, 0) returns (1, 0)
+   *
+   * @param incidentEdge               edge being clipped
+   * @param referencePlaneIntersection point on the clipping plane
+   * @param outwardPlaneNormal         clipping plane normal
+   * @return intersection point along the incident edge
+   */
+  private Vector computeLineIntersection(Vector[] incidentEdge, Vector referencePlaneIntersection,
+      Vector outwardPlaneNormal) {
+    //TODO: referencePlaneIntersection should be an endpoint of the reference edge? put in documentation
+    Vector edgeDirection = incidentEdge[1].subtract(incidentEdge[0]);
+    double edgeLengthInPlaneNormalDirection = edgeDirection.dot(outwardPlaneNormal);
+    double fractionAlongIncidentEdge = (referencePlaneIntersection.subtract(incidentEdge[0])).dot(
+        outwardPlaneNormal) / edgeLengthInPlaneNormalDirection; //
+
+    return incidentEdge[0].add(edgeDirection.multiply(fractionAlongIncidentEdge));
   }
 }
