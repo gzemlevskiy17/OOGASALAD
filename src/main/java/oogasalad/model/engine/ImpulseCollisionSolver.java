@@ -116,7 +116,7 @@ public class ImpulseCollisionSolver {
       referenceCrossProductSum +=
           contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse; //TODO: make impulse vector?
-      referenceCrossProductSum +=
+      incidentCrossProductSum +=
           contactPointPhysics.positionFromIncident.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse;
     }
