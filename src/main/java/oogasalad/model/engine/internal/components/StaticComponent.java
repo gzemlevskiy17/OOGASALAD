@@ -35,24 +35,21 @@ public abstract class StaticComponent extends GameComponent {
     this.friction = friction;
   }
 
-<<<<<<< HEAD
   @Override
   public void addForce(Vector force) {
     // immovable terrain: ignore
   }
-  @Override
-  public void setRestitution(double restitution) {
-    // optional: store a field if your solver uses restitution on statics; else no-op
-  }
+
   @Override
   public boolean isAffectedByGravity() {
     return false;
   }
+
   @Override
   public boolean isTrigger() {
     return false;
   }
-=======
+
   public double getRestitution() {
     return restitution;
   }
@@ -60,6 +57,4 @@ public abstract class StaticComponent extends GameComponent {
   public void setRestitution(double restitution) {
     this.restitution = restitution;
   }
-
->>>>>>> 044256994f6ce735c41e84af939ad969365d1a17
 }
