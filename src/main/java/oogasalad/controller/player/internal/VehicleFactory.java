@@ -13,18 +13,16 @@ import oogasalad.model.engine.internal.components.DriveComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.StructuralComponent;
-import oogasalad.model.engine.internal.joints.RevoluteJoint;
 import oogasalad.model.engine.internal.joints.RigidJoint;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
 
 /**
- * Translates a VehicleLayout into GameComponent instances and joints in the World. Each grid cell
- * becomes one structural body that is {@link RigidJoint}-linked to its cardinal neighbors and
- * braced with triangle chords and anti-rotation links. Wheel cells expand into two bodies — a
- * hub (structural, rigidly joined to the chassis) and a tire (joined to the hub by a single
- * {@link RevoluteJoint}), so the tire can spin from ground friction while the hub stays oriented
- * with the chassis.
+ * Translates a VehicleLayout into GameComponent instances and joints in the World. Cardinal
+ * neighbors are pinned at their shared edge midpoint with {@link RigidJoint} (zero rest distance)
+ * so the whole vehicle behaves as a single rigid body. Triangle chord and anti-rotation joints
+ * provide additional bracing for cells with only one neighbor. Wheel cells are plain structural
+ * bodies — the tire spin is a cosmetic view-side animation driven off linear speed.
  *
  * @author Paulina Vvedenskaya
  */
@@ -34,15 +32,12 @@ public class VehicleFactory {
       ResourceBundle.getBundle("oogasalad.view.authoring.VehicleComponentPalette");
 
   private static final double CELL_SIZE = 60.0;
+  private static final double HALF_CELL = CELL_SIZE / 2.0;
   private static final double DEFAULT_FRICTION = 0.3;
   private static final double DEFAULT_MASS_PIG = 2.0;
   private static final double DEFAULT_MASS_DRIVE = 20.0;
   private static final double DEFAULT_MASS_STRUCTURAL = 1.5;
-  private static final double DEFAULT_MASS_HUB = 1.0;
-  private static final double DEFAULT_MASS_TIRE = 1.5;
   private static final double DEFAULT_MAX_HP = 100.0;
-
-  private static final Set<String> WHEEL_TYPES = Set.of("Wheel", "Small Wheel", "Large Wheel");
 
   public void buildVehicle(VehicleLayout layout, World world, double startX, double startY) {
     List<PlacedComponent> resolvedPlacements = compactVerticalGaps(layout);
@@ -51,15 +46,9 @@ public class VehicleFactory {
     for (PlacedComponent p : resolvedPlacements) {
       double worldX = startX + p.col() * CELL_SIZE;
       double worldY = startY + p.row() * CELL_SIZE;
-      GameComponent gridBody = createGridBody(p.componentType(), worldX, worldY);
-      world.addComponent(gridBody);
-      placed.put(toKey(p.row(), p.col()), gridBody);
-
-      if (WHEEL_TYPES.contains(p.componentType())) {
-        GameComponent tire = createTire(p.componentType(), worldX, worldY);
-        world.addComponent(tire);
-        world.addJoint(new RevoluteJoint(gridBody, tire, new Vector(0, 0), new Vector(0, 0)));
-      }
+      GameComponent body = createComponent(p.componentType(), worldX, worldY);
+      world.addComponent(body);
+      placed.put(toKey(p.row(), p.col()), body);
     }
 
     Set<String> edgeKeys = new HashSet<>();
@@ -68,12 +57,14 @@ public class VehicleFactory {
 
       GameComponent right = placed.get(toKey(p.row(), p.col() + 1));
       if (right != null) {
-        world.addJoint(new RigidJoint(current, right));
+        world.addJoint(new RigidJoint(current, right,
+            new Vector(HALF_CELL, 0), new Vector(-HALF_CELL, 0), 0.0, 0.0));
         edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row(), p.col() + 1)));
       }
       GameComponent below = placed.get(toKey(p.row() + 1, p.col()));
       if (below != null) {
-        world.addJoint(new RigidJoint(current, below));
+        world.addJoint(new RigidJoint(current, below,
+            new Vector(0, HALF_CELL), new Vector(0, -HALF_CELL), 0.0, 0.0));
         edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row() + 1, p.col())));
       }
     }
@@ -175,27 +166,6 @@ public class VehicleFactory {
       }
     }
     return compacted;
-  }
-
-  private GameComponent createGridBody(String componentType, double x, double y) {
-    if (WHEEL_TYPES.contains(componentType)) {
-      return createHub(componentType, x, y);
-    }
-    return createComponent(componentType, x, y);
-  }
-
-  private GameComponent createHub(String wheelType, double x, double y) {
-    String displayName = wheelType + " Hub";
-    double[] wh = paletteDims(displayName);
-    return new StructuralComponent(x, y, 0, DEFAULT_MASS_HUB, DEFAULT_FRICTION,
-        DEFAULT_MAX_HP, displayName, wh[0], wh[1]);
-  }
-
-  private GameComponent createTire(String wheelType, double x, double y) {
-    String displayName = wheelType + " Tire";
-    double[] wh = paletteDims(displayName);
-    return new StructuralComponent(x, y, 0, DEFAULT_MASS_TIRE, DEFAULT_FRICTION,
-        DEFAULT_MAX_HP, displayName, wh[0], wh[1]);
   }
 
   private GameComponent createComponent(String componentType, double x, double y) {
