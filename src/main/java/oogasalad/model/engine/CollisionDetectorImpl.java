@@ -143,6 +143,11 @@ public class CollisionDetectorImpl implements CollisionDetector {
         minReferenceEdge[1] = point2;
       }
     }
+
+    if (penetration == null) {
+      return Optional.empty();
+    }
+
     collision.setPenetration(penetration);
     collision.setReferenceEdge(minReferenceEdge);
     collision.setIncidentEdge(findIncidentEdge(incidentPolygon, penetration));
@@ -164,7 +169,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
 
     List<Vector> points = incidentPolygon.getPoints();
     for (int i = 0; i < points.size() - 1; i++) {
-      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize().rotateLeft();
+      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize().rotateRight(); // maybe rotateLeft
       double dotWithIncident = penetrationNormal.dot(incidentNormal);
       if (dotWithIncident < minimumDotProduct) {
         minimumDotProduct = dotWithIncident;

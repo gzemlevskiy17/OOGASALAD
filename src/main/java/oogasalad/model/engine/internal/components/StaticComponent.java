@@ -1,10 +1,9 @@
 package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.ConvexPolygon;
+import oogasalad.model.engine.api.Vector;
 
 public abstract class StaticComponent extends RigidBody {
-
-  private double friction;
 
   /**
    *
@@ -28,6 +27,21 @@ public abstract class StaticComponent extends RigidBody {
   @Override
   public double getInverseMomentOfInertia() {
     return 0.0;
+  }
+
+  @Override
+  public void addForce(Vector force) {
+    // immovable terrain: ignore
+  }
+
+  @Override
+  public boolean isAffectedByGravity() {
+    return false;
+  }
+
+  @Override
+  public boolean isTrigger() {
+    return false;
   }
 
 }

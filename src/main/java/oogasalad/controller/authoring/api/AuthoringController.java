@@ -17,4 +17,16 @@ public interface AuthoringController {
 
   /** Commands the data layer to load an existing level. */
   void loadLevel(String fileName);
+
+  /** Reverses the most recently recorded canvas action, if any. */
+  void undo();
+
+  /** Re-applies the most recently undone canvas action, if any. */
+  void redo();
+
+  /** Clears the undo/redo history. */
+  void clearHistory();
+
+  /** Clears all placed objects, resets history, and refreshes the canvas. */
+  void clearLevel();
 }

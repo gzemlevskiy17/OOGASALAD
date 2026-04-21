@@ -12,6 +12,8 @@ public interface Camera {
 
   double getX();
   double getY();
+  double getViewWidth();
+  double getViewHeight();
 
   void setPosition(double x, double y);
 

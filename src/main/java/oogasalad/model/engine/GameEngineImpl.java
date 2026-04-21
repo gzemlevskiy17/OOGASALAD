@@ -3,6 +3,7 @@ package oogasalad.model.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.Driveable;
@@ -12,6 +13,8 @@ import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
+import oogasalad.model.engine.internal.joints.DistanceJoint;
+import oogasalad.model.engine.internal.joints.RevoluteJoint;
 
 /**
  * Main physics-step orchestrator for simulation updates in a world.
@@ -24,8 +27,8 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  * contracts. Invalid or partial state data may cause no-op updates or runtime exceptions.
  *
  * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link CollisionDetector},
- * {@link CollisionSolver}, {@link GameObject}, {@link StaticState}, {@link DynamicState},
- * {@link Collision}, and {@link Vector}.
+ * {@link CollisionSolver}, {@link GameObject}, {@link StaticState}, {@link DynamicState}, {@link Collision}, and
+ * {@link Vector}.
  *
  * <p><strong>Example:</strong>
  *
@@ -42,11 +45,13 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  */
 public class GameEngineImpl implements GameEngine {
 
-  private final Vector gravityVector = new Vector(0,
-      -9.8); // Change in the future (inject levelAttributes)
   private World world;
   private CollisionDetector collisionDetector;
   private CollisionDispatcher collisionDispatcher;
+
+  private final Vector gravityVector = new Vector(0, -9.8); // Change in the future (inject levelAttributes)
+  private static final double GRAVITY = 400.0;
+  private static final int JOINT_SOLVER_ITERATIONS = 8;
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -86,7 +91,11 @@ public class GameEngineImpl implements GameEngine {
   public void step(double elapsedTime) {
     resetForces(world.getObjects());
 
-    applyJointConstraints(elapsedTime);
+    applyAllJointConstraints(elapsedTime, 1);
+
+    for (GameObject gameObject : world.getObjects()) {
+      gameObject.updatePolygon();
+    }
 
     applyForces(world.getObjects());
 
@@ -100,6 +109,9 @@ public class GameEngineImpl implements GameEngine {
     }
 
     handleCollisions();
+
+    // Positional constraints (rigid distance/revolute) need iterative post-integration stabilization.
+    applyPositionJointConstraints(elapsedTime, JOINT_SOLVER_ITERATIONS);
 
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
@@ -127,6 +139,7 @@ public class GameEngineImpl implements GameEngine {
         }
       }
     }
+
   }
 
   private void resetForces(Collection<GameObject> objects) {
@@ -145,6 +158,39 @@ public class GameEngineImpl implements GameEngine {
     solveCollisions(collisions);
   }
 
+  private void applyAllJointConstraints(double elapsedTime, int iterations) {
+    for (int i = 0; i < iterations; i++) {
+      for (Joint joint : world.getJoints()) {
+        joint.apply(elapsedTime);
+      }
+    }
+  }
+
+  private void applyPositionJointConstraints(double elapsedTime, int iterations) {
+    for (int i = 0; i < iterations; i++) {
+      for (Joint joint : world.getJoints()) {
+        if (isPositionConstraintJoint(joint)) {
+          joint.apply(elapsedTime);
+        }
+      }
+    }
+  }
+
+  private boolean isPositionConstraintJoint(Joint joint) {
+    if (joint instanceof RevoluteJoint) {
+      return true;
+    }
+    return joint instanceof DistanceJoint distanceJoint && distanceJoint.isRigid();
+  }
+
+  private static final String VEHICLE_TAG = "vehicle";
+  private static final String PIGS_TAG = "pigs";
+
+  private static boolean isPigVehiclePair(String tagA, String tagB) {
+    return (PIGS_TAG.equals(tagA) && VEHICLE_TAG.equals(tagB))
+        || (VEHICLE_TAG.equals(tagA) && PIGS_TAG.equals(tagB));
+  }
+
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
     for (GameObject objectA : world.getObjects()) {
@@ -160,21 +206,34 @@ public class GameEngineImpl implements GameEngine {
 
   private void solveCollisions(List<Collision> collisions) {
     for (Collision collision : collisions) {
-      CollisionPair collisionPair = new CollisionPair(collision.getReferenceObject().getClass(),
-          collision.getIncidentObject()
-              .getClass()); //TODO: add recursive map lookup handler (looks up classes up the hierarchy)
+      GameObject objectA = collision.getReferenceObject();
+      GameObject objectB = collision.getIncidentObject();
+      System.out.println("objectA: " + objectA);
+      System.out.println("objectB: " + objectB);
+      CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
+          objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
         collisionPair = findSuperClass(collisionPair);
       }
-      collisionDispatcher.getSolverMap().get(collisionPair)
-          .solve(collision.getReferenceObject(), collision.getIncidentObject(), collision);
+
+      if (!collisionPair.objectA().isAssignableFrom(objectA.getClass())) {
+        GameObject temp = objectA;
+        objectA = objectB;
+        objectB = temp;
+      }
+
+      collisionDispatcher.getSolverMap().get(collisionPair).solve(objectA, objectB, collision);
     }
   }
 
   private CollisionPair findSuperClass(CollisionPair collisionPair) {
-    if (collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
-      return collisionPair;
+    Map<CollisionPair, CollisionSolver> solverMap = collisionDispatcher.getSolverMap();
+    CollisionPair sortedPair = CollisionPair.of(collisionPair.objectA(), collisionPair.objectB());
+    if (solverMap.containsKey(sortedPair)) {
+      System.out.println("sortedPair");
+      return sortedPair;
     }
+
     //TODO: make more efficient: currently recursive calls are unnecessarily duplicated (DP?)
     CollisionPair left = null;
     if (collisionPair.objectA().getSuperclass() != null) {
@@ -187,7 +246,7 @@ public class GameEngineImpl implements GameEngine {
     }
 
     if (collisionPair.objectB().getSuperclass() != null) {
-      findSuperClass(
+      return findSuperClass(
           new CollisionPair(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
     }
     return null;
