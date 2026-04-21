@@ -24,8 +24,8 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  * contracts. Invalid or partial state data may cause no-op updates or runtime exceptions.
  *
  * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link CollisionDetector},
- * {@link CollisionSolver}, {@link GameObject}, {@link StaticState}, {@link DynamicState}, {@link Collision}, and
- * {@link Vector}.
+ * {@link CollisionSolver}, {@link GameObject}, {@link StaticState}, {@link DynamicState},
+ * {@link Collision}, and {@link Vector}.
  *
  * <p><strong>Example:</strong>
  *
@@ -42,11 +42,11 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  */
 public class GameEngineImpl implements GameEngine {
 
+  private final Vector gravityVector = new Vector(0,
+      -9.8); // Change in the future (inject levelAttributes)
   private World world;
   private CollisionDetector collisionDetector;
   private CollisionDispatcher collisionDispatcher;
-
-  private final Vector gravityVector = new Vector(0, -9.8); // Change in the future (inject levelAttributes)
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -94,8 +94,8 @@ public class GameEngineImpl implements GameEngine {
 
     //TODO: store dynamic/static components in world and only loop over dynamics to integrate
     for (GameObject gameObject : world.getObjects()) {
-        if (gameObject instanceof DynamicComponent dynamicComponent) {
-          dynamicComponent.integrateObjectState(elapsedTime);
+      if (gameObject instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.integrateObjectState(elapsedTime);
       }
     }
 
@@ -127,7 +127,6 @@ public class GameEngineImpl implements GameEngine {
         }
       }
     }
-
   }
 
   private void resetForces(Collection<GameObject> objects) {
@@ -158,13 +157,30 @@ public class GameEngineImpl implements GameEngine {
     }
     return collisions;
   }
+
   private void solveCollisions(List<Collision> collisions) {
     for (Collision collision : collisions) {
       CollisionPair collisionPair = new CollisionPair(collision.getReferenceObject().getClass(),
-          collision.getIncidentObject().getClass());
+          collision.getIncidentObject()
+              .getClass()); //TODO: add recursive map lookup handler (looks up classes up the hierarchy)
+      if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
+        collisionPair = findSuperClass(collisionPair);
+      }
       collisionDispatcher.getSolverMap().get(collisionPair)
           .solve(collision.getReferenceObject(), collision.getIncidentObject(), collision);
     }
+  }
+
+  private CollisionPair findSuperClass(CollisionPair collisionPair) {
+    if (collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
+      return collisionPair;
+    }
+    //TODO: make more efficient: currently recursive calls are unnecessarily duplicated (DP?)
+    findSuperClass(
+        new CollisionPair(collisionPair.objectA().getSuperclass(), collisionPair.objectB()));
+    findSuperClass(
+        new CollisionPair(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
+    return null;
   }
 
   private void applyJointConstraints(double elapsedTime) {
