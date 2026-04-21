@@ -28,7 +28,7 @@ import oogasalad.model.engine.api.CollisionSolver;
  */
 public record CollisionPair(Class<?> objectA, Class<?> objectB) {
 
-  public CollisionPair of(Class<?> objectA, Class<?> objectB) {
+  public static CollisionPair of(Class<?> objectA, Class<?> objectB) {
     if (objectA.getName().compareTo(objectB.getName()) < 0) {
       return new CollisionPair(objectA, objectB);
     } else {

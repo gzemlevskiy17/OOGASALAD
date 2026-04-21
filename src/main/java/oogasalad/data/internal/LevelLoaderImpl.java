@@ -99,7 +99,7 @@ public class LevelLoaderImpl implements LevelLoader {
     String texture = props.path("texture").asText("assets/terrain/default.png");
     boolean tiled = props.path("tile_texture").asBoolean(false);
     double friction = props.path("friction").asDouble(DEFAULT_FRICTION);
-    double restitution = props.path("friction").asDouble(DEFAULT_RESTITUTION);
+    double restitution = props.path("restitution").asDouble(DEFAULT_RESTITUTION);
 
     return new TerrainBlock(x, y, width, height, texture, tiled, friction, restitution);
   }
