@@ -34,9 +34,9 @@ public class TerrainBlock extends TerrainComponent {
    * @param friction surface friction coefficient (non-negative)
    */
   public TerrainBlock(double x, double y, double width, double height,
-      String sprite, boolean tiled, double friction) {
+      String sprite, boolean tiled, double friction, double restitution) {
 
-    this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR);
+    this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR, restitution);
     setPolygon(ConvexPolygon.axisAlignedBox(x, y, width, height));
   }
 
@@ -44,14 +44,15 @@ public class TerrainBlock extends TerrainComponent {
    * @param color CSS color string used as a fallback when the sprite cannot be loaded
    */
   public TerrainBlock(double x, double y, double width, double height,
-      String sprite, boolean tiled, double friction, String color) {
+      String sprite, boolean tiled, double friction, String color, double restitution) {
     super(
         x,
         y,
         0,
         ConvexPolygon.axisAlignedBox(x, y, width, height),
         sprite,
-        friction);
+        friction,
+        restitution);
 
     this.width = width;
     this.height = height;
