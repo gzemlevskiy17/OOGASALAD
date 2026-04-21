@@ -76,12 +76,6 @@ class HudToolDriveableMappingTest {
         "placing 'Balloon' should create a DriveComponent");
   }
 
-  /**
-   * Bug A: palette + HUD use "Engine", but VehicleFactory's switch only recognizes "Motor", so
-   * placing "Engine" falls through to the default branch and becomes a StructuralComponent.
-   * Expected to FAIL until either the HUD tool is renamed to "motor" or VehicleFactory's switch
-   * gains an "Engine" case.
-   */
   @Test
   void engineTool_mapsToDriveComponent() {
     World world = new WorldImpl();
@@ -90,8 +84,7 @@ class HudToolDriveableMappingTest {
         world, START_X, START_Y);
 
     assertTrue(worldHasDriveWithDisplayNameIgnoreCase(world, "engine"),
-        "placing 'Engine' should create a DriveComponent — currently fails because "
-            + "VehicleFactory.createComponent only recognizes 'Motor', not 'Engine'");
+        "placing 'Engine' should create a DriveComponent");
   }
 
   /**

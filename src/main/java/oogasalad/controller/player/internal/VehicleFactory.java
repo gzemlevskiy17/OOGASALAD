@@ -278,7 +278,7 @@ public class VehicleFactory {
       case "Pig":
       case "Small Pig":
         return new PigComponent(x, y, 0, DEFAULT_MASS_PIG, DEFAULT_FRICTION, componentType);
-      case "Motor":
+      case "Engine":
       case "Fan":
       case "Balloon":
       case "Rocket":
