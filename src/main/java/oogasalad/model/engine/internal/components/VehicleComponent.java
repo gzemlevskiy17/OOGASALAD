@@ -10,7 +10,7 @@ import oogasalad.view.core.api.SpriteRenderable;
  */
 public abstract class VehicleComponent extends DynamicComponent implements SpriteRenderable {
   private static final Set<String> WHEEL_DISPLAY_NAMES = Set.of(
-      "Wheel", "Small Wheel", "Large Wheel");
+      "Wood Wheel", "Metal Wheel");
 
   private double maxHp;
   private double currentHp;

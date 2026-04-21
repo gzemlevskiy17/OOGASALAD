@@ -23,13 +23,10 @@ public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
       Map.entry("Frame", new BuildRules(
           Set.of(TOP, RIGHT, BOTTOM, LEFT), Set.of(), Set.of(),
           Containment.NONE, PositionConstraint.NONE)),
-      Map.entry("Wheel", new BuildRules(
+      Map.entry("Wood Wheel", new BuildRules(
           Set.of(TOP), Set.of(TOP), Set.of(),
           Containment.NONE, PositionConstraint.BOTTOM_ROW_OF_GRID)),
-      Map.entry("Small Wheel", new BuildRules(
-          Set.of(TOP), Set.of(TOP), Set.of(),
-          Containment.NONE, PositionConstraint.BOTTOM_ROW_OF_GRID)),
-      Map.entry("Large Wheel", new BuildRules(
+      Map.entry("Metal Wheel", new BuildRules(
           Set.of(TOP), Set.of(TOP), Set.of(),
           Containment.NONE, PositionConstraint.BOTTOM_ROW_OF_GRID)),
       Map.entry("Sled", new BuildRules(
@@ -46,6 +43,9 @@ public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
           Containment.NONE, PositionConstraint.NONE)),
       Map.entry("Balloon", new BuildRules(
           Set.of(BOTTOM), Set.of(BOTTOM), Set.of(TOP),
+          Containment.NONE, PositionConstraint.NONE)),
+      Map.entry("Engine", new BuildRules(
+          Set.of(RIGHT, BOTTOM), Set.of(), Set.of(),
           Containment.NONE, PositionConstraint.NONE))
   );
 
