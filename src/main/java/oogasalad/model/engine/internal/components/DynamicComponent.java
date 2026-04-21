@@ -6,13 +6,11 @@ import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.StaticState;
 import oogasalad.model.engine.api.Vector;
 
-public abstract class DynamicComponent extends GameComponent {
+public abstract class DynamicComponent extends RigidBody {
 
   private DynamicState dynamicState;
   private double mass;
-  private double friction;
   private double momentOfInertia;
-  private double restitution;
   private Vector force;
   private boolean affectedByGravity;
 
@@ -27,17 +25,17 @@ public abstract class DynamicComponent extends GameComponent {
   public DynamicComponent(double x, double y, double rotation,
       ConvexPolygon polygon, String tag, double friction, double mass, double momentOfInertia,
       double restitution, boolean affectedByGravity) {
-    super(x, y, rotation, polygon, tag);
+    super(x, y, rotation, polygon, tag, friction, restitution);
     this.dynamicState = new DynamicState();
     this.mass = mass;
-    this.friction = friction;
-    this.restitution = restitution;
     this.momentOfInertia = momentOfInertia;
     this.affectedByGravity = affectedByGravity;
     this.force = new Vector(0, 0);
   }
 
-  /** Exposes mutable linear/angular state for integration and tests. */
+  /**
+   * Exposes mutable linear/angular state for integration and tests.
+   */
   public DynamicState getDynamicState() {
     return dynamicState;
   }
@@ -65,6 +63,16 @@ public abstract class DynamicComponent extends GameComponent {
     this.mass = mass;
   }
 
+  @Override
+  public double getInverseMass() {
+    return 1 / mass;
+  }
+
+  @Override
+  public double getInverseMomentOfInertia() {
+    return 1 / momentOfInertia;
+  }
+
   public boolean isAffectedByGravity() {
     return affectedByGravity;
   }
@@ -81,27 +89,8 @@ public abstract class DynamicComponent extends GameComponent {
     this.momentOfInertia = momentOfInertia;
   }
 
-  public double getRestitution() {
-    return restitution;
-  }
-
-  public void setRestitution(double restitution) {
-    this.restitution = restitution;
-  }
-
   public void resetForce() {
     this.force = new Vector(0, 0);
-  }
-
-  public double getFriction() {
-    return friction;
-  }
-
-  public void setFriction(double friction) {
-    if (friction < 0) {
-      throw new IllegalArgumentException(EngineError.FRICTION_MUST_BE_NON_NEGATIVE.message());
-    }
-    this.friction = friction;
   }
 
   /**
