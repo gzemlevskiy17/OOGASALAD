@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.api.World;
@@ -45,13 +46,19 @@ public class LevelLoaderImpl implements LevelLoader {
 
   private static final double DEFAULT_FRICTION = 0.5;
   private static final double DEFAULT_SIZE = 1.0;
+  private static final int DEFAULT_MAX_SELECTABLE = 5;
 
   @Override
-  public void loadLevel(String fileName, World world, GameConfig config) {
+  public void loadLevel(String fileName, World world, LevelAttributes levelAttributes,
+      GameConfig config) {
     JsonNode root = parseFile(fileName);
     VALIDATOR.validate(root);
 
-    loadTerrain(root.path("level").path("terrain"), world, fileName);
+    JsonNode levelNode = root.path("level");
+    loadTerrain(levelNode.path("terrain"), world, fileName);
+    if (levelAttributes != null) {
+      loadVehiclePalette(levelNode.path("vehicle_palette"), levelAttributes);
+    }
     LOG.info("Level loaded from {}", fileName);
   }
 
@@ -87,5 +94,25 @@ public class LevelLoaderImpl implements LevelLoader {
     double friction = props.path("friction").asDouble(DEFAULT_FRICTION);
 
     return new TerrainBlock(x, y, width, height, texture, tiled, friction);
+  }
+
+  private void loadVehiclePalette(JsonNode vehiclePaletteNode, LevelAttributes levelAttributes) {
+    if (vehiclePaletteNode.isMissingNode()) {
+      levelAttributes.setMaxSelectableVehicleItems(DEFAULT_MAX_SELECTABLE);
+      levelAttributes.setAllowedVehicleComponents(java.util.List.of());
+      return;
+    }
+
+    levelAttributes.setMaxSelectableVehicleItems(
+        vehiclePaletteNode.path("max_selectable").asInt(DEFAULT_MAX_SELECTABLE));
+
+    java.util.List<String> allowedComponents = new java.util.ArrayList<>();
+    JsonNode allowedComponentsNode = vehiclePaletteNode.path("allowed_components");
+    if (allowedComponentsNode.isArray()) {
+      for (JsonNode componentNode : allowedComponentsNode) {
+        allowedComponents.add(componentNode.asText());
+      }
+    }
+    levelAttributes.setAllowedVehicleComponents(allowedComponents);
   }
 }

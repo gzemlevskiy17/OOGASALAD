@@ -1,6 +1,7 @@
 package oogasalad.view.authoring.internal;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
@@ -40,8 +41,10 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
   private final ScrollPane visualRoot;
   private final SpriteCache spriteCache = new SpriteCache();
   private final AuthoringAlertService alertService = new AuthoringAlertService();
-  private final Map<StackPane, String> selectedCells = new LinkedHashMap<>();
+  private final Map<StackPane, SelectedVehicleComponent> selectedCells = new LinkedHashMap<>();
   private Consumer<String> selectionSummaryHandler = summary -> {
+  };
+  private Consumer<List<String>> selectedComponentsHandler = selectedComponents -> {
   };
 
   /**
@@ -85,6 +88,16 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
   }
 
   /**
+   * Returns the maximum number of vehicle items the palette allows to be selected.
+   *
+   * @return configured vehicle-item selection cap
+   * @author Emilio Garcia
+   */
+  public int getMaxSelectableItems() {
+    return Integer.parseInt(PALETTE_CONFIG.getString("maxSelectableItems"));
+  }
+
+  /**
    * Registers a listener that is notified whenever the selected vehicle item summary changes.
    *
    * @param handler consumer that receives the formatted selected-items summary text
@@ -92,6 +105,18 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
    */
   public void setSelectionSummaryHandler(Consumer<String> handler) {
     selectionSummaryHandler = handler == null ? summary -> {
+    } : handler;
+    notifySelectionSummaryChanged();
+  }
+
+  /**
+   * Registers a listener that is notified whenever the selected vehicle component IDs change.
+   *
+   * @param handler consumer that receives the current selected vehicle component IDs
+   * @author Emilio Garcia
+   */
+  public void setSelectedComponentsHandler(Consumer<List<String>> handler) {
+    selectedComponentsHandler = handler == null ? selectedComponents -> {
     } : handler;
     notifySelectionSummaryChanged();
   }
@@ -114,8 +139,9 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     VBox cellContent = new VBox(2);
     cellContent.setAlignment(Pos.CENTER);
 
-    String key = componentName.replace(" ", "");
-    String spriteKey = key + ".sprite";
+    String resourceKey = componentName.replace(" ", "");
+    String componentId = toStableComponentId(componentName);
+    String spriteKey = resourceKey + ".sprite";
     if (PALETTE_CONFIG.containsKey(spriteKey)) {
       Image img = spriteCache.get(PALETTE_CONFIG.getString(spriteKey));
       if (img != null) {
@@ -141,7 +167,7 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     updateCellStyle(cell, false);
     cell.setOnMouseClicked(event -> {
       try {
-        toggleSelection(cell, componentName);
+        toggleSelection(cell, new SelectedVehicleComponent(componentId, componentName));
       } catch (VehicleSelectionLimitException e) {
         LOG.warn("{}", e.getMessage());
         alertService.showWarning(
@@ -153,7 +179,7 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     return cell;
   }
 
-  private void toggleSelection(StackPane cell, String componentName) {
+  private void toggleSelection(StackPane cell, SelectedVehicleComponent component) {
     if (selectedCells.containsKey(cell)) {
       selectedCells.remove(cell);
       updateCellStyle(cell, false);
@@ -161,7 +187,7 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
       return;
     }
     validateSelectionCapacity();
-    selectedCells.put(cell, componentName);
+    selectedCells.put(cell, component);
     updateCellStyle(cell, true);
     notifySelectionSummaryChanged();
   }
@@ -175,11 +201,23 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
   }
 
   private void notifySelectionSummaryChanged() {
+    selectedComponentsHandler.accept(selectedCells.values().stream()
+        .map(SelectedVehicleComponent::id)
+        .toList());
     if (selectedCells.isEmpty()) {
       selectionSummaryHandler.accept(PALETTE_CONFIG.getString("selectionSummaryEmpty"));
       return;
     }
-    selectionSummaryHandler.accept(String.join(", ", selectedCells.values()));
+    selectionSummaryHandler.accept(selectedCells.values().stream()
+        .map(SelectedVehicleComponent::displayName)
+        .collect(java.util.stream.Collectors.joining(", ")));
+  }
+
+  private String toStableComponentId(String componentName) {
+    return componentName.trim().toLowerCase().replace(' ', '_');
+  }
+
+  private record SelectedVehicleComponent(String id, String displayName) {
   }
 
   private void updateCellStyle(StackPane cell, boolean selected) {

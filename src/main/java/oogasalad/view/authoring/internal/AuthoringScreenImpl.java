@@ -159,6 +159,8 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     canvasHost = new StackPane(canvasScrollPane);
 
     vehiclePalette = new VehicleComponentScrollPalette();
+    vehiclePalette.setSelectedComponentsHandler(levelAttributes::setAllowedVehicleComponents);
+    levelAttributes.setMaxSelectableVehicleItems(vehiclePalette.getMaxSelectableItems());
     vehiclePalette.setSelectionSummaryHandler(this::updateSelectedItemsSummary);
     terrainPalette = new ComponentPaletteImpl();
     pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");

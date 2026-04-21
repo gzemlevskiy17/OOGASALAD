@@ -249,14 +249,14 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   @Override
   public void saveLevel(String fileName) {
-    saver.saveLevel(fileName, world);
+    saver.saveLevel(fileName, world, levelAttributes);
     LOG.info("Saved level to {}", fileName);
   }
 
   @Override
   public void loadLevel(String fileName) {
     world.clear();
-    loader.loadLevel(fileName, world, null);
+    loader.loadLevel(fileName, world, levelAttributes, null);
     canvas.refreshGrid();
     LOG.info("Loaded level from {}", fileName);
   }
