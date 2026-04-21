@@ -24,6 +24,7 @@ import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
@@ -177,10 +178,13 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       if (r == player) {
         c.setRadius(BALL_RADIUS + 3);
         c.setFill(Color.ORANGE);
-      } else if (r instanceof GameObject go) {
-        Vector v = go.getState().getLinearVelocity();
+      } else if (r instanceof DynamicComponent dyn) {
+        Vector v = dyn.getDynamicState().getLinearVelocity();
         boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
         c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY);
+      } else if (r instanceof GameObject) {
+        // Static / pass-through / other non-dynamic simulation objects — no DynamicState
+        c.setFill(Color.DODGERBLUE);
       } else {
         c.setFill(Color.DODGERBLUE);
       }

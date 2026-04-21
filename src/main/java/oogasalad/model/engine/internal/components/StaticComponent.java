@@ -2,6 +2,7 @@ package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.EngineError;
+import oogasalad.model.engine.api.Vector;
 
 public abstract class StaticComponent extends GameComponent {
 
@@ -30,5 +31,22 @@ public abstract class StaticComponent extends GameComponent {
       throw new IllegalArgumentException(EngineError.FRICTION_MUST_BE_NON_NEGATIVE.message());
     }
     this.friction = friction;
+  }
+
+  @Override
+  public void addForce(Vector force) {
+    // immovable terrain: ignore
+  }
+  @Override
+  public void setRestitution(double restitution) {
+    // optional: store a field if your solver uses restitution on statics; else no-op
+  }
+  @Override
+  public boolean isAffectedByGravity() {
+    return false;
+  }
+  @Override
+  public boolean isTrigger() {
+    return false;
   }
 }

@@ -82,6 +82,7 @@ public class TerrainPlaceable implements AuthoringPlaceable {
         row,
         colSpan(cellSize),
         rowSpan(cellSize),
+        sprite,
         tiled,
         friction,
         color);

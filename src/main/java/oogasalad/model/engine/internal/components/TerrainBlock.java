@@ -45,8 +45,14 @@ public class TerrainBlock extends TerrainComponent {
    */
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction, String color) {
-    super(x, y, 0, 0, friction);
-    setAffectedByGravity(false);
+    super(
+        x,
+        y,
+        0,
+        ConvexPolygon.axisAlignedBox(x, y, width, height),
+        sprite,
+        friction);
+
     this.width = width;
     this.height = height;
     this.sprite = sprite;

@@ -58,7 +58,6 @@ public abstract class GameComponent implements GameObject {
 
 
   //TODO: should we expose this?
-  @Override
   public void setStaticState(StaticState staticState) {
     this.staticState = staticState;
   }
