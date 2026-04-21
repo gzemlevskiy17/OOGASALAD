@@ -3,7 +3,6 @@ package oogasalad.model.engine.internal.joints;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -22,92 +21,51 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public class RigidJoint extends DistanceJoint {
 
-  /**
-   * Creates a rigid joint that locks the initial anchor separation.
-   */
   public RigidJoint(GameComponent objectA, GameComponent objectB) {
     super(objectA, objectB, 0.0, 0.0);
   }
 
-  /** Creates a rigid joint with an allowed distance band. */
-  public RigidJoint(GameComponent objectA, GameComponent objectB, double minDistance, double maxDistance) {
+  public RigidJoint(GameComponent objectA, GameComponent objectB, double minDistance,
+      double maxDistance) {
     super(objectA, objectB, minDistance, maxDistance, 0.0, 0.0);
   }
 
-  /** Creates a rigid joint with explicit local anchors and a distance band. */
   public RigidJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
-      Vector localAnchorB,
-      double minDistance, double maxDistance) {
+      Vector localAnchorB, double minDistance, double maxDistance) {
     super(objectA, objectB, localAnchorA, localAnchorB, minDistance, maxDistance, 0.0, 0.0);
   }
 
-  /**
-   * Registers three rigid bars on the three pairs of bodies: AB, BC, and AC.
-   *
-   * <p>Together they enforce the triangle side lengths at construction time (each
-   * {@link RigidJoint}
-   * captures the current anchor separation). That is the usual “three lengths lock the triangle” /
-   * SSS rigidification used to brace an {@code A–B–C} linkage when all three edges should be rigid
-   * bars.
-   *
-   * <p>Do not use this if two of the edges are already in the {@link World}, unless you intend
-   * duplicate constraints — prefer adding only the missing edges in that case.
-   *
-   * @param world simulation world receiving the joints
-   * @param a     first vertex of the triangle
-   * @param b     second vertex
-   * @param c     third vertex
-   */
   public static void registerRigidTriangle(World world, GameComponent a, GameComponent b,
       GameComponent c) {
-    Objects.requireNonNull(world, EngineError.NULL_PARAMETER.format("world"));
-    Objects.requireNonNull(a, EngineError.NULL_PARAMETER.format("a"));
-    Objects.requireNonNull(b, EngineError.NULL_PARAMETER.format("b"));
-    Objects.requireNonNull(c, EngineError.NULL_PARAMETER.format("c"));
+    Objects.requireNonNull(world, "world");
+    Objects.requireNonNull(a, "a");
+    Objects.requireNonNull(b, "b");
+    Objects.requireNonNull(c, "c");
     world.addJoint(new RigidJoint(a, b));
     world.addJoint(new RigidJoint(b, c));
     world.addJoint(new RigidJoint(a, c));
   }
 
-  /**
-   * Same as {@link #registerRigidTriangle(World, GameComponent, GameComponent, GameComponent)} with
-   * vertices taken in list order ({@code get(0)}, {@code get(1)}, {@code get(2)}).
-   *
-   * @throws IllegalArgumentException if the list size is not exactly 3
-   */
   public static void registerRigidTriangle(World world, List<GameComponent> abc) {
-    Objects.requireNonNull(abc, EngineError.NULL_PARAMETER.format("abc"));
+    Objects.requireNonNull(abc, "abc");
     if (abc.size() != 3) {
       throw new IllegalArgumentException(
-          EngineError.RIGID_TRIANGLE_LIST_SIZE.format(abc.size()));
+          "registerRigidTriangle requires exactly 3 components, got " + abc.size());
     }
     registerRigidTriangle(world, abc.get(0), abc.get(1), abc.get(2));
   }
 
-  /**
-   * Registers the three rigid bars AB, BC, and AC, skipping any pair whose canonical undirected key
-   * is already in {@code existingCanonicalPairKeys}. Intended when some edges were registered
-   * earlier (e.g. cardinal grid bars) so only missing triangle sides are added—typically the
-   * chord.
-   *
-   * @param existingCanonicalPairKeys mutable set; updated when a new pair is registered (same
-   *                                  format as elsewhere, e.g. lexicographic {@code "r,c|r2,c2"})
-   * @param keyA                      stable key for vertex {@code a} (caller-defined)
-   * @param keyB                      stable key for vertex {@code b}
-   * @param keyC                      stable key for vertex {@code c}
-   */
   public static void registerRigidTriangle(World world, GameComponent a, GameComponent b,
       GameComponent c, Set<String> existingCanonicalPairKeys, String keyA, String keyB,
       String keyC) {
-    Objects.requireNonNull(world, EngineError.NULL_PARAMETER.format("world"));
-    Objects.requireNonNull(a, EngineError.NULL_PARAMETER.format("a"));
-    Objects.requireNonNull(b, EngineError.NULL_PARAMETER.format("b"));
-    Objects.requireNonNull(c, EngineError.NULL_PARAMETER.format("c"));
-    Objects.requireNonNull(existingCanonicalPairKeys,
-        EngineError.NULL_PARAMETER.format("existingCanonicalPairKeys"));
-    Objects.requireNonNull(keyA, EngineError.NULL_PARAMETER.format("keyA"));
-    Objects.requireNonNull(keyB, EngineError.NULL_PARAMETER.format("keyB"));
-    Objects.requireNonNull(keyC, EngineError.NULL_PARAMETER.format("keyC"));
+    Objects.requireNonNull(world, "world");
+    Objects.requireNonNull(a, "a");
+    Objects.requireNonNull(b, "b");
+    Objects.requireNonNull(c, "c");
+    Objects.requireNonNull(existingCanonicalPairKeys, "existingCanonicalPairKeys");
+    Objects.requireNonNull(keyA, "keyA");
+    Objects.requireNonNull(keyB, "keyB");
+    Objects.requireNonNull(keyC, "keyC");
     tryRegisterRigidBar(world, a, b, existingCanonicalPairKeys, keyA, keyB);
     tryRegisterRigidBar(world, b, c, existingCanonicalPairKeys, keyB, keyC);
     tryRegisterRigidBar(world, a, c, existingCanonicalPairKeys, keyA, keyC);
