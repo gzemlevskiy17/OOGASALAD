@@ -1,31 +1,57 @@
 package oogasalad.model.engine;
 
+import java.text.MessageFormat;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
+/**
+ * Enumerates engine-facing error messages loaded from {@code EngineError.properties}
+ * (bundle base name {@code oogasalad.model.engine.EngineError}).
+ */
 public enum EngineError {
-  MASS_MUST_BE_NON_NEGATIVE("mass must be non-negative"),
-  FRICTION_MUST_BE_NON_NEGATIVE("friction must be non-negative"),
-  THRUST_FORCE_MUST_BE_NON_NEGATIVE("thrust force must be non-negative"),
-  MAX_HP_MUST_BE_NON_NEGATIVE("maxHp must be non-negative"),
-  CURRENT_HP_OUT_OF_RANGE("currentHp must be within [0, maxHp]"),
-  DAMAGE_MUST_BE_NON_NEGATIVE("damage amount must be non-negative"),
-  REPAIR_MUST_BE_NON_NEGATIVE("repair amount must be non-negative"),
-  WORLD_ONLY_SUPPORTS_GAME_COMPONENTS("World only supports GameComponent objects"),
-  JOINT_UNSUPPORTED_PASSTHROUGH("passthrough components cannot participate in joints"),
-  JOINT_UNSUPPORTED_STATIC_STATIC("static-static joints are not supported"),
-  JOINT_UNSUPPORTED_PAIR("joint pair must be dynamic-dynamic or dynamic-static"),
-  JOINT_DISTANCE_PARAMS_NON_NEGATIVE("distance joint stiffness and damping must be non-negative"),
-  JOINT_DISTANCE_RANGE_INVALID("distance joint minDistance cannot exceed maxDistance"),
-  SPRING_JOINT_REQUIRES_POSITIVE_STIFFNESS("SpringJoint requires positive stiffness"),
-  ROPE_JOINT_MAX_DISTANCE_TOO_SMALL("rope max distance cannot be less than initial distance"),
-  REVOLUTE_JOINT_REQUIRES_SHARED_ANCHOR(
-      "revolute joint anchors must resolve to the same world point on creation");
 
-  private final String message;
+  NULL_PARAMETER,
 
-  EngineError(String message) {
-    this.message = message;
+  MASS_MUST_BE_NON_NEGATIVE,
+  FRICTION_MUST_BE_NON_NEGATIVE,
+  THRUST_FORCE_MUST_BE_NON_NEGATIVE,
+  MAX_HP_MUST_BE_NON_NEGATIVE,
+  CURRENT_HP_OUT_OF_RANGE,
+  DAMAGE_MUST_BE_NON_NEGATIVE,
+  REPAIR_MUST_BE_NON_NEGATIVE,
+
+  WORLD_ONLY_SUPPORTS_GAME_COMPONENTS,
+
+  JOINT_UNSUPPORTED_PASSTHROUGH,
+  JOINT_UNSUPPORTED_STATIC_STATIC,
+  JOINT_UNSUPPORTED_PAIR,
+  JOINT_DISTANCE_PARAMS_NON_NEGATIVE,
+  JOINT_DISTANCE_RANGE_INVALID,
+
+  SPRING_JOINT_REQUIRES_POSITIVE_STIFFNESS,
+  ROPE_JOINT_MAX_DISTANCE_TOO_SMALL,
+  REVOLUTE_JOINT_REQUIRES_SHARED_ANCHOR,
+
+  RIGID_TRIANGLE_LIST_SIZE;
+
+  private static final ResourceBundle BUNDLE =
+      ResourceBundle.getBundle("oogasalad.model.engine.EngineError");
+
+  /**
+   * Non-parameterized message from the bundle for this constant.
+   */
+  public String message() {
+    try {
+      return BUNDLE.getString(name());
+    } catch (MissingResourceException ex) {
+      return name();
+    }
   }
 
-  public String message() {
-    return message;
+  /**
+   * Message from the bundle with {@link MessageFormat} applied (use for keys containing {@code {0}}, etc.).
+   */
+  public String format(Object... args) {
+    return MessageFormat.format(message(), args);
   }
 }

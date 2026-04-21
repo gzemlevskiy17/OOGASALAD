@@ -43,27 +43,31 @@ public class TerrainPropertiesPanel {
     root.setPadding(new Insets(PANEL_PADDING));
     root.setPrefWidth(PANEL_WIDTH);
     root.getStyleClass().add("authoring-attributes-panel");
-    root.setVisible(false);
-    root.setManaged(false);
+    root.setVisible(true);
+    root.setManaged(true);
+    showPlaceholder();
   }
 
   public Node getVisualRoot() {
     return root;
   }
 
-  /** Populates and shows the panel with the selected object's properties. */
+  /** Populates the panel with the selected object's properties. */
   public void show(AuthoringPlaceable placeable) {
     textureValue.setText(placeable.getSprite());
     frictionValue.setText(String.format("%.2f", placeable.getFriction()));
     sizeValue.setText(String.format("%.0f x %.0f", placeable.getWidth(), placeable.getHeight()));
-    root.setVisible(true);
-    root.setManaged(true);
   }
 
-  /** Hides the panel (no object selected). */
+  /** Resets the panel to its empty placeholder state. */
   public void hide() {
-    root.setVisible(false);
-    root.setManaged(false);
+    showPlaceholder();
+  }
+
+  private void showPlaceholder() {
+    textureValue.setText("—");
+    frictionValue.setText("—");
+    sizeValue.setText("—");
   }
 
   private VBox fieldRow(String label, Label value) {

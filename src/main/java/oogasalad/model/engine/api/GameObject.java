@@ -20,5 +20,14 @@ public interface GameObject extends Renderable {
 
   StaticState getStaticState();
 
-  void setStaticState(StaticState state);
+  void setRestitution(double restitution);
+
+  double getFriction();
+  boolean isActive();
+  boolean isAffectedByGravity();
+  boolean isTrigger();
+
+  void addForce(Vector force);
+
+  default void updatePolygon() {}
 }

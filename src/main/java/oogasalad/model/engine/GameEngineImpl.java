@@ -12,6 +12,8 @@ import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
+import oogasalad.model.engine.internal.joints.DistanceJoint;
+import oogasalad.model.engine.internal.joints.RevoluteJoint;
 
 /**
  * Main physics-step orchestrator for simulation updates in a world.
@@ -47,6 +49,8 @@ public class GameEngineImpl implements GameEngine {
   private CollisionDispatcher collisionDispatcher;
 
   private final Vector gravityVector = new Vector(0, -9.8); // Change in the future (inject levelAttributes)
+  private static final double GRAVITY = 400.0;
+  private static final int JOINT_SOLVER_ITERATIONS = 8;
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -81,12 +85,17 @@ public class GameEngineImpl implements GameEngine {
    * are valid for integration.
    *
    * @param elapsedTime simulation delta time in seconds
+   * @throws NullPointerException if world/object state references are null
    */
   @Override
   public void step(double elapsedTime) {
     resetForces(world.getObjects());
 
-    applyJointConstraints(elapsedTime);
+    applyAllJointConstraints(elapsedTime, 1);
+
+    for (GameObject gameObject : world.getObjects()) {
+      gameObject.updatePolygon();
+    }
 
     applyForces(world.getObjects());
 
@@ -100,6 +109,9 @@ public class GameEngineImpl implements GameEngine {
     }
 
     handleCollisions();
+
+    // Positional constraints (rigid distance/revolute) need iterative post-integration stabilization.
+    applyPositionJointConstraints(elapsedTime, JOINT_SOLVER_ITERATIONS);
 
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
@@ -145,6 +157,27 @@ public class GameEngineImpl implements GameEngine {
     List<Collision> collisions = getCollisions();
     solveCollisions(collisions);
   }
+
+  private void applyAllJointConstraints(double elapsedTime, int iterations) {
+    for (int i = 0; i < iterations; i++) {
+      for (Joint joint : world.getJoints()) {joint.apply(elapsedTime);}
+    }
+  }
+
+  private void applyPositionJointConstraints(double elapsedTime, int iterations) {
+    for (int i = 0; i < iterations; i++) {
+      for (Joint joint : world.getJoints()) {
+        if (isPositionConstraintJoint(joint)) {joint.apply(elapsedTime);}
+      }
+    }
+  }
+
+  private boolean isPositionConstraintJoint(Joint joint) {
+    if (joint instanceof RevoluteJoint) {return true;}
+    return joint instanceof DistanceJoint distanceJoint && distanceJoint.isRigid();
+  }
+
+  private static final String VEHICLE_TAG = "vehicle";
 
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();

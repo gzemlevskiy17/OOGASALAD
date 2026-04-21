@@ -27,4 +27,9 @@ public interface GameController {
 
   /** Registers a callback to be fired when the game reaches a terminal outcome. */
   void setOnOutcome(Consumer<Outcome> callback);
+
+  /**
+   * Forwards a tool button press to the InputRouter to activate/deactivate the bound action.
+   */
+  void handleButtonPress(String buttonId);
 }

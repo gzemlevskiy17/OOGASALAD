@@ -1,0 +1,236 @@
+package oogasalad.controller.player.internal;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.Set;
+import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DriveComponent;
+import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.PigComponent;
+import oogasalad.model.engine.internal.components.StructuralComponent;
+import oogasalad.model.engine.internal.joints.RevoluteJoint;
+import oogasalad.model.engine.internal.joints.RigidJoint;
+import oogasalad.model.player.api.PlacedComponent;
+import oogasalad.model.player.api.VehicleLayout;
+
+/**
+ * Translates a VehicleLayout into GameComponent instances and joints in the World. Cardinal
+ * neighbors (right / below) get {@link RevoluteJoint} (wheels) or {@link RigidJoint} (non-wheels).
+ *
+ * <p>Where two perpendicular cardinal neighbors of the same cell are both rigid links,
+ * {@link #addRightAngleRigidChords} invokes {@link RigidJoint}'s triangle registration with stable
+ * grid keys and {@link java.util.Set}-based edge deduplication so the cardinal pass and chord pass
+ * share one physical edge set. {@link #addAntiRotationJoints} still adds longer braces where supported.
+ *
+ * @author Paulina Vvedenskaya
+ */
+public class VehicleFactory {
+
+  private static final ResourceBundle PALETTE =
+      ResourceBundle.getBundle("oogasalad.view.authoring.VehicleComponentPalette");
+
+  private static final double CELL_SIZE = 60.0;
+  private static final double DEFAULT_FRICTION = 0.3;
+  private static final double DEFAULT_MASS_PIG = 2.0;
+  private static final double DEFAULT_MASS_DRIVE = 20.0;
+  private static final double DEFAULT_MASS_STRUCTURAL = 1.5;
+  private static final double DEFAULT_MAX_HP = 100.0;
+
+  private static final Set<String> WHEEL_TYPES = Set.of("Wheel", "Small Wheel", "Large Wheel");
+
+  public void buildVehicle(VehicleLayout layout, World world, double startX, double startY) {
+    List<PlacedComponent> resolvedPlacements = compactVerticalGaps(layout);
+    Map<String, GameComponent> placed = new HashMap<>();
+    Map<String, String> placedTypes = new HashMap<>();
+
+    for (PlacedComponent p : resolvedPlacements) {
+      double worldX = startX + p.col() * CELL_SIZE;
+      double worldY = startY + p.row() * CELL_SIZE;
+      GameComponent component = createComponent(p.componentType(), worldX, worldY);
+      world.addComponent(component);
+      String key = toKey(p.row(), p.col());
+      placed.put(key, component);
+      placedTypes.put(key, p.componentType());
+    }
+
+    Set<String> edgeKeys = new HashSet<>();
+    for (PlacedComponent p : resolvedPlacements) {
+      GameComponent current = placed.get(toKey(p.row(), p.col()));
+
+      GameComponent right = placed.get(toKey(p.row(), p.col() + 1));
+      if (right != null) {
+        world.addJoint(buildJoint(current, right, p.componentType(),
+            placedTypes.getOrDefault(toKey(p.row(), p.col() + 1), "")));
+        edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row(), p.col() + 1)));
+      }
+      GameComponent below = placed.get(toKey(p.row() + 1, p.col()));
+      if (below != null) {
+        world.addJoint(buildJoint(current, below, p.componentType(),
+            placedTypes.getOrDefault(toKey(p.row() + 1, p.col()), "")));
+        edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row() + 1, p.col())));
+      }
+    }
+    addRightAngleRigidChords(resolvedPlacements, world, placed, placedTypes, edgeKeys);
+    addAntiRotationJoints(resolvedPlacements, world, placed, placedTypes, edgeKeys);
+  }
+
+  private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
+    if (WHEEL_TYPES.contains(typeA) || WHEEL_TYPES.contains(typeB)) {
+      Vector posA = a.getState().getLinearPosition();
+      Vector posB = b.getState().getLinearPosition();
+      Vector localAnchorA = posB.subtract(posA).multiply(0.5);
+      Vector localAnchorB = posA.subtract(posB).multiply(0.5);
+      return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
+    }
+    return new RigidJoint(a, b);
+  }
+
+  /**
+   * For each filled cell, if two perpendicular cardinal neighbors exist and both arms use rigid
+   * distance joints (no wheel on either side of that arm), adds the closing joint between the two
+   * outer cells — the hypotenuse of the isosceles right triangle.
+   */
+  private void addRightAngleRigidChords(List<PlacedComponent> placements, World world,
+      Map<String, GameComponent> placed, Map<String, String> placedTypes,
+      Set<String> edgeKeys) {
+    for (PlacedComponent p : placements) {
+      int r = p.row();
+      int c = p.col();
+      tryAddRigidTriangleChord(r, c, r, c + 1, r + 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c - 1, r + 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c + 1, r - 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c - 1, r - 1, c, placed, placedTypes, world,
+          edgeKeys);
+    }
+  }
+
+  private void tryAddRigidTriangleChord(int cornerR, int cornerC, int n1r, int n1c, int n2r, int n2c,
+      Map<String, GameComponent> placed, Map<String, String> placedTypes, World world,
+      Set<String> edgeKeys) {
+    String kCorner = toKey(cornerR, cornerC);
+    String k1 = toKey(n1r, n1c);
+    String k2 = toKey(n2r, n2c);
+    if (!placed.containsKey(k1) || !placed.containsKey(k2)) {
+      return;
+    }
+    String tCorner = placedTypes.get(kCorner);
+    String t1 = placedTypes.get(k1);
+    String t2 = placedTypes.get(k2);
+    if (tCorner == null || t1 == null || t2 == null) {
+      return;
+    }
+    if (!isRigidCardinalPair(tCorner, t1) || !isRigidCardinalPair(tCorner, t2)) {
+      return;
+    }
+    RigidJoint.registerRigidTriangle(world, placed.get(kCorner), placed.get(k1), placed.get(k2),
+        edgeKeys, kCorner, k1, k2);
+  }
+
+  private boolean isRigidCardinalPair(String typeA, String typeB) {
+    return !WHEEL_TYPES.contains(typeA) && !WHEEL_TYPES.contains(typeB);
+  }
+
+  private void addAntiRotationJoints(List<PlacedComponent> placements, World world,
+      Map<String, GameComponent> placed,
+      Map<String, String> placedTypes, Set<String> edgeKeys) {
+    int[][] offsets = {{0, 2}, {2, 0}, {1, 1}, {1, -1}};
+
+    for (PlacedComponent component : placements) {
+      for (int[] offset : offsets) {
+        int targetRow = component.row() + offset[0];
+        int targetCol = component.col() + offset[1];
+        String startKey = toKey(component.row(), component.col());
+        String targetKey = toKey(targetRow, targetCol);
+        if (!placed.containsKey(targetKey) || !isNonWheelPair(placedTypes, startKey, targetKey)) {
+          continue;
+        }
+        if (!hasSupportCell(component.row(), component.col(), targetRow, targetCol, placedTypes)) {
+          continue;
+        }
+        String pairKey = canonicalPairKey(startKey, targetKey);
+        if (!edgeKeys.add(pairKey)) {
+          continue;
+        }
+        world.addJoint(new RigidJoint(placed.get(startKey), placed.get(targetKey)));
+      }
+    }
+  }
+
+  private boolean hasSupportCell(int rowA, int colA, int rowB, int colB, Map<String, String> placedTypes) {
+    int rowDelta = Math.abs(rowA - rowB);
+    int colDelta = Math.abs(colA - colB);
+
+    if (rowDelta == 2 && colDelta == 0) {return isNonWheelCell(placedTypes, toKey((rowA + rowB) / 2, colA));}
+    if (rowDelta == 0 && colDelta == 2) {return isNonWheelCell(placedTypes, toKey(rowA, (colA + colB) / 2));}
+    if (rowDelta == 1 && colDelta == 1) {
+      return isNonWheelCell(placedTypes, toKey(rowA, colB))
+          || isNonWheelCell(placedTypes, toKey(rowB, colA));
+    }
+    return false;
+  }
+
+  private boolean isNonWheelPair(Map<String, String> placedTypes, String keyA, String keyB) {
+    return isNonWheelCell(placedTypes, keyA) && isNonWheelCell(placedTypes, keyB);
+  }
+
+  private boolean isNonWheelCell(Map<String, String> placedTypes, String key) {
+    String type = placedTypes.get(key);
+    return type != null && !WHEEL_TYPES.contains(type);
+  }
+
+  private String canonicalPairKey(String keyA, String keyB) {return keyA.compareTo(keyB) < 0 ? keyA + "|" + keyB : keyB + "|" + keyA;}
+
+  private String toKey(int row, int col) {return row + "," + col;}
+
+  private List<PlacedComponent> compactVerticalGaps(VehicleLayout layout) {
+    Map<Integer, List<PlacedComponent>> byColumn = new HashMap<>();
+    for (PlacedComponent placement : layout.placements()) {
+      byColumn.computeIfAbsent(placement.col(), ignored -> new ArrayList<>()).add(placement);
+    }
+
+    List<PlacedComponent> compacted = new ArrayList<>();
+    for (List<PlacedComponent> columnPlacements : byColumn.values()) {
+      columnPlacements.sort((a, b) -> Integer.compare(b.row(), a.row()));
+      int targetRow = columnPlacements.get(0).row();
+      for (PlacedComponent placement : columnPlacements) {
+        compacted.add(new PlacedComponent(targetRow, placement.col(), placement.componentType()));
+        targetRow--;
+      }
+    }
+    return compacted;
+  }
+
+  private GameComponent createComponent(String componentType, double x, double y) {
+    String key = componentType.replace(" ", "");
+    String sprite = PALETTE.containsKey(key + ".sprite") ? PALETTE.getString(key + ".sprite") : "";
+    double width =
+        PALETTE.containsKey(key + ".width") ? Double.parseDouble(PALETTE.getString(key + ".width"))
+            : 40.0;
+    double height = PALETTE.containsKey(key + ".height") ? Double.parseDouble(
+        PALETTE.getString(key + ".height")) : 40.0;
+
+    switch (componentType) {
+      case "Pig":
+        return new PigComponent(x, y, 0, DEFAULT_MASS_PIG, DEFAULT_FRICTION);
+      case "Motor":
+      case "Fan":
+      case "Balloon":
+      case "Rocket":
+      case "Propeller":
+        return new DriveComponent(x, y, 0, DEFAULT_MASS_DRIVE, DEFAULT_FRICTION,
+            DEFAULT_MAX_HP, componentType, sprite, width, height);
+      default:
+        return new StructuralComponent(x, y, 0, DEFAULT_MASS_STRUCTURAL, DEFAULT_FRICTION,
+            DEFAULT_MAX_HP, componentType, sprite, width, height);
+    }
+  }
+}

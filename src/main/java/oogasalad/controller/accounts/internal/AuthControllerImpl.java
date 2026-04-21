@@ -28,6 +28,8 @@ public class AuthControllerImpl implements AuthController {
       case AccountOutcome.RegisterRequested r ->
           authService.register(r.user(), r.pass(), r.avatar());
       case AccountOutcome.UpdateAvatarRequested r -> authService.updateAvatar(r.path());
+      case AccountOutcome.UpdateUsernameRequested r -> authService.updateUsername(r.newUsername());
+      case AccountOutcome.UpdatePasswordRequested r -> authService.updatePassword(r.newPassword());
       case AccountOutcome.LogoutRequested r -> {
         authService.logout();
         yield new AuthResult.Success(null);

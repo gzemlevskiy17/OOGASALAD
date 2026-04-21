@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.transform.Scale;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.view.authoring.api.AuthoringCanvas;
@@ -39,10 +40,15 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private static final Color TERRAIN_FALLBACK_COLOR = Color.SADDLEBROWN;
   private static final Color TERRAIN_STROKE_COLOR = Color.BLACK;
+  private static final double ZOOM_MIN = 0.25;
+  private static final double ZOOM_MAX = 4.0;
+
+  private final Scale zoomTransform = new Scale(1, 1, 0, 0);
+  private double zoomFactor = 1.0;
 
   private final double cellSize;
-  private final int gridCols;
-  private final int gridRows;
+  private int gridCols;
+  private int gridRows;
   private final int gridLineSpacing;
   private final Color defaultFill;
   private final Color gridStroke;
@@ -77,6 +83,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
     this.root = new Pane();
     root.getStyleClass().add("authoring-canvas");
+    root.getTransforms().add(zoomTransform);
     double totalWidth = gridCols * cellSize;
     double totalHeight = gridRows * cellSize;
     root.setPrefSize(totalWidth, totalHeight);
@@ -86,12 +93,30 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   @Override
   public boolean isWithinBounds(int col, int row) {
-    return col >= 0 && col < gridCols && row >= 0 && row < gridRows;
+    if (col < 0 || row < 0) {
+      return false;
+    }
+    if (col >= gridCols || row >= gridRows) {
+      gridCols = Math.max(gridCols, col + 1);
+      gridRows = Math.max(gridRows, row + 1);
+      root.setPrefSize(gridCols * cellSize, gridRows * cellSize);
+    }
+    return true;
   }
 
   @Override
   public double getCellSize() {
     return cellSize;
+  }
+
+  @Override
+  public int getGridCols() {
+    return gridCols;
+  }
+
+  @Override
+  public int getGridRows() {
+    return gridRows;
   }
 
   @Override
@@ -180,6 +205,18 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     }
   }
 
+  @Override
+  public void setZoom(double factor) {
+    zoomFactor = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, factor));
+    zoomTransform.setX(zoomFactor);
+    zoomTransform.setY(zoomFactor);
+  }
+
+  @Override
+  public double getZoom() {
+    return zoomFactor;
+  }
+
   private void drawObjects() {
     for (GameObject obj : world.getObjects()) {
       root.getChildren().add(drawObject((AuthoringPlaceable) obj));
@@ -202,10 +239,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
       applySprite(rect, placeable.getSprite(), fallback);
     }
 
-    rect.setOnMousePressed(e -> {
-      e.consume(); // prevent canvas placement handler from firing
-      onObjectSelected.accept(placeable);
-    });
+    rect.setOnMousePressed(e -> onObjectSelected.accept(placeable));
 
     return rect;
   }
