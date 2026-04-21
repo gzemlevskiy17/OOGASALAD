@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.internal.components.DynamicComponent;
+import oogasalad.model.engine.internal.components.PassThroughComponent;
+import oogasalad.model.engine.internal.components.StaticComponent;
 
 /**
  * Routes collisions to appropriate {@link CollisionSolver} implementations based on object type
@@ -31,11 +33,14 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  * }</pre>
  *
  * @author Georgiy Zemlevskiy
+ * @author Iurii Beliaev
  */
 public class CollisionDispatcher {
 
   private final ImpulseCollisionSolver impulseSolver = new ImpulseCollisionSolver();
   private final DynamicPassthroughSolver dynamicPassthroughSolver = new DynamicPassthroughSolver();
+  private final DynamicStaticSolver dynamicStaticSolver = new DynamicStaticSolver();
+
   private Map<CollisionPair, CollisionSolver> solverMap;
 
   //  Map<CollisionPair, CollisionDetector> collisionDetectors;
@@ -50,9 +55,14 @@ public class CollisionDispatcher {
         (objectA, objectB, collision) -> {
           impulseSolver.solve((DynamicComponent) objectA, (DynamicComponent) objectB, collision);
         });
-//    collisionSolvers.put(new CollisionPair(DynamicComponent.class, StaticComponent.class), new ImpulseCollisionSolver());
-//    solverMap.put(new CollisionPair(DynamicComponent.class, PassThroughComponent.class),
-//        new DynamicPassthroughSolver());
+    solverMap.put(new CollisionPair(DynamicComponent.class, StaticComponent.class),
+        (objectA, objectB, collision) -> {
+          dynamicStaticSolver.solve((DynamicComponent) objectA, (StaticComponent) objectB, collision);
+        });
+    solverMap.put(new CollisionPair(DynamicComponent.class, PassThroughComponent.class),
+        (objectA, objectB, collision) -> {
+          dynamicStaticSolver.solve((DynamicComponent) objectA, (PassThroughComponent) objectB, collision);
+    });
   }
 
   public Map<CollisionPair, CollisionSolver> getSolverMap() {

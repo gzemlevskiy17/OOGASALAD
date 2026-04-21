@@ -192,7 +192,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private GameEngine buildEngine(World world) {
     GameEngineImpl physics =
         new GameEngineImpl(
-            world, new CollisionDetectorImpl(), new DynamicPassthroughSolver());
+            world, new CollisionDetectorImpl(),
+
+            new DynamicPassthroughSolver());
     return elapsed -> {
       physics.step(elapsed);
       clampDynamicsToWorldBounds(world);

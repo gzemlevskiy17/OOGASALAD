@@ -5,7 +5,7 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.PassThroughComponent;
 
 /**
- * The solver for the Dynamic - Pass Through Collision
+ * The solver for the Dynamic - PassThrough Collision
  *
  * @author Iurii Beliaev
  */
