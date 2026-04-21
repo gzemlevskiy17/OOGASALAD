@@ -15,8 +15,8 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
-import oogasalad.model.engine.VehicleTerrainSupport;
 import oogasalad.model.engine.ImpulseCollisionSolver;
+import oogasalad.model.engine.VehicleTerrainSupport;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Driveable;
@@ -102,6 +102,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     InputRouter inputRouter = buildInputRouter();
 
     bindDriveActions(inputRouter, world);
+    screen.setOnToolActivated(inputRouter::handleButtonPress);
+    screen.setOnToolDeactivated(inputRouter::handleButtonPress);
 
     double viewWidth = screen.getGameLayer().getWidth();
     double viewHeight = screen.getGameLayer().getHeight();
@@ -220,7 +222,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
    * Driveable components in the world. A button whose ID matches a component's display name
    * (case-insensitive) toggles that component's drive state.
    */
-  private void bindDriveActions(InputRouter inputRouter, World world) {
+  // package-private so unit tests can drive it directly against a constructed World.
+  void bindDriveActions(InputRouter inputRouter, World world) {
     for (GameObject obj : world.getObjects()) {
       if (!(obj instanceof Driveable driveable)) {
         continue;
@@ -234,15 +237,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
         id = vc.getDisplayName().toLowerCase();
       }
 
-      final Driveable target = driveable;
-      final String buttonId = id;
-      inputRouter.bind(buttonId, () -> {
-        if (target.isDriveEnabled()) {
-          target.deactivateDrive();
-        } else {
-          target.activateDrive();
-        }
-      });
+      inputRouter.bind(id, new DriveAction(driveable));
     }
   }
 
