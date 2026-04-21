@@ -22,6 +22,7 @@ public class DriveComponent extends VehicleComponent implements Driveable {
   private static final double DEFAULT_RESTITUTION = 0.5;
 
   public DriveComponent(double x, double y, double rotation, double mass, double friction,
+<<<<<<< HEAD
       double maxHp, String displayName, String spritePath, double spriteWidth,
       double spriteHeight) {
     super(
@@ -40,6 +41,10 @@ public class DriveComponent extends VehicleComponent implements Driveable {
         spritePath,
         spriteWidth,
         spriteHeight);
+=======
+      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
+    super(x, y, rotation, mass, friction, maxHp, displayName, bodyWidth, bodyHeight);
+>>>>>>> origin/feat/dev/joints-and-vehicle-build
     this.thrustDirection = new Vector(1, 0);
     this.thrustForce = DEFAULT_THRUST_FORCE;
     this.driveEnabled = false;

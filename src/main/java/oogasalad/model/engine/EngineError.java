@@ -5,8 +5,8 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 /**
- * Enumerates engine-facing error messages loaded from {@code EngineError.properties}
- * (bundle base name {@code oogasalad.model.engine.EngineError}).
+ * Enumerates engine-facing error messages loaded from {@code EngineError.properties} (bundle base
+ * name {@code oogasalad.model.engine.EngineError}).
  */
 public enum EngineError {
 
@@ -49,7 +49,8 @@ public enum EngineError {
   }
 
   /**
-   * Message from the bundle with {@link MessageFormat} applied (use for keys containing {@code {0}}, etc.).
+   * Message from the bundle with {@link MessageFormat} applied (use for keys containing
+   * {@code {0}}, etc.).
    */
   public String format(Object... args) {
     return MessageFormat.format(message(), args);

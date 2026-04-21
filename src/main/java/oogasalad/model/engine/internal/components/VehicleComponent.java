@@ -11,9 +11,10 @@ import oogasalad.view.core.api.SpriteRenderable;
  */
 public abstract class VehicleComponent extends DynamicComponent implements SpriteRenderable {
   private static final Set<String> WHEEL_DISPLAY_NAMES = Set.of(
-      "Wheel", "Small Wheel", "Large Wheel");
+      "Wood Wheel", "Metal Wheel");
 
   private final String displayName;
+<<<<<<< HEAD
   private final String spritePath;
   private final double spriteWidth;
   private final double spriteHeight;
@@ -27,6 +28,14 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
       double spriteHeight) {
     super(x, y, rotation, polygon, tag, friction, mass, momentOfInertia, restitution,
         affectedByGravity);
+=======
+  private final double bodyWidth;
+  private final double bodyHeight;
+
+  public VehicleComponent(double x, double y, double rotation, double mass, double friction,
+      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
+    super(x, y, rotation, mass, friction);
+>>>>>>> origin/feat/dev/joints-and-vehicle-build
     setTag(DefaultTag.VEHICLE.value());
     if (maxHp < 0) {
       throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());
@@ -34,12 +43,16 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
     this.maxHp = maxHp;
     this.currentHp = maxHp;
     this.displayName = displayName;
-    this.spritePath = spritePath;
-    this.spriteWidth = spriteWidth;
-    this.spriteHeight = spriteHeight;
+    this.bodyWidth = bodyWidth;
+    this.bodyHeight = bodyHeight;
   }
 
   public String getDisplayName() {
+    return displayName;
+  }
+
+  @Override
+  public String getComponentType() {
     return displayName;
   }
 
@@ -49,23 +62,17 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
   }
 
   @Override
-  public String getSpritePath() {
-    return spritePath;
-  }
-
-  @Override
   public void updatePolygon() {
-    setPolygon(ConvexPolygon.axisAlignedBox(getX(), getY(), spriteWidth, spriteHeight));
+    setPolygon(ConvexPolygon.axisAlignedBox(
+        getX() - bodyWidth / 2, getY() - bodyHeight / 2, bodyWidth, bodyHeight));
   }
 
-  @Override
-  public double getSpriteWidth() {
-    return spriteWidth;
+  public double getBodyWidth() {
+    return bodyWidth;
   }
 
-  @Override
-  public double getSpriteHeight() {
-    return spriteHeight;
+  public double getBodyHeight() {
+    return bodyHeight;
   }
 
   public double getMaxHp() {

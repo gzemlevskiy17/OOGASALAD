@@ -19,7 +19,7 @@ import oogasalad.view.accounts.internal.ProfileScreen;
 import oogasalad.view.accounts.internal.UpdateProfileScreen;
 import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
-import oogasalad.view.core.api.GameMenuScreen;
+import oogasalad.view.core.internal.GameMenuScreen;
 import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;

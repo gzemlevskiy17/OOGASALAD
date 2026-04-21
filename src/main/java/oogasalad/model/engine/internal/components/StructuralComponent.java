@@ -7,6 +7,7 @@ import oogasalad.model.engine.ConvexPolygon;
  */
 public class StructuralComponent extends VehicleComponent {
 
+<<<<<<< HEAD
   public StructuralComponent(double x, double y, double rotation, ConvexPolygon polygon, String tag,
       double friction, double mass, double momentOfInertia, double restitution,
       boolean affectedByGravity,
@@ -15,6 +16,11 @@ public class StructuralComponent extends VehicleComponent {
     super(x, y, rotation, polygon, tag, friction, mass, momentOfInertia, restitution,
         affectedByGravity, maxHp, displayName, spritePath, spriteWidth,
         spriteHeight);
+=======
+  public StructuralComponent(double x, double y, double rotation, double mass, double friction,
+      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
+    super(x, y, rotation, mass, friction, maxHp, displayName, bodyWidth, bodyHeight);
+>>>>>>> origin/feat/dev/joints-and-vehicle-build
   }
 
   @Override
