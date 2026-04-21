@@ -1,12 +1,14 @@
 package oogasalad.controller.player.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.StructuralComponent;
@@ -156,9 +158,77 @@ class VehicleFactoryPigPlacementTest {
         "Pig and Frame in the same cell should be connected by a RigidJoint");
   }
 
+  @Test
+  void smallPigInSameCellAsFrame_isBuiltAsPigAndRigidlyAttached() {
+    VehicleLayout layout = new VehicleLayout(List.of(
+        new PlacedComponent(2, 2, "Frame"),
+        new PlacedComponent(2, 2, "Small Pig")
+    ));
+    World world = new WorldImpl();
+
+    new VehicleFactory().buildVehicle(layout, world, START_X, START_Y);
+
+    long pigCount = world.getObjectsByTag(DefaultTag.PIGS.value()).size();
+    assertEquals(1, pigCount, "Small Pig should be instantiated as a pig-tagged component");
+
+    PigComponent pig = findPig(world);
+    GameComponent frame = findComponentAt(world, START_X + 2 * CELL_SIZE, START_Y + 2 * CELL_SIZE,
+        "Frame");
+    assertNotNull(frame, "Frame should exist at the small pig host cell");
+
+    boolean hasPigFrameJoint = world.getJoints().stream()
+        .filter(RigidJoint.class::isInstance)
+        .anyMatch(j -> jointConnects(j, pig, frame));
+    assertTrue(hasPigFrameJoint,
+        "Small Pig and Frame in the same cell should be connected by a RigidJoint");
+  }
+
   private boolean jointConnects(Joint j, GameComponent a, GameComponent b) {
     return (j.getComponentA() == a && j.getComponentB() == b)
         || (j.getComponentA() == b && j.getComponentB() == a);
+  }
+
+  private GameComponent findComponentAt(World world, double x, double y, String displayName) {
+    return world.getComponents().stream()
+        .filter(c -> Math.abs(c.getX() - x) < 1e-9 && Math.abs(c.getY() - y) < 1e-9)
+        .filter(c -> !(c instanceof PigComponent))
+        .filter(c -> {
+          if (c instanceof StructuralComponent sc) {
+            return displayName.equals(sc.getDisplayName());
+          }
+          if (c instanceof oogasalad.model.engine.internal.components.DriveComponent dc) {
+            return displayName.equals(dc.getDisplayName());
+          }
+          return false;
+        })
+        .findFirst()
+        .orElse(null);
+  }
+
+  @Test
+  void fanAttachedToFrame_getsWeldStyleDualRigidConstraints() {
+    VehicleLayout layout = new VehicleLayout(List.of(
+        new PlacedComponent(2, 0, "Fan"),
+        new PlacedComponent(2, 1, "Frame"),
+        new PlacedComponent(2, 2, "Frame"),
+        new PlacedComponent(3, 1, "Wheel"),
+        new PlacedComponent(3, 2, "Wheel")
+    ));
+    World world = new WorldImpl();
+    new VehicleFactory().buildVehicle(layout, world, START_X, START_Y);
+
+    GameComponent fan = findComponentAt(world, START_X, START_Y + 2 * CELL_SIZE, "Fan");
+    GameComponent attachedFrame = findComponentAt(world, START_X + CELL_SIZE,
+        START_Y + 2 * CELL_SIZE, "Frame");
+    assertNotNull(fan, "Fan should be instantiated at expected cell");
+    assertNotNull(attachedFrame, "Attached frame should be instantiated at expected cell");
+
+    long rigidJointCount = world.getJoints().stream()
+        .filter(RigidJoint.class::isInstance)
+        .filter(j -> jointConnects(j, fan, attachedFrame))
+        .count();
+    assertTrue(rigidJointCount >= 2,
+        "Fan and attached frame should have two rigid constraints to resist swing");
   }
 
   private double[] polygonBounds(GameComponent c) {

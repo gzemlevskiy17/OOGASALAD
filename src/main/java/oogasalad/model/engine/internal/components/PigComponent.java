@@ -10,9 +10,16 @@ import oogasalad.view.core.api.SpriteRenderable;
 public class PigComponent extends DynamicComponent implements SpriteRenderable {
 
   private static final double DEFAULT_SIZE = 40.0;
+  private final String componentType;
 
   public PigComponent(double x, double y, double rotation, double mass, double friction) {
+    this(x, y, rotation, mass, friction, "Pig");
+  }
+
+  public PigComponent(double x, double y, double rotation, double mass, double friction,
+      String componentType) {
     super(x, y, rotation, mass, friction);
+    this.componentType = componentType;
     setTag(DefaultTag.PIGS.value());
   }
 
@@ -24,7 +31,7 @@ public class PigComponent extends DynamicComponent implements SpriteRenderable {
 
   @Override
   public String getComponentType() {
-    return "Pig";
+    return componentType;
   }
 
 }

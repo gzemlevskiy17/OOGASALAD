@@ -117,6 +117,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
    * just before the session starts. Each stacked component becomes its own {@link PlacedComponent}.
    */
   public VehicleLayout getVehicleLayout() {
+    return getRawVehicleLayout();
+  }
+
+  private VehicleLayout getRawVehicleLayout() {
     List<PlacedComponent> placements = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry : gridState.entrySet()) {
       int[] rc = parseKey(entry.getKey());

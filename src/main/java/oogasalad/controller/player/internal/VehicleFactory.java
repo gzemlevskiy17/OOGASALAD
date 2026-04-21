@@ -38,17 +38,18 @@ public class VehicleFactory {
   private static final double CELL_SIZE = 60.0;
   private static final double DEFAULT_FRICTION = 0.3;
   private static final double DEFAULT_MASS_PIG = 2.0;
-  private static final double DEFAULT_MASS_DRIVE = 20.0;
+  private static final double DEFAULT_MASS_DRIVE = 5.0;
   private static final double DEFAULT_MASS_STRUCTURAL = 1.5;
   private static final double DEFAULT_MAX_HP = 100.0;
 
   private static final Set<String> WHEEL_TYPES = Set.of("Wheel", "Small Wheel", "Large Wheel");
+  private static final Set<String> PIG_TYPES = Set.of("Pig", "Small Pig");
 
   public void buildVehicle(VehicleLayout layout, World world, double startX, double startY) {
     List<PlacedComponent> structuralPlacements = new ArrayList<>();
     List<PlacedComponent> pigPlacements = new ArrayList<>();
     for (PlacedComponent p : layout.placements()) {
-      if ("Pig".equals(p.componentType())) {
+      if (PIG_TYPES.contains(p.componentType())) {
         pigPlacements.add(p);
       } else {
         structuralPlacements.add(p);
@@ -74,14 +75,16 @@ public class VehicleFactory {
 
       GameComponent right = placed.get(toKey(p.row(), p.col() + 1));
       if (right != null) {
-        world.addJoint(buildJoint(current, right, p.componentType(),
-            placedTypes.getOrDefault(toKey(p.row(), p.col() + 1), "")));
+        String rightType = placedTypes.getOrDefault(toKey(p.row(), p.col() + 1), "");
+        world.addJoint(buildJoint(current, right, p.componentType(), rightType));
+        addWeldStabilizerIfRigidPair(world, current, right, p.componentType(), rightType, true);
         edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row(), p.col() + 1)));
       }
       GameComponent below = placed.get(toKey(p.row() + 1, p.col()));
       if (below != null) {
-        world.addJoint(buildJoint(current, below, p.componentType(),
-            placedTypes.getOrDefault(toKey(p.row() + 1, p.col()), "")));
+        String belowType = placedTypes.getOrDefault(toKey(p.row() + 1, p.col()), "");
+        world.addJoint(buildJoint(current, below, p.componentType(), belowType));
+        addWeldStabilizerIfRigidPair(world, current, below, p.componentType(), belowType, false);
         edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row() + 1, p.col())));
       }
     }
@@ -96,7 +99,7 @@ public class VehicleFactory {
     for (PlacedComponent p : pigPlacements) {
       double worldX = startX + p.col() * CELL_SIZE;
       double worldY = startY + p.row() * CELL_SIZE;
-      GameComponent pig = createComponent("Pig", worldX, worldY);
+      GameComponent pig = createComponent(p.componentType(), worldX, worldY);
       world.addComponent(pig);
       GameComponent host = placed.get(toKey(p.row(), p.col()));
       if (host != null) {
@@ -106,14 +109,42 @@ public class VehicleFactory {
   }
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
+    Vector posA = a.getState().getLinearPosition();
+    Vector posB = b.getState().getLinearPosition();
+    Vector delta = posB.subtract(posA);
+
     if (WHEEL_TYPES.contains(typeA) || WHEEL_TYPES.contains(typeB)) {
-      Vector posA = a.getState().getLinearPosition();
-      Vector posB = b.getState().getLinearPosition();
-      Vector localAnchorA = posB.subtract(posA).multiply(0.5);
-      Vector localAnchorB = posA.subtract(posB).multiply(0.5);
+      double halfHa = halfHeight(typeA);
+      double halfHb = halfHeight(typeB);
+      Vector localAnchorA;
+      Vector localAnchorB;
+      if (Math.abs(delta.x()) < 1e-6) {
+        double dir = Math.signum(delta.y());
+        localAnchorA = new Vector(0, dir * halfHa);
+        localAnchorB = new Vector(0, -dir * halfHb);
+      } else {
+        double dir = Math.signum(delta.x());
+        localAnchorA = new Vector(dir * halfWidth(typeA), 0);
+        localAnchorB = new Vector(-dir * halfWidth(typeB), 0);
+      }
       return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
     }
-    return new RigidJoint(a, b);
+
+    Vector localAnchorA;
+    Vector localAnchorB;
+    if (Math.abs(delta.y()) < 1e-6) {
+      double dir = Math.signum(delta.x());
+      localAnchorA = new Vector(dir * halfWidth(typeA), 0);
+      localAnchorB = new Vector(-dir * halfWidth(typeB), 0);
+    } else if (Math.abs(delta.x()) < 1e-6) {
+      double dir = Math.signum(delta.y());
+      localAnchorA = new Vector(0, dir * halfHeight(typeA));
+      localAnchorB = new Vector(0, -dir * halfHeight(typeB));
+    } else {
+      localAnchorA = new Vector(0, 0);
+      localAnchorB = new Vector(0, 0);
+    }
+    return new RigidJoint(a, b, localAnchorA, localAnchorB, -1.0, -1.0);
   }
 
   /**
@@ -163,6 +194,36 @@ public class VehicleFactory {
 
   private boolean isRigidCardinalPair(String typeA, String typeB) {
     return !WHEEL_TYPES.contains(typeA) && !WHEEL_TYPES.contains(typeB);
+  }
+
+  private void addWeldStabilizerIfRigidPair(World world, GameComponent a, GameComponent b,
+      String typeA, String typeB, boolean horizontalNeighbor) {
+    if (!isRigidCardinalPair(typeA, typeB)) {
+      return;
+    }
+    double offset = horizontalNeighbor
+        ? 0.35 * Math.min(halfHeight(typeA), halfHeight(typeB))
+        : 0.35 * Math.min(halfWidth(typeA), halfWidth(typeB));
+    Vector anchorA = horizontalNeighbor ? new Vector(0, offset) : new Vector(offset, 0);
+    Vector anchorB = horizontalNeighbor ? new Vector(0, offset) : new Vector(offset, 0);
+    world.addJoint(new RigidJoint(a, b, anchorA, anchorB, -1.0, -1.0));
+  }
+
+  private double halfWidth(String componentType) {
+    return paletteDimension(componentType, "width") / 2.0;
+  }
+
+  private double halfHeight(String componentType) {
+    return paletteDimension(componentType, "height") / 2.0;
+  }
+
+  private double paletteDimension(String componentType, String axis) {
+    String key = componentType.replace(" ", "");
+    String paletteKey = key + "." + axis;
+    if (PALETTE.containsKey(paletteKey)) {
+      return Double.parseDouble(PALETTE.getString(paletteKey));
+    }
+    return 40.0;
   }
 
   private void addAntiRotationJoints(List<PlacedComponent> placements, World world,
@@ -235,7 +296,8 @@ public class VehicleFactory {
 
     switch (componentType) {
       case "Pig":
-        return new PigComponent(x, y, 0, DEFAULT_MASS_PIG, DEFAULT_FRICTION);
+      case "Small Pig":
+        return new PigComponent(x, y, 0, DEFAULT_MASS_PIG, DEFAULT_FRICTION, componentType);
       case "Motor":
       case "Fan":
       case "Balloon":
