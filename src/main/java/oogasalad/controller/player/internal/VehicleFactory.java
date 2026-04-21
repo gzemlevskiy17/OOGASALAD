@@ -267,6 +267,34 @@ public class VehicleFactory {
     return row + "," + col;
   }
 
+  // Thrust direction is in +y-down world coords, so (0, -1) means "pushes up".
+  // Magnitudes relative to drive mass × gravity (5 × 400 = 2000): lift types must exceed 2000.
+  private static void configureThrust(DriveComponent drive, String componentType) {
+    switch (componentType) {
+      case "Engine" -> {
+        drive.setThrustDirection(new Vector(1, 0));
+        drive.setThrustForce(3000.0);
+      }
+      case "Fan" -> {
+        drive.setThrustDirection(new Vector(1, 0));
+        drive.setThrustForce(1500.0);
+      }
+      case "Balloon" -> {
+        drive.setThrustDirection(new Vector(0, -1));
+        drive.setThrustForce(2500.0);
+      }
+      case "Rocket" -> {
+        drive.setThrustDirection(new Vector(0, -1));
+        drive.setThrustForce(4500.0);
+      }
+      case "Propeller" -> {
+        drive.setThrustDirection(new Vector(1, 0));
+        drive.setThrustForce(2000.0);
+      }
+      default -> { /* keep DriveComponent constructor defaults */ }
+    }
+  }
+
   private GameComponent createComponent(String componentType, double x, double y) {
     String key = componentType.replace(" ", "");
     double width = PALETTE.containsKey(key + ".width")
@@ -283,8 +311,10 @@ public class VehicleFactory {
       case "Balloon":
       case "Rocket":
       case "Propeller":
-        return new DriveComponent(x, y, 0, DEFAULT_MASS_DRIVE, DEFAULT_FRICTION,
+        DriveComponent drive = new DriveComponent(x, y, 0, DEFAULT_MASS_DRIVE, DEFAULT_FRICTION,
             DEFAULT_MAX_HP, componentType, width, height);
+        configureThrust(drive, componentType);
+        return drive;
       default:
         return new StructuralComponent(x, y, 0, DEFAULT_MASS_STRUCTURAL, DEFAULT_FRICTION,
             DEFAULT_MAX_HP, componentType, width, height);
