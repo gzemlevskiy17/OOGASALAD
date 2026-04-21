@@ -7,6 +7,7 @@ import oogasalad.model.engine.api.Vector;
 public abstract class StaticComponent extends GameComponent {
 
   private double friction;
+  private double restitution;
 
   /**
    *
@@ -17,9 +18,10 @@ public abstract class StaticComponent extends GameComponent {
    * @param tag
    */
   public StaticComponent(double x, double y, double rotation, ConvexPolygon polygon,
-      String tag, double friction) {
+      String tag, double friction, double restitution) {
     super(x, y, rotation, polygon, tag);
     this.friction = friction;
+    this.restitution = restitution;
   }
 
   public double getFriction() {
@@ -33,6 +35,7 @@ public abstract class StaticComponent extends GameComponent {
     this.friction = friction;
   }
 
+<<<<<<< HEAD
   @Override
   public void addForce(Vector force) {
     // immovable terrain: ignore
@@ -49,4 +52,14 @@ public abstract class StaticComponent extends GameComponent {
   public boolean isTrigger() {
     return false;
   }
+=======
+  public double getRestitution() {
+    return restitution;
+  }
+
+  public void setRestitution(double restitution) {
+    this.restitution = restitution;
+  }
+
+>>>>>>> 044256994f6ce735c41e84af939ad969365d1a17
 }

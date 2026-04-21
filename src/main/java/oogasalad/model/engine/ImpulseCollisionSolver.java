@@ -52,17 +52,23 @@ public class ImpulseCollisionSolver {
    * <p>Use this method from engine collision orchestration after detection has produced per-pair
    * collision data for the current step.
    *
-   * <p><strong>Assumptions:</strong> {@code collision} is non-null and contains enough contact and
-   * normal information for response calculations.
+   * <p><strong>Assumptions:</strong> {@code collision} is non-null and contains enough contact
+   * and normal information for response calculations.
    *
-   * @param referenceObject reference object whose collision normal is used for response
-   * @param incidentObject  incident object being resolved against the reference object
-   * @param collision       collision data containing manifold and penetration information
+   * @param objectA   reference object whose collision normal is used for response
+   * @param objectB   incident object being resolved against the reference object
+   * @param collision collision data containing manifold and penetration information
    */
-  public void solve(DynamicComponent referenceObject, DynamicComponent incidentObject,
+  public void solve(DynamicComponent objectA, DynamicComponent objectB,
       Collision collision) {
-    this.referenceObject = referenceObject;
-    this.incidentObject = incidentObject;
+    //TODO: move this into the dispatcher. document the convention
+    if (objectA == collision.getIncidentObject()) {
+      collision.setPenetration(collision.getPenetration().multiply(-1));
+    }
+    this.referenceObject = objectA;
+    this.incidentObject = objectB;
+    //TODO: a and b technically are no longer incident and reference
+
     resolveImpulseAtContacts(collision);
     applyPositionalCorrection(collision);
   }
@@ -76,12 +82,10 @@ public class ImpulseCollisionSolver {
    */
   private void resolveImpulseAtContacts(Collision collision) {
     //TODO: refactor
-//    GameObject referenceObject = collision.getReferenceObject();
-//    GameObject incidentObject = collision.getIncidentObject();
     StaticState referenceStaticState = referenceObject.getStaticState();
     StaticState incidentStaticState = incidentObject.getStaticState();
     DynamicState referenceDynamicState = referenceObject.getDynamicState();
-    DynamicState incidentDynamicState = referenceObject.getDynamicState();
+    DynamicState incidentDynamicState = incidentObject.getDynamicState();
 
     Vector referenceUnitNormal = collision.getPenetration().normalize();
 
@@ -234,30 +238,5 @@ public class ImpulseCollisionSolver {
     Vector newIncidentObjectState = incidentStaticState.getLinearPosition()
         .add(correction.multiply(referenceObject.getMass()));
     incidentStaticState.setLinearPosition(newIncidentObjectState);
-  }
-
-  /**
-   * Physics data for a contact point in a collision manifold used while resolving a single
-   * collision.
-   */
-  class ContactPointPhysics {
-
-    Vector contactPoint;
-    Vector positionFromIncident;
-    Vector positionFromReference;
-    Vector relativeVelocity;
-    double depth;
-    double impulse;
-
-    /**
-     * Creates contact data for a clipped collision point.
-     *
-     * @param contactPoint world-space contact point
-     * @param depth        penetration depth at the contact point
-     */
-    public ContactPointPhysics(Vector contactPoint, double depth) {
-      this.contactPoint = contactPoint;
-      this.depth = depth;
-    }
   }
 }
