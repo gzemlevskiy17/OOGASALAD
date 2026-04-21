@@ -57,7 +57,7 @@ class BindDriveActionsTest {
     router.handleButtonPress("fan");
 
     assertFalse(fan.isDriveEnabled(),
-        "two presses should toggle off — matches HUD ToggleButton select/deselect");
+        "two presses should toggle off — matches control-button ToggleButton select/deselect");
   }
 
   @Test
