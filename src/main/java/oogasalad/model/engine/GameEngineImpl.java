@@ -3,6 +3,7 @@ package oogasalad.model.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.Driveable;
@@ -205,14 +206,17 @@ public class GameEngineImpl implements GameEngine {
   }
 
   private CollisionPair findSuperClass(CollisionPair collisionPair) {
-    if (collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
-      return collisionPair;
+    Map<CollisionPair, CollisionSolver> solverMap = collisionDispatcher.getSolverMap();
+    CollisionPair sortedPair = CollisionPair.of(collisionPair.objectA(), collisionPair.objectB());
+    if (solverMap.containsKey(sortedPair)) {
+      return sortedPair;
     }
+
     //TODO: make more efficient: currently recursive calls are unnecessarily duplicated (DP?)
     CollisionPair left = null;
     if (collisionPair.objectA().getSuperclass() != null) {
       left = findSuperClass(
-          CollisionPair.of(collisionPair.objectA().getSuperclass(), collisionPair.objectB()));
+          new CollisionPair(collisionPair.objectA().getSuperclass(), collisionPair.objectB()));
     }
 
     if (left != null) {
@@ -221,7 +225,7 @@ public class GameEngineImpl implements GameEngine {
 
     if (collisionPair.objectB().getSuperclass() != null) {
       return findSuperClass(
-          CollisionPair.of(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
+          new CollisionPair(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
     }
     return null;
   }
