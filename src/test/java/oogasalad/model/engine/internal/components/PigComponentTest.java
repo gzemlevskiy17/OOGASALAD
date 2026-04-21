@@ -3,6 +3,7 @@ package oogasalad.model.engine.internal.components;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.view.core.api.SpriteRenderable;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +15,20 @@ class PigComponentTest {
 
   @BeforeEach
   void setUp() {
-    pig = new PigComponent(100.0, 200.0, 0.0, 5.0, 0.5);
+    double w = 40.0;
+    double h = 40.0;
+    double mass = 5.0;
+    pig = new PigComponent(
+        100.0,
+        200.0,
+        0.0,
+        ConvexPolygon.axisAlignedBox(100.0, 200.0, w, h),
+        "",
+        0.5,
+        mass,
+        mass * (w * w + h * h) / 12.0,
+        0.5,
+        true);
   }
 
   @Test

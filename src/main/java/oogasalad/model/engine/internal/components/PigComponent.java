@@ -9,33 +9,26 @@ import oogasalad.view.core.api.SpriteRenderable;
  */
 public class PigComponent extends DynamicComponent implements SpriteRenderable {
 
-<<<<<<< HEAD
-  public PigComponent(double x, double y, double rotation, ConvexPolygon polygon, String tag,
-      double friction, double mass, double momentOfInertia, double restitution,
-      boolean affectedByGravity) {
-    super(x, y, rotation, polygon, tag, friction, mass, momentOfInertia, restitution,
-        affectedByGravity);
-=======
   private static final double DEFAULT_SIZE = 40.0;
   private final String componentType;
 
-  public PigComponent(double x, double y, double rotation, double mass, double friction) {
-    this(x, y, rotation, mass, friction, "Pig");
+  public PigComponent(double x, double y, double rotation, ConvexPolygon polygon, String tag,
+      double friction, double mass, double momentOfInertia, double restitution,
+      boolean affectedByGravity) {
+    this(x, y, rotation, polygon, tag, friction, mass, momentOfInertia, restitution,
+        affectedByGravity, "Pig");
   }
 
-  public PigComponent(double x, double y, double rotation, double mass, double friction,
-      String componentType) {
-    super(x, y, rotation, mass, friction);
+  public PigComponent(double x, double y, double rotation, ConvexPolygon polygon, String tag,
+      double friction, double mass, double momentOfInertia, double restitution,
+      boolean affectedByGravity, String componentType) {
+    super(x, y, rotation, polygon, tag, friction, mass, momentOfInertia, restitution,
+        affectedByGravity);
     this.componentType = componentType;
->>>>>>> origin/feat/dev/joints-and-vehicle-build
     setTag(DefaultTag.PIGS.value());
   }
 
   @Override
-<<<<<<< HEAD
-  public boolean isTrigger() {
-    return false;
-=======
   public void updatePolygon() {
     setPolygon(ConvexPolygon.axisAlignedBox(
         getX() - DEFAULT_SIZE / 2, getY() - DEFAULT_SIZE / 2, DEFAULT_SIZE, DEFAULT_SIZE));
@@ -44,9 +37,10 @@ public class PigComponent extends DynamicComponent implements SpriteRenderable {
   @Override
   public String getComponentType() {
     return componentType;
->>>>>>> origin/feat/dev/joints-and-vehicle-build
   }
 
-
+  @Override
+  public boolean isTrigger() {
+    return false;
+  }
 }
-

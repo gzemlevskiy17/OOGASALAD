@@ -116,17 +116,11 @@ public class VehicleFactory {
   }
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
-    Vector posA = a.getState().getLinearPosition();
-    Vector posB = b.getState().getLinearPosition();
+    Vector posA = a.getStaticState().getLinearPosition();
+    Vector posB = b.getStaticState().getLinearPosition();
     Vector delta = posB.subtract(posA);
 
     if (WHEEL_TYPES.contains(typeA) || WHEEL_TYPES.contains(typeB)) {
-<<<<<<< HEAD
-      Vector posA = a.getStaticState().getLinearPosition();
-      Vector posB = b.getStaticState().getLinearPosition();
-      Vector localAnchorA = posB.subtract(posA).multiply(0.5);
-      Vector localAnchorB = posA.subtract(posB).multiply(0.5);
-=======
       double halfHa = halfHeight(typeA);
       double halfHb = halfHeight(typeB);
       Vector localAnchorA;
@@ -140,7 +134,6 @@ public class VehicleFactory {
         localAnchorA = new Vector(dir * halfWidth(typeA), 0);
         localAnchorB = new Vector(-dir * halfWidth(typeB), 0);
       }
->>>>>>> origin/feat/dev/joints-and-vehicle-build
       return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
     }
 
@@ -308,9 +301,12 @@ public class VehicleFactory {
     double height = PALETTE.containsKey(key + ".height")
         ? Double.parseDouble(PALETTE.getString(key + ".height")) : 40.0;
 
+    String spritePath =
+        PALETTE.containsKey(key + ".sprite") ? PALETTE.getString(key + ".sprite") : "";
+
     switch (componentType) {
       case "Pig":
-<<<<<<< HEAD
+      case "Small Pig":
         return new PigComponent(
             x,
             y,
@@ -321,20 +317,16 @@ public class VehicleFactory {
             DEFAULT_MASS_PIG,
             boxMomentOfInertia(DEFAULT_MASS_PIG, width, height),
             DEFAULT_RESTITUTION,
-            true);
-=======
-      case "Small Pig":
-        return new PigComponent(x, y, 0, DEFAULT_MASS_PIG, DEFAULT_FRICTION, componentType);
->>>>>>> origin/feat/dev/joints-and-vehicle-build
+            true,
+            componentType);
       case "Motor":
       case "Fan":
       case "Balloon":
       case "Rocket":
       case "Propeller":
         return new DriveComponent(x, y, 0, DEFAULT_MASS_DRIVE, DEFAULT_FRICTION,
-            DEFAULT_MAX_HP, componentType, width, height);
+            DEFAULT_MAX_HP, componentType, spritePath, width, height);
       default:
-<<<<<<< HEAD
         return new StructuralComponent(
             x,
             y,
@@ -348,13 +340,9 @@ public class VehicleFactory {
             true,
             DEFAULT_MAX_HP,
             componentType,
-            sprite,
+            spritePath,
             width,
             height);
-=======
-        return new StructuralComponent(x, y, 0, DEFAULT_MASS_STRUCTURAL, DEFAULT_FRICTION,
-            DEFAULT_MAX_HP, componentType, width, height);
->>>>>>> origin/feat/dev/joints-and-vehicle-build
     }
   }
 }

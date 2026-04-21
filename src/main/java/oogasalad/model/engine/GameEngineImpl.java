@@ -206,14 +206,21 @@ public class GameEngineImpl implements GameEngine {
 
   private void solveCollisions(List<Collision> collisions) {
     for (Collision collision : collisions) {
-      CollisionPair collisionPair = CollisionPair.of(collision.getReferenceObject().getClass(),
-          collision.getIncidentObject()
-              .getClass()); //TODO: add recursive map lookup handler (looks up classes up the hierarchy)
+      GameObject objectA = collision.getReferenceObject();
+      GameObject objectB = collision.getIncidentObject();
+      CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
+          objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
         collisionPair = findSuperClass(collisionPair);
       }
-      collisionDispatcher.getSolverMap().get(collisionPair)
-          .solve(collision.getReferenceObject(), collision.getIncidentObject(), collision);
+
+      if (!collisionPair.objectA().isAssignableFrom(objectA.getClass())) {
+        GameObject temp = objectA;
+        objectA = objectB;
+        objectB = temp;
+      }
+
+      collisionDispatcher.getSolverMap().get(collisionPair).solve(objectA, objectB, collision);
     }
   }
 

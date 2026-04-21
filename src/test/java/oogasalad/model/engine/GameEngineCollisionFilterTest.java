@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
-import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.StructuralComponent;
@@ -19,8 +18,9 @@ import org.junit.jupiter.api.Test;
  */
 class GameEngineCollisionFilterTest {
 
-  private static final CollisionSolver NO_OP_SOLVER = collision -> {
-  };
+  private static double boxMoI(double mass, double width, double height) {
+    return mass * (width * width + height * height) / 12.0;
+  }
 
   private boolean containsPair(List<Pair> pairs, GameObject x, GameObject y) {
     return pairs.stream().anyMatch(p ->
@@ -30,14 +30,43 @@ class GameEngineCollisionFilterTest {
   @Test
   void step_pigAndFrameSameCell_collisionDetectorNotCalledForThePair() {
     WorldImpl world = new WorldImpl();
-    PigComponent pig = new PigComponent(100, 100, 0, 2, 0.3);
+    double pw = 40.0;
+    double ph = 40.0;
+    PigComponent pig = new PigComponent(
+        100,
+        100,
+        0,
+        ConvexPolygon.axisAlignedBox(100, 100, pw, ph),
+        "",
+        0.3,
+        2.0,
+        boxMoI(2.0, pw, ph),
+        0.5,
+        true);
+    double fw = 60.0;
+    double fh = 60.0;
     StructuralComponent frame =
-        new StructuralComponent(100, 100, 0, 1.5, 0.3, 100, "Frame", 60, 60);
+        new StructuralComponent(
+            100,
+            100,
+            0,
+            ConvexPolygon.axisAlignedBox(100, 100, fw, fh),
+            "",
+            0.3,
+            1.5,
+            boxMoI(1.5, fw, fh),
+            0.5,
+            true,
+            100,
+            "Frame",
+            "",
+            fw,
+            fh);
     world.addComponent(pig);
     world.addComponent(frame);
 
     RecordingDetector detector = new RecordingDetector();
-    GameEngineImpl engine = new GameEngineImpl(world, detector, NO_OP_SOLVER);
+    GameEngineImpl engine = new GameEngineImpl(world, detector);
 
     engine.step(1.0 / 60.0);
 
@@ -48,15 +77,47 @@ class GameEngineCollisionFilterTest {
   @Test
   void step_twoFrames_collisionDetectorStillSkipsVehicleVehicle() {
     WorldImpl world = new WorldImpl();
+    double fw = 60.0;
+    double fh = 60.0;
     StructuralComponent frameA =
-        new StructuralComponent(100, 100, 0, 1.5, 0.3, 100, "Frame", 60, 60);
+        new StructuralComponent(
+            100,
+            100,
+            0,
+            ConvexPolygon.axisAlignedBox(100, 100, fw, fh),
+            "",
+            0.3,
+            1.5,
+            boxMoI(1.5, fw, fh),
+            0.5,
+            true,
+            100,
+            "Frame",
+            "",
+            fw,
+            fh);
     StructuralComponent frameB =
-        new StructuralComponent(200, 100, 0, 1.5, 0.3, 100, "Frame", 60, 60);
+        new StructuralComponent(
+            200,
+            100,
+            0,
+            ConvexPolygon.axisAlignedBox(200, 100, fw, fh),
+            "",
+            0.3,
+            1.5,
+            boxMoI(1.5, fw, fh),
+            0.5,
+            true,
+            100,
+            "Frame",
+            "",
+            fw,
+            fh);
     world.addComponent(frameA);
     world.addComponent(frameB);
 
     RecordingDetector detector = new RecordingDetector();
-    GameEngineImpl engine = new GameEngineImpl(world, detector, NO_OP_SOLVER);
+    GameEngineImpl engine = new GameEngineImpl(world, detector);
 
     engine.step(1.0 / 60.0);
 
@@ -67,15 +128,27 @@ class GameEngineCollisionFilterTest {
   @Test
   void step_pigAndTerrain_collisionDetectorIsCalled() {
     WorldImpl world = new WorldImpl();
-    PigComponent pig = new PigComponent(100, 100, 0, 2, 0.3);
+    double pw = 40.0;
+    double ph = 40.0;
+    PigComponent pig = new PigComponent(
+        100,
+        100,
+        0,
+        ConvexPolygon.axisAlignedBox(100, 100, pw, ph),
+        "",
+        0.3,
+        2.0,
+        boxMoI(2.0, pw, ph),
+        0.5,
+        true);
     oogasalad.model.engine.internal.components.TerrainBlock terrain =
         new oogasalad.model.engine.internal.components.TerrainBlock(
-            0, 200, 400, 20, "t.png", false, 0.5);
+            0, 200, 400, 20, "t.png", false, 0.5, 0.5);
     world.addComponent(pig);
     world.addComponent(terrain);
 
     RecordingDetector detector = new RecordingDetector();
-    GameEngineImpl engine = new GameEngineImpl(world, detector, NO_OP_SOLVER);
+    GameEngineImpl engine = new GameEngineImpl(world, detector);
 
     engine.step(1.0 / 60.0);
 

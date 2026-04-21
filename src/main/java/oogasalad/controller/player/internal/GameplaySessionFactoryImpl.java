@@ -15,7 +15,6 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
-import oogasalad.model.engine.ImpulseCollisionSolver;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Driveable;
@@ -130,37 +129,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     SpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
     Map<Renderable, Sprite> spritesByRenderable = new IdentityHashMap<>();
 
-<<<<<<< HEAD
-      if (r instanceof SpriteRenderable sr) {
-        return createImageView(sr, spriteCache);
-      }
-
-      if (r instanceof TerrainBlock tb) {
-        Rectangle rect = new Rectangle(tb.getWidth(), tb.getHeight());
-        rect.setManaged(false);
-        rect.setStrokeWidth(0.5);
-        rect.setStroke(Color.BLACK);
-        rect.setFill(Paint.valueOf(tb.getColor())); // visible even if texture missing
-        return rect;
-      }
-
-      Circle c = new Circle(BALL_RADIUS);
-      if (r == player) {
-        c.setRadius(BALL_RADIUS + 3);
-        c.setFill(Color.ORANGE);
-      } else if (r instanceof DynamicComponent dyn) {
-        Vector v = dyn.getDynamicState().getLinearVelocity();
-        boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
-        c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY);
-      } else if (r instanceof GameObject) {
-        // Static / pass-through / other non-dynamic simulation objects — no DynamicState
-        c.setFill(Color.DODGERBLUE);
-      } else {
-        c.setFill(Color.DODGERBLUE);
-      }
-      return c;
-    });
-=======
     Renderer objectRenderer = new RendererImpl(screen.getGameLayer(),
         r -> {
           if (r instanceof TerrainBlock tb) {
@@ -186,13 +154,12 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             return;
           }
           double speed = 0.0;
-          if (r instanceof GameObject go) {
-            Vector v = go.getState().getLinearVelocity();
+          if (r instanceof DynamicComponent dyn) {
+            Vector v = dyn.getDynamicState().getLinearVelocity();
             speed = Math.hypot(v.x(), v.y());
           }
           sprite.update(node, speed);
         });
->>>>>>> origin/feat/dev/joints-and-vehicle-build
 
     Renderer renderer = (cameraRef, objects) -> {
       objectRenderer.render(cameraRef, objects);

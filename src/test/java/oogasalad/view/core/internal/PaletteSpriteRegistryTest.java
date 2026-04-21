@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.view.core.api.SingleSprite;
 import oogasalad.view.core.api.Sprite;
@@ -22,7 +23,20 @@ class PaletteSpriteRegistryTest {
 
   @Test
   void resolve_pigComponent_returnsSpriteFromPalette() {
-    PigComponent pig = new PigComponent(0, 0, 0, 1, 0.3);
+    double w = 40.0;
+    double h = 40.0;
+    double mass = 1.0;
+    PigComponent pig = new PigComponent(
+        0,
+        0,
+        0,
+        ConvexPolygon.axisAlignedBox(0, 0, w, h),
+        "",
+        0.3,
+        mass,
+        mass * (w * w + h * h) / 12.0,
+        0.5,
+        true);
     Sprite sprite = registry.resolve(pig);
     assertNotNull(sprite);
     SingleSprite single = assertInstanceOf(SingleSprite.class, sprite);

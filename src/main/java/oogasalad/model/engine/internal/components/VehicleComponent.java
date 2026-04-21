@@ -14,28 +14,19 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
       "Wood Wheel", "Metal Wheel");
 
   private final String displayName;
-<<<<<<< HEAD
   private final String spritePath;
-  private final double spriteWidth;
-  private final double spriteHeight;
+  private final double bodyWidth;
+  private final double bodyHeight;
   private double maxHp;
   private double currentHp;
 
   public VehicleComponent(double x, double y, double rotation, ConvexPolygon polygon, String tag,
       double friction, double mass, double momentOfInertia, double restitution,
       boolean affectedByGravity,
-      double maxHp, String displayName, String spritePath, double spriteWidth,
-      double spriteHeight) {
+      double maxHp, String displayName, String spritePath, double bodyWidth,
+      double bodyHeight) {
     super(x, y, rotation, polygon, tag, friction, mass, momentOfInertia, restitution,
         affectedByGravity);
-=======
-  private final double bodyWidth;
-  private final double bodyHeight;
-
-  public VehicleComponent(double x, double y, double rotation, double mass, double friction,
-      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
-    super(x, y, rotation, mass, friction);
->>>>>>> origin/feat/dev/joints-and-vehicle-build
     setTag(DefaultTag.VEHICLE.value());
     if (maxHp < 0) {
       throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());
@@ -43,12 +34,17 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
     this.maxHp = maxHp;
     this.currentHp = maxHp;
     this.displayName = displayName;
+    this.spritePath = spritePath;
     this.bodyWidth = bodyWidth;
     this.bodyHeight = bodyHeight;
   }
 
   public String getDisplayName() {
     return displayName;
+  }
+
+  public String getSpritePath() {
+    return spritePath;
   }
 
   @Override
