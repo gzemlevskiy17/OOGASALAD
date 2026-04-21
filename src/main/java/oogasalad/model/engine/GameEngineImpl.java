@@ -85,7 +85,6 @@ public class GameEngineImpl implements GameEngine {
    * are valid for integration.
    *
    * @param elapsedTime simulation delta time in seconds
-   * @throws NullPointerException if world/object state references are null
    */
   @Override
   public void step(double elapsedTime) {
@@ -103,8 +102,8 @@ public class GameEngineImpl implements GameEngine {
 
     //TODO: store dynamic/static components in world and only loop over dynamics to integrate
     for (GameObject gameObject : world.getObjects()) {
-        if (gameObject instanceof DynamicComponent dynamicComponent) {
-          dynamicComponent.integrateObjectState(elapsedTime);
+      if (gameObject instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.integrateObjectState(elapsedTime);
       }
     }
 
@@ -191,13 +190,30 @@ public class GameEngineImpl implements GameEngine {
     }
     return collisions;
   }
+
   private void solveCollisions(List<Collision> collisions) {
     for (Collision collision : collisions) {
       CollisionPair collisionPair = new CollisionPair(collision.getReferenceObject().getClass(),
-          collision.getIncidentObject().getClass());
+          collision.getIncidentObject()
+              .getClass()); //TODO: add recursive map lookup handler (looks up classes up the hierarchy)
+      if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
+        collisionPair = findSuperClass(collisionPair);
+      }
       collisionDispatcher.getSolverMap().get(collisionPair)
           .solve(collision.getReferenceObject(), collision.getIncidentObject(), collision);
     }
+  }
+
+  private CollisionPair findSuperClass(CollisionPair collisionPair) {
+    if (collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
+      return collisionPair;
+    }
+    //TODO: make more efficient: currently recursive calls are unnecessarily duplicated (DP?)
+    findSuperClass(
+        new CollisionPair(collisionPair.objectA().getSuperclass(), collisionPair.objectB()));
+    findSuperClass(
+        new CollisionPair(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
+    return null;
   }
 
   private void applyJointConstraints(double elapsedTime) {
