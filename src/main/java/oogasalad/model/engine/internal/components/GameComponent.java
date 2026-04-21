@@ -24,6 +24,7 @@ public abstract class GameComponent implements GameObject {
     this.staticState = new StaticState(new Vector(x, y), rotation);
     this.polygon = polygon;
     this.tag = tag;
+    this.active = true;
   }
 
   public void setPosition(double x, double y, double rotation) {
