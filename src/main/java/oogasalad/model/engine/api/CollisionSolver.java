@@ -18,7 +18,7 @@ import oogasalad.model.engine.Collision;
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
- * CollisionSolver solver = new ImpulseCollisionSolver();
+ * CollisionSolver solver = new DynamicDynamicSolver();
  * solver.solve(collision);
  * }</pre>
  *
@@ -30,6 +30,7 @@ import oogasalad.model.engine.Collision;
  */
 @FunctionalInterface
 public interface CollisionSolver {
+  //TODO: comment
 
   /**
    * Applies a collision response strategy to one collision record.

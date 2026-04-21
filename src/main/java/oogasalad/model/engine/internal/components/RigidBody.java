@@ -4,6 +4,7 @@ import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.EngineError;
 
 public abstract class RigidBody extends GameComponent {
+  //TODO: comment
 
   private double friction;
   private double restitution;

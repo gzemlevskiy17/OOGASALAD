@@ -26,7 +26,7 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
- * CollisionSolver solver = new ImpulseCollisionSolver();
+ * CollisionSolver solver = new DynamicDynamicSolver();
  * solver.solve(dynamicObjectA, dynamicObjectB, collision);
  * }</pre>
  *
@@ -39,7 +39,7 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  *
  * @author Georgiy Zemlevskiy
  */
-public class ImpulseCollisionSolver {
+public class DynamicDynamicSolver {
 
   private DynamicComponent referenceObject;
   private DynamicComponent incidentObject;

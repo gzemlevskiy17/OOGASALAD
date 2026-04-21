@@ -4,6 +4,7 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 
 public class DynamicStaticSolver {
+  //TODO: comment
 
   private StaticComponent referenceObject;
   private DynamicComponent incidentObject;

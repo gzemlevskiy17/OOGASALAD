@@ -19,6 +19,7 @@ public abstract class StaticComponent extends RigidBody {
   }
 
 
+  //TODO: comment
   @Override
   public double getInverseMass() {
     return 0.0;

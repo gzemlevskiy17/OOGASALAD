@@ -20,7 +20,7 @@ import oogasalad.model.engine.internal.components.StaticComponent;
  * pair patterns.
  *
  * <p><strong>Dependencies:</strong> Depends on {@link CollisionPair}, {@link CollisionSolver},
- * {@link ImpulseCollisionSolver}, and {@link DynamicPassthroughSolver}. Uses {@link HashMap} for
+ * {@link DynamicDynamicSolver}, and {@link DynamicPassthroughSolver}. Uses {@link HashMap} for
  * internal storage.
  *
  * <p><strong>Example:</strong>
@@ -37,7 +37,7 @@ import oogasalad.model.engine.internal.components.StaticComponent;
  */
 public class CollisionDispatcher {
 
-  private final ImpulseCollisionSolver impulseSolver = new ImpulseCollisionSolver();
+  private final DynamicDynamicSolver impulseSolver = new DynamicDynamicSolver();
   private final DynamicPassthroughSolver dynamicPassthroughSolver = new DynamicPassthroughSolver();
   private final DynamicStaticSolver dynamicStaticSolver = new DynamicStaticSolver();
 

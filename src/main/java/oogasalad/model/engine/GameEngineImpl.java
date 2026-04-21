@@ -64,7 +64,7 @@ public class GameEngineImpl implements GameEngine {
    * lifetime. The provided world and detector follow their interface contracts.
    *
    * <p><strong>Dependencies:</strong> Requires {@link World} and {@link CollisionDetector}
-   * implementations. Uses {@link CollisionDispatcher} and {@link ImpulseCollisionSolver}
+   * implementations. Uses {@link CollisionDispatcher} and {@link DynamicDynamicSolver}
    * internally.
    *
    * @param world             world that stores active simulation objects

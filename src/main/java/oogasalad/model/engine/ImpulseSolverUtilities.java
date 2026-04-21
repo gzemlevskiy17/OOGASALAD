@@ -6,7 +6,7 @@ import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.RigidBody;
 
 public class ImpulseSolverUtilities {
-
+//TODO: comment
   /**
    * Computes the contact-relative positions from each object's center of mass.
    *
