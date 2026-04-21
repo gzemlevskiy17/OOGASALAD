@@ -15,6 +15,7 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
+import oogasalad.model.engine.VehicleTerrainSupport;
 import oogasalad.model.engine.ImpulseCollisionSolver;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.DefaultTag;
@@ -258,6 +259,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     // (spawnX, spawnY). Offset by half a cell so the vehicle's top-left corner matches the
     // historical spawn origin (350, 300) used when bodies were top-left-anchored.
     vehicleFactory.buildVehicle(layout, world, 380, 330);
+    VehicleTerrainSupport.keepVehicleAssemblyAboveTerrainSurface(world);
     return new BuiltWorld(world, bounds);
   }
 

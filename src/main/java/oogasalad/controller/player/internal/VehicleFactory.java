@@ -49,13 +49,9 @@ public class VehicleFactory {
     List<PlacedComponent> structuralPlacements = new ArrayList<>();
     List<PlacedComponent> pigPlacements = new ArrayList<>();
     for (PlacedComponent p : layout.placements()) {
-      if (PIG_TYPES.contains(p.componentType())) {
-        pigPlacements.add(p);
-      } else {
-        structuralPlacements.add(p);
-      }
+      if (PIG_TYPES.contains(p.componentType())) {pigPlacements.add(p);
+      } else {structuralPlacements.add(p);}
     }
-
     Map<String, GameComponent> placed = new HashMap<>();
     Map<String, String> placedTypes = new HashMap<>();
 
@@ -72,7 +68,6 @@ public class VehicleFactory {
     Set<String> edgeKeys = new HashSet<>();
     for (PlacedComponent p : structuralPlacements) {
       GameComponent current = placed.get(toKey(p.row(), p.col()));
-
       GameComponent right = placed.get(toKey(p.row(), p.col() + 1));
       if (right != null) {
         String rightType = placedTypes.getOrDefault(toKey(p.row(), p.col() + 1), "");
@@ -90,7 +85,6 @@ public class VehicleFactory {
     }
     addRightAngleRigidChords(structuralPlacements, world, placed, placedTypes, edgeKeys);
     addAntiRotationJoints(structuralPlacements, world, placed, placedTypes, edgeKeys);
-
     attachPigsToHostCells(pigPlacements, placed, world, startX, startY);
   }
 
@@ -126,8 +120,7 @@ public class VehicleFactory {
         double dir = Math.signum(delta.x());
         localAnchorA = new Vector(dir * halfWidth(typeA), 0);
         localAnchorB = new Vector(-dir * halfWidth(typeB), 0);
-      }
-      return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
+      }return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
     }
 
     Vector localAnchorA;
@@ -176,20 +169,13 @@ public class VehicleFactory {
     String kCorner = toKey(cornerR, cornerC);
     String k1 = toKey(n1r, n1c);
     String k2 = toKey(n2r, n2c);
-    if (!placed.containsKey(k1) || !placed.containsKey(k2)) {
-      return;
-    }
+    if (!placed.containsKey(k1) || !placed.containsKey(k2)) {return;}
     String tCorner = placedTypes.get(kCorner);
     String t1 = placedTypes.get(k1);
     String t2 = placedTypes.get(k2);
-    if (tCorner == null || t1 == null || t2 == null) {
-      return;
-    }
-    if (!isRigidCardinalPair(tCorner, t1) || !isRigidCardinalPair(tCorner, t2)) {
-      return;
-    }
-    RigidJoint.registerRigidTriangle(world, placed.get(kCorner), placed.get(k1), placed.get(k2),
-        edgeKeys, kCorner, k1, k2);
+    if (tCorner == null || t1 == null || t2 == null) {return;}
+    if (!isRigidCardinalPair(tCorner, t1) || !isRigidCardinalPair(tCorner, t2)) {return;}
+    RigidJoint.registerRigidTriangle(world, placed.get(kCorner), placed.get(k1), placed.get(k2),edgeKeys, kCorner, k1, k2);
   }
 
   private boolean isRigidCardinalPair(String typeA, String typeB) {
@@ -198,9 +184,7 @@ public class VehicleFactory {
 
   private void addWeldStabilizerIfRigidPair(World world, GameComponent a, GameComponent b,
       String typeA, String typeB, boolean horizontalNeighbor) {
-    if (!isRigidCardinalPair(typeA, typeB)) {
-      return;
-    }
+    if (!isRigidCardinalPair(typeA, typeB)) {return;}
     double offset = horizontalNeighbor
         ? 0.35 * Math.min(halfHeight(typeA), halfHeight(typeB))
         : 0.35 * Math.min(halfWidth(typeA), halfWidth(typeB));
@@ -209,13 +193,9 @@ public class VehicleFactory {
     world.addJoint(new RigidJoint(a, b, anchorA, anchorB, -1.0, -1.0));
   }
 
-  private double halfWidth(String componentType) {
-    return paletteDimension(componentType, "width") / 2.0;
-  }
+  private double halfWidth(String componentType) {return paletteDimension(componentType, "width") / 2.0;}
 
-  private double halfHeight(String componentType) {
-    return paletteDimension(componentType, "height") / 2.0;
-  }
+  private double halfHeight(String componentType) {return paletteDimension(componentType, "height") / 2.0;}
 
   private double paletteDimension(String componentType, String axis) {
     String key = componentType.replace(" ", "");

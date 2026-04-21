@@ -12,10 +12,7 @@ public class PigComponent extends DynamicComponent implements SpriteRenderable {
   private static final double DEFAULT_SIZE = 40.0;
   private final String componentType;
 
-  public PigComponent(double x, double y, double rotation, double mass, double friction) {
-    this(x, y, rotation, mass, friction, "Pig");
-  }
-
+  public PigComponent(double x, double y, double rotation, double mass, double friction) {this(x, y, rotation, mass, friction, "Pig");}
   public PigComponent(double x, double y, double rotation, double mass, double friction,
       String componentType) {
     super(x, y, rotation, mass, friction);
@@ -26,13 +23,9 @@ public class PigComponent extends DynamicComponent implements SpriteRenderable {
   @Override
   public void updatePolygon() {
     setPolygon(ConvexPolygon.axisAlignedBox(
-        getX() - DEFAULT_SIZE / 2, getY() - DEFAULT_SIZE / 2, DEFAULT_SIZE, DEFAULT_SIZE));
-  }
+      getX() - DEFAULT_SIZE / 2, getY() - DEFAULT_SIZE / 2, DEFAULT_SIZE, DEFAULT_SIZE));}
 
   @Override
-  public String getComponentType() {
-    return componentType;
-  }
-
+  public String getComponentType() {return componentType;}
 }
 

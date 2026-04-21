@@ -103,6 +103,8 @@ public class GameEngineImpl implements GameEngine {
     // Positional constraints (rigid distance/revolute) need iterative post-integration stabilization.
     applyPositionJointConstraints(elapsedTime, JOINT_SOLVER_ITERATIONS);
 
+    VehicleTerrainSupport.keepVehicleAssemblyAboveTerrainSurface(world);
+
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
 //    }

@@ -116,10 +116,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
    * Reads the current grid state and returns it as a VehicleLayout. Called by the gameplay factory
    * just before the session starts. Each stacked component becomes its own {@link PlacedComponent}.
    */
-  public VehicleLayout getVehicleLayout() {
-    return getRawVehicleLayout();
-  }
-
+  public VehicleLayout getVehicleLayout() {return getRawVehicleLayout();}
   private VehicleLayout getRawVehicleLayout() {
     List<PlacedComponent> placements = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry : gridState.entrySet()) {
@@ -127,8 +124,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       for (String type : entry.getValue()) {
         placements.add(new PlacedComponent(rc[0], rc[1], type));
       }
-    }
-    return new VehicleLayout(placements);
+    }return new VehicleLayout(placements);
   }
 
   @Override
@@ -137,7 +133,6 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     root.getStylesheets().add(getClass().getResource(
         "/oogasalad/view/player/vehicle-builder.css").toExternalForm());
     root.getStyleClass().add("screen-root");
-
     VBox mainContent = new VBox(d("main.content.spacing"));
     mainContent.setAlignment(Pos.CENTER);
     mainContent.getChildren().addAll(
