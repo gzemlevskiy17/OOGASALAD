@@ -208,6 +208,8 @@ public class GameEngineImpl implements GameEngine {
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
+      System.out.println("objectA: " + objectA);
+      System.out.println("objectB: " + objectB);
       CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
           objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
@@ -228,6 +230,7 @@ public class GameEngineImpl implements GameEngine {
     Map<CollisionPair, CollisionSolver> solverMap = collisionDispatcher.getSolverMap();
     CollisionPair sortedPair = CollisionPair.of(collisionPair.objectA(), collisionPair.objectB());
     if (solverMap.containsKey(sortedPair)) {
+      System.out.println("sortedPair");
       return sortedPair;
     }
 
