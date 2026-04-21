@@ -6,7 +6,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
@@ -56,8 +55,6 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
-  // Constants for a demonstration
-  private static final double BALL_RADIUS = 12.0;
   private static final double MIN_VIEWPORT_SIZE = 1.0;
   private static final double DEFAULT_VIEW_WIDTH = 1280.0;
   private static final double DEFAULT_VIEW_HEIGHT = 720.0;
@@ -148,7 +145,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             spritesByRenderable.put(r, sprite);
             return sprite.render(spriteCache);
           }
-          return new Circle(BALL_RADIUS, Color.DODGERBLUE);
+          throw new IllegalStateException(
+              "No renderer for " + r.getClass().getName()
+                  + " — must be TerrainBlock or SpriteRenderable");
         },
         (r, node) -> {
           Sprite sprite = spritesByRenderable.get(r);
@@ -255,7 +254,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     }
 
     LevelBounds bounds = computeLevelBounds(world);
-    vehicleFactory.buildVehicle(layout, world, 350, 300);
+    // Vehicle bodies on this branch use centered polygons, so cell (0,0)'s center lands at
+    // (spawnX, spawnY). Offset by half a cell so the vehicle's top-left corner matches the
+    // historical spawn origin (350, 300) used when bodies were top-left-anchored.
+    vehicleFactory.buildVehicle(layout, world, 380, 330);
     return new BuiltWorld(world, bounds);
   }
 

@@ -45,11 +45,20 @@ public class VehicleFactory {
   private static final Set<String> WHEEL_TYPES = Set.of("Wheel", "Small Wheel", "Large Wheel");
 
   public void buildVehicle(VehicleLayout layout, World world, double startX, double startY) {
-    List<PlacedComponent> resolvedPlacements = compactVerticalGaps(layout);
+    List<PlacedComponent> structuralPlacements = new ArrayList<>();
+    List<PlacedComponent> pigPlacements = new ArrayList<>();
+    for (PlacedComponent p : layout.placements()) {
+      if ("Pig".equals(p.componentType())) {
+        pigPlacements.add(p);
+      } else {
+        structuralPlacements.add(p);
+      }
+    }
+
     Map<String, GameComponent> placed = new HashMap<>();
     Map<String, String> placedTypes = new HashMap<>();
 
-    for (PlacedComponent p : resolvedPlacements) {
+    for (PlacedComponent p : structuralPlacements) {
       double worldX = startX + p.col() * CELL_SIZE;
       double worldY = startY + p.row() * CELL_SIZE;
       GameComponent component = createComponent(p.componentType(), worldX, worldY);
@@ -60,7 +69,7 @@ public class VehicleFactory {
     }
 
     Set<String> edgeKeys = new HashSet<>();
-    for (PlacedComponent p : resolvedPlacements) {
+    for (PlacedComponent p : structuralPlacements) {
       GameComponent current = placed.get(toKey(p.row(), p.col()));
 
       GameComponent right = placed.get(toKey(p.row(), p.col() + 1));
@@ -76,8 +85,24 @@ public class VehicleFactory {
         edgeKeys.add(canonicalPairKey(toKey(p.row(), p.col()), toKey(p.row() + 1, p.col())));
       }
     }
-    addRightAngleRigidChords(resolvedPlacements, world, placed, placedTypes, edgeKeys);
-    addAntiRotationJoints(resolvedPlacements, world, placed, placedTypes, edgeKeys);
+    addRightAngleRigidChords(structuralPlacements, world, placed, placedTypes, edgeKeys);
+    addAntiRotationJoints(structuralPlacements, world, placed, placedTypes, edgeKeys);
+
+    attachPigsToHostCells(pigPlacements, placed, world, startX, startY);
+  }
+
+  private void attachPigsToHostCells(List<PlacedComponent> pigPlacements,
+      Map<String, GameComponent> placed, World world, double startX, double startY) {
+    for (PlacedComponent p : pigPlacements) {
+      double worldX = startX + p.col() * CELL_SIZE;
+      double worldY = startY + p.row() * CELL_SIZE;
+      GameComponent pig = createComponent("Pig", worldX, worldY);
+      world.addComponent(pig);
+      GameComponent host = placed.get(toKey(p.row(), p.col()));
+      if (host != null) {
+        world.addJoint(new RigidJoint(pig, host));
+      }
+    }
   }
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
@@ -199,24 +224,6 @@ public class VehicleFactory {
 
   private String toKey(int row, int col) {
     return row + "," + col;
-  }
-
-  private List<PlacedComponent> compactVerticalGaps(VehicleLayout layout) {
-    Map<Integer, List<PlacedComponent>> byColumn = new HashMap<>();
-    for (PlacedComponent placement : layout.placements()) {
-      byColumn.computeIfAbsent(placement.col(), ignored -> new ArrayList<>()).add(placement);
-    }
-
-    List<PlacedComponent> compacted = new ArrayList<>();
-    for (List<PlacedComponent> columnPlacements : byColumn.values()) {
-      columnPlacements.sort((a, b) -> Integer.compare(b.row(), a.row()));
-      int targetRow = columnPlacements.get(0).row();
-      for (PlacedComponent placement : columnPlacements) {
-        compacted.add(new PlacedComponent(targetRow, placement.col(), placement.componentType()));
-        targetRow--;
-      }
-    }
-    return compacted;
   }
 
   private GameComponent createComponent(String componentType, double x, double y) {

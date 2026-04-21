@@ -163,6 +163,12 @@ public class GameEngineImpl implements GameEngine {
   }
 
   private static final String VEHICLE_TAG = "vehicle";
+  private static final String PIGS_TAG = "pigs";
+
+  private static boolean isPigVehiclePair(String tagA, String tagB) {
+    return (PIGS_TAG.equals(tagA) && VEHICLE_TAG.equals(tagB))
+        || (VEHICLE_TAG.equals(tagA) && PIGS_TAG.equals(tagB));
+  }
 
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
@@ -181,6 +187,9 @@ public class GameEngineImpl implements GameEngine {
           continue;
         }
         if (VEHICLE_TAG.equals(a.getTag()) && VEHICLE_TAG.equals(b.getTag())) {
+          continue;
+        }
+        if (isPigVehiclePair(a.getTag(), b.getTag())) {
           continue;
         }
         Optional<Collision> collision = collisionDetector.detectCollision(a, b);
