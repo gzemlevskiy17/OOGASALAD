@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
@@ -41,6 +42,12 @@ public class VehicleFactory {
   private static final double DEFAULT_MASS_DRIVE = 20.0;
   private static final double DEFAULT_MASS_STRUCTURAL = 1.5;
   private static final double DEFAULT_MAX_HP = 100.0;
+
+  private static final double DEFAULT_RESTITUTION = 0.5;
+  private static double boxMomentOfInertia(double mass, double width, double height) {
+    return mass * (width * width + height * height) / 12.0;
+  }
+
 
   private static final Set<String> WHEEL_TYPES = Set.of("Wheel", "Small Wheel", "Large Wheel");
 
@@ -82,8 +89,8 @@ public class VehicleFactory {
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
     if (WHEEL_TYPES.contains(typeA) || WHEEL_TYPES.contains(typeB)) {
-      Vector posA = a.getState().getLinearPosition();
-      Vector posB = b.getState().getLinearPosition();
+      Vector posA = a.getStaticState().getLinearPosition();
+      Vector posB = b.getStaticState().getLinearPosition();
       Vector localAnchorA = posB.subtract(posA).multiply(0.5);
       Vector localAnchorB = posA.subtract(posB).multiply(0.5);
       return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
@@ -220,7 +227,17 @@ public class VehicleFactory {
 
     switch (componentType) {
       case "Pig":
-        return new PigComponent(x, y, 0, DEFAULT_MASS_PIG, DEFAULT_FRICTION);
+        return new PigComponent(
+            x,
+            y,
+            0,
+            ConvexPolygon.axisAlignedBox(x, y, width, height),
+            "",
+            DEFAULT_FRICTION,
+            DEFAULT_MASS_PIG,
+            boxMomentOfInertia(DEFAULT_MASS_PIG, width, height),
+            DEFAULT_RESTITUTION,
+            true);
       case "Motor":
       case "Fan":
       case "Balloon":
@@ -229,8 +246,22 @@ public class VehicleFactory {
         return new DriveComponent(x, y, 0, DEFAULT_MASS_DRIVE, DEFAULT_FRICTION,
             DEFAULT_MAX_HP, componentType, sprite, width, height);
       default:
-        return new StructuralComponent(x, y, 0, DEFAULT_MASS_STRUCTURAL, DEFAULT_FRICTION,
-            DEFAULT_MAX_HP, componentType, sprite, width, height);
+        return new StructuralComponent(
+            x,
+            y,
+            0,
+            ConvexPolygon.axisAlignedBox(x, y, width, height),
+            "",
+            DEFAULT_FRICTION,
+            DEFAULT_MASS_STRUCTURAL,
+            boxMomentOfInertia(DEFAULT_MASS_STRUCTURAL, width, height),
+            DEFAULT_RESTITUTION,
+            true,
+            DEFAULT_MAX_HP,
+            componentType,
+            sprite,
+            width,
+            height);
     }
   }
 }

@@ -16,4 +16,9 @@ public class StructuralComponent extends VehicleComponent {
         affectedByGravity, maxHp, displayName, spritePath, spriteWidth,
         spriteHeight);
   }
+
+  @Override
+  public boolean isTrigger() {
+    return false;
+  }
 }

@@ -2,6 +2,7 @@ package oogasalad.model.engine.internal.joints;
 
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 
 /**
@@ -162,6 +163,10 @@ public abstract class AbstractJoint implements Joint {
   }
 
   private double inverseMass(GameComponent component) {
-    return component.getMass() > 0.0 ? 1.0 / component.getMass() : 0.0;
+    if (!(component instanceof DynamicComponent dynamic)) {
+      return 0.0;
+    }
+    double m = dynamic.getMass();
+    return m > 0.0 ? 1.0 / m : 0.0;
   }
 }
