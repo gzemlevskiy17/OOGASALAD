@@ -6,6 +6,7 @@ import oogasalad.model.engine.EngineError;
 public abstract class StaticComponent extends GameComponent {
 
   private double friction;
+  private double restitution;
 
   /**
    *
@@ -16,9 +17,10 @@ public abstract class StaticComponent extends GameComponent {
    * @param tag
    */
   public StaticComponent(double x, double y, double rotation, ConvexPolygon polygon,
-      String tag, double friction) {
+      String tag, double friction, double restitution) {
     super(x, y, rotation, polygon, tag);
     this.friction = friction;
+    this.restitution = restitution;
   }
 
   public double getFriction() {
@@ -31,4 +33,13 @@ public abstract class StaticComponent extends GameComponent {
     }
     this.friction = friction;
   }
+
+  public double getRestitution() {
+    return restitution;
+  }
+
+  public void setRestitution(double restitution) {
+    this.restitution = restitution;
+  }
+
 }
