@@ -114,8 +114,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     BuiltWorld built = buildWorld(config, layout);
     World world = built.world();
     LevelBounds bounds = built.bounds();
-    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl(),
-        new ImpulseCollisionSolver());
+    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl());
 
     WinConditionChecker winChecker = buildWinChecker();
     LossConditionChecker lossChecker = buildLossChecker(bounds.height());
