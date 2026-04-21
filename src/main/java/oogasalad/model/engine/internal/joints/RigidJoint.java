@@ -29,13 +29,19 @@ public class RigidJoint extends DistanceJoint {
     super(objectA, objectB, 0.0, 0.0);
   }
 
-  /** Creates a rigid joint with an allowed distance band. */
-  public RigidJoint(GameComponent objectA, GameComponent objectB, double minDistance, double maxDistance) {
+  /**
+   * Creates a rigid joint with an allowed distance band.
+   */
+  public RigidJoint(GameComponent objectA, GameComponent objectB, double minDistance,
+      double maxDistance) {
     super(objectA, objectB, minDistance, maxDistance, 0.0, 0.0);
   }
 
-  /** Creates a rigid joint with explicit local anchors and a distance band. */
-  public RigidJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA, Vector localAnchorB,
+  /**
+   * Creates a rigid joint with explicit local anchors and a distance band.
+   */
+  public RigidJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
+      Vector localAnchorB,
       double minDistance, double maxDistance) {
     super(objectA, objectB, localAnchorA, localAnchorB, minDistance, maxDistance, 0.0, 0.0);
   }
@@ -43,7 +49,8 @@ public class RigidJoint extends DistanceJoint {
   /**
    * Registers three rigid bars on the three pairs of bodies: AB, BC, and AC.
    *
-   * <p>Together they enforce the triangle side lengths at construction time (each {@link RigidJoint}
+   * <p>Together they enforce the triangle side lengths at construction time (each
+   * {@link RigidJoint}
    * captures the current anchor separation). That is the usual “three lengths lock the triangle” /
    * SSS rigidification used to brace an {@code A–B–C} linkage when all three edges should be rigid
    * bars.
@@ -56,7 +63,8 @@ public class RigidJoint extends DistanceJoint {
    * @param b     second vertex
    * @param c     third vertex
    */
-  public static void registerRigidTriangle(World world, GameComponent a, GameComponent b, GameComponent c) {
+  public static void registerRigidTriangle(World world, GameComponent a, GameComponent b,
+      GameComponent c) {
     Objects.requireNonNull(world, EngineError.NULL_PARAMETER.format("world"));
     Objects.requireNonNull(a, EngineError.NULL_PARAMETER.format("a"));
     Objects.requireNonNull(b, EngineError.NULL_PARAMETER.format("b"));

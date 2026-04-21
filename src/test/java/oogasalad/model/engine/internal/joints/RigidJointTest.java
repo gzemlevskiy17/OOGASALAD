@@ -19,6 +19,10 @@ class RigidJointTest {
   private TestBody b;
   private TestBody c;
 
+  private static String canonicalKey(String ka, String kb) {
+    return ka.compareTo(kb) < 0 ? ka + "|" + kb : kb + "|" + ka;
+  }
+
   @BeforeEach
   void setUp() {
     world = new WorldImpl();
@@ -36,7 +40,8 @@ class RigidJointTest {
   @Test
   void registerRigidTriangle_nullWorld_messageFromBundle() {
     NullPointerException ex =
-        assertThrows(NullPointerException.class, () -> RigidJoint.registerRigidTriangle(null, a, b, c));
+        assertThrows(NullPointerException.class,
+            () -> RigidJoint.registerRigidTriangle(null, a, b, c));
     assertEquals(EngineError.NULL_PARAMETER.format("world"), ex.getMessage());
   }
 
@@ -72,10 +77,6 @@ class RigidJointTest {
     NullPointerException ex = assertThrows(NullPointerException.class,
         () -> RigidJoint.registerRigidTriangle(world, a, b, c, keys, "0,0", "1,0", null));
     assertEquals(EngineError.NULL_PARAMETER.format("keyC"), ex.getMessage());
-  }
-
-  private static String canonicalKey(String ka, String kb) {
-    return ka.compareTo(kb) < 0 ? ka + "|" + kb : kb + "|" + ka;
   }
 
   private static final class TestBody extends DynamicComponent {
