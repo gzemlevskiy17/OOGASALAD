@@ -1,10 +1,9 @@
 package oogasalad.controller.player.internal;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
@@ -36,10 +35,14 @@ import oogasalad.model.player.internal.FallOffWorldLossChecker;
 import oogasalad.model.player.internal.FinishLineWinChecker;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
+import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
+import oogasalad.view.core.api.Sprite;
+import oogasalad.view.core.api.SpriteRegistry;
 import oogasalad.view.core.api.SpriteRenderable;
 import oogasalad.view.core.internal.CameraImpl;
 import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
+import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.RendererImpl;
 import oogasalad.view.core.internal.SpriteCache;
 import oogasalad.view.player.internal.GamePlayAppScreen;
@@ -79,48 +82,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   ) {
     this.levelLoader = levelLoader;
     this.levelPathSupplier = levelPathSupplier;
-  }
-
-  private static Node createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
-    double w = sr.getSpriteWidth();
-    double h = sr.getSpriteHeight();
-
-    javafx.scene.image.Image wheelImage = loadOrNull(sr.getWheelSpritePath(), spriteCache);
-    javafx.scene.image.Image hubImage = loadOrNull(sr.getHubSpritePath(), spriteCache);
-    if (wheelImage != null && hubImage != null) {
-      Group group = new Group(buildImageView(wheelImage, w, h), buildImageView(hubImage, w, h));
-      group.setManaged(false);
-      return group;
-    }
-
-    javafx.scene.image.Image image = spriteCache.get(sr.getSpritePath());
-    if (image == null) {
-      Rectangle rect = new Rectangle(w, h);
-      rect.setManaged(false);
-      rect.setFill(Color.DODGERBLUE);
-      rect.setStroke(Color.BLACK);
-      rect.setStrokeWidth(1.0);
-      rect.setTranslateX(-w / 2);
-      rect.setTranslateY(-h / 2);
-      return rect;
-    }
-    return buildImageView(image, w, h);
-  }
-
-  private static ImageView buildImageView(javafx.scene.image.Image image, double w, double h) {
-    ImageView imageView = new ImageView(image);
-    imageView.setFitWidth(w);
-    imageView.setFitHeight(h);
-    imageView.setTranslateX(-w / 2);
-    imageView.setTranslateY(-h / 2);
-    return imageView;
-  }
-
-  private static javafx.scene.image.Image loadOrNull(String path, SpriteCache spriteCache) {
-    if (path == null || path.isBlank()) {
-      return null;
-    }
-    return spriteCache.get(path);
   }
 
   /**
@@ -169,45 +130,38 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     camera.setBehavior(behavior);
     wireResponsiveCamera(screen, camera);
     SpriteCache spriteCache = new SpriteCache();
-    Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
-      if (r instanceof GoalLineComponent gl) {
-        Rectangle rect = new Rectangle(gl.getSpriteWidth(), gl.getSpriteHeight());
-        rect.setManaged(false);
-        rect.setFill(Color.rgb(0, 200, 0, 0.4));
-        rect.setStroke(Color.LIMEGREEN);
-        rect.setStrokeWidth(2.0);
-        rect.getStrokeDashArray().addAll(8.0, 6.0);
-        rect.setTranslateX(-gl.getSpriteWidth() / 2);
-        rect.setTranslateY(-gl.getSpriteHeight() / 2);
-        return rect;
-      }
+    SpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
+    Map<Renderable, Sprite> spritesByRenderable = new IdentityHashMap<>();
 
-      if (r instanceof SpriteRenderable sr) {
-        return createImageView(sr, spriteCache);
-      }
-
-      if (r instanceof TerrainBlock tb) {
-        Rectangle rect = new Rectangle(tb.getWidth(), tb.getHeight());
-        rect.setManaged(false);
-        rect.setStrokeWidth(0.5);
-        rect.setStroke(Color.BLACK);
-        rect.setFill(Paint.valueOf(tb.getColor())); // visible even if texture missing
-        return rect;
-      }
-
-      Circle c = new Circle(BALL_RADIUS);
-      if (r == player) {
-        c.setRadius(BALL_RADIUS + 3);
-        c.setFill(Color.ORANGE);
-      } else if (r instanceof GameObject go) {
-        Vector v = go.getState().getLinearVelocity();
-        boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
-        c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY);
-      } else {
-        c.setFill(Color.DODGERBLUE);
-      }
-      return c;
-    });
+    Renderer objectRenderer = new RendererImpl(screen.getGameLayer(),
+        r -> {
+          if (r instanceof TerrainBlock tb) {
+            Rectangle rect = new Rectangle(tb.getWidth(), tb.getHeight());
+            rect.setManaged(false);
+            rect.setStrokeWidth(0.5);
+            rect.setStroke(Color.BLACK);
+            rect.setFill(Paint.valueOf(tb.getColor()));
+            return rect;
+          }
+          if (r instanceof SpriteRenderable) {
+            Sprite sprite = spriteRegistry.resolve(r);
+            spritesByRenderable.put(r, sprite);
+            return sprite.render(spriteCache);
+          }
+          return new Circle(BALL_RADIUS, Color.DODGERBLUE);
+        },
+        (r, node) -> {
+          Sprite sprite = spritesByRenderable.get(r);
+          if (sprite == null) {
+            return;
+          }
+          double speed = 0.0;
+          if (r instanceof GameObject go) {
+            Vector v = go.getState().getLinearVelocity();
+            speed = Math.hypot(v.x(), v.y());
+          }
+          sprite.update(node, speed);
+        });
 
     Renderer renderer = (cameraRef, objects) -> {
       objectRenderer.render(cameraRef, objects);
@@ -313,8 +267,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
         maxX = Math.max(maxX, tb.getX() + tb.getWidth());
         maxY = Math.max(maxY, tb.getY() + tb.getHeight());
       } else if (c instanceof GoalLineComponent gl) {
-        maxX = Math.max(maxX, gl.getX() + gl.getSpriteWidth());
-        maxY = Math.max(maxY, gl.getY() + gl.getSpriteHeight());
+        maxX = Math.max(maxX, gl.getX() + gl.getWidth());
+        maxY = Math.max(maxY, gl.getY() + gl.getHeight());
       }
     }
     double width = maxX > 0 ? maxX + BOUNDS_PADDING : FALLBACK_WORLD_WIDTH;
