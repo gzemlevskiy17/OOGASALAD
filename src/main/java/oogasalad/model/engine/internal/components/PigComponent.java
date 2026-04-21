@@ -15,5 +15,12 @@ public class PigComponent extends DynamicComponent {
         affectedByGravity);
     setTag(DefaultTag.PIGS.value());
   }
+
+  @Override
+  public boolean isTrigger() {
+    return false;
+  }
+
+
 }
 

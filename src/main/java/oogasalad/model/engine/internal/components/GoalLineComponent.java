@@ -2,6 +2,7 @@ package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.view.core.api.SpriteRenderable;
 
 /**
@@ -17,10 +18,9 @@ public class GoalLineComponent extends FinishLineComponent implements SpriteRend
   private final double height;
 
   public GoalLineComponent(double x, double y, double width, double height) {
-    super(x, y, 0, 0, 0);
+    super(x, y, 0, ConvexPolygon.axisAlignedBox(x, y, width, height), ""); // fix later for extendability
     this.width = width;
     this.height = height;
-    updatePolygon();
   }
 
   @Override
@@ -28,7 +28,6 @@ public class GoalLineComponent extends FinishLineComponent implements SpriteRend
     setPolygon(ConvexPolygon.axisAlignedBox(getX(), getY(), width, height));
   }
 
-  @Override
   public void applyEffect(GameObject target) {
     // win detection is handled by FinishLineWinChecker, not by the component itself
   }
@@ -46,5 +45,30 @@ public class GoalLineComponent extends FinishLineComponent implements SpriteRend
   @Override
   public double getSpriteHeight() {
     return height;
+  }
+
+  @Override
+  public void addForce(Vector force) {
+    // Non-physical zone: ignore forces.
+  }
+
+  @Override
+  public void setRestitution(double restitution) {
+    // No rigid-body restitution for this zone unless you store it later.
+  }
+
+  @Override
+  public double getFriction() {
+    return 0.0;
+  }
+
+  @Override
+  public boolean isAffectedByGravity() {
+    return false;
+  }
+
+  @Override
+  public boolean isTrigger() {
+    return true;
   }
 }

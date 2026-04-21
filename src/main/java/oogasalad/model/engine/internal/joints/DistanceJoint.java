@@ -2,6 +2,7 @@ package oogasalad.model.engine.internal.joints;
 
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 
 /**
@@ -106,9 +107,9 @@ public class DistanceJoint extends AbstractJoint {
     if (Math.abs(displacement) < 1e-9) {
       return;
     }
-    //TODO: double dispatch
-    Vector relativeVelocity = getComponentB().getDynamicState().getLinearVelocity()
-        .subtract(getComponentA().getDynamicState().getLinearVelocity());
+
+    Vector relativeVelocity =
+        linearVelocity(getComponentB()).subtract(linearVelocity(getComponentA()));
     double dampingForceMagnitude = relativeVelocity.dot(direction) * damping;
     double springForceMagnitude = (stiffness * displacement) + dampingForceMagnitude;
     Vector springForce = direction.multiply(springForceMagnitude);
@@ -120,5 +121,12 @@ public class DistanceJoint extends AbstractJoint {
     if (currentDistance < minDistance) {return currentDistance - minDistance;}
     if (currentDistance > maxDistance) {return currentDistance - maxDistance;}
     return 0.0;
+  }
+
+  private static Vector linearVelocity(GameComponent component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getDynamicState().getLinearVelocity();
+    }
+    return new Vector(0, 0);
   }
 }
