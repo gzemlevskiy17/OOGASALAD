@@ -17,7 +17,8 @@ public class PigComponent extends DynamicComponent {
 
   @Override
   public void updatePolygon() {
-    setPolygon(ConvexPolygon.axisAlignedBox(getX(), getY(), DEFAULT_SIZE, DEFAULT_SIZE));
+    setPolygon(ConvexPolygon.axisAlignedBox(
+        getX() - DEFAULT_SIZE / 2, getY() - DEFAULT_SIZE / 2, DEFAULT_SIZE, DEFAULT_SIZE));
   }
 
 }
