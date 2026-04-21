@@ -26,8 +26,7 @@ import oogasalad.model.player.api.VehicleLayout;
  * <p>Where two perpendicular cardinal neighbors of the same cell are both rigid links,
  * {@link #addRightAngleRigidChords} invokes {@link RigidJoint}'s triangle registration with stable
  * grid keys and {@link java.util.Set}-based edge deduplication so the cardinal pass and chord pass
- * share one physical edge set. {@link #addAntiRotationJoints} still adds longer braces where
- * supported.
+ * share one physical edge set. {@link #addAntiRotationJoints} still adds longer braces where supported.
  *
  * @author Paulina Vvedenskaya
  */
@@ -92,21 +91,31 @@ public class VehicleFactory {
     return new RigidJoint(a, b);
   }
 
+  /**
+   * For each filled cell, if two perpendicular cardinal neighbors exist and both arms use rigid
+   * distance joints (no wheel on either side of that arm), adds the closing joint between the two
+   * outer cells — the hypotenuse of the isosceles right triangle.
+   */
   private void addRightAngleRigidChords(List<PlacedComponent> placements, World world,
       Map<String, GameComponent> placed, Map<String, String> placedTypes,
       Set<String> edgeKeys) {
     for (PlacedComponent p : placements) {
       int r = p.row();
       int c = p.col();
-      tryAddRigidTriangleChord(r, c, r, c + 1, r + 1, c, placed, placedTypes, world, edgeKeys);
-      tryAddRigidTriangleChord(r, c, r, c - 1, r + 1, c, placed, placedTypes, world, edgeKeys);
-      tryAddRigidTriangleChord(r, c, r, c + 1, r - 1, c, placed, placedTypes, world, edgeKeys);
-      tryAddRigidTriangleChord(r, c, r, c - 1, r - 1, c, placed, placedTypes, world, edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c + 1, r + 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c - 1, r + 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c + 1, r - 1, c, placed, placedTypes, world,
+          edgeKeys);
+      tryAddRigidTriangleChord(r, c, r, c - 1, r - 1, c, placed, placedTypes, world,
+          edgeKeys);
     }
   }
 
   private void tryAddRigidTriangleChord(int cornerR, int cornerC, int n1r, int n1c, int n2r,
-      int n2c, Map<String, GameComponent> placed, Map<String, String> placedTypes, World world,
+      int n2c,
+      Map<String, GameComponent> placed, Map<String, String> placedTypes, World world,
       Set<String> edgeKeys) {
     String kCorner = toKey(cornerR, cornerC);
     String k1 = toKey(n1r, n1c);
@@ -132,7 +141,8 @@ public class VehicleFactory {
   }
 
   private void addAntiRotationJoints(List<PlacedComponent> placements, World world,
-      Map<String, GameComponent> placed, Map<String, String> placedTypes, Set<String> edgeKeys) {
+      Map<String, GameComponent> placed,
+      Map<String, String> placedTypes, Set<String> edgeKeys) {
     int[][] offsets = {{0, 2}, {2, 0}, {1, 1}, {1, -1}};
 
     for (PlacedComponent component : placements) {

@@ -41,8 +41,8 @@ import org.apache.logging.log4j.Logger;
 public class AuthoringControllerImpl implements AuthoringController {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
-  private static final ResourceBundle MESSAGES =
-      ResourceBundle.getBundle("oogasalad.controller.authoring.AuthoringController");
+  private static final ResourceBundle MESSAGES = ResourceBundle.getBundle(
+      "oogasalad.controller.authoring.AuthoringController");
 
   private final World world;
   private final LevelLoader loader;
