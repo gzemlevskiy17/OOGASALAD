@@ -209,10 +209,20 @@ public class GameEngineImpl implements GameEngine {
       return collisionPair;
     }
     //TODO: make more efficient: currently recursive calls are unnecessarily duplicated (DP?)
-    findSuperClass(
-        new CollisionPair(collisionPair.objectA().getSuperclass(), collisionPair.objectB()));
-    findSuperClass(
-        new CollisionPair(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
+    CollisionPair left = null;
+    if (collisionPair.objectA().getSuperclass() != null) {
+      left = findSuperClass(
+          new CollisionPair(collisionPair.objectA().getSuperclass(), collisionPair.objectB()));
+    }
+
+    if (left != null) {
+      return left;
+    }
+
+    if (collisionPair.objectB().getSuperclass() != null) {
+      findSuperClass(
+          new CollisionPair(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
+    }
     return null;
   }
 
