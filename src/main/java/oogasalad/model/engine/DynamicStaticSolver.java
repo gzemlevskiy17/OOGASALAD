@@ -70,16 +70,16 @@ public class DynamicStaticSolver {
     }
 
     double impulseSum = 0;
-    double referenceCrossProductSum = 0;
+//    double referenceCrossProductSum = 0;
     double incidentCrossProductSum = 0;
     for (ContactPointPhysics contactPointPhysics : contactPoints) {
       contactPointPhysics.impulse *= contactPointPhysics.depth / totalDepth;
 
       impulseSum += contactPointPhysics.impulse;
-      referenceCrossProductSum +=
-          contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
-              * contactPointPhysics.impulse; //TODO: make impulse vector?
-      referenceCrossProductSum +=
+//      referenceCrossProductSum +=
+//          contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
+//              * contactPointPhysics.impulse; //TODO: make impulse vector?
+      incidentCrossProductSum +=
           contactPointPhysics.positionFromIncident.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse;
     }
