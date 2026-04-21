@@ -121,12 +121,14 @@ public class CollisionDetectorImpl implements CollisionDetector {
       Vector point1 = referencePolygon.getPoints().get(i);
       Vector point2 = referencePolygon.getPoints().get(i + 1);
       Vector tangent = point2.subtract(point1).normalize();
-      Vector inwardUnitNormal = tangent.rotateRight(); //Find the inward normal along which to compute the penetration depth
+      Vector outwardUnitNormal = tangent.rotateLeft(); //Find the outward normal along which to compute the penetration depth
+      //TODO: TEST
 
-      double[] projectionA = projectPolygonAlongVector(referencePolygon, inwardUnitNormal);
-      double[] projectionB = projectPolygonAlongVector(incidentPolygon, inwardUnitNormal);
+      double[] projectionA = projectPolygonAlongVector(referencePolygon, outwardUnitNormal);
+      double[] projectionB = projectPolygonAlongVector(incidentPolygon, outwardUnitNormal);
       boolean noOverlap =
-          projectionA[1] <= projectionB[0] || projectionB[1] <= projectionA[0]; //TODO: clean logic
+          projectionA[1] <= projectionB[0]
+              || projectionB[1] <= projectionA[0]; //TODO: make easier to understand
       if (!noOverlap) { //if the shadows don't overlap in at least one axis, there is no collision by the SAT
         return Optional.empty();
       }
@@ -135,7 +137,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
           Math.min(projectionA[1], projectionB[1]) - Math.max(projectionA[0],
               projectionB[0]);
       if (currentPenetrationDepth < minPenetrationDepth) {
-        penetration = inwardUnitNormal.multiply(currentPenetrationDepth);
+        penetration = outwardUnitNormal.multiply(currentPenetrationDepth);
         minPenetrationDepth = currentPenetrationDepth;
         minReferenceEdge[0] = point1;
         minReferenceEdge[1] = point2;
@@ -154,7 +156,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
    *
    * @param incidentPolygon   polygon supplying the candidate incident edges
    * @param penetrationNormal collision normal used to choose the most opposing edge
-   * @return the incident edge that should be clipped against the reference edge
+   * @return the incident edge that will be clipped against the reference edge
    */
   private Vector[] findIncidentEdge(ConvexPolygon incidentPolygon, Vector penetrationNormal) {
     Vector[] incidentEdge = new Vector[2];
