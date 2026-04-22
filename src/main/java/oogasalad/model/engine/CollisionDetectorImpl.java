@@ -129,7 +129,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
       boolean noOverlap =
           projectionA[1] <= projectionB[0]
               || projectionB[1] <= projectionA[0]; //TODO: make easier to understand
-      if (!noOverlap) { //if the shadows don't overlap in at least one axis, there is no collision by the SAT
+      if (noOverlap) { //if the shadows don't overlap in at least one axis, there is no collision by the SAT
         return Optional.empty();
       }
 
