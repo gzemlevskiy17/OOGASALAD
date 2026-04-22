@@ -134,13 +134,28 @@ public class GameEngineImpl implements GameEngine {
     for (Joint joint : world.getJoints()) {
       GameObject a = joint.getComponentA();
       GameObject b = joint.getComponentB();
-      if (a == null || b == null || a == b) {
-        continue;
-      }
+      if (a == null || b == null || a == b) continue;
       pairs.add(canonicalUnorderedPair(a, b));
+    }
+    // TEMP DEBUG: print once TODO: Delete after
+    if (!loggedPairsOnce) {
+      loggedPairsOnce = true;
+      System.out.println("[DEBUG] joints=" + world.getJoints().size()
+          + " jointedPairs=" + pairs.size());
+      for (Joint j : world.getJoints()) {
+        GameObject a = j.getComponentA();
+        GameObject b = j.getComponentB();
+        System.out.println("  joint " + j.getClass().getSimpleName()
+            + " : " + a.getClass().getSimpleName() + "#" + System.identityHashCode(a)
+            + " tag=" + a.getTag()
+            + "  <->  "
+            + b.getClass().getSimpleName() + "#" + System.identityHashCode(b)
+            + " tag=" + b.getTag());
+      }
     }
     return pairs;
   }
+  private boolean loggedPairsOnce = false;
 
   private void applyForcesToAcceleration(Collection<GameObject> objects) {
     for (GameObject object : objects) {
@@ -262,7 +277,16 @@ public class GameEngineImpl implements GameEngine {
         if (jointedPairs.contains(pairKey)) {
           continue;
         }
-        collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
+
+        // TODO: Temporary debug - delete later
+        collisionDetector.detectCollision(objectA, objectB).ifPresent(c -> {
+          System.out.println("[COL] "
+              + objectA.getClass().getSimpleName() + "(" + objectA.getTag() + ")"
+              + " <-> "
+              + objectB.getClass().getSimpleName() + "(" + objectB.getTag() + ")"
+              + " pen=" + c.getPenetration());
+          collisions.add(c);
+        });
       }
     }
     return collisions;

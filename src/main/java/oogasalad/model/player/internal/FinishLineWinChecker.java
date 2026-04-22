@@ -3,6 +3,7 @@ package oogasalad.model.player.internal;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.player.api.WinConditionChecker;
 
@@ -15,6 +16,22 @@ public class FinishLineWinChecker implements WinConditionChecker {
 
   @Override
   public boolean hasWon(World world) {
+
+    // TODO: used for debugging - delete in the future
+    for (GameObject pig : world.getObjectsByTag(DefaultTag.PIGS.value())) {
+      if (pig instanceof DynamicComponent d) {
+        var v = d.getDynamicState().getLinearVelocity();
+        System.out.println("  pig v=(" + v.x() + "," + v.y() + ") x=" + pig.getX());
+      }
+    }
+    for (GameObject veh : world.getObjectsByTag(DefaultTag.VEHICLE.value())) {
+      if (veh instanceof DynamicComponent d) {
+        var v = d.getDynamicState().getLinearVelocity();
+        System.out.println("  veh " + veh.getClass().getSimpleName()
+            + " v=(" + v.x() + "," + v.y() + ") x=" + veh.getX());
+      }
+    }
+
     for (GameObject pig : world.getObjectsByTag(DefaultTag.PIGS.value())) {
       for (GameObject finish : world.getObjectsByTag(DefaultTag.FINISH_LINE.value())) {
         // Print the PigComponent location for logging
