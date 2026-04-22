@@ -56,7 +56,6 @@ public class GameEngineImpl implements GameEngine {
   private CollisionDispatcher collisionDispatcher;
 
   private final Vector gravityVector = new Vector(0, -9.8); // Change in the future (inject levelAttributes)
-  private static final double GRAVITY = 400.0;
   private static final int JOINT_SOLVER_ITERATIONS = 8;
 
   /**
@@ -124,6 +123,23 @@ public class GameEngineImpl implements GameEngine {
 //    }
 
   }
+  /**
+   * Returns the set of unordered (A, B) pairs that are currently linked by at least one joint.
+   * Used to suppress collision detection between bodies glued together by a RigidJoint /
+   * RevoluteJoint / DistanceJoint, whose positional constraint fights the impulse solver and
+   * causes positive-feedback blow-up of velocities.
+   */
+  private Set<List<GameObject>> buildJointedPairs() {
+    Set<List<GameObject>> pairs = new HashSet<>();
+    for (Joint joint : world.getJoints()) {
+      GameObject a = joint.getComponentA();
+      GameObject b = joint.getComponentB();
+      if (a == null || b == null || a == b) continue;
+      pairs.add(canonicalUnorderedPair(a, b));
+    }
+    return pairs;
+  }
+  private boolean loggedPairsOnce = false;
 
   private void applyForcesToAcceleration(Collection<GameObject> objects) {
     for (GameObject object : objects) {
@@ -217,6 +233,7 @@ public class GameEngineImpl implements GameEngine {
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
     Set<List<GameObject>> seenUnorderedPairs = new HashSet<>();
+    Set<List<GameObject>> jointedPairs = buildJointedPairs();
     for (GameObject objectA : world.getObjects()) {
       for (GameObject objectB : world.getObjects()) {
         if (objectA == objectB) {
@@ -228,15 +245,27 @@ public class GameEngineImpl implements GameEngine {
           continue;
         }
 
-        if ((objectA instanceof GoalLineComponent && objectB instanceof StaticComponent) || (objectA instanceof StaticComponent && objectB instanceof GoalLineComponent)) {
+        if ((objectA instanceof GoalLineComponent && objectB instanceof StaticComponent)
+            || (objectA instanceof StaticComponent && objectB instanceof GoalLineComponent)) {
           continue;
         }
 
-        if (!seenUnorderedPairs.add(canonicalUnorderedPair(objectA, objectB))) {
+        List<GameObject> pairKey = canonicalUnorderedPair(objectA, objectB);
+        if (!seenUnorderedPairs.add(pairKey)) {
           continue;
         }
 
-        collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
+        // Bodies linked by a joint must not generate collision impulses: the joint
+        // re-enforces their relative position each frame, so any collision response
+        // only adds velocity that the joint never cancels -> exponential blow-up.
+        if (jointedPairs.contains(pairKey)) {
+          continue;
+        }
+
+        // TODO: Temporary debug - delete larted
+        collisionDetector.detectCollision(objectA, objectB).ifPresent(c -> {
+          collisions.add(c);
+        });
       }
     }
     return collisions;
@@ -246,8 +275,8 @@ public class GameEngineImpl implements GameEngine {
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
-      System.out.println("objectA: " + objectA); // TODO: delete the print statements when they are unused
-      System.out.println("objectB: " + objectB); // TODO: delete the print statements when they are unused
+      // System.out.println("objectA: " + objectA); // TODO: delete the print statements when they are unused
+      // System.out.println("objectB: " + objectB); // TODO: delete the print statements when they are unused
       CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
           objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
@@ -268,7 +297,7 @@ public class GameEngineImpl implements GameEngine {
     Map<CollisionPair, CollisionSolver> solverMap = collisionDispatcher.getSolverMap();
     CollisionPair sortedPair = CollisionPair.of(collisionPair.objectA(), collisionPair.objectB());
     if (solverMap.containsKey(sortedPair)) {
-      System.out.println("sortedPair");
+      // System.out.println("sortedPair");
       return sortedPair;
     }
 

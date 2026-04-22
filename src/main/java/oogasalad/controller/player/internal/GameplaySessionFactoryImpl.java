@@ -106,18 +106,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     if (viewWidth <= 0) viewWidth = DEFAULT_VIEW_WIDTH;
     if (viewHeight <= 0) viewHeight = DEFAULT_VIEW_HEIGHT;
 
-    // World boundary overlay (drawn in world space, projected each frame)
-    Rectangle worldBounds = new Rectangle(bounds.width(), bounds.height());
-    worldBounds.setManaged(false);
-    worldBounds.setFill(Color.TRANSPARENT);
-    worldBounds.setStroke(Color.LIMEGREEN);
-    worldBounds.setStrokeWidth(2.0);
-    worldBounds.getStrokeDashArray().addAll(10.0, 8.0);
-
-    // keep the world boundary behind balls
-    screen.getGameLayer().getChildren().add(worldBounds);
-    worldBounds.toBack();
-
     Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
     GameObject player = resolveControlledPlayer(world);
 
@@ -144,7 +132,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             spritesByRenderable.put(r, sprite);
             return sprite.render(spriteCache);
           }
-          throw new IllegalStateException(
+          throw new IllegalStateException( //TODO: Refactor into the "properties" error
               "No renderer for " + r.getClass().getName()
                   + " — must be TerrainBlock or SpriteRenderable");
         },
@@ -164,9 +152,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     Renderer renderer = (cameraRef, objects) -> {
       objectRenderer.render(cameraRef, objects);
 
-      // project world border into viewport using camera transform
-      worldBounds.setLayoutX(-cameraRef.getX());
-      worldBounds.setLayoutY(-cameraRef.getY());
     };
 
     GameController controller = new GameControllerImpl(
