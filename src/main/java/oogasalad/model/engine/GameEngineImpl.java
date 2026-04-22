@@ -208,8 +208,8 @@ public class GameEngineImpl implements GameEngine {
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
-      System.out.println("objectA: " + objectA);
-      System.out.println("objectB: " + objectB);
+      System.out.println("objectA: " + objectA); // need to be fixed to logging
+      System.out.println("objectB: " + objectB); // need to be fixed to logging
       CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
           objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
