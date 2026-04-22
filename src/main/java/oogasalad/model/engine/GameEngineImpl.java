@@ -13,6 +13,8 @@ import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
+import oogasalad.model.engine.internal.components.GoalLineComponent;
+import oogasalad.model.engine.internal.components.StaticComponent;
 import oogasalad.model.engine.internal.joints.DistanceJoint;
 import oogasalad.model.engine.internal.joints.RevoluteJoint;
 
@@ -198,6 +200,15 @@ public class GameEngineImpl implements GameEngine {
         if (objectA == objectB) {
           continue;
         }
+
+        if (objectA instanceof StaticComponent && objectB instanceof StaticComponent) {
+          continue;
+        }
+
+        if ((objectA instanceof GoalLineComponent && objectB instanceof StaticComponent) || (objectA instanceof StaticComponent && objectB instanceof GoalLineComponent)) {
+          continue;
+        }
+
         collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
       }
     }
