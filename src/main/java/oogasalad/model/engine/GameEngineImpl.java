@@ -137,22 +137,6 @@ public class GameEngineImpl implements GameEngine {
       if (a == null || b == null || a == b) continue;
       pairs.add(canonicalUnorderedPair(a, b));
     }
-    // TEMP DEBUG: print once TODO: Delete after
-    if (!loggedPairsOnce) {
-      loggedPairsOnce = true;
-      System.out.println("[DEBUG] joints=" + world.getJoints().size()
-          + " jointedPairs=" + pairs.size());
-      for (Joint j : world.getJoints()) {
-        GameObject a = j.getComponentA();
-        GameObject b = j.getComponentB();
-        System.out.println("  joint " + j.getClass().getSimpleName()
-            + " : " + a.getClass().getSimpleName() + "#" + System.identityHashCode(a)
-            + " tag=" + a.getTag()
-            + "  <->  "
-            + b.getClass().getSimpleName() + "#" + System.identityHashCode(b)
-            + " tag=" + b.getTag());
-      }
-    }
     return pairs;
   }
   private boolean loggedPairsOnce = false;
@@ -278,13 +262,8 @@ public class GameEngineImpl implements GameEngine {
           continue;
         }
 
-        // TODO: Temporary debug - delete later
+        // TODO: Temporary debug - delete larted
         collisionDetector.detectCollision(objectA, objectB).ifPresent(c -> {
-          System.out.println("[COL] "
-              + objectA.getClass().getSimpleName() + "(" + objectA.getTag() + ")"
-              + " <-> "
-              + objectB.getClass().getSimpleName() + "(" + objectB.getTag() + ")"
-              + " pen=" + c.getPenetration());
           collisions.add(c);
         });
       }
