@@ -17,6 +17,11 @@ public class FinishLineWinChecker implements WinConditionChecker {
   public boolean hasWon(World world) {
     for (GameObject pig : world.getObjectsByTag(DefaultTag.PIGS.value())) {
       for (GameObject finish : world.getObjectsByTag(DefaultTag.FINISH_LINE.value())) {
+        // Print the PigComponent location for logging
+        System.out.println("Pig Coordinates: " + pig.getX());
+        System.out.println("Finish Line Coordinates: " + finish.getX());
+
+
         if (!(finish instanceof GoalLineComponent g)) continue;
         double fxL = g.getX() - g.getWidth()  / 2.0;
         double fxR = g.getX() + g.getWidth()  / 2.0;
