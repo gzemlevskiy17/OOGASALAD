@@ -2,8 +2,11 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.Driveable;
@@ -188,6 +191,23 @@ public class GameEngineImpl implements GameEngine {
   private static final String VEHICLE_TAG = "vehicle";
   private static final String PIGS_TAG = "pigs";
 
+  /**
+   * Total order for building a stable key for the unordered pair {A, B}. Same two instances
+   * always map to the same list regardless of which was passed as "first" in the double loop.
+   */
+  private static final Comparator<GameObject> UNORDERED_PAIR_KEY_ORDER =
+      Comparator.<GameObject>comparingInt(o -> System.identityHashCode(o))
+          .thenComparingInt(Object::hashCode)
+          .thenComparing(o -> o.getClass().getName())
+          .thenComparing(GameObject::getTag, Comparator.nullsFirst(Comparator.naturalOrder()));
+
+  private static List<GameObject> canonicalUnorderedPair(GameObject a, GameObject b) {
+    if (UNORDERED_PAIR_KEY_ORDER.compare(a, b) <= 0) {
+      return List.of(a, b);
+    }
+    return List.of(b, a);
+  }
+
   private static boolean isPigVehiclePair(String tagA, String tagB) {
     return (PIGS_TAG.equals(tagA) && VEHICLE_TAG.equals(tagB))
         || (VEHICLE_TAG.equals(tagA) && PIGS_TAG.equals(tagB));
@@ -195,17 +215,23 @@ public class GameEngineImpl implements GameEngine {
 
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
+    Set<List<GameObject>> seenUnorderedPairs = new HashSet<>();
     for (GameObject objectA : world.getObjects()) {
       for (GameObject objectB : world.getObjects()) {
         if (objectA == objectB) {
           continue;
         }
 
+        // TODO: fix hardcoded if statements
         if (objectA instanceof StaticComponent && objectB instanceof StaticComponent) {
           continue;
         }
 
         if ((objectA instanceof GoalLineComponent && objectB instanceof StaticComponent) || (objectA instanceof StaticComponent && objectB instanceof GoalLineComponent)) {
+          continue;
+        }
+
+        if (!seenUnorderedPairs.add(canonicalUnorderedPair(objectA, objectB))) {
           continue;
         }
 
@@ -219,8 +245,8 @@ public class GameEngineImpl implements GameEngine {
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
-      System.out.println("objectA: " + objectA); // need to be fixed to logging
-      System.out.println("objectB: " + objectB); // need to be fixed to logging
+      System.out.println("objectA: " + objectA); // TODO: delete the print statements when they are unused
+      System.out.println("objectB: " + objectB); // TODO: delete the print statements when they are unused
       CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
           objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
