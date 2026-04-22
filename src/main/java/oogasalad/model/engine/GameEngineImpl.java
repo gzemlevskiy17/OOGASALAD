@@ -246,8 +246,8 @@ public class GameEngineImpl implements GameEngine {
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
-      System.out.println("objectA: " + objectA); // TODO: delete the print statements when they are unused
-      System.out.println("objectB: " + objectB); // TODO: delete the print statements when they are unused
+      // System.out.println("objectA: " + objectA); // TODO: delete the print statements when they are unused
+      // System.out.println("objectB: " + objectB); // TODO: delete the print statements when they are unused
       CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
           objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
@@ -268,7 +268,7 @@ public class GameEngineImpl implements GameEngine {
     Map<CollisionPair, CollisionSolver> solverMap = collisionDispatcher.getSolverMap();
     CollisionPair sortedPair = CollisionPair.of(collisionPair.objectA(), collisionPair.objectB());
     if (solverMap.containsKey(sortedPair)) {
-      System.out.println("sortedPair");
+      // System.out.println("sortedPair");
       return sortedPair;
     }
 

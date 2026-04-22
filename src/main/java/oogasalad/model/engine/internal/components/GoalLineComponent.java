@@ -23,6 +23,7 @@ public class GoalLineComponent extends FinishLineComponent implements SpriteRend
     this.height = height;
   }
 
+  // TODO: fix Constructor anchors the box for polygon at x, y, and this fixes it to center at (x, y)
   @Override
   public void updatePolygon() {
     setPolygon(ConvexPolygon.axisAlignedBox(

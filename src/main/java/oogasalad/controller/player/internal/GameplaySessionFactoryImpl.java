@@ -132,7 +132,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             spritesByRenderable.put(r, sprite);
             return sprite.render(spriteCache);
           }
-          throw new IllegalStateException(
+          throw new IllegalStateException( //TODO: Refactor into the "properties" error
               "No renderer for " + r.getClass().getName()
                   + " — must be TerrainBlock or SpriteRenderable");
         },
