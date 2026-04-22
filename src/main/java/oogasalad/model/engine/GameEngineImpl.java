@@ -47,6 +47,7 @@ import oogasalad.model.engine.internal.joints.RevoluteJoint;
  * href="https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/">...</a></p>
  *
  * @author Georgiy Zemlevskiy
+ * @author Iurii Beliaev
  */
 public class GameEngineImpl implements GameEngine {
 
