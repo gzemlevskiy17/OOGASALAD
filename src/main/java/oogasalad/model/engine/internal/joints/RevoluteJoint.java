@@ -28,6 +28,8 @@ public class RevoluteJoint extends AbstractJoint {
     }
   }
 
+  private static final double VECTOR_CORRECTION = 0.2;
+
   /** Re-aligns the two anchors while leaving relative rotation unconstrained. */
   @Override
   public void apply(double dt) {
@@ -35,6 +37,7 @@ public class RevoluteJoint extends AbstractJoint {
     if (delta.magnitude() < 1e-9) {
       return;
     }
-    applyLinearCorrection(delta, delta.multiply(0.2)); // TODO: determine the correct coefficient
+    Vector correction = delta.multiply(VECTOR_CORRECTION);
+    applyLinearCorrection(correction, correction.multiply(-1));
   }
 }
