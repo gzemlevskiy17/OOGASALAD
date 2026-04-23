@@ -1,5 +1,7 @@
 package oogasalad.controller.core.internal;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -13,6 +15,13 @@ import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.model.auth.api.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
+import oogasalad.model.auth.api.PlayerProfile;
+import oogasalad.model.player.api.GameplayScore;
+import oogasalad.model.player.api.PlayHistoryEntry;
+import oogasalad.model.player.api.PlayHistoryRepository;
+import oogasalad.model.player.api.ScoreCalculator;
+import oogasalad.model.player.internal.ScoreCalculatorImpl;
+import oogasalad.model.player.internal.SqlitePlayHistoryRepo;
 import oogasalad.view.accounts.internal.CreateAccountScreen;
 import oogasalad.view.accounts.internal.LoginScreen;
 import oogasalad.view.accounts.internal.ProfileScreen;
@@ -48,6 +57,8 @@ public class ScreenFactory {
   private final ScreenManager screenManager;
   private final AuthService authService = AuthFactory.createService();
   private final AuthController authController;
+  private final PlayHistoryRepository playHistoryRepo = new SqlitePlayHistoryRepo();
+  private final ScoreCalculator scoreCalculator = new ScoreCalculatorImpl();
 
   // Player screens stored as fields so the vehicle layout can be read before gameplay starts
   private VehicleBuilderAppScreen vehicleBuilderScreen;
@@ -179,15 +190,70 @@ public class ScreenFactory {
   }
 
   private void pushGameplayStatsIfTerminal(Outcome outcome) {
-    if (gameplayCoordinator == null) {
+    if (gameplayCoordinator == null
+        || (outcome != Outcome.GAME_WON && outcome != Outcome.GAME_LOST)) {
       return;
     }
-    double elapsed = gameplayCoordinator.getLastElapsedSeconds();
-    double progress = gameplayCoordinator.getLastProgressPercent();
+    GameplayScore runScore = gameplayCoordinator.getLastGameplayScore();
+    if (runScore == null) {
+      return;
+    }
+    double currentScore = scoreCalculator.score(runScore);
+    double displayProgress = outcome == Outcome.GAME_WON ? 1.0 : runScore.progressPercent();
+
+    String userId = currentUsernameOrNull();
+    RecordFlags flags = computeNewRecordFlags(userId, runScore, currentScore, displayProgress);
+
     if (outcome == Outcome.GAME_WON && winScreen != null) {
-      winScreen.setStats(elapsed, 1.0);
+      winScreen.setStats(runScore.elapsedSeconds(), currentScore, displayProgress,
+          flags.newTime, flags.newScore, flags.newProgress);
     } else if (outcome == Outcome.GAME_LOST && loseScreen != null) {
-      loseScreen.setStats(elapsed, progress);
+      loseScreen.setStats(runScore.elapsedSeconds(), currentScore, displayProgress,
+          flags.newTime, flags.newScore, flags.newProgress);
+    }
+
+    if (userId != null) {
+      playHistoryRepo.save(new PlayHistoryEntry(
+          null, userId, runScore.levelId(),
+          runScore.distanceTraveled(), runScore.elapsedSeconds(), displayProgress,
+          currentScore, runScore.won(), Instant.now()));
+    }
+  }
+
+  private String currentUsernameOrNull() {
+    if (!authService.session().isLoggedIn()) {
+      return null;
+    }
+    PlayerProfile user = authService.session().currentUser();
+    return user != null ? user.username() : null;
+  }
+
+  private RecordFlags computeNewRecordFlags(String userId, GameplayScore runScore,
+      double currentScore, double currentProgress) {
+    if (userId == null) {
+      return RecordFlags.all();
+    }
+    List<PlayHistoryEntry> priorRunsForLevel = playHistoryRepo.findAllByUser(userId).stream()
+        .filter(e -> e.levelId().equals(runScore.levelId()))
+        .toList();
+    if (priorRunsForLevel.isEmpty()) {
+      return RecordFlags.all();
+    }
+    double bestTime = priorRunsForLevel.stream()
+        .mapToDouble(PlayHistoryEntry::elapsedSeconds).min().orElse(Double.POSITIVE_INFINITY);
+    double bestScore = priorRunsForLevel.stream()
+        .mapToDouble(PlayHistoryEntry::score).max().orElse(Double.NEGATIVE_INFINITY);
+    double bestProgress = priorRunsForLevel.stream()
+        .mapToDouble(PlayHistoryEntry::progressPercent).max().orElse(Double.NEGATIVE_INFINITY);
+    return new RecordFlags(
+        runScore.elapsedSeconds() < bestTime,
+        currentScore > bestScore,
+        currentProgress > bestProgress);
+  }
+
+  private record RecordFlags(boolean newTime, boolean newScore, boolean newProgress) {
+    static RecordFlags all() {
+      return new RecordFlags(true, true, true);
     }
   }
 
