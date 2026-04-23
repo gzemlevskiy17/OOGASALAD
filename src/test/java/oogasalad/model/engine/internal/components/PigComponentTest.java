@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.DefaultTag;
-import oogasalad.view.core.api.SpriteRenderable;
+import oogasalad.model.engine.api.TypedComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +32,8 @@ class PigComponentTest {
   }
 
   @Test
-  void pig_isSpriteRenderable() {
-    assertInstanceOf(SpriteRenderable.class, pig);
+  void pig_isTypedComponent() {
+    assertInstanceOf(TypedComponent.class, pig);
   }
 
   @Test
