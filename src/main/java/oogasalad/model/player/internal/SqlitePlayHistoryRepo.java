@@ -24,7 +24,8 @@ import oogasalad.model.player.api.PlayHistoryRepository;
 public class SqlitePlayHistoryRepo implements PlayHistoryRepository {
 
   private static final String COLUMNS =
-      "id, user_id, level_id, distance_traveled, elapsed_seconds, score, won, finished_at";
+      "id, user_id, level_id, distance_traveled, elapsed_seconds, progress_percent, score, won, "
+          + "finished_at";
 
   private final Connection connection;
 
@@ -60,6 +61,7 @@ public class SqlitePlayHistoryRepo implements PlayHistoryRepository {
             level_id TEXT NOT NULL,
             distance_traveled REAL NOT NULL,
             elapsed_seconds REAL NOT NULL,
+            progress_percent REAL NOT NULL DEFAULT 0.0,
             score REAL NOT NULL,
             won INTEGER NOT NULL,
             finished_at INTEGER NOT NULL
@@ -70,27 +72,45 @@ public class SqlitePlayHistoryRepo implements PlayHistoryRepository {
       s.execute("CREATE INDEX IF NOT EXISTS idx_play_history_user "
           + "ON play_history(user_id)");
     }
+    addProgressPercentColumnIfMissing();
+  }
+
+  private void addProgressPercentColumnIfMissing() throws SQLException {
+    try (Statement s = connection.createStatement();
+        ResultSet rs = s.executeQuery("PRAGMA table_info(play_history)")) {
+      while (rs.next()) {
+        if ("progress_percent".equalsIgnoreCase(rs.getString("name"))) {
+          return;
+        }
+      }
+    }
+    try (Statement s = connection.createStatement()) {
+      s.execute(
+          "ALTER TABLE play_history ADD COLUMN progress_percent REAL NOT NULL DEFAULT 0.0");
+    }
   }
 
   @Override
   public PlayHistoryEntry save(PlayHistoryEntry entry) {
     String id = entry.id() != null ? entry.id() : UUID.randomUUID().toString();
     try (PreparedStatement ps = connection.prepareStatement(
-        "INSERT INTO play_history(" + COLUMNS + ") VALUES(?, ?, ?, ?, ?, ?, ?, ?)")) {
+        "INSERT INTO play_history(" + COLUMNS + ") VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
       ps.setString(1, id);
       ps.setString(2, entry.userId());
       ps.setString(3, entry.levelId());
       ps.setDouble(4, entry.distanceTraveled());
       ps.setDouble(5, entry.elapsedSeconds());
-      ps.setDouble(6, entry.score());
-      ps.setInt(7, entry.won() ? 1 : 0);
-      ps.setLong(8, entry.finishedAt().toEpochMilli());
+      ps.setDouble(6, entry.progressPercent());
+      ps.setDouble(7, entry.score());
+      ps.setInt(8, entry.won() ? 1 : 0);
+      ps.setLong(9, entry.finishedAt().toEpochMilli());
       ps.executeUpdate();
     } catch (SQLException e) {
       throw new RuntimeException("Failed to save play history entry", e);
     }
     return new PlayHistoryEntry(id, entry.userId(), entry.levelId(), entry.distanceTraveled(),
-        entry.elapsedSeconds(), entry.score(), entry.won(), entry.finishedAt());
+        entry.elapsedSeconds(), entry.progressPercent(), entry.score(), entry.won(),
+        entry.finishedAt());
   }
 
   @Override
@@ -136,6 +156,7 @@ public class SqlitePlayHistoryRepo implements PlayHistoryRepository {
         rs.getString("level_id"),
         rs.getDouble("distance_traveled"),
         rs.getDouble("elapsed_seconds"),
+        rs.getDouble("progress_percent"),
         rs.getDouble("score"),
         rs.getInt("won") != 0,
         Instant.ofEpochMilli(rs.getLong("finished_at"))

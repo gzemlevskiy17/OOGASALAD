@@ -25,7 +25,8 @@ class SqlitePlayHistoryRepoTest {
   private PlayHistoryEntry draft(String userId, String levelId, double score, boolean won,
       long finishedAtMs) {
     return new PlayHistoryEntry(
-        null, userId, levelId, 1000.0, 30.0, score, won, Instant.ofEpochMilli(finishedAtMs));
+        null, userId, levelId, 1000.0, 30.0, 0.0, score, won,
+        Instant.ofEpochMilli(finishedAtMs));
   }
 
   @Test
@@ -114,7 +115,7 @@ class SqlitePlayHistoryRepoTest {
   void save_withNullUserId_surfacesErrorAsRuntimeException() {
     // user_id is NOT NULL in the schema; a null must be surfaced, not silently written.
     PlayHistoryEntry badEntry = new PlayHistoryEntry(
-        null, null, "level-1", 0.0, 0.0, 0.0, false, Instant.EPOCH);
+        null, null, "level-1", 0.0, 0.0, 0.0, 0.0, false, Instant.EPOCH);
 
     assertThrows(RuntimeException.class, () -> repo.save(badEntry));
   }

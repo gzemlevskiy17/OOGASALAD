@@ -12,6 +12,7 @@ public record PlayHistoryEntry(
     String levelId,
     double distanceTraveled,
     double elapsedSeconds,
+    double progressPercent,
     double score,
     boolean won,
     Instant finishedAt
