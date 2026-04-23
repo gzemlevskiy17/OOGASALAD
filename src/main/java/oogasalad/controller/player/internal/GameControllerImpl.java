@@ -15,6 +15,7 @@ import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.player.api.GameplayScore;
 import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.WinConditionChecker;
@@ -63,6 +64,7 @@ public class GameControllerImpl implements GameController {
 
   private Consumer<Outcome> onOutcome;
   private BiConsumer<Double, Double> onStatsTick;
+  private Consumer<GameplayScore> onTerminalScore;
 
   /**
    * Constructs the controller and builds the game loop (does not start it).
@@ -111,6 +113,11 @@ public class GameControllerImpl implements GameController {
   @Override
   public void setOnStatsTick(BiConsumer<Double, Double> callback) {
     this.onStatsTick = callback;
+  }
+
+  @Override
+  public void setOnTerminalScore(Consumer<GameplayScore> callback) {
+    this.onTerminalScore = callback;
   }
 
   /**
@@ -177,7 +184,10 @@ public class GameControllerImpl implements GameController {
 
   private void finalizeAndFire(boolean won, Outcome outcome) {
     stopSimulation();
-    tracker.finish(won);
+    GameplayScore score = tracker.finish(won);
+    if (onTerminalScore != null) {
+      onTerminalScore.accept(score);
+    }
     if (onOutcome != null) {
       onOutcome.accept(outcome);
     }

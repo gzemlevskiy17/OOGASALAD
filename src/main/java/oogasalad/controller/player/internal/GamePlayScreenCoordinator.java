@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import javafx.scene.Parent;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameplaySessionFactory;
+import oogasalad.model.player.api.GameplayScore;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.player.internal.GamePlayAppScreen;
@@ -30,6 +31,7 @@ public class GamePlayScreenCoordinator implements AppScreen {
 
   private double lastElapsedSeconds = 0.0;
   private double lastProgressPercent = 0.0;
+  private GameplayScore lastGameplayScore;
 
   /**
    * Creates a coordinator for one gameplay screen instance.
@@ -90,6 +92,7 @@ public class GamePlayScreenCoordinator implements AppScreen {
       lastProgressPercent = progress;
       view.updateHud(elapsed, progress);
     });
+    session.setOnTerminalScore(score -> lastGameplayScore = score);
     session.start();
   }
 
@@ -101,6 +104,15 @@ public class GamePlayScreenCoordinator implements AppScreen {
   /** Latest progress percent in [0, 1] reported by the stats tick; zero before any session runs. */
   public double getLastProgressPercent() {
     return lastProgressPercent;
+  }
+
+  /**
+   * The frozen snapshot produced by {@code tracker.finish()} for the most recent terminal
+   * outcome, or null if no run has ended yet. Cleared on a new screen entry only implicitly —
+   * callers reading this should ensure they do so immediately after a terminal outcome fires.
+   */
+  public GameplayScore getLastGameplayScore() {
+    return lastGameplayScore;
   }
 
   /**

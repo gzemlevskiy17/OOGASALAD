@@ -3,6 +3,7 @@ package oogasalad.controller.player.api;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.model.player.api.GameplayScore;
 
 /**
  * High-level controller of the game player environment.
@@ -35,6 +36,13 @@ public interface GameController {
    * disable.
    */
   void setOnStatsTick(BiConsumer<Double, Double> callback);
+
+  /**
+   * Registers a callback fired once per run immediately after the tracker finalizes, carrying the
+   * immutable {@link GameplayScore} snapshot. Fires before the terminal outcome callback so
+   * listeners can inspect or persist the run before navigation. Pass null to disable.
+   */
+  void setOnTerminalScore(Consumer<GameplayScore> callback);
 
   /**
    * Forwards a tool button press to the InputRouter to activate/deactivate the bound action.
