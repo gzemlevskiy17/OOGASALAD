@@ -35,6 +35,6 @@ public class RevoluteJoint extends AbstractJoint {
     if (delta.magnitude() < 1e-9) {
       return;
     }
-    applyLinearCorrection(delta, delta.multiply(-1));
+    applyLinearCorrection(delta, delta.multiply(0.2)); // TODO: determine the correct coefficient
   }
 }

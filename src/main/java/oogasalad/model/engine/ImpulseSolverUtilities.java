@@ -79,37 +79,54 @@ public class ImpulseSolverUtilities {
   /**
    * Moves objects out of overlap.
    *
-   * <p>
-   * Move incident polygon by the vector d/2 * (m_Reference/(m_A + m_B)) * B. Move reference polygon
-   * by the vector -d/2 * (m_Incident/(m_A + m_B)) * B. B is a number between 0 and 1. In one step,
-   * the collision is thus not fully resolved, but only partly. This method will be called multiple
-   * times so that the resolution is visually smooth.
+   * <p>Uses Baumgarte-style positional projection: each frame resolves {@code correctionFraction}
+   * of the remaining penetration (above a small {@code slop} tolerance), and splits the motion
+   * between the two bodies proportionally to their inverse masses. Static bodies (inverse mass 0)
+   * therefore absorb none of the correction, while lighter dynamic bodies absorb more than heavier
+   * ones. This method is expected to be called multiple times per frame (either by the solver
+   * iteration loop or by the joint/collision interleave in the engine) so the remaining penetration
+   * decays geometrically to zero.
    *
-   * @param collision detected collision pair
+   * @param collision       detected collision pair; penetration must point from the reference body
+   *                        outward toward the incident body (true MTV direction)
+   * @param referenceObject body that receives the negative share of the correction
+   * @param incidentObject  body that receives the positive share of the correction
    */
   public static void applyPositionalCorrection(Collision collision, RigidBody referenceObject,
       RigidBody incidentObject) {
-    double correctionFraction = 0.4; //TODO: put into properties file
+    final double correctionFraction = 0.4; // TODO: put into properties file
+    final double slop = 0.01;              // ignore sub-pixel overlaps to avoid jitter
 
-//    GameObject referenceObject = collision.getReferenceObject();
-//    GameObject incidentObject = collision.getIncidentObject();
+    double totalInverseMass =
+        incidentObject.getInverseMass() + referenceObject.getInverseMass();
+    if (totalInverseMass == 0.0) {
+      return; // two static bodies: nothing movable to correct
+    }
+
+    Vector penetration = collision.getPenetration();
+    double depth = penetration.magnitude();
+    if (depth <= slop) {
+      return;
+    }
+
+    Vector normal = penetration.multiply(1.0 / depth); // normalize without re-reading magnitude
+    double correctionMagnitude = (depth - slop) * correctionFraction / totalInverseMass;
+    Vector correction = normal.multiply(correctionMagnitude);
+
     StaticState referenceStaticState = referenceObject.getStaticState();
     StaticState incidentStaticState = incidentObject.getStaticState();
 
-    double inverseMassSum = incidentObject.getInverseMass() + referenceObject.getInverseMass();
+    if (referenceObject.getInverseMass() > 0.0) {
+      Vector newReferencePosition = referenceStaticState.getLinearPosition()
+          .subtract(correction.multiply(referenceObject.getInverseMass()));
+      referenceStaticState.setLinearPosition(newReferencePosition);
+    }
 
-    Vector penetration = collision.getPenetration();
-    double correctionMagnitude =
-        (penetration.magnitude() / 2) * inverseMassSum * correctionFraction;
-    Vector correction = penetration.normalize().multiply(correctionMagnitude);
-
-    Vector newReferenceObjectState = referenceStaticState.getLinearPosition()
-        .subtract(correction.multiply(referenceObject.getInverseMass()));
-    referenceStaticState.setLinearPosition(newReferenceObjectState);
-
-    Vector newIncidentObjectState = incidentStaticState.getLinearPosition()
-        .add(correction.multiply(incidentObject.getInverseMass()));
-    incidentStaticState.setLinearPosition(newIncidentObjectState);
+    if (incidentObject.getInverseMass() > 0.0) {
+      Vector newIncidentPosition = incidentStaticState.getLinearPosition()
+          .add(correction.multiply(incidentObject.getInverseMass()));
+      incidentStaticState.setLinearPosition(newIncidentPosition);
+    }
   }
 
   public static void resolveImpulseAtContactsHelper(Collision collision, RigidBody referenceObject,
