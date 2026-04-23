@@ -14,7 +14,6 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
       "Wood Wheel", "Metal Wheel");
 
   private final String displayName;
-  private final String spritePath;
   private final double bodyWidth;
   private final double bodyHeight;
   private double maxHp;
@@ -23,8 +22,7 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
   public VehicleComponent(double x, double y, double rotation, ConvexPolygon polygon, String tag,
       double friction, double mass, double momentOfInertia, double restitution,
       boolean affectedByGravity,
-      double maxHp, String displayName, String spritePath, double bodyWidth,
-      double bodyHeight) {
+      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
     super(x, y, rotation, polygon, tag, friction, mass, momentOfInertia, restitution,
         affectedByGravity);
     setTag(DefaultTag.VEHICLE.value());
@@ -34,17 +32,12 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
     this.maxHp = maxHp;
     this.currentHp = maxHp;
     this.displayName = displayName;
-    this.spritePath = spritePath;
     this.bodyWidth = bodyWidth;
     this.bodyHeight = bodyHeight;
   }
 
   public String getDisplayName() {
     return displayName;
-  }
-
-  public String getSpritePath() {
-    return spritePath;
   }
 
   @Override
