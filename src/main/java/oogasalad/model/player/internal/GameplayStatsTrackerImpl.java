@@ -65,6 +65,19 @@ public class GameplayStatsTrackerImpl implements GameplayStatsTracker {
   }
 
   @Override
+  public double currentProgressPercent() {
+    if (startX == null || finishX == null) {
+      return 0.0;
+    }
+    double span = Math.hypot(finishX - startX, finishY - startY);
+    if (span <= 0) {
+      return 0.0;
+    }
+    double remaining = Math.hypot(finishX - lastPigX, finishY - lastPigY);
+    return Math.max(0.0, Math.min(1.0, 1.0 - remaining / span));
+  }
+
+  @Override
   public GameplayScore finish(boolean won) {
     double span = 0.0;
     double progress = 0.0;

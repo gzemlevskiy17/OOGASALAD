@@ -1,5 +1,6 @@
 package oogasalad.controller.player.api;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import oogasalad.controller.core.api.Outcome;
 
@@ -27,6 +28,13 @@ public interface GameController {
 
   /** Registers a callback to be fired when the game reaches a terminal outcome. */
   void setOnOutcome(Consumer<Outcome> callback);
+
+  /**
+   * Registers a callback fired each tick with {@code (elapsedSeconds, progressPercent)} so a
+   * HUD can display live run stats. {@code progressPercent} is in {@code [0, 1]}. Pass null to
+   * disable.
+   */
+  void setOnStatsTick(BiConsumer<Double, Double> callback);
 
   /**
    * Forwards a tool button press to the InputRouter to activate/deactivate the bound action.

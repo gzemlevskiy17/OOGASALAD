@@ -2,6 +2,7 @@ package oogasalad.controller.player.internal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -14,6 +15,7 @@ import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.view.core.api.Camera;
@@ -46,6 +48,7 @@ public class GameControllerImpl implements GameController {
   private final LossConditionChecker lossChecker;
   private final InputRouter inputRouter;
   private final GameConfig config;
+  private final GameplayStatsTracker tracker;
 
   /** Maps config action names (e.g. "activate_engine") to their Action instances. */
   private final Map<String, Action> actionRegistry = new HashMap<>();
@@ -59,6 +62,7 @@ public class GameControllerImpl implements GameController {
   private boolean initialized = false;
 
   private Consumer<Outcome> onOutcome;
+  private BiConsumer<Double, Double> onStatsTick;
 
   /**
    * Constructs the controller and builds the game loop (does not start it).
@@ -75,7 +79,8 @@ public class GameControllerImpl implements GameController {
    */
   public GameControllerImpl(GameEngine engine, World world, Renderer renderer, Camera camera,
       CameraBehavior cameraBehavior, WinConditionChecker winChecker,
-      LossConditionChecker lossChecker, InputRouter inputRouter, GameConfig config) {
+      LossConditionChecker lossChecker, InputRouter inputRouter, GameConfig config,
+      GameplayStatsTracker tracker) {
     this.engine = engine;
     this.world = world;
     this.renderer = renderer;
@@ -84,6 +89,7 @@ public class GameControllerImpl implements GameController {
     this.lossChecker = lossChecker;
     this.inputRouter = inputRouter;
     this.config = config;
+    this.tracker = tracker;
     this.gameLoop = buildGameLoop();
   }
 
@@ -100,6 +106,11 @@ public class GameControllerImpl implements GameController {
   @Override
   public void setOnOutcome(Consumer<Outcome> callback) {
     this.onOutcome = callback;
+  }
+
+  @Override
+  public void setOnStatsTick(BiConsumer<Double, Double> callback) {
+    this.onStatsTick = callback;
   }
 
   /**
@@ -147,6 +158,10 @@ public class GameControllerImpl implements GameController {
    */
   private void tick() {
     engine.step(FRAME_DURATION_SECONDS);
+    tracker.sample(world, FRAME_DURATION_SECONDS);
+    if (onStatsTick != null) {
+      onStatsTick.accept(tracker.currentElapsedSeconds(), tracker.currentProgressPercent());
+    }
     camera.updateBehavior();
     renderer.render(camera, world.getObjects());
     checkWinLoss();
@@ -154,15 +169,17 @@ public class GameControllerImpl implements GameController {
 
   private void checkWinLoss() {
     if (winChecker.hasWon(world)) {
-      stopSimulation();
-      if (onOutcome != null) {
-        onOutcome.accept(Outcome.GAME_WON);
-      }
+      finalizeAndFire(true, Outcome.GAME_WON);
     } else if (lossChecker.hasLost(world)) {
-      stopSimulation();
-      if (onOutcome != null) {
-        onOutcome.accept(Outcome.GAME_LOST);
-      }
+      finalizeAndFire(false, Outcome.GAME_LOST);
+    }
+  }
+
+  private void finalizeAndFire(boolean won, Outcome outcome) {
+    stopSimulation();
+    tracker.finish(won);
+    if (onOutcome != null) {
+      onOutcome.accept(outcome);
     }
   }
 

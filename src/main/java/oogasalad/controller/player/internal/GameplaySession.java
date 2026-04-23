@@ -1,5 +1,6 @@
 package oogasalad.controller.player.internal;
 
+import java.util.function.BiConsumer;
 import oogasalad.controller.player.api.GameController;
 
 /**
@@ -37,5 +38,13 @@ public class GameplaySession {
    */
   public void handleButtonPress(String buttonId) {
     controller.handleButtonPress(buttonId);
+  }
+
+  /**
+   * Subscribes to per-tick {@code (elapsedSeconds, progressPercent)} updates for HUD display.
+   * Pass null to disable.
+   */
+  public void setOnStatsTick(BiConsumer<Double, Double> callback) {
+    controller.setOnStatsTick(callback);
   }
 }

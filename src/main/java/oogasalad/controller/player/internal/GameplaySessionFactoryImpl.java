@@ -28,11 +28,13 @@ import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.VehicleComponent;
+import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.model.player.internal.FallOffWorldLossChecker;
 import oogasalad.model.player.internal.FinishLineWinChecker;
+import oogasalad.model.player.internal.GameplayStatsTrackerImpl;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
@@ -173,8 +175,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       worldBounds.setLayoutY(-cameraRef.getY());
     };
 
+    GameplayStatsTracker tracker = new GameplayStatsTrackerImpl(levelPathSupplier.get());
     GameController controller = new GameControllerImpl(
-        engine, world, renderer, camera, behavior, winChecker, lossChecker, inputRouter, config
+        engine, world, renderer, camera, behavior, winChecker, lossChecker, inputRouter, config,
+        tracker
     );
     controller.setOnOutcome(onOutcome);
 

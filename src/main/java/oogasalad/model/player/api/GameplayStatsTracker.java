@@ -14,6 +14,9 @@ public interface GameplayStatsTracker {
   /** Live elapsed time accumulated so far, in seconds. */
   double currentElapsedSeconds();
 
+  /** Live progress in {@code [0, 1]}: fraction of the straight-line distance covered so far. */
+  double currentProgressPercent();
+
   /** Produces an immutable snapshot of the run with the given outcome. */
   GameplayScore finish(boolean won);
 }
