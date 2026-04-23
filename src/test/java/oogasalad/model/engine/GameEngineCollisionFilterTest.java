@@ -59,7 +59,6 @@ class GameEngineCollisionFilterTest {
             true,
             100,
             "Frame",
-            "",
             fw,
             fh);
     world.addComponent(pig);
@@ -93,7 +92,6 @@ class GameEngineCollisionFilterTest {
             true,
             100,
             "Frame",
-            "",
             fw,
             fh);
     StructuralComponent frameB =
@@ -110,7 +108,6 @@ class GameEngineCollisionFilterTest {
             true,
             100,
             "Frame",
-            "",
             fw,
             fh);
     world.addComponent(frameA);
