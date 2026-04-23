@@ -169,4 +169,82 @@ public abstract class AbstractJoint implements Joint {
     double m = dynamic.getMass();
     return m > 0.0 ? 1.0 / m : 0.0;
   }
+
+  private static double inverseInertia(GameComponent component) {
+    if (!(component instanceof DynamicComponent dynamic)) {
+      return 0.0;
+    }
+    return dynamic.getInverseMomentOfInertia();
+  }
+
+  private static oogasalad.model.engine.api.Vector linearVelocity(GameComponent component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getDynamicState().getLinearVelocity();
+    }
+    return new oogasalad.model.engine.api.Vector(0, 0);
+  }
+
+  private static double angularVelocity(GameComponent component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getDynamicState().getAngularVelocity();
+    }
+    return 0.0;
+  }
+
+  /**
+   * Zeroes the relative linear velocity of the two anchor points in world space via an impulse
+   * pair, including the angular contribution {@code ω × r} at each anchor and updating both linear
+   * and angular velocity on each side. Static sides contribute zero inverse mass/inertia so
+   * impulses only affect the dynamic body, which is what we want.
+   *
+   * <p>Call this whenever the joint should behave rigidly at the velocity level (revolute or
+   * rigid-distance). Soft/spring joints shouldn't call this — they resolve velocity via forces.
+   */
+  protected void applyAnchorVelocityEqualization() {
+    double invMA = inverseMass(objectA);
+    double invMB = inverseMass(objectB);
+    double invIA = inverseInertia(objectA);
+    double invIB = inverseInertia(objectB);
+    if (invMA + invMB == 0.0) {
+      return;
+    }
+
+    oogasalad.model.engine.api.Vector rA =
+        getWorldAnchorA().subtract(objectA.getStaticState().getLinearPosition());
+    oogasalad.model.engine.api.Vector rB =
+        getWorldAnchorB().subtract(objectB.getStaticState().getLinearPosition());
+
+    oogasalad.model.engine.api.Vector vA = linearVelocity(objectA);
+    oogasalad.model.engine.api.Vector vB = linearVelocity(objectB);
+    double wA = angularVelocity(objectA);
+    double wB = angularVelocity(objectB);
+
+    oogasalad.model.engine.api.Vector vAnchorA = vA.add(rA.crossWithScalar(wA));
+    oogasalad.model.engine.api.Vector vAnchorB = vB.add(rB.crossWithScalar(wB));
+    oogasalad.model.engine.api.Vector relVel = vAnchorB.subtract(vAnchorA);
+    if (relVel.magnitude() < 1e-9) {
+      return;
+    }
+
+    double k00 = invMA + invMB + rA.y() * rA.y() * invIA + rB.y() * rB.y() * invIB;
+    double k11 = invMA + invMB + rA.x() * rA.x() * invIA + rB.x() * rB.x() * invIB;
+    double k01 = -rA.x() * rA.y() * invIA - rB.x() * rB.y() * invIB;
+    double det = k00 * k11 - k01 * k01;
+    if (Math.abs(det) < 1e-12) {
+      return;
+    }
+    double invDet = 1.0 / det;
+    double px = -invDet * (k11 * relVel.x() - k01 * relVel.y());
+    double py = -invDet * (-k01 * relVel.x() + k00 * relVel.y());
+    oogasalad.model.engine.api.Vector impulse = new oogasalad.model.engine.api.Vector(px, py);
+
+    if (objectA instanceof DynamicComponent dA) {
+      dA.getDynamicState().setLinearVelocity(vA.subtract(impulse.multiply(invMA)));
+      dA.getDynamicState().setAngularVelocity(wA - rA.crossWithVector(impulse) * invIA);
+    }
+    if (objectB instanceof DynamicComponent dB) {
+      dB.getDynamicState().setLinearVelocity(vB.add(impulse.multiply(invMB)));
+      dB.getDynamicState().setAngularVelocity(wB + rB.crossWithVector(impulse) * invIB);
+    }
+  }
 }

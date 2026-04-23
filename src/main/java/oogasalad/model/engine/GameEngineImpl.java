@@ -167,6 +167,12 @@ public class GameEngineImpl implements GameEngine {
     }
   }
 
+  private void applyVelocityJointConstraints() {
+    for (Joint joint : world.getJoints()) {
+      joint.applyVelocity();
+    }
+  }
+
   private boolean isPositionConstraintJoint(Joint joint) {
     if (joint instanceof RevoluteJoint) {
       return true;
@@ -189,7 +195,6 @@ public class GameEngineImpl implements GameEngine {
         }
       }
     }
-
   }
 
   private void resetForces(Collection<GameObject> objects) {
@@ -260,16 +265,22 @@ public class GameEngineImpl implements GameEngine {
       }
     }
 
-    handleCollisions(true);
-
+    // ---- Collision + joint solve ----
+    // Exactly one impulse pass per frame. Applying impulse inside the iteration loop
+    // compounds it every iteration: the first impulse already zeros closing velocity,
+    // but re-detection picks up floating-point residuals and joint velocity equalization
+    // shuffles velocity between connected bodies, so another full impulse fires, and
+    // another. The body launches upward, gravity slams it back next frame, and the
+    // result is the visible jitter. The loop below refines geometry only.
     for (int i = 0; i < JOINT_SOLVER_ITERATIONS; i++) {
+      applyVelocityJointConstraints();
       applyPositionJointConstraints(elapsedTime, 1);
       for (GameObject go : world.getObjects()) {
         if (go instanceof DynamicComponent) {
           go.updatePolygon();
         }
       }
-      handleCollisions(false);
+      handleCollisions(true);
     }
   }
 
@@ -328,8 +339,6 @@ public class GameEngineImpl implements GameEngine {
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
-      // System.out.println("objectA: " + objectA); // TODO: delete the print statements when they are unused
-      // System.out.println("objectB: " + objectB); // TODO: delete the print statements when they are unused
       CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
           objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
@@ -367,7 +376,6 @@ public class GameEngineImpl implements GameEngine {
     Map<CollisionPair, CollisionSolver> solverMap = collisionDispatcher.getSolverMap();
     CollisionPair sortedPair = CollisionPair.of(collisionPair.objectA(), collisionPair.objectB());
     if (solverMap.containsKey(sortedPair)) {
-      // System.out.println("sortedPair");
       return sortedPair;
     }
 

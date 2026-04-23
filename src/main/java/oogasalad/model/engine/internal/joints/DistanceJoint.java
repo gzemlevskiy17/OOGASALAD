@@ -88,6 +88,13 @@ public class DistanceJoint extends AbstractJoint {
     solveSpring(dt);
   }
 
+  @Override
+  public void applyVelocity() {
+    if (isRigid()) {
+      applyAnchorVelocityEqualization();
+    }
+  }
+
   /** Directly corrects body positions to restore the allowed distance. */
   protected void solveRigid() {
     applyDistanceCorrection(computeDistanceError(getCurrentDistance()));

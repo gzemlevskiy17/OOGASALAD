@@ -34,12 +34,24 @@ public class ImpulseSolverUtilities {
    * @param referenceUnitNormal collision normal used for the impulse calculation
    * @return impulse magnitude along the collision normal
    */
+  /**
+   * Below this approach-speed threshold, contacts are treated as perfectly inelastic (e=0).
+   * Prevents resting contacts from endlessly bouncing when gravity adds a small approach velocity
+   * every frame that restitution would otherwise reflect into a persistent oscillation. Set above a
+   * single gravity impulse ({@code g·dt ≈ 16 px/s} at 60 Hz, g=980) but well under any real landing
+   * or collision velocity.
+   */
+  private static final double RESTITUTION_APPROACH_THRESHOLD = 40.0;
+
   private static double computeImpulse(RigidBody referenceObject, RigidBody incidentObject,
       ContactPointPhysics contactPointPhysics,
       Vector referenceUnitNormal) {
     double restitution = (incidentObject.getRestitution() + referenceObject.getRestitution()) / 2;
-    double velocity =
-        -(1 + restitution) * contactPointPhysics.relativeVelocity.dot(referenceUnitNormal);
+    double approach = -contactPointPhysics.relativeVelocity.dot(referenceUnitNormal);
+    if (approach < RESTITUTION_APPROACH_THRESHOLD) {
+      restitution = 0;
+    }
+    double velocity = (1 + restitution) * approach;
     if (velocity <= 0) {
       return 0;
     }

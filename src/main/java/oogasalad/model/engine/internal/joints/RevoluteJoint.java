@@ -40,4 +40,9 @@ public class RevoluteJoint extends AbstractJoint {
     Vector correction = delta.multiply(VECTOR_CORRECTION);
     applyLinearCorrection(correction, correction.multiply(-1));
   }
+
+  @Override
+  public void applyVelocity() {
+    applyAnchorVelocityEqualization();
+  }
 }
