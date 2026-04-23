@@ -22,7 +22,7 @@ public final class StructuralPartSpec extends AbstractVehiclePartSpec {
   public GameComponent create(double x, double y) {
     return new StructuralComponent(
         x, y, 0,
-        ConvexPolygon.axisAlignedBox(x, y, bodyWidth(), bodyHeight()),
+        ConvexPolygon.rotatedBox(x, y, bodyWidth(), bodyHeight(), 0),
         "",
         FRICTION,
         MASS,

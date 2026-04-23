@@ -21,7 +21,8 @@ public final class PigPartSpec extends AbstractVehiclePartSpec {
   public GameComponent create(double x, double y) {
     return new PigComponent(
         x, y, 0,
-        ConvexPolygon.axisAlignedBox(x, y, bodyWidth(), bodyHeight()),
+        ConvexPolygon.axisAlignedBox(x - bodyWidth() / 2, y - bodyHeight() / 2, bodyWidth(),
+            bodyHeight()),
         "",
         FRICTION,
         MASS,

@@ -65,8 +65,6 @@ public class CollisionDispatcher {
         (objectA, objectB, collision) -> {
           dynamicPassthroughSolver.solve((DynamicComponent) objectA, (PassThroughComponent) objectB,
               collision);
-          dynamicPassthroughSolver.solve((DynamicComponent) objectA, (PassThroughComponent) objectB,
-              collision);
         });
 //    solverMap.put(new CollisionPair(StaticComponent.class, StaticComponent.class),
 //        (objectA, objectB, collision) -> {

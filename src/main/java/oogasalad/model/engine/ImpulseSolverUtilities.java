@@ -40,6 +40,9 @@ public class ImpulseSolverUtilities {
     double restitution = (incidentObject.getRestitution() + referenceObject.getRestitution()) / 2;
     double velocity =
         -(1 + restitution) * contactPointPhysics.relativeVelocity.dot(referenceUnitNormal);
+    if (velocity <= 0) {
+      return 0;
+    }
 
     double incidentPointMomentum = contactPointPhysics.positionFromIncident.crossWithVector(
         referenceUnitNormal);

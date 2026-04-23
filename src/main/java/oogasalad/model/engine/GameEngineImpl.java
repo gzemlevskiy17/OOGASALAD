@@ -17,6 +17,7 @@ import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
+import oogasalad.model.engine.internal.components.PassThroughComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 import oogasalad.model.engine.internal.joints.DistanceJoint;
 import oogasalad.model.engine.internal.joints.RevoluteJoint;
@@ -98,59 +99,12 @@ public class GameEngineImpl implements GameEngine {
     return List.of(b, a);
   }
 
-  /**
-   * Advances the simulation by one time step.
-   *
-   * <p>Use this method once per frame/tick to run collision handling and state integration in a
-   * consistent order.
-   *
-   * <p><strong>Assumptions:</strong> {@code elapsedTime} is non-negative and world object states
-   * are valid for integration.
-   *
-   * @param elapsedTime simulation delta time in seconds
-   */
-  @Override
-  public void step(double elapsedTime) {
-    resetForces(world.getObjects());
-
-    for (GameObject gameObject : world.getObjects()) {
-      gameObject.updatePolygon();
-    }
-
-    applyAllJointConstraints(elapsedTime, 1);
-
-    applyForces(world.getObjects());
-
-    applyForcesToAcceleration(world.getObjects());
-
-    //TODO: store dynamic/static components in world and only loop over dynamics to integrate
-    for (GameObject gameObject : world.getObjects()) {
-      if (gameObject instanceof DynamicComponent dynamicComponent) {
-        dynamicComponent.integrateObjectState(elapsedTime);
-      }
-    }
-
-    // update the polygon for the second time after the computation
-    for (GameObject gameObject : world.getObjects()) {
-      if (gameObject instanceof DynamicComponent) {
-        gameObject.updatePolygon();
-      }
-    }
-
-    handleCollisions();
-
-    for (int i = 0; i < JOINT_SOLVER_ITERATIONS; i++) {
-      applyPositionJointConstraints(elapsedTime, 1);
-      for (GameObject go : world.getObjects()) {
-        if (go instanceof DynamicComponent) {
-          go.updatePolygon();
-        }
-      }
-      handleCollisions();
-    }
-
-    // Positional constraints (rigid distance/revolute) need iterative post-integration stabilization. TODO: split the solver into two entry points: one that only does applyPositionalCorrection and one that does the impulse. Use only the positional one inside the joint loop; keep the full call in the initial handleCollisions()
-    // applyPositionJointConstraints(elapsedTime, JOINT_SOLVER_ITERATIONS);
+  private static boolean isDynamicDynamicPair(CollisionPair pair, GameObject objectA,
+      GameObject objectB) {
+    return pair.objectA().isAssignableFrom(objectA.getClass())
+        && pair.objectB().isAssignableFrom(objectB.getClass())
+        && DynamicComponent.class.isAssignableFrom(pair.objectA())
+        && DynamicComponent.class.isAssignableFrom(pair.objectB());
   }
 
   /**
@@ -182,10 +136,17 @@ public class GameEngineImpl implements GameEngine {
 
   //TODO: implement collision detection for all world objects
 
-  //TODO: implement solving of collisions in multiple small steps
-  private void handleCollisions() {
-    List<Collision> collisions = getCollisions();
-    solveCollisions(collisions);
+  private static boolean isDynamicStaticPair(CollisionPair pair, GameObject objectA,
+      GameObject objectB) {
+    if (!pair.objectA().isAssignableFrom(objectA.getClass())
+        || !pair.objectB().isAssignableFrom(objectB.getClass())) {
+      return false;
+    }
+    if (PassThroughComponent.class.isAssignableFrom(pair.objectB())) {
+      return false;
+    }
+    return DynamicComponent.class.isAssignableFrom(pair.objectA())
+        && StaticComponent.class.isAssignableFrom(pair.objectB());
   }
 
   private void applyAllJointConstraints(double elapsedTime, int iterations) {
@@ -244,6 +205,80 @@ public class GameEngineImpl implements GameEngine {
         || (VEHICLE_TAG.equals(tagA) && PIGS_TAG.equals(tagB));
   }
 
+  private static void applyDynamicDynamicPositionCorrection(DynamicComponent objectA,
+      DynamicComponent objectB, Collision collision) {
+    if (objectA == collision.getIncidentObject()) {
+      collision.setPenetration(collision.getPenetration().multiply(-1));
+    }
+    ImpulseSolverUtilities.applyPositionalCorrection(collision, objectA, objectB);
+  }
+
+  private static void applyDynamicStaticPositionCorrection(DynamicComponent dynamicObject,
+      StaticComponent staticObject, Collision collision) {
+    if (dynamicObject == collision.getReferenceObject()) {
+      collision.setPenetration(collision.getPenetration().multiply(-1));
+    }
+    ImpulseSolverUtilities.applyPositionalCorrection(collision, staticObject, dynamicObject);
+  }
+
+  /**
+   * Advances the simulation by one time step.
+   *
+   * <p>Use this method once per frame/tick to run collision handling and state integration in a
+   * consistent order.
+   *
+   * <p><strong>Assumptions:</strong> {@code elapsedTime} is non-negative and world object states
+   * are valid for integration.
+   *
+   * @param elapsedTime simulation delta time in seconds
+   */
+  @Override
+  public void step(double elapsedTime) {
+    resetForces(world.getObjects());
+
+    for (GameObject gameObject : world.getObjects()) {
+      gameObject.updatePolygon();
+    }
+
+    applyAllJointConstraints(elapsedTime, 1);
+
+    applyForces(world.getObjects());
+
+    applyForcesToAcceleration(world.getObjects());
+
+    //TODO: store dynamic/static components in world and only loop over dynamics to integrate
+    for (GameObject gameObject : world.getObjects()) {
+      if (gameObject instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.integrateObjectState(elapsedTime);
+      }
+    }
+
+    // update the polygon for the second time after the computation
+    for (GameObject gameObject : world.getObjects()) {
+      if (gameObject instanceof DynamicComponent) {
+        gameObject.updatePolygon();
+      }
+    }
+
+    handleCollisions(true);
+
+    for (int i = 0; i < JOINT_SOLVER_ITERATIONS; i++) {
+      applyPositionJointConstraints(elapsedTime, 1);
+      for (GameObject go : world.getObjects()) {
+        if (go instanceof DynamicComponent) {
+          go.updatePolygon();
+        }
+      }
+      handleCollisions(false);
+    }
+  }
+
+  //TODO: implement solving of collisions in multiple small steps
+  private void handleCollisions(boolean applyImpulse) {
+    List<Collision> collisions = getCollisions();
+    solveCollisions(collisions, applyImpulse);
+  }
+
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
     Set<List<GameObject>> seenUnorderedPairs = new HashSet<>();
@@ -256,6 +291,10 @@ public class GameEngineImpl implements GameEngine {
 
         // TODO: fix hardcoded if statements
         if (objectA instanceof StaticComponent && objectB instanceof StaticComponent) {
+          continue;
+        }
+
+        if (objectA instanceof PassThroughComponent && objectB instanceof PassThroughComponent) {
           continue;
         }
 
@@ -285,7 +324,7 @@ public class GameEngineImpl implements GameEngine {
     return collisions;
   }
 
-  private void solveCollisions(List<Collision> collisions) {
+  private void solveCollisions(List<Collision> collisions, boolean applyImpulse) {
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
@@ -303,7 +342,24 @@ public class GameEngineImpl implements GameEngine {
         objectB = temp;
       }
 
-      collisionDispatcher.getSolverMap().get(collisionPair).solve(objectA, objectB, collision);
+      if (applyImpulse) {
+        collisionDispatcher.getSolverMap().get(collisionPair).solve(objectA, objectB, collision);
+      } else {
+        solveCollisionPositionOnly(collisionPair, objectA, objectB, collision);
+      }
+    }
+  }
+
+  private void solveCollisionPositionOnly(CollisionPair collisionPair, GameObject objectA,
+      GameObject objectB, Collision collision) {
+    if (isDynamicDynamicPair(collisionPair, objectA, objectB)) {
+      applyDynamicDynamicPositionCorrection((DynamicComponent) objectA, (DynamicComponent) objectB,
+          collision);
+      return;
+    }
+    if (isDynamicStaticPair(collisionPair, objectA, objectB)) {
+      applyDynamicStaticPositionCorrection((DynamicComponent) objectA, (StaticComponent) objectB,
+          collision);
     }
   }
 

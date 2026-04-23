@@ -27,7 +27,7 @@ public class DriveComponent extends VehicleComponent implements Driveable {
         x,
         y,
         rotation,
-        ConvexPolygon.axisAlignedBox(x, y, bodyWidth, bodyHeight),
+        ConvexPolygon.rotatedBox(x, y, bodyWidth, bodyHeight, rotation),
         "",
         friction,
         mass,
