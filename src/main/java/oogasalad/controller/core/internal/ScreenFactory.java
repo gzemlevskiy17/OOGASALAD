@@ -1,7 +1,5 @@
 package oogasalad.controller.core.internal;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -11,13 +9,12 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
+import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.model.auth.api.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
-import oogasalad.model.player.api.GameplayScore;
-import oogasalad.model.player.api.PlayHistoryEntry;
 import oogasalad.model.player.api.PlayHistoryRepository;
 import oogasalad.model.player.api.ScoreCalculator;
 import oogasalad.model.player.internal.ScoreCalculatorImpl;
@@ -68,6 +65,7 @@ public class ScreenFactory {
   private GamePlayScreenCoordinator gameplayCoordinator;
   private WinAppScreen winScreen;
   private LoseAppScreen loseScreen;
+  private TerminalResultHandler terminalResultHandler;
 
   // Auth screens stored as fields so lambdas can reference them after construction
   private LoginScreen loginScreen;
@@ -144,6 +142,10 @@ public class ScreenFactory {
     loseScreen = new LoseAppScreen(this::guardedOutcome);
     screenManager.registerScreen(WIN_APP_SCREEN_KEY, winScreen);
     screenManager.registerScreen(LOSE_APP_SCREEN_KEY, loseScreen);
+
+    terminalResultHandler = new TerminalResultHandler(
+        scoreCalculator, playHistoryRepo, this::currentUsernameOrNull,
+        winScreen::setStats, loseScreen::setStats);
   }
 
   private void registerAuthScreens() {
@@ -177,46 +179,17 @@ public class ScreenFactory {
 
   /**
    * Intercepts BACK_TO_MENU and redirects to the login screen when no player is logged in. Also
-   * pushes terminal gameplay stats into the Win/Lose screens before navigation so they can render
-   * the elapsed time and progress of the run that just ended.
+   * delegates terminal gameplay outcomes (win/loss) to {@link TerminalResultHandler} so the run
+   * gets scored, recorded, and surfaced on the result screen before navigation.
    */
   private void guardedOutcome(Outcome outcome) {
-    pushGameplayStatsIfTerminal(outcome);
+    if (terminalResultHandler != null && gameplayCoordinator != null) {
+      terminalResultHandler.handle(outcome, gameplayCoordinator.getLastGameplayScore());
+    }
     if (outcome == Outcome.BACK_TO_MENU && !authService.session().isLoggedIn()) {
       screenManager.onOutcome(Outcome.OPEN_LOGIN);
     } else {
       screenManager.onOutcome(outcome);
-    }
-  }
-
-  private void pushGameplayStatsIfTerminal(Outcome outcome) {
-    if (gameplayCoordinator == null
-        || (outcome != Outcome.GAME_WON && outcome != Outcome.GAME_LOST)) {
-      return;
-    }
-    GameplayScore runScore = gameplayCoordinator.getLastGameplayScore();
-    if (runScore == null) {
-      return;
-    }
-    double currentScore = scoreCalculator.score(runScore);
-    double displayProgress = outcome == Outcome.GAME_WON ? 1.0 : runScore.progressPercent();
-
-    String userId = currentUsernameOrNull();
-    RecordFlags flags = computeNewRecordFlags(userId, runScore, currentScore, displayProgress);
-
-    if (outcome == Outcome.GAME_WON && winScreen != null) {
-      winScreen.setStats(runScore.elapsedSeconds(), currentScore, displayProgress,
-          flags.newTime, flags.newScore, flags.newProgress);
-    } else if (outcome == Outcome.GAME_LOST && loseScreen != null) {
-      loseScreen.setStats(runScore.elapsedSeconds(), currentScore, displayProgress,
-          flags.newTime, flags.newScore, flags.newProgress);
-    }
-
-    if (userId != null) {
-      playHistoryRepo.save(new PlayHistoryEntry(
-          null, userId, runScore.levelId(),
-          runScore.distanceTraveled(), runScore.elapsedSeconds(), displayProgress,
-          currentScore, runScore.won(), Instant.now()));
     }
   }
 
@@ -226,35 +199,6 @@ public class ScreenFactory {
     }
     PlayerProfile user = authService.session().currentUser();
     return user != null ? user.username() : null;
-  }
-
-  private RecordFlags computeNewRecordFlags(String userId, GameplayScore runScore,
-      double currentScore, double currentProgress) {
-    if (userId == null) {
-      return RecordFlags.all();
-    }
-    List<PlayHistoryEntry> priorRunsForLevel = playHistoryRepo.findAllByUser(userId).stream()
-        .filter(e -> e.levelId().equals(runScore.levelId()))
-        .toList();
-    if (priorRunsForLevel.isEmpty()) {
-      return RecordFlags.all();
-    }
-    double bestTime = priorRunsForLevel.stream()
-        .mapToDouble(PlayHistoryEntry::elapsedSeconds).min().orElse(Double.POSITIVE_INFINITY);
-    double bestScore = priorRunsForLevel.stream()
-        .mapToDouble(PlayHistoryEntry::score).max().orElse(Double.NEGATIVE_INFINITY);
-    double bestProgress = priorRunsForLevel.stream()
-        .mapToDouble(PlayHistoryEntry::progressPercent).max().orElse(Double.NEGATIVE_INFINITY);
-    return new RecordFlags(
-        runScore.elapsedSeconds() < bestTime,
-        currentScore > bestScore,
-        currentProgress > bestProgress);
-  }
-
-  private record RecordFlags(boolean newTime, boolean newScore, boolean newProgress) {
-    static RecordFlags all() {
-      return new RecordFlags(true, true, true);
-    }
   }
 
   private void handleAuthError(String message) {

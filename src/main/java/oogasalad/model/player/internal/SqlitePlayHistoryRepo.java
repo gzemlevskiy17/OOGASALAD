@@ -33,7 +33,7 @@ public class SqlitePlayHistoryRepo implements PlayHistoryRepository {
     this(defaultJdbcUrl());
   }
 
-  SqlitePlayHistoryRepo(String jdbcUrl) {
+  public SqlitePlayHistoryRepo(String jdbcUrl) {
     try {
       this.connection = DriverManager.getConnection(jdbcUrl);
       initSchema();
