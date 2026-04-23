@@ -22,7 +22,7 @@ public class DriveComponent extends VehicleComponent implements Driveable {
   private static final double DEFAULT_RESTITUTION = 0.5;
 
   public DriveComponent(double x, double y, double rotation, double mass, double friction,
-      double maxHp, String displayName, String spritePath, double bodyWidth, double bodyHeight) {
+      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
     super(
         x,
         y,
@@ -36,7 +36,6 @@ public class DriveComponent extends VehicleComponent implements Driveable {
         true,
         maxHp,
         displayName,
-        spritePath,
         bodyWidth,
         bodyHeight);
     this.thrustDirection = new Vector(1, 0);
