@@ -122,8 +122,16 @@ public class GameEngineImpl implements GameEngine {
 
     handleCollisions();
 
-    // Positional constraints (rigid distance/revolute) need iterative post-integration stabilization.
-    applyPositionJointConstraints(elapsedTime, JOINT_SOLVER_ITERATIONS);
+    for (int i = 0; i < JOINT_SOLVER_ITERATIONS; i++) {
+      applyPositionJointConstraints(elapsedTime, 1);
+      for (GameObject go : world.getObjects()) {
+        if (go instanceof DynamicComponent) go.updatePolygon();
+      }
+      handleCollisions();
+    }
+
+    // Positional constraints (rigid distance/revolute) need iterative post-integration stabilization. TODO: split the solver into two entry points: one that only does applyPositionalCorrection and one that does the impulse. Use only the positional one inside the joint loop; keep the full call in the initial handleCollisions()
+    // applyPositionJointConstraints(elapsedTime, JOINT_SOLVER_ITERATIONS);
 
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
