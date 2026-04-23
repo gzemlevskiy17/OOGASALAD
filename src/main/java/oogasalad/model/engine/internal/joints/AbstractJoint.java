@@ -12,6 +12,10 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public abstract class AbstractJoint implements Joint {
 
+  // Anchor violations below half a pixel are ignored so joints don't fight collision
+  // drift every frame.
+  protected static final double ANCHOR_POSITION_SLOP = 0.5;
+
   private final GameComponent objectA;
   private final GameComponent objectB;
   private final oogasalad.model.engine.api.Vector localAnchorA;
@@ -114,12 +118,14 @@ public abstract class AbstractJoint implements Joint {
    */
   protected void applyDistanceCorrection(double distanceError) {
     double currentDistance = getCurrentDistance();
-    if (currentDistance == 0.0 || Math.abs(distanceError) < 1e-9) {
+    if (currentDistance == 0.0 || Math.abs(distanceError) <= ANCHOR_POSITION_SLOP) {
       return;
     }
 
+    double excess =
+        Math.signum(distanceError) * (Math.abs(distanceError) - ANCHOR_POSITION_SLOP);
     oogasalad.model.engine.api.Vector correction =
-        getAnchorDelta().normalize().multiply(distanceError);
+        getAnchorDelta().normalize().multiply(excess);
     applyLinearCorrection(correction, correction.multiply(-1));
   }
 

@@ -34,10 +34,12 @@ public class RevoluteJoint extends AbstractJoint {
   @Override
   public void apply(double dt) {
     Vector delta = getAnchorDelta();
-    if (delta.magnitude() < 1e-9) {
+    double magnitude = delta.magnitude();
+    if (magnitude <= ANCHOR_POSITION_SLOP) {
       return;
     }
-    Vector correction = delta.multiply(VECTOR_CORRECTION);
+    double excessScale = (magnitude - ANCHOR_POSITION_SLOP) / magnitude;
+    Vector correction = delta.multiply(VECTOR_CORRECTION * excessScale);
     applyLinearCorrection(correction, correction.multiply(-1));
   }
 
