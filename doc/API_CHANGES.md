@@ -128,3 +128,26 @@
   * Better: smaller constructor surface, no dead field, model no longer carries a view-layer string.
     Sprite resolution can happen in the view layer via `getComponentType()` (already exposed)
     without the model knowing about assets.
+
+#### Replace view-side `SpriteRenderable` with model-side `TypedComponent`
+
+* Method changed: `oogasalad.view.core.api.SpriteRenderable` deleted. New
+  `oogasalad.model.engine.api.TypedComponent` takes its place — same single method
+  `String getComponentType()`, but in the model package. `PigComponent`, `VehicleComponent`, and
+  `GoalLineComponent` now `implements TypedComponent` instead of `implements SpriteRenderable`. The
+  `oogasalad.view.core.api.SpriteRenderable` import is gone from the model.
+
+  * Why was the change made? The prior setup had the physics model implementing a view-package
+    interface, i.e. the model depended on the view. `SpriteRenderable` was a marker with a single
+    type-name getter — nothing sprite-specific — and the view's `PaletteSpriteRegistry` only used it
+    to read the type string. Relocating the interface to the model flips the dependency to the
+    correct direction (view → model) without changing runtime behavior.
+
+  * Major or Minor: Minor. Two view/controller consumers updated in place: `PaletteSpriteRegistry`
+    (swapped `instanceof SpriteRenderable` → `instanceof TypedComponent`) and
+    `GameplaySessionFactoryImpl` (same swap plus error-message text). One test
+    (`PigComponentTest.pig_isSpriteRenderable`) renamed to `pig_isTypedComponent`.
+
+  * Better: removes a model-on-view dependency; interface name now describes what it actually does
+    (exposes a component type) rather than hinting at rendering; view code now depends on a stable
+    model type instead of a shape-for-shape view-layer marker.
