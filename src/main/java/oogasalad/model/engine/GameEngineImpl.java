@@ -94,6 +94,7 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
+    // TODO: add the proper logic for Joint and Impulse integration in several steps
     resetForces(world.getObjects());
 
     for (GameObject gameObject : world.getObjects()) {
