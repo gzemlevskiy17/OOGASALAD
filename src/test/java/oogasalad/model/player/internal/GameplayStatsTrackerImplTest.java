@@ -75,6 +75,26 @@ class GameplayStatsTrackerImplTest {
   }
 
   @Test
+  void verticalMotion_contributesToDistanceAndPullsRemainingAndProgress() {
+    tracker.sample(world, DT);
+    pig.setPosition(0, 30, 0);
+    tracker.sample(world, DT);
+    pig.setPosition(40, 30, 0);
+    tracker.sample(world, DT);
+
+    GameplayScore score = tracker.finish(false);
+
+    // Path lengths: (0,0)->(0,30)=30, (0,30)->(40,30)=40 → total 70
+    assertEquals(70.0, score.distanceTraveled(), 1e-6);
+    // Span is Euclidean start→finish: (0,0)→(1000,0) = 1000.
+    // Remaining is Euclidean current→finish: (40,30)→(1000,0) = hypot(960, 30).
+    double expectedRemaining = Math.hypot(960, 30);
+    assertEquals(1000.0, score.levelSpan(), 1e-6);
+    assertEquals(expectedRemaining, score.remainingDistance(), 1e-6);
+    assertEquals(1.0 - expectedRemaining / 1000.0, score.progressPercent(), 1e-6);
+  }
+
+  @Test
   void sampleIsNoOp_whenPigIsMissing() {
     World onlyFinish = new WorldImpl();
     onlyFinish.addComponent(new GoalLineComponent(1000, 0, 20, 400));
