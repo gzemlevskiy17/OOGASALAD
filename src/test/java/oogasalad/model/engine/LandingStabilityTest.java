@@ -206,6 +206,46 @@ class LandingStabilityTest {
   }
 
   /**
+   * Diagnostic check for the observed "explodes upward" behavior on first ground contact.
+   */
+  @Test
+  void miniVehicle_firstContactDoesNotInjectLargeUpwardVelocity() {
+    WorldImpl world = new WorldImpl();
+    double size = 40;
+    DynamicComponent chassis = fallingBox(0, 0, size, 5.0);
+    DynamicComponent leftWheel = fallingBox(-size, size, size, 2.0);
+    DynamicComponent rightWheel = fallingBox(size, size, size, 2.0);
+    TerrainBlock ground = groundAt(200, 4000);
+    world.addComponent(chassis);
+    world.addComponent(leftWheel);
+    world.addComponent(rightWheel);
+    world.addComponent(ground);
+    world.addJoint(new RevoluteJoint(chassis, leftWheel,
+        new Vector(-size / 2, size / 2), new Vector(size / 2, -size / 2)));
+    world.addJoint(new RevoluteJoint(chassis, rightWheel,
+        new Vector(size / 2, size / 2), new Vector(-size / 2, -size / 2)));
+
+    GameEngineImpl engine = new GameEngineImpl(world, new CollisionDetectorImpl());
+    boolean contactSeen = false;
+    double maxUpwardVelocityAfterContact = 0.0;
+    for (int i = 0; i < SIM_STEPS; i++) {
+      engine.step(DT);
+      double chassisBottom = chassis.getStaticState().getLinearPosition().y() + size / 2;
+      if (chassisBottom >= 200) {
+        contactSeen = true;
+      }
+      if (contactSeen) {
+        maxUpwardVelocityAfterContact = Math.max(maxUpwardVelocityAfterContact,
+            -chassis.getDynamicState().getLinearVelocity().y());
+      }
+    }
+
+    assertTrue(contactSeen, "Expected mini-vehicle to contact terrain during simulation.");
+    assertTrue(maxUpwardVelocityAfterContact < 600.0,
+        "Large upward launch detected after contact: " + maxUpwardVelocityAfterContact);
+  }
+
+  /**
    * Same jointed pair shouldn't drift sideways off the landing point either.
    */
   @Test

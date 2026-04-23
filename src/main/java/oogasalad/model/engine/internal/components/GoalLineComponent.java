@@ -18,13 +18,13 @@ public class GoalLineComponent extends FinishLineComponent implements TypedCompo
   private final double height;
 
   public GoalLineComponent(double x, double y, double width, double height) {
-    super(x, y, 0, ConvexPolygon.axisAlignedBox(x, y, width, height),
-        ""); // fix later for extendability
+    super(x, y, 0,
+        ConvexPolygon.axisAlignedBox(x - width / 2, y - height / 2, width, height),
+        "");
     this.width = width;
     this.height = height;
   }
 
-  // TODO: fix Constructor anchors the box for polygon at x, y, and this fixes it to center at (x, y)
   @Override
   public void updatePolygon() {
     setPolygon(ConvexPolygon.axisAlignedBox(
