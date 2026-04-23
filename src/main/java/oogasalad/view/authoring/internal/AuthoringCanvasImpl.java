@@ -80,7 +80,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     this.gridStroke = Color.web(PROPS.getString("gridStroke"));
     this.gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
     this.selectedPlaceable = new TerrainPlaceable(
-        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
+        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.4);
     this.root = new Pane();
     root.getStyleClass().add("authoring-canvas");
     root.getTransforms().add(zoomTransform);

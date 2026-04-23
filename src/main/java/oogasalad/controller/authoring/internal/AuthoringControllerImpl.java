@@ -71,7 +71,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.history = new CanvasActionHistory();
     double cellSize = canvas.getCellSize();
     this.selectedPlaceable = new TerrainPlaceable(
-        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
+        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.5);
   }
 
   public void setActiveTool(ToolSelector.ToolType type) {
@@ -354,7 +354,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         action.col(), action.row(),
         action.width(), action.height(),
         action.sprite(), action.tiled(),
-        action.friction(), action.color());
+        action.friction(), action.color(), action.restitution());
     world.addObject(block);
   }
 
@@ -389,7 +389,8 @@ public class AuthoringControllerImpl implements AuthoringController {
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),
         selectedPlaceable.isTiled(),
-        selectedPlaceable.getFriction());
+        selectedPlaceable.getFriction(),
+        selectedPlaceable.getRestitution());
 
     history.beginBatch();
     try {
@@ -433,7 +434,8 @@ public class AuthoringControllerImpl implements AuthoringController {
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),
         selectedPlaceable.isTiled(),
-        selectedPlaceable.getFriction());
+        selectedPlaceable.getFriction(),
+        selectedPlaceable.getRestitution());
     history.beginBatch();
     try {
       for (int[] cell : best.cells()) {

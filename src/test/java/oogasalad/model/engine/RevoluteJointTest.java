@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
-import oogasalad.model.engine.internal.components.PassthroughComponent;
+import oogasalad.model.engine.internal.components.PassThroughComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 import oogasalad.model.engine.internal.joints.RevoluteJoint;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ class RevoluteJointTest {
     TestDynamicComponent objectB = new TestDynamicComponent(3, 0, 0);
     RevoluteJoint joint = new RevoluteJoint(objectA, objectB, new Vector(2, 0), new Vector(-1, 0));
 
-    objectB.getState().setLinearPosition(new Vector(5, 0));
+    objectB.getStaticState().setLinearPosition(new Vector(5, 0));
     joint.apply(1.0);
 
     assertEquals(1.0, objectA.getX(), 1e-9);
@@ -34,7 +34,7 @@ class RevoluteJointTest {
     TestStaticComponent fixed = new TestStaticComponent(2, 6, 0);
     RevoluteJoint joint = new RevoluteJoint(dynamic, fixed, new Vector(2, 0), new Vector(0, 0));
 
-    dynamic.getState().setAngularPosition(0.0);
+    dynamic.getStaticState().setAngularPosition(0.0);
     joint.apply(1.0);
 
     assertEquals(0.0, dynamic.getX(), 1e-9);
@@ -57,7 +57,7 @@ class RevoluteJointTest {
   @Test
   void constructor_allowsPassthroughPairs() {
     TestDynamicComponent dynamic = new TestDynamicComponent(0, 0, 0);
-    TestPassthroughComponent passthrough = new TestPassthroughComponent(0, 0, 0);
+    TestPassThroughComponent passthrough = new TestPassThroughComponent(0, 0, 0);
     new RevoluteJoint(dynamic, passthrough);
   }
 
@@ -73,8 +73,11 @@ class RevoluteJointTest {
     }
   }
 
-  private static class TestPassthroughComponent extends PassthroughComponent {
-    TestPassthroughComponent(double x, double y, double rotation) {super(x, y, rotation, 0.0, 0.0);}
+  private static class TestPassThroughComponent extends PassThroughComponent {
+
+    TestPassThroughComponent(double x, double y, double rotation) {
+      super(x, y, rotation, 0.0, 0.0);
+    }
 
     @Override
     public void applyEffect(GameObject target) {}

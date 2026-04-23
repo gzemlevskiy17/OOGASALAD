@@ -15,8 +15,6 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
-import oogasalad.model.engine.ImpulseCollisionSolver;
-import oogasalad.model.engine.VehicleTerrainSupport;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Driveable;
@@ -24,6 +22,7 @@ import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
@@ -94,8 +93,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     BuiltWorld built = buildWorld(config, layout);
     World world = built.world();
     LevelBounds bounds = built.bounds();
-    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl(),
-        new ImpulseCollisionSolver());
+    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl());
 
     WinConditionChecker winChecker = buildWinChecker();
     LossConditionChecker lossChecker = buildLossChecker(bounds.height());
@@ -109,18 +107,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     double viewHeight = screen.getGameLayer().getHeight();
     if (viewWidth <= 0) viewWidth = DEFAULT_VIEW_WIDTH;
     if (viewHeight <= 0) viewHeight = DEFAULT_VIEW_HEIGHT;
-
-    // World boundary overlay (drawn in world space, projected each frame)
-    Rectangle worldBounds = new Rectangle(bounds.width(), bounds.height());
-    worldBounds.setManaged(false);
-    worldBounds.setFill(Color.TRANSPARENT);
-    worldBounds.setStroke(Color.LIMEGREEN);
-    worldBounds.setStrokeWidth(2.0);
-    worldBounds.getStrokeDashArray().addAll(10.0, 8.0);
-
-    // keep the world boundary behind balls
-    screen.getGameLayer().getChildren().add(worldBounds);
-    worldBounds.toBack();
 
     Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
     GameObject player = resolveControlledPlayer(world);
@@ -148,7 +134,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             spritesByRenderable.put(r, sprite);
             return sprite.render(spriteCache);
           }
-          throw new IllegalStateException(
+          throw new IllegalStateException( //TODO: Refactor into the "properties" error
               "No renderer for " + r.getClass().getName()
                   + " — must be TerrainBlock or SpriteRenderable");
         },
@@ -158,8 +144,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             return;
           }
           double speed = 0.0;
-          if (r instanceof GameObject go) {
-            Vector v = go.getState().getLinearVelocity();
+          if (r instanceof DynamicComponent dyn) {
+            Vector v = dyn.getDynamicState().getLinearVelocity();
             speed = Math.hypot(v.x(), v.y());
           }
           sprite.update(node, speed);
@@ -168,9 +154,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     Renderer renderer = (cameraRef, objects) -> {
       objectRenderer.render(cameraRef, objects);
 
-      // project world border into viewport using camera transform
-      worldBounds.setLayoutX(-cameraRef.getX());
-      worldBounds.setLayoutY(-cameraRef.getY());
     };
 
     GameController controller = new GameControllerImpl(
@@ -254,7 +237,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     // (spawnX, spawnY). Offset by half a cell so the vehicle's top-left corner matches the
     // historical spawn origin (350, 300) used when bodies were top-left-anchored.
     vehicleFactory.buildVehicle(layout, world, 380, 330);
-    VehicleTerrainSupport.keepVehicleAssemblyAboveTerrainSurface(world);
     return new BuiltWorld(world, bounds);
   }
 

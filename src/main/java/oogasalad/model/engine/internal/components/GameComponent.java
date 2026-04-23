@@ -2,92 +2,46 @@ package oogasalad.model.engine.internal.components;
 
 import java.util.Objects;
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.EngineError;
-import oogasalad.model.engine.ObjectState;
+import oogasalad.model.engine.StaticState;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
 public abstract class GameComponent implements GameObject {
 
-  private ObjectState state;
-  private double mass;
-  private double momentOfInertia;
-  private double restitution;
-  private double friction;
+  private StaticState staticState;
   private ConvexPolygon polygon;
-  private Vector force;
   private boolean active; //TODO: depends on how people up the stack implement it
-  private boolean affectedByGravity;
-  private boolean trigger; //TODO: not needed?
   private String tag;
+
 
   /**
    *
    * @param x
    * @param y
    * @param rotation
-   * @param mass
-   * @param friction
    */
-  public GameComponent(double x, double y, double rotation, double mass, double friction) {
-    this.state = new ObjectState(new Vector(x, y), new Vector(0, 0), new Vector(0, 0), rotation, 0,
-        0
-    );
-    setMass(mass);
-    setFriction(friction);
-    this.force = new Vector(0, 0);
+  public GameComponent(double x, double y, double rotation, ConvexPolygon polygon, String tag) {
+    this.staticState = new StaticState(new Vector(x, y), rotation);
+    this.polygon = polygon;
+    this.tag = tag;
     this.active = true;
-    this.affectedByGravity = true;
-    this.trigger = false;
   }
 
   public void setPosition(double x, double y, double rotation) {
-    state.setLinearPosition(new Vector(x, y));
-    state.setAngularPosition(rotation);
+    staticState.setLinearPosition(new Vector(x, y));
+    staticState.setAngularPosition(rotation);
   }
 
   @Override
-  public String getTag() {return tag;}
-
-  @Override
-  public void setTag(String tag) {this.tag = Objects.requireNonNull(tag);}
-
-  @Override
-  public double getMass() {return mass;}
-
-  public void setMass(double mass) {
-    if (mass < 0) {
-      throw new IllegalArgumentException(EngineError.MASS_MUST_BE_NON_NEGATIVE.message());
-    }
-    this.mass = mass;
+  public String getTag() {
+    return tag;
   }
 
   @Override
-  public double getFriction() {
-    return friction;
+  public void setTag(String tag) {
+    this.tag = Objects.requireNonNull(tag);
   }
 
-  public void setFriction(double friction) {
-    if (friction < 0) {
-      throw new IllegalArgumentException(EngineError.FRICTION_MUST_BE_NON_NEGATIVE.message());
-    }
-    this.friction = friction;
-  }
-
-  @Override
-  public Vector getForce() {
-    return force;
-  }
-
-  @Override
-  public void setForce(Vector force) {
-    this.force = force;
-  }
-
-  @Override
-  public void addForce(Vector force) {
-    this.force = this.force.add(force);
-  }
 
   @Override
   public ConvexPolygon getPolygon() {
@@ -99,57 +53,29 @@ public abstract class GameComponent implements GameObject {
   }
 
   @Override
-  public ObjectState getState() {
-    return state;
+  public StaticState getStaticState() {
+    return staticState;
   }
 
-  @Override
-  public void setState(ObjectState state) {
-    this.state = state;
+
+  //TODO: should we expose this?
+  public void setStaticState(StaticState staticState) {
+    this.staticState = staticState;
   }
 
-  @Override
-  public double getMomentOfInertia() {
-    return momentOfInertia;
-  }
 
-  @Override
-  public void setMomentOfInertia(double momentOfInertia) {
-    this.momentOfInertia = momentOfInertia;
-  }
-
-  @Override
-  public double getRestitution() {
-    return restitution;
-  }
-
-  @Override
-  public void setRestitution(double restitution) {
-    this.restitution = restitution;
-  }
-
-  @Override
   public boolean isActive() {
     return active;
   }
 
-  @Override
-  public boolean isAffectedByGravity() {
-    return affectedByGravity;
-  }
+//  @Override
+//  public boolean isTrigger() {
+//    return trigger;
+//  }
 
-  public void setAffectedByGravity(boolean affectedByGravity) {
-    this.affectedByGravity = affectedByGravity;
-  }
-
-  @Override
-  public boolean isTrigger() {
-    return trigger;
-  }
-
-  protected void setTrigger(boolean trigger) {
-    this.trigger = trigger;
-  }
+//  protected void setTrigger(boolean trigger) {
+//    this.trigger = trigger;
+//  }
 
   public void activate() {
     active = true;
@@ -165,20 +91,16 @@ public abstract class GameComponent implements GameObject {
 
   @Override
   public double getX() {
-    return state.getLinearPosition().x();
+    return staticState.getLinearPosition().x();
   }
 
   @Override
   public double getY() {
-    return state.getLinearPosition().y();
+    return staticState.getLinearPosition().y();
   }
 
   @Override
   public double getRotation() {
-    return state.getAngularPosition();
-  }
-
-  protected void resetForce() {
-    this.force = new Vector(0, 0);
+    return staticState.getAngularPosition();
   }
 }

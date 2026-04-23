@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
@@ -42,6 +43,13 @@ public class VehicleFactory {
   private static final double DEFAULT_MASS_STRUCTURAL = 1.5;
   private static final double DEFAULT_MAX_HP = 100.0;
 
+  private static final double DEFAULT_RESTITUTION = 0.5;
+
+  private static double boxMomentOfInertia(double mass, double width, double height) {
+    return mass * (width * width + height * height) / 12.0;
+  }
+
+
   private static final Set<String> WHEEL_TYPES = Set.of("Wheel", "Small Wheel", "Large Wheel");
   private static final Set<String> PIG_TYPES = Set.of("Pig", "Small Pig");
 
@@ -49,8 +57,11 @@ public class VehicleFactory {
     List<PlacedComponent> structuralPlacements = new ArrayList<>();
     List<PlacedComponent> pigPlacements = new ArrayList<>();
     for (PlacedComponent p : layout.placements()) {
-      if (PIG_TYPES.contains(p.componentType())) {pigPlacements.add(p);
-      } else {structuralPlacements.add(p);}
+      if (PIG_TYPES.contains(p.componentType())) {
+        pigPlacements.add(p);
+      } else {
+        structuralPlacements.add(p);
+      }
     }
     Map<String, GameComponent> placed = new HashMap<>();
     Map<String, String> placedTypes = new HashMap<>();
@@ -103,8 +114,8 @@ public class VehicleFactory {
   }
 
   private Joint buildJoint(GameComponent a, GameComponent b, String typeA, String typeB) {
-    Vector posA = a.getState().getLinearPosition();
-    Vector posB = b.getState().getLinearPosition();
+    Vector posA = a.getStaticState().getLinearPosition();
+    Vector posB = b.getStaticState().getLinearPosition();
     Vector delta = posB.subtract(posA);
 
     if (WHEEL_TYPES.contains(typeA) || WHEEL_TYPES.contains(typeB)) {
@@ -120,7 +131,8 @@ public class VehicleFactory {
         double dir = Math.signum(delta.x());
         localAnchorA = new Vector(dir * halfWidth(typeA), 0);
         localAnchorB = new Vector(-dir * halfWidth(typeB), 0);
-      }return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
+      }
+      return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
     }
 
     Vector localAnchorA;
@@ -169,7 +181,9 @@ public class VehicleFactory {
     String kCorner = toKey(cornerR, cornerC);
     String k1 = toKey(n1r, n1c);
     String k2 = toKey(n2r, n2c);
-    if (!placed.containsKey(k1) || !placed.containsKey(k2)) {return;}
+    if (!placed.containsKey(k1) || !placed.containsKey(k2)) {
+      return;
+    }
     String tCorner = placedTypes.get(kCorner);
     String t1 = placedTypes.get(k1);
     String t2 = placedTypes.get(k2);
@@ -193,9 +207,13 @@ public class VehicleFactory {
     world.addJoint(new RigidJoint(a, b, anchorA, anchorB, -1.0, -1.0));
   }
 
-  private double halfWidth(String componentType) {return paletteDimension(componentType, "width") / 2.0;}
+  private double halfWidth(String componentType) {
+    return paletteDimension(componentType, "width") / 2.0;
+  }
 
-  private double halfHeight(String componentType) {return paletteDimension(componentType, "height") / 2.0;}
+  private double halfHeight(String componentType) {
+    return paletteDimension(componentType, "height") / 2.0;
+  }
 
   private double paletteDimension(String componentType, String axis) {
     String key = componentType.replace(" ", "");
@@ -305,19 +323,47 @@ public class VehicleFactory {
     switch (componentType) {
       case "Pig":
       case "Small Pig":
+        return new PigComponent(
+            x,
+            y,
+            0,
+            ConvexPolygon.axisAlignedBox(x, y, width, height),
+            "",
+            DEFAULT_FRICTION,
+            DEFAULT_MASS_PIG,
+            boxMomentOfInertia(DEFAULT_MASS_PIG, width, height),
+            DEFAULT_RESTITUTION,
+            true,
+            componentType);
+      case "Motor":
         return new PigComponent(x, y, 0, DEFAULT_MASS_PIG, DEFAULT_FRICTION, componentType);
       case "Engine":
       case "Fan":
       case "Balloon":
       case "Rocket":
       case "Propeller":
+        return new DriveComponent(x, y, 0, DEFAULT_MASS_DRIVE, DEFAULT_FRICTION,
+            DEFAULT_MAX_HP, componentType, spritePath, width, height);
         DriveComponent drive = new DriveComponent(x, y, 0, DEFAULT_MASS_DRIVE, DEFAULT_FRICTION,
             DEFAULT_MAX_HP, componentType, width, height);
         configureThrust(drive, componentType);
         return drive;
       default:
-        return new StructuralComponent(x, y, 0, DEFAULT_MASS_STRUCTURAL, DEFAULT_FRICTION,
-            DEFAULT_MAX_HP, componentType, width, height);
+        return new StructuralComponent(
+            x,
+            y,
+            0,
+            ConvexPolygon.axisAlignedBox(x, y, width, height),
+            "",
+            DEFAULT_FRICTION,
+            DEFAULT_MASS_STRUCTURAL,
+            boxMomentOfInertia(DEFAULT_MASS_STRUCTURAL, width, height),
+            DEFAULT_RESTITUTION,
+            true,
+            DEFAULT_MAX_HP,
+            componentType,
+            width,
+            height);
     }
   }
 }

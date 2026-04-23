@@ -14,15 +14,17 @@ public class TerrainPlaceable implements AuthoringPlaceable {
   private final String sprite;
   private final boolean tiled;
   private final double friction;
+  private final double restitution;
 
   public TerrainPlaceable(double widthPx, double heightPx, String color,
-      String sprite, boolean tiled, double friction) {
+      String sprite, boolean tiled, double friction, double restitution) {
     this.widthPx = widthPx;
     this.heightPx = heightPx;
     this.color = color;
     this.sprite = sprite;
     this.tiled = tiled;
     this.friction = friction;
+    this.restitution = restitution;
   }
 
   @Override
@@ -76,6 +78,11 @@ public class TerrainPlaceable implements AuthoringPlaceable {
   }
 
   @Override
+  public double getRestitution() {
+    return restitution;
+  }
+
+  @Override
   public AuthoringPlaceable createAt(int col, int row, double cellSize) {
     return new TerrainBlock(
         col,
@@ -85,6 +92,7 @@ public class TerrainPlaceable implements AuthoringPlaceable {
         sprite,
         tiled,
         friction,
-        color);
+        color,
+        restitution);
   }
 }
