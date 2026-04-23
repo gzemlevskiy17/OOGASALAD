@@ -28,6 +28,9 @@ public class GamePlayScreenCoordinator implements AppScreen {
 
   private GameplaySession session;
 
+  private double lastElapsedSeconds = 0.0;
+  private double lastProgressPercent = 0.0;
+
   /**
    * Creates a coordinator for one gameplay screen instance.
    *
@@ -82,7 +85,22 @@ public class GamePlayScreenCoordinator implements AppScreen {
   public void onEnter() {
     VehicleLayout layout = vehicleLayoutSupplier.get();
     session = sessionFactory.create(view, this::handleOutcome, layout);
+    session.setOnStatsTick((elapsed, progress) -> {
+      lastElapsedSeconds = elapsed;
+      lastProgressPercent = progress;
+      view.updateHud(elapsed, progress);
+    });
     session.start();
+  }
+
+  /** Latest elapsed seconds reported by the stats tick; zero before any session runs. */
+  public double getLastElapsedSeconds() {
+    return lastElapsedSeconds;
+  }
+
+  /** Latest progress percent in [0, 1] reported by the stats tick; zero before any session runs. */
+  public double getLastProgressPercent() {
+    return lastProgressPercent;
   }
 
   /**

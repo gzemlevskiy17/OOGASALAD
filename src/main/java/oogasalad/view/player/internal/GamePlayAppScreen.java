@@ -25,6 +25,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
   private Pane gameLayer;
+  private GameHudDisplay hud;
   private Runnable onPause = () -> { };
   private Runnable onResume = () -> { };
   private Runnable onReset = () -> { };
@@ -39,6 +40,19 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
   public Pane getGameLayer() {
     return gameLayer;
+  }
+
+  /**
+   * Pushes the latest per-tick stats to the in-game HUD. Intended to be wired to
+   * {@code GameplaySession.setOnStatsTick}.
+   *
+   * @param elapsedSeconds seconds since session start (>= 0)
+   * @param progressPercent progress toward the goal in [0.0, 1.0]
+   */
+  public void updateHud(double elapsedSeconds, double progressPercent) {
+    if (hud != null) {
+      hud.update(elapsedSeconds, progressPercent);
+    }
   }
 
   public void setOnPause(Runnable onPause) {
@@ -87,14 +101,16 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
     HBox topControls = createTopControlsRegion();
     HBox bottomControls = createBottomControlsRegion();
+    hud = new GameHudDisplay();
 
     Node backButton = createBackButtonRegion();
 
     StackPane.setAlignment(topControls, Pos.TOP_LEFT);
+    StackPane.setAlignment(hud, Pos.TOP_CENTER);
     StackPane.setAlignment(backButton, Pos.TOP_RIGHT);
     StackPane.setAlignment(bottomControls, Pos.BOTTOM_CENTER);
 
-    root.getChildren().addAll(gameLayer, topControls, bottomControls, backButton);
+    root.getChildren().addAll(gameLayer, hud, topControls, bottomControls, backButton);
 
     return root;
   }

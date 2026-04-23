@@ -52,6 +52,12 @@ public class ScreenFactory {
   // Player screens stored as fields so the vehicle layout can be read before gameplay starts
   private VehicleBuilderAppScreen vehicleBuilderScreen;
 
+  // Gameplay + result screens kept as fields so terminal stats can be pushed into Win/Lose screens
+  // before navigating to them.
+  private GamePlayScreenCoordinator gameplayCoordinator;
+  private WinAppScreen winScreen;
+  private LoseAppScreen loseScreen;
+
   // Auth screens stored as fields so lambdas can reference them after construction
   private LoginScreen loginScreen;
   private CreateAccountScreen createAccountScreen;
@@ -119,12 +125,14 @@ public class ScreenFactory {
         selectedLevelPath::get
     );
 
-    screenManager.registerScreen(GAMEPLAY_APP_SCREEN_KEY,
-        new GamePlayScreenCoordinator(this::guardedOutcome, sessionFactory,
-            vehicleBuilderScreen::getVehicleLayout));
+    gameplayCoordinator = new GamePlayScreenCoordinator(this::guardedOutcome, sessionFactory,
+        vehicleBuilderScreen::getVehicleLayout);
+    screenManager.registerScreen(GAMEPLAY_APP_SCREEN_KEY, gameplayCoordinator);
 
-    screenManager.registerScreen(WIN_APP_SCREEN_KEY, new WinAppScreen(this::guardedOutcome));
-    screenManager.registerScreen(LOSE_APP_SCREEN_KEY, new LoseAppScreen(this::guardedOutcome));
+    winScreen = new WinAppScreen(this::guardedOutcome);
+    loseScreen = new LoseAppScreen(this::guardedOutcome);
+    screenManager.registerScreen(WIN_APP_SCREEN_KEY, winScreen);
+    screenManager.registerScreen(LOSE_APP_SCREEN_KEY, loseScreen);
   }
 
   private void registerAuthScreens() {
@@ -157,14 +165,29 @@ public class ScreenFactory {
   }
 
   /**
-   * Intercepts BACK_TO_MENU and redirects to the login screen when no player is logged in. All
-   * other outcomes pass through unchanged.
+   * Intercepts BACK_TO_MENU and redirects to the login screen when no player is logged in. Also
+   * pushes terminal gameplay stats into the Win/Lose screens before navigation so they can render
+   * the elapsed time and progress of the run that just ended.
    */
   private void guardedOutcome(Outcome outcome) {
+    pushGameplayStatsIfTerminal(outcome);
     if (outcome == Outcome.BACK_TO_MENU && !authService.session().isLoggedIn()) {
       screenManager.onOutcome(Outcome.OPEN_LOGIN);
     } else {
       screenManager.onOutcome(outcome);
+    }
+  }
+
+  private void pushGameplayStatsIfTerminal(Outcome outcome) {
+    if (gameplayCoordinator == null) {
+      return;
+    }
+    double elapsed = gameplayCoordinator.getLastElapsedSeconds();
+    double progress = gameplayCoordinator.getLastProgressPercent();
+    if (outcome == Outcome.GAME_WON && winScreen != null) {
+      winScreen.setStats(elapsed, 1.0);
+    } else if (outcome == Outcome.GAME_LOST && loseScreen != null) {
+      loseScreen.setStats(elapsed, progress);
     }
   }
 
