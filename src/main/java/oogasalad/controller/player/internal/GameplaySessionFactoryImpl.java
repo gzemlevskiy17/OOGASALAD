@@ -20,6 +20,7 @@ import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.TypedComponent;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
@@ -38,7 +39,6 @@ import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
 import oogasalad.view.core.api.Sprite;
 import oogasalad.view.core.api.SpriteRegistry;
-import oogasalad.view.core.api.SpriteRenderable;
 import oogasalad.view.core.internal.CameraImpl;
 import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
@@ -129,14 +129,14 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             rect.setFill(Paint.valueOf(tb.getColor()));
             return rect;
           }
-          if (r instanceof SpriteRenderable) {
+          if (r instanceof TypedComponent) {
             Sprite sprite = spriteRegistry.resolve(r);
             spritesByRenderable.put(r, sprite);
             return sprite.render(spriteCache);
           }
           throw new IllegalStateException( //TODO: Refactor into the "properties" error
               "No renderer for " + r.getClass().getName()
-                  + " — must be TerrainBlock or SpriteRenderable");
+                  + " — must be TerrainBlock or TypedComponent");
         },
         (r, node) -> {
           Sprite sprite = spritesByRenderable.get(r);

@@ -151,13 +151,6 @@ public class GameEngineImpl implements GameEngine {
 
     // Positional constraints (rigid distance/revolute) need iterative post-integration stabilization. TODO: split the solver into two entry points: one that only does applyPositionalCorrection and one that does the impulse. Use only the positional one inside the joint loop; keep the full call in the initial handleCollisions()
     // applyPositionJointConstraints(elapsedTime, JOINT_SOLVER_ITERATIONS);
-
-    VehicleTerrainSupport.keepVehicleAssemblyAboveTerrainSurface(world);
-
-//    for (Constraint constraint : constraings) {
-//      enforceConstraint(constraint);
-//    }
-
   }
 
   /**
