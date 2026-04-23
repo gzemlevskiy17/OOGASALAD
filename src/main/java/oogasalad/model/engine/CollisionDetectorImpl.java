@@ -121,7 +121,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
       Vector point1 = referencePolygon.getPoints().get(i);
       Vector point2 = referencePolygon.getPoints().get(i + 1);
       Vector tangent = point2.subtract(point1).normalize();
-      Vector outwardUnitNormal = tangent.rotateLeft(); //Find the outward normal along which to compute the penetration depth
+      Vector outwardUnitNormal = tangent.rotateRight(); //Find the inward normal along which to compute the penetration depth
       //TODO: TEST
 
       double[] projectionA = projectPolygonAlongVector(referencePolygon, outwardUnitNormal);
@@ -193,7 +193,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
    */
   private Map<Vector, Double> faceClip(Vector[] clippedIncidentEdge, Vector[] referenceEdge) {
     Vector referenceOutwardNormal = referenceEdge[1].subtract(referenceEdge[0]).normalize()
-        .rotateLeft();
+        .rotateRight();
     Map<Vector, Double> manifoldPoints = new HashMap<>();
     double distanceFromLeftPlane = distanceFromPlane(clippedIncidentEdge[0], referenceEdge[0],
         referenceOutwardNormal);

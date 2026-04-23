@@ -55,7 +55,7 @@ public class GameEngineImpl implements GameEngine {
   private CollisionDetector collisionDetector;
   private CollisionDispatcher collisionDispatcher;
 
-  private final Vector gravityVector = new Vector(0, -9.8); // Change in the future (inject levelAttributes)
+  private final Vector gravityVector = new Vector(0, 980); // Change in the future (inject levelAttributes)
   private static final int JOINT_SOLVER_ITERATIONS = 8;
 
   /**
@@ -96,11 +96,11 @@ public class GameEngineImpl implements GameEngine {
   public void step(double elapsedTime) {
     resetForces(world.getObjects());
 
-    applyAllJointConstraints(elapsedTime, 1);
-
     for (GameObject gameObject : world.getObjects()) {
       gameObject.updatePolygon();
     }
+
+    applyAllJointConstraints(elapsedTime, 1);
 
     applyForces(world.getObjects());
 
@@ -110,6 +110,13 @@ public class GameEngineImpl implements GameEngine {
     for (GameObject gameObject : world.getObjects()) {
       if (gameObject instanceof DynamicComponent dynamicComponent) {
         dynamicComponent.integrateObjectState(elapsedTime);
+      }
+    }
+
+    // update the polygon for the second time after the computation
+    for (GameObject gameObject : world.getObjects()) {
+      if (gameObject instanceof DynamicComponent) {
+        gameObject.updatePolygon();
       }
     }
 

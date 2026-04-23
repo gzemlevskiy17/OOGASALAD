@@ -166,7 +166,7 @@ public class ImpulseSolverUtilities {
     referenceDynamicState.setLinearVelocity(newReferenceLinearVelocity);
 
     Vector newIncidentLinearVelocity = incidentDynamicState.getLinearVelocity()
-        .subtract(referenceUnitNormal.multiply(impulseSum * incidentObject.getInverseMass()));
+        .add(referenceUnitNormal.multiply(impulseSum * incidentObject.getInverseMass()));
     incidentDynamicState.setLinearVelocity(newIncidentLinearVelocity);
   }
 }
