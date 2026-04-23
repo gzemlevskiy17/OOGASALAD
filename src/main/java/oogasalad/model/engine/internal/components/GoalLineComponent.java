@@ -2,8 +2,8 @@ package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.TypedComponent;
 import oogasalad.model.engine.api.Vector;
-import oogasalad.view.core.api.SpriteRenderable;
 
 /**
  * A visible finish-line column placed in the world. The pig wins when it reaches this zone.
@@ -12,7 +12,7 @@ import oogasalad.view.core.api.SpriteRenderable;
  *
  * @author Paulina Vvedenskaya
  */
-public class GoalLineComponent extends FinishLineComponent implements SpriteRenderable {
+public class GoalLineComponent extends FinishLineComponent implements TypedComponent {
 
   private final double width;
   private final double height;

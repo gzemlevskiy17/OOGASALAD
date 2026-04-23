@@ -4,12 +4,12 @@ import java.util.Set;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.DefaultTag;
-import oogasalad.view.core.api.SpriteRenderable;
+import oogasalad.model.engine.api.TypedComponent;
 
 /**
  * @author Xuye
  */
-public abstract class VehicleComponent extends DynamicComponent implements SpriteRenderable {
+public abstract class VehicleComponent extends DynamicComponent implements TypedComponent {
   private static final Set<String> WHEEL_DISPLAY_NAMES = Set.of(
       "Wood Wheel", "Metal Wheel");
 

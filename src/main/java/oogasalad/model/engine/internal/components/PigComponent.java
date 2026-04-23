@@ -2,12 +2,12 @@ package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.DefaultTag;
-import oogasalad.view.core.api.SpriteRenderable;
+import oogasalad.model.engine.api.TypedComponent;
 
 /**
  * Concrete dynamic component tagged as pigs.
  */
-public class PigComponent extends DynamicComponent implements SpriteRenderable {
+public class PigComponent extends DynamicComponent implements TypedComponent {
 
   private static final double DEFAULT_SIZE = 40.0;
   private final String componentType;
