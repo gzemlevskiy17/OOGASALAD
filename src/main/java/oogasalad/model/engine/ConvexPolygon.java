@@ -27,7 +27,7 @@ import oogasalad.model.engine.api.Vector;
 public class ConvexPolygon {
   //TODO: define as interface?
 
-  private List<Vector> points;
+  private final List<Vector> points;
 
   public ConvexPolygon(List<Vector> points) {
     this.points = points;
@@ -41,6 +41,20 @@ public class ConvexPolygon {
         new Vector(x,     y + h),
         new Vector(x,     y)
     ));
+  }
+
+  /**
+   * Creates a box collider centered at ({@code centerX}, {@code centerY}) rotated by
+   * {@code radians} around its center.
+   */
+  public static ConvexPolygon rotatedBox(double centerX, double centerY, double w, double h,
+      double radians) {
+    Vector center = new Vector(centerX, centerY);
+    Vector bottomLeft = new Vector(-w / 2.0, -h / 2.0).rotate(radians).add(center);
+    Vector bottomRight = new Vector(w / 2.0, -h / 2.0).rotate(radians).add(center);
+    Vector topRight = new Vector(w / 2.0, h / 2.0).rotate(radians).add(center);
+    Vector topLeft = new Vector(-w / 2.0, h / 2.0).rotate(radians).add(center);
+    return new ConvexPolygon(List.of(bottomLeft, bottomRight, topRight, topLeft, bottomLeft));
   }
 
   public List<Vector> getPoints() { //in CW order

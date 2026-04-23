@@ -52,8 +52,8 @@ public abstract class VehicleComponent extends DynamicComponent implements Typed
 
   @Override
   public void updatePolygon() {
-    setPolygon(ConvexPolygon.axisAlignedBox(
-        getX() - bodyWidth / 2, getY() - bodyHeight / 2, bodyWidth, bodyHeight));
+    setPolygon(ConvexPolygon.rotatedBox(
+        getX(), getY(), bodyWidth, bodyHeight, getRotation()));
   }
 
   public double getBodyWidth() {
