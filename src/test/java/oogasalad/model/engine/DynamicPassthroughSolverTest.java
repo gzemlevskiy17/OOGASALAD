@@ -84,37 +84,74 @@ class DynamicPassthroughSolverTest {
         p.isActive());
   }
 
-  @Test
-  void solve_firesPickupEffectExactlyOnceAndConsumesPickup() {
+  private record PickupScenario(DynamicComponent dynamic, PickupComponent pickup,
+                                RecordingPickupEffect effect, Collision collision) {
+
+  }
+
+  private static PickupScenario newPickupScenario() {
     DynamicComponent dynamic = newDynamic(1.0, 2.0);
     RecordingPickupEffect effect = new RecordingPickupEffect();
     PickupComponent pickup = new PickupComponent(4.0, 5.0, 0, unitSquare(), "", effect);
     Collision collision = new Collision(dynamic, pickup);
-
-    DynamicSnapshot beforeDyn = snapshotDynamic(dynamic);
-
-    new DynamicPassthroughSolver().solve(dynamic, pickup, collision);
-
-    assertEquals(1, effect.callCount(), "effect must fire exactly once");
-    assertSame(dynamic, effect.lastTarget(), "effect must receive the dynamic body as target");
-    assertTrue(pickup.isConsumed(), "pickup must be marked consumed");
-    assertFalse(pickup.isActive(), "pickup must be deactivated");
-    assertEquals(beforeDyn, snapshotDynamic(dynamic),
-        "dynamic body state must remain untouched by pickup solver");
+    return new PickupScenario(dynamic, pickup, effect, collision);
   }
 
   @Test
-  void solve_repeatedCallsOnSamePickupFireEffectOnlyOnce() {
-    DynamicComponent dynamic = newDynamic(1.0, 2.0);
-    RecordingPickupEffect effect = new RecordingPickupEffect();
-    PickupComponent pickup = new PickupComponent(4.0, 5.0, 0, unitSquare(), "", effect);
-    Collision collision = new Collision(dynamic, pickup);
+  void solve_pickup_invokesEffectExactlyOnce() {
+    PickupScenario s = newPickupScenario();
+
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+
+    assertEquals(1, s.effect().callCount());
+  }
+
+  @Test
+  void solve_pickup_passesDynamicAsTargetToEffect() {
+    PickupScenario s = newPickupScenario();
+
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+
+    assertSame(s.dynamic(), s.effect().lastTarget());
+  }
+
+  @Test
+  void solve_pickup_marksPickupConsumed() {
+    PickupScenario s = newPickupScenario();
+
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+
+    assertTrue(s.pickup().isConsumed());
+  }
+
+  @Test
+  void solve_pickup_deactivatesPickup() {
+    PickupScenario s = newPickupScenario();
+
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+
+    assertFalse(s.pickup().isActive());
+  }
+
+  @Test
+  void solve_pickup_doesNotMutateDynamicState() {
+    PickupScenario s = newPickupScenario();
+    DynamicSnapshot before = snapshotDynamic(s.dynamic());
+
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+
+    assertEquals(before, snapshotDynamic(s.dynamic()));
+  }
+
+  @Test
+  void solve_repeatedCallsOnSamePickupInvokeEffectOnlyOnce() {
+    PickupScenario s = newPickupScenario();
     DynamicPassthroughSolver solver = new DynamicPassthroughSolver();
 
-    solver.solve(dynamic, pickup, collision);
-    solver.solve(dynamic, pickup, collision);
+    solver.solve(s.dynamic(), s.pickup(), s.collision());
+    solver.solve(s.dynamic(), s.pickup(), s.collision());
 
-    assertEquals(1, effect.callCount());
+    assertEquals(1, s.effect().callCount());
   }
 
   @Test

@@ -50,30 +50,52 @@ class PickupComponentTest {
   }
 
   @Test
-  void newPickup_isActiveAndUnconsumed() {
+  void newPickup_isNotConsumed() {
     PickupComponent pickup = newPickup();
 
     assertFalse(pickup.isConsumed());
+  }
+
+  @Test
+  void newPickup_isActive() {
+    PickupComponent pickup = newPickup();
+
     assertTrue(pickup.isActive());
   }
 
   @Test
-  void applyTo_firesEffectExactlyOnceWithGivenTarget() {
+  void applyTo_invokesEffectExactlyOnce() {
     PickupComponent pickup = newPickup();
 
     pickup.applyTo(target);
 
     assertEquals(1, effect.callCount());
+  }
+
+  @Test
+  void applyTo_passesGivenTargetToEffect() {
+    PickupComponent pickup = newPickup();
+
+    pickup.applyTo(target);
+
     assertSame(target, effect.lastTarget());
   }
 
   @Test
-  void applyTo_consumesAndDestroysPickup() {
+  void applyTo_marksPickupConsumed() {
     PickupComponent pickup = newPickup();
 
     pickup.applyTo(target);
 
     assertTrue(pickup.isConsumed());
+  }
+
+  @Test
+  void applyTo_deactivatesPickup() {
+    PickupComponent pickup = newPickup();
+
+    pickup.applyTo(target);
+
     assertFalse(pickup.isActive());
   }
 
@@ -93,7 +115,29 @@ class PickupComponentTest {
     PickupComponent pickup = newPickup();
 
     assertThrows(NullPointerException.class, () -> pickup.applyTo(null));
+  }
+
+  @Test
+  void applyTo_nullTarget_doesNotInvokeEffect() {
+    PickupComponent pickup = newPickup();
+
+    try {
+      pickup.applyTo(null);
+    } catch (NullPointerException ignored) {
+    }
+
     assertEquals(0, effect.callCount());
+  }
+
+  @Test
+  void applyTo_nullTarget_doesNotConsumePickup() {
+    PickupComponent pickup = newPickup();
+
+    try {
+      pickup.applyTo(null);
+    } catch (NullPointerException ignored) {
+    }
+
     assertFalse(pickup.isConsumed());
   }
 
