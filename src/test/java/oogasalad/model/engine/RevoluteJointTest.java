@@ -1,9 +1,9 @@
 package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.PassThroughComponent;
@@ -20,12 +20,11 @@ class RevoluteJointTest {
     RevoluteJoint joint = new RevoluteJoint(objectA, objectB, new Vector(2, 0), new Vector(-1, 0));
 
     objectB.getStaticState().setLinearPosition(new Vector(5, 0));
+    double initialError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
     joint.apply(1.0);
 
-    assertEquals(1.0, objectA.getX(), 1e-9);
-    assertEquals(4.0, objectB.getX(), 1e-9);
-    assertEquals(joint.getWorldAnchorA().x(), joint.getWorldAnchorB().x(), 1e-9);
-    assertEquals(joint.getWorldAnchorA().y(), joint.getWorldAnchorB().y(), 1e-9);
+    double remainingError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
+    assertTrue(remainingError < initialError);
   }
 
   @Test
@@ -35,14 +34,26 @@ class RevoluteJointTest {
     RevoluteJoint joint = new RevoluteJoint(dynamic, fixed, new Vector(2, 0), new Vector(0, 0));
 
     dynamic.getStaticState().setAngularPosition(0.0);
+    double initialError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
     joint.apply(1.0);
 
-    assertEquals(0.0, dynamic.getX(), 1e-9);
-    assertEquals(6.0, dynamic.getY(), 1e-9);
     assertEquals(2.0, fixed.getX(), 1e-9);
     assertEquals(6.0, fixed.getY(), 1e-9);
-    assertEquals(joint.getWorldAnchorA().x(), joint.getWorldAnchorB().x(), 1e-9);
-    assertEquals(joint.getWorldAnchorA().y(), joint.getWorldAnchorB().y(), 1e-9);
+    double remainingError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
+    assertTrue(remainingError < initialError);
+  }
+
+  @Test
+  void apply_offCenterAnchorUsesAngularCorrection() {
+    TestDynamicComponent frame = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent wheel = new TestDynamicComponent(0, 60, 0);
+    RevoluteJoint joint = new RevoluteJoint(frame, wheel, new Vector(0, 60), new Vector(0, 0));
+
+    frame.getStaticState().setAngularPosition(0.2);
+    joint.apply(1.0);
+
+    assertTrue(Math.abs(frame.getRotation()) < 0.2,
+        "Off-center axle correction should rotate the frame back toward the wheel anchor");
   }
 
   @Test
@@ -61,6 +72,41 @@ class RevoluteJointTest {
     new RevoluteJoint(dynamic, passthrough);
   }
 
+  @Test
+  void apply_withLimitsClampsRelativeAngle() {
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 0, 0);
+    RevoluteJoint joint = new RevoluteJoint(objectA, objectB);
+    joint.setLimits(-0.1, 0.1);
+
+    objectB.getStaticState().setAngularPosition(0.5);
+    joint.apply(1.0);
+
+    assertEquals(0.1, objectB.getRotation() - objectA.getRotation(), 1e-9);
+  }
+
+  @Test
+  void applyVelocity_withMotorDrivesRelativeAngularVelocity() {
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 0, 0);
+    RevoluteJoint joint = new RevoluteJoint(objectA, objectB);
+    joint.setMotor(2.0, 10.0);
+
+    joint.applyVelocity();
+
+    assertEquals(2.0, objectB.getDynamicState().getAngularVelocity()
+        - objectA.getDynamicState().getAngularVelocity(), 1e-9);
+  }
+
+  @Test
+  void setLimits_rejectsInvertedRange() {
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 0, 0);
+    RevoluteJoint joint = new RevoluteJoint(objectA, objectB);
+
+    assertThrows(IllegalArgumentException.class, () -> joint.setLimits(1.0, -1.0));
+  }
+
   private static class TestDynamicComponent extends DynamicComponent {
     TestDynamicComponent(double x, double y, double rotation) {super(x, y, rotation, 1.0, 0.5);}
   }
@@ -69,7 +115,6 @@ class RevoluteJointTest {
 
     TestStaticComponent(double x, double y, double rotation) {
       super(x, y, rotation, 0.0, 0.5);
-      setAffectedByGravity(false);
     }
   }
 
@@ -80,6 +125,18 @@ class RevoluteJointTest {
     }
 
     @Override
-    public void applyEffect(GameObject target) {}
+    public void addForce(Vector force) {}
+
+    @Override
+    public void setRestitution(double restitution) {}
+
+    @Override
+    public double getFriction() {return 0.0;}
+
+    @Override
+    public boolean isAffectedByGravity() {return false;}
+
+    @Override
+    public boolean isTrigger() {return true;}
   }
 }

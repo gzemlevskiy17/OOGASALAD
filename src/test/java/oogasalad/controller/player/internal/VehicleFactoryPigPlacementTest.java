@@ -12,6 +12,7 @@ import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.StructuralComponent;
+import oogasalad.model.engine.internal.joints.RevoluteJoint;
 import oogasalad.model.engine.internal.joints.RigidJoint;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
@@ -229,6 +230,33 @@ class VehicleFactoryPigPlacementTest {
         .count();
     assertTrue(rigidJointCount >= 2,
         "Fan and attached frame should have two rigid constraints to resist swing");
+  }
+
+  @Test
+  void wheelAttachedBelowFrame_usesWheelCenterAsRevoluteAnchor() {
+    VehicleLayout layout = new VehicleLayout(List.of(
+        new PlacedComponent(0, 0, "Frame"),
+        new PlacedComponent(1, 0, "Wood Wheel")
+    ));
+    World world = new WorldImpl();
+    new VehicleFactory().buildVehicle(layout, world, START_X, START_Y);
+
+    StructuralComponent wheel = world.getComponents().stream()
+        .filter(StructuralComponent.class::isInstance)
+        .map(StructuralComponent.class::cast)
+        .filter(s -> "Wood Wheel".equals(s.getDisplayName()))
+        .findFirst()
+        .orElseThrow();
+    RevoluteJoint joint = world.getJoints().stream()
+        .filter(RevoluteJoint.class::isInstance)
+        .map(RevoluteJoint.class::cast)
+        .findFirst()
+        .orElseThrow();
+
+    assertEquals(wheel.getX(), joint.getWorldAnchorA().x(), 1e-9);
+    assertEquals(wheel.getY(), joint.getWorldAnchorA().y(), 1e-9);
+    assertEquals(wheel.getX(), joint.getWorldAnchorB().x(), 1e-9);
+    assertEquals(wheel.getY(), joint.getWorldAnchorB().y(), 1e-9);
   }
 
   private double[] polygonBounds(GameComponent c) {

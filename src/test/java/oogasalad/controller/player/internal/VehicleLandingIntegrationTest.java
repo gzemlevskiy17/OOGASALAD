@@ -42,7 +42,6 @@ class VehicleLandingIntegrationTest {
 
   private static final double DT = 1.0 / 60.0;
   private static final double CELL_SIZE = 60.0;
-  private static final double GRAVITY = 980.0;
   private static final int SIM_STEPS = 240; // 4 seconds at 60 Hz
   private static final double START_X = 0.0;
   private static final double START_Y = 0.0;
@@ -73,6 +72,20 @@ class VehicleLandingIntegrationTest {
         "Polygon should not shift between construction and first updatePolygon(). "
             + "Initial corner: " + initial.get(0)
             + " After updatePolygon: " + afterUpdate.get(0));
+  }
+
+  @Test
+  void wheelPart_usesRoundColliderBeforeAndAfterPolygonUpdate() {
+    VehiclePartRegistry registry = new VehiclePartRegistry();
+    VehiclePartSpec spec = registry.get("Wood Wheel");
+    GameComponent wheel = spec.create(100, 100);
+
+    assertTrue(wheel.getPolygon().getPoints().size() > 5,
+        "Wheel collider should use a regular polygon rather than a box");
+    wheel.updatePolygon();
+
+    assertTrue(wheel.getPolygon().getPoints().size() > 5,
+        "Wheel updatePolygon should preserve the round collider");
   }
 
   /**

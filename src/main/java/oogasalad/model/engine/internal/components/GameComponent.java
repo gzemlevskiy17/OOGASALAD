@@ -12,6 +12,8 @@ public abstract class GameComponent implements GameObject {
   private ConvexPolygon polygon;
   private boolean active; //TODO: depends on how people up the stack implement it
   private String tag;
+  private int collisionCategoryBits;
+  private int collisionMaskBits;
 
 
   /**
@@ -25,6 +27,8 @@ public abstract class GameComponent implements GameObject {
     this.polygon = polygon;
     this.tag = tag;
     this.active = true;
+    this.collisionCategoryBits = 0x0001;
+    this.collisionMaskBits = 0xFFFF_FFFF;
   }
 
   public void setPosition(double x, double y, double rotation) {
@@ -40,6 +44,22 @@ public abstract class GameComponent implements GameObject {
   @Override
   public void setTag(String tag) {
     this.tag = Objects.requireNonNull(tag);
+  }
+
+  @Override
+  public int getCollisionCategoryBits() {
+    return collisionCategoryBits;
+  }
+
+  @Override
+  public int getCollisionMaskBits() {
+    return collisionMaskBits;
+  }
+
+  @Override
+  public void setCollisionFilter(int categoryBits, int maskBits) {
+    this.collisionCategoryBits = categoryBits;
+    this.collisionMaskBits = maskBits;
   }
 
 
