@@ -38,4 +38,14 @@ public interface Joint {
    */
   default void applyVelocity() {
   }
+
+  /**
+   * Whether the two connected bodies should still be considered by collision detection.
+   */
+  default boolean isCollideConnected() {
+    return false;
+  }
+
+  default void setCollideConnected(boolean collideConnected) {
+  }
 }

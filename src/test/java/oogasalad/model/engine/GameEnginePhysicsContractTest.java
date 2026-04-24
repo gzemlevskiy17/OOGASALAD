@@ -10,6 +10,7 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.joints.RigidJoint;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -93,6 +94,40 @@ class GameEnginePhysicsContractTest {
 
     assertEquals(expectedNarrowPhaseCallsPerFrame(expectedUnorderedNonStaticPairs(1)),
         counting.getNarrowPhaseCallCount());
+  }
+
+  @Test
+  void collisionFilter_maskExcludesPairBeforeNarrowPhase() {
+    World world = new WorldImpl();
+    TerrainBlock floor = new TerrainBlock(0, 0, 10, 10, "floor.png", false, 0.4, "#888888", 0.0);
+    TestBox body = new TestBox(5, 5, 1, 1, 1.0, 0.0, false);
+    body.setCollisionFilter(0x0002, 0x0000);
+    world.addComponent(floor);
+    world.addComponent(body);
+
+    CountingCollisionDetector counting = new CountingCollisionDetector((a, b) -> Optional.empty());
+    GameEngineImpl engine = new GameEngineImpl(world, counting);
+    engine.step(DT);
+
+    assertEquals(0, counting.getNarrowPhaseCallCount());
+  }
+
+  @Test
+  void collideConnected_allowsJointedPairToReachNarrowPhase() {
+    WorldImpl world = new WorldImpl();
+    TestBox objectA = new TestBox(0, 0, 1, 1, 1.0, 0.0, false);
+    TestBox objectB = new TestBox(0, 0, 1, 1, 1.0, 0.0, false);
+    RigidJoint joint = new RigidJoint(objectA, objectB);
+    joint.setCollideConnected(true);
+    world.addComponent(objectA);
+    world.addComponent(objectB);
+    world.addJoint(joint);
+
+    CountingCollisionDetector counting = new CountingCollisionDetector((a, b) -> Optional.empty());
+    GameEngineImpl engine = new GameEngineImpl(world, counting);
+    engine.step(DT);
+
+    assertEquals(expectedNarrowPhaseCallsPerFrame(1), counting.getNarrowPhaseCallCount());
   }
 
   // --- Tests: broad-phase AABB culling ---

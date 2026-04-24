@@ -21,6 +21,7 @@ public abstract class AbstractJoint implements Joint {
   private final oogasalad.model.engine.api.Vector localAnchorA;
   private final oogasalad.model.engine.api.Vector localAnchorB;
   private final double restDistance;
+  private boolean collideConnected;
 
   /**
    * Creates a joint whose anchors default to each component's local origin.
@@ -49,6 +50,7 @@ public abstract class AbstractJoint implements Joint {
     this.localAnchorA = localAnchorA;
     this.localAnchorB = localAnchorB;
     this.restDistance = getWorldAnchorB().subtract(getWorldAnchorA()).magnitude();
+    this.collideConnected = false;
   }
 
   @Override
@@ -59,6 +61,16 @@ public abstract class AbstractJoint implements Joint {
   @Override
   public GameComponent getComponentB() {
     return objectB;
+  }
+
+  @Override
+  public boolean isCollideConnected() {
+    return collideConnected;
+  }
+
+  @Override
+  public void setCollideConnected(boolean collideConnected) {
+    this.collideConnected = collideConnected;
   }
 
   /**

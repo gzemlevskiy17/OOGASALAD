@@ -167,14 +167,14 @@ public class GameEngineImpl implements GameEngine {
   }
 
   /**
-   * Returns the set of unordered (A, B) pairs that are currently linked by at least one joint. Used
-   * to suppress collision detection between bodies glued together by a RigidJoint / RevoluteJoint /
-   * DistanceJoint, whose positional constraint fights the impulse solver and causes
-   * positive-feedback blow-up of velocities.
+   * Returns jointed unordered pairs whose joint does not opt into connected-body collision.
    */
   private Set<List<GameObject>> buildJointedPairs() {
     Set<List<GameObject>> pairs = new HashSet<>();
     for (Joint joint : world.getJoints()) {
+      if (joint.isCollideConnected()) {
+        continue;
+      }
       GameObject a = joint.getComponentA();
       GameObject b = joint.getComponentB();
       if (a == null || b == null || a == b) {
@@ -206,6 +206,11 @@ public class GameEngineImpl implements GameEngine {
     }
     return DynamicComponent.class.isAssignableFrom(pair.objectA())
         && StaticComponent.class.isAssignableFrom(pair.objectB());
+  }
+
+  private boolean shouldCollideByFilter(GameObject objectA, GameObject objectB) {
+    return (objectA.getCollisionMaskBits() & objectB.getCollisionCategoryBits()) != 0
+        && (objectB.getCollisionMaskBits() & objectA.getCollisionCategoryBits()) != 0;
   }
 
   private void applyAllJointConstraints(double elapsedTime, int iterations) {
@@ -382,6 +387,10 @@ public class GameEngineImpl implements GameEngine {
 
         if ((objectA instanceof GoalLineComponent && objectB instanceof StaticComponent)
             || (objectA instanceof StaticComponent && objectB instanceof GoalLineComponent)) {
+          continue;
+        }
+
+        if (!shouldCollideByFilter(objectA, objectB)) {
           continue;
         }
 
