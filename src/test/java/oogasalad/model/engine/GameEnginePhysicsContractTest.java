@@ -47,7 +47,7 @@ class GameEnginePhysicsContractTest {
   }
 
   @Test
-  void engine_invokesNarrowPhaseOncePerUnorderedPair_twoDynamicPlusFloor() {
+  void broadPhase_skipsSeparatedPairs_twoDynamicPlusFloor() {
     World world = new WorldImpl();
     TerrainBlock floor = new TerrainBlock(0, 0, 400, 1, "floor.png", false, 0.4, "#888888", 0.0);
     TestBox a = new TestBox(5, 4, 1, 1, 1.0, 0.0, true);
@@ -60,13 +60,11 @@ class GameEnginePhysicsContractTest {
     GameEngineImpl engine = new GameEngineImpl(world, counting);
     engine.step(DT);
 
-    // 2 dynamics + 1 static -> (2 choose 2) + 2 = 1 + 2 = 3 unordered pairs.
-    assertEquals(expectedNarrowPhaseCallsPerFrame(expectedUnorderedNonStaticPairs(2)),
-        counting.getNarrowPhaseCallCount());
+    assertEquals(0, counting.getNarrowPhaseCallCount());
   }
 
   @Test
-  void engine_invokesNarrowPhaseOncePerUnorderedPair_fiveIsolatedDynamicBodies() {
+  void broadPhase_skipsSeparatedPairs_fiveIsolatedDynamicBodies() {
     World world = new WorldImpl();
     for (int i = 0; i < 5; i++) {
       // Spaced 50 units — no broad-phase culling, but no overlap either.
@@ -78,12 +76,26 @@ class GameEnginePhysicsContractTest {
     GameEngineImpl engine = new GameEngineImpl(world, counting);
     engine.step(DT);
 
-    int n = 5;
-    assertEquals(expectedNarrowPhaseCallsPerFrame(n * (n - 1) / 2),
+    assertEquals(0, counting.getNarrowPhaseCallCount());
+  }
+
+  @Test
+  void broadPhase_invokesNarrowPhaseForOverlappingAabbs() {
+    World world = new WorldImpl();
+    TerrainBlock floor = new TerrainBlock(0, 0, 10, 10, "floor.png", false, 0.4, "#888888", 0.0);
+    TestBox body = new TestBox(5, 5, 1, 1, 1.0, 0.0, false);
+    world.addComponent(floor);
+    world.addComponent(body);
+
+    CountingCollisionDetector counting = new CountingCollisionDetector((a, b) -> Optional.empty());
+    GameEngineImpl engine = new GameEngineImpl(world, counting);
+    engine.step(DT);
+
+    assertEquals(expectedNarrowPhaseCallsPerFrame(expectedUnorderedNonStaticPairs(1)),
         counting.getNarrowPhaseCallCount());
   }
 
-  // --- Tests: broad-phase (one narrow-phase per unordered pair) ---
+  // --- Tests: broad-phase AABB culling ---
 
   @Test
   void firstStepOfFreeFall_matchesSemiImplicitEuler() {

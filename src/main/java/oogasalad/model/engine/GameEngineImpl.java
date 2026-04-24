@@ -56,6 +56,7 @@ public class GameEngineImpl implements GameEngine {
   private static final double DEFAULT_FIXED_TIME_STEP = 1.0 / 60.0;
   private static final int DEFAULT_SUB_STEP_COUNT = 4;
   private static final double MAX_FRAME_TIME = 0.25;
+  private static final double AABB_MARGIN = 1e-6;
 
   /**
    * Total order for building a stable key for the unordered pair {A, B}. Same two instances always
@@ -147,6 +148,10 @@ public class GameEngineImpl implements GameEngine {
       return List.of(a, b);
     }
     return List.of(b, a);
+  }
+
+  private static boolean aabbsOverlap(GameObject objectA, GameObject objectB) {
+    return BoundingBox.from(objectA).overlaps(BoundingBox.from(objectB));
   }
 
   private static boolean isDynamicDynamicPair(CollisionPair pair, GameObject objectA,
@@ -385,7 +390,10 @@ public class GameEngineImpl implements GameEngine {
           continue;
         }
 
-        // TODO: Temporary debug - delete larted
+        if (!aabbsOverlap(objectA, objectB)) {
+          continue;
+        }
+
         collisionDetector.detectCollision(objectA, objectB).ifPresent(c -> {
           collisions.add(c);
         });
@@ -463,5 +471,29 @@ public class GameEngineImpl implements GameEngine {
           new CollisionPair(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
     }
     return null;
+  }
+
+  private record BoundingBox(double minX, double minY, double maxX, double maxY) {
+
+    private static BoundingBox from(GameObject object) {
+      double minX = Double.POSITIVE_INFINITY;
+      double minY = Double.POSITIVE_INFINITY;
+      double maxX = Double.NEGATIVE_INFINITY;
+      double maxY = Double.NEGATIVE_INFINITY;
+      for (Vector point : object.getPolygon().getPoints()) {
+        minX = Math.min(minX, point.x());
+        minY = Math.min(minY, point.y());
+        maxX = Math.max(maxX, point.x());
+        maxY = Math.max(maxY, point.y());
+      }
+      return new BoundingBox(minX, minY, maxX, maxY);
+    }
+
+    private boolean overlaps(BoundingBox other) {
+      return maxX + AABB_MARGIN >= other.minX
+          && other.maxX + AABB_MARGIN >= minX
+          && maxY + AABB_MARGIN >= other.minY
+          && other.maxY + AABB_MARGIN >= minY;
+    }
   }
 }
