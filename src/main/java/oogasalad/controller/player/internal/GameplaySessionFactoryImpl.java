@@ -20,6 +20,7 @@ import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.TypedComponent;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
@@ -118,6 +119,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     SpriteCache spriteCache = new SpriteCache();
     SpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
     Map<Renderable, Sprite> spritesByRenderable = new IdentityHashMap<>();
+    Map<Renderable, Renderable> wheelConnectorRotationSources =
+        wheelConnectorRotationSources(world);
 
     Renderer objectRenderer = new RendererImpl(screen.getGameLayer(),
         r -> {
@@ -149,6 +152,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             speed = Math.hypot(v.x(), v.y());
           }
           sprite.update(node, speed);
+          Renderable connectorRotationSource = wheelConnectorRotationSources.get(r);
+          if (connectorRotationSource != null) {
+            node.setRotate(Math.toDegrees(connectorRotationSource.getRotation()));
+          }
         });
 
     Renderer renderer = (cameraRef, objects) -> {
@@ -162,6 +169,24 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     controller.setOnOutcome(onOutcome);
 
     return new GameplaySession(controller);
+  }
+
+  static Map<Renderable, Renderable> wheelConnectorRotationSources(World world) {
+    Map<Renderable, Renderable> sources = new IdentityHashMap<>();
+    for (Joint joint : world.getJoints()) {
+      GameComponent a = joint.getComponentA();
+      GameComponent b = joint.getComponentB();
+      if (isWheel(a) && !isWheel(b)) {
+        sources.put(a, b);
+      } else if (isWheel(b) && !isWheel(a)) {
+        sources.put(b, a);
+      }
+    }
+    return sources;
+  }
+
+  private static boolean isWheel(GameComponent component) {
+    return component instanceof VehicleComponent vehicleComponent && vehicleComponent.isWheel();
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
