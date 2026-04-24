@@ -13,6 +13,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.view.core.api.AppScreen;
 
 /**
  * Basic start menu screen for the application.

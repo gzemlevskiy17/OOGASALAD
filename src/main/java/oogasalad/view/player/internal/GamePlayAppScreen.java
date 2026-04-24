@@ -26,7 +26,12 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
   private Pane gameLayer;
   private Runnable onPause = () -> { };
+  private Runnable onResume = () -> { };
   private Runnable onReset = () -> { };
+  private java.util.function.Consumer<String> onToolActivated = id -> {
+  };
+  private java.util.function.Consumer<String> onToolDeactivated = id -> {
+  };
 
   public GamePlayAppScreen(Consumer<Outcome> onOutcome) {
     super(onOutcome);
@@ -44,12 +49,30 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  public void setOnResume(Runnable onResume) {
+    if (onResume == null) {
+      this.onResume = () -> { };
+    } else {
+      this.onResume = onResume;
+    }
+  }
+
   public void setOnReset(Runnable onReset) {
     if (onReset == null) {
       this.onReset = () -> { };
     } else {
       this.onReset = onReset;
     }
+  }
+
+  public void setOnToolActivated(java.util.function.Consumer<String> onToolActivated) {
+    this.onToolActivated = onToolActivated != null ? onToolActivated : id -> {
+    };
+  }
+
+  public void setOnToolDeactivated(java.util.function.Consumer<String> onToolDeactivated) {
+    this.onToolDeactivated = onToolDeactivated != null ? onToolDeactivated : id -> {
+    };
   }
 
   @Override
@@ -92,13 +115,21 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
   private HBox createTopControlsRegion() {
     HBox container = new HBox(d("top.controls.spacing"));
-    container.getStyleClass().add("hud-top");
+    container.getStyleClass().add("controlbuttons-top");
 
     container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
     container.setPickOnBounds(false);
 
-    Button pauseBtn = new Button(s("button.pause"));
-    pauseBtn.setOnAction(e -> onPause.run());
+    ToggleButton pauseBtn = new ToggleButton(s("button.pause"));
+    pauseBtn.setOnAction(e -> {
+      if (pauseBtn.isSelected()) {
+        onPause.run();
+        pauseBtn.setText(s("button.resume"));
+      } else {
+        onResume.run();
+        pauseBtn.setText(s("button.pause"));
+      }
+    });
     pauseBtn.getStyleClass().add("sys-button");
 
     Button resetBtn = new Button(s("button.reset"));
@@ -119,7 +150,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
   private HBox createBottomControlsRegion() {
     HBox container = new HBox(d("bottom.controls.spacing"));
-    container.getStyleClass().add("hud-bottom");
+    container.getStyleClass().add("controlbuttons-bottom");
 
     container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
     container.setPickOnBounds(false);
@@ -129,7 +160,11 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
       toolBtn.getStyleClass().add("tool-button");
 
       toolBtn.setOnAction(e -> {
-        // TODO: Update GameController
+        if (toolBtn.isSelected()) {
+          onToolActivated.accept(tool);
+        } else {
+          onToolDeactivated.accept(tool);
+        }
       });
 
       container.getChildren().add(toolBtn);

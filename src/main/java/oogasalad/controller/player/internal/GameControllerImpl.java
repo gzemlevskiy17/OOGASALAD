@@ -93,6 +93,11 @@ public class GameControllerImpl implements GameController {
   }
 
   @Override
+  public void handleButtonPress(String buttonId) {
+    inputRouter.handleButtonPress(buttonId);
+  }
+
+  @Override
   public void setOnOutcome(Consumer<Outcome> callback) {
     this.onOutcome = callback;
   }

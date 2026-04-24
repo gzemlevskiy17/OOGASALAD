@@ -25,9 +25,7 @@ public class Main extends Application {
         ScreenManager screenManager = new ScreenManagerImpl(stage);
         ScreenFactory screenFactory = new ScreenFactory(screenManager);
         screenFactory.registerScreens();
-
         screenManager.switchScreen(ScreenFactory.LOGIN_SCREEN_KEY);
-
         stage.setTitle("Good Piggies");
         stage.show();
         stage.setMaximized(true);

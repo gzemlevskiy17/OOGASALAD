@@ -3,6 +3,8 @@ package oogasalad.view.accounts.internal;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -30,6 +32,7 @@ public class ProfileScreen implements AppScreen {
       Supplier<PlayerProfile> profileSupplier) {
     this.profileSupplier = profileSupplier;
     BorderPane layout = new BorderPane();
+    layout.setPadding(new Insets(20));
 
     Button logoutButton = new Button(PROPS.getString("logoutButton"));
     logoutButton.setOnAction(e -> onAction.accept(new AccountOutcome.LogoutRequested()));
@@ -37,8 +40,14 @@ public class ProfileScreen implements AppScreen {
     Button editButton = new Button(PROPS.getString("editButton"));
     editButton.setOnAction(e -> onNav.accept(Outcome.OPEN_UPDATE_PROFILE));
 
-    layout.setTop(new HBox(10, editButton, logoutButton));
-    layout.setCenter(new VBox(10, avatarView, usernameLabel));
+    HBox topBar = new HBox(10, editButton, logoutButton);
+    topBar.setAlignment(Pos.TOP_RIGHT);
+
+    VBox centerBox = new VBox(15, avatarView, usernameLabel);
+    centerBox.setAlignment(Pos.CENTER);
+
+    layout.setTop(topBar);
+    layout.setCenter(centerBox);
 
     this.root = layout;
   }

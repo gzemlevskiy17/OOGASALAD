@@ -82,6 +82,11 @@
   -fx-font-size: 15px;
 }
 
+.authoring-action-button.tool-active {
+  -fx-background-color: #d0d0d0;
+  -fx-border-color: #e67e22;
+}
+
 .authoring-level-palette {
   -fx-alignment: center-left;
 }

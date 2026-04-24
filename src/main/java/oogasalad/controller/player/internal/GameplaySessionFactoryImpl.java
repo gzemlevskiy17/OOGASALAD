@@ -1,30 +1,48 @@
 package oogasalad.controller.player.internal;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.function.Consumer;
-import javafx.scene.image.ImageView;
+import java.util.function.Supplier;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelLoader;
+import oogasalad.model.engine.CollisionDetectorImpl;
+import oogasalad.model.engine.GameEngineImpl;
+import oogasalad.model.engine.ImpulseCollisionSolver;
+import oogasalad.model.engine.VehicleTerrainSupport;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.DefaultTag;
+import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.GoalLineComponent;
+import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.VehicleComponent;
 import oogasalad.model.player.api.LossConditionChecker;
+import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
+import oogasalad.model.player.internal.FallOffWorldLossChecker;
+import oogasalad.model.player.internal.FinishLineWinChecker;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
+import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
+import oogasalad.view.core.api.Sprite;
+import oogasalad.view.core.api.SpriteRegistry;
 import oogasalad.view.core.api.SpriteRenderable;
 import oogasalad.view.core.internal.CameraImpl;
 import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
+import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.RendererImpl;
 import oogasalad.view.core.internal.SpriteCache;
 import oogasalad.view.player.internal.GamePlayAppScreen;
@@ -34,50 +52,66 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  * renderer, input, win/loss checks, and controller) for one playable session.
  *
  * @author Iurii Beliaev
+ * @author Paulina Vvedenskaya
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
-  // Constants for a demonstration
-  private static final double BALL_RADIUS = 12.0;
-  private static final double WORLD_WIDTH = 2600.0;
-  private static final double WORLD_HEIGHT = 1600.0;
+  private static final double MIN_VIEWPORT_SIZE = 1.0;
+  private static final double DEFAULT_VIEW_WIDTH = 1280.0;
+  private static final double DEFAULT_VIEW_HEIGHT = 720.0;
+  private static final double ZOOM_STEP = 1.1;
+  private static final double MIN_ZOOM = 0.5;
+  private static final double MAX_ZOOM = 3.0;
+  private static final double BOUNDS_PADDING = 400.0;
+  private static final double FALLBACK_WORLD_WIDTH = 2600.0;
+  private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
 
-  private static ImageView createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
-    ImageView imageView = new ImageView(spriteCache.get(sr.getSpritePath()));
-    imageView.setFitWidth(sr.getSpriteWidth());
-    imageView.setFitHeight(sr.getSpriteHeight());
-    imageView.setTranslateX(-sr.getSpriteWidth() / 2);
-    imageView.setTranslateY(-sr.getSpriteHeight() / 2);
-    return imageView;
+  private record LevelBounds(double width, double height) {}
+
+  private record BuiltWorld(World world, LevelBounds bounds) {}
+
+  private final VehicleFactory vehicleFactory = new VehicleFactory();
+  private final LevelLoader levelLoader;
+  private final Supplier<String> levelPathSupplier;
+
+  public GameplaySessionFactoryImpl(
+      LevelLoader levelLoader,
+      Supplier<String> levelPathSupplier
+  ) {
+    this.levelLoader = levelLoader;
+    this.levelPathSupplier = levelPathSupplier;
   }
 
   /**
    * Builds and wires one gameplay session using the supplied screen and outcome callback.
-   *
-   * @param screen gameplay view implementation used for render-layer attachment and sizing
-   * @param onOutcome callback fired when controller detects terminal game outcomes
-   * @return fully assembled gameplay session ready to start
    */
   @Override
-  public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome) {
-    // Re-entry / retry can reuse the same view instance, so clear stale nodes from prior sessions.
+  public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome,
+      VehicleLayout layout) {
     screen.getGameLayer().getChildren().clear();
 
-    World world = buildWorldForCurrentLevel();
-    GameEngine engine = buildEngine(world);
     GameConfig config = buildConfig();
+    BuiltWorld built = buildWorld(config, layout);
+    World world = built.world();
+    LevelBounds bounds = built.bounds();
+    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl(),
+        new ImpulseCollisionSolver());
 
     WinConditionChecker winChecker = buildWinChecker();
-    LossConditionChecker lossChecker = buildLossChecker();
+    LossConditionChecker lossChecker = buildLossChecker(bounds.height());
     InputRouter inputRouter = buildInputRouter();
 
-    double viewWidth = screen.getGameLayer().getPrefWidth();
-    double viewHeight = screen.getGameLayer().getPrefHeight();
-    if (viewWidth <= 0) viewWidth = 1280;
-    if (viewHeight <= 0) viewHeight = 720;
+    bindDriveActions(inputRouter, world);
+    screen.setOnToolActivated(inputRouter::handleButtonPress);
+    screen.setOnToolDeactivated(inputRouter::handleButtonPress);
+
+    double viewWidth = screen.getGameLayer().getWidth();
+    double viewHeight = screen.getGameLayer().getHeight();
+    if (viewWidth <= 0) viewWidth = DEFAULT_VIEW_WIDTH;
+    if (viewHeight <= 0) viewHeight = DEFAULT_VIEW_HEIGHT;
 
     // World boundary overlay (drawn in world space, projected each frame)
-    Rectangle worldBounds = new Rectangle(WORLD_WIDTH, WORLD_HEIGHT);
+    Rectangle worldBounds = new Rectangle(bounds.width(), bounds.height());
     worldBounds.setManaged(false);
     worldBounds.setFill(Color.TRANSPARENT);
     worldBounds.setStroke(Color.LIMEGREEN);
@@ -91,26 +125,45 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
     GameObject player = resolveControlledPlayer(world);
 
-    CameraBehavior behavior = new FollowPlayerCameraBehavior(() -> player, viewWidth, viewHeight, 0, 0, 0.2);
+    CameraBehavior behavior = new FollowPlayerCameraBehavior(
+        () -> player, 0, 0, 0.2, bounds.width(), bounds.height());
     camera.setBehavior(behavior);
+    wireResponsiveCamera(screen, camera);
     SpriteCache spriteCache = new SpriteCache();
-    Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
-      if (r instanceof SpriteRenderable sr) {
-        return createImageView(sr, spriteCache);
-      }
-      Circle c = new Circle(BALL_RADIUS);
-      if (r == player) {
-        c.setRadius(BALL_RADIUS + 3);
-        c.setFill(Color.ORANGE); // followed ball
-      } else if (r instanceof GameObject go) {
-        Vector v = go.getState().getLinearVelocity();
-        boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
-        c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY); // moving vs idle
-      } else {
-        c.setFill(Color.DODGERBLUE);
-      }
-      return c;
-    });
+    SpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
+    Map<Renderable, Sprite> spritesByRenderable = new IdentityHashMap<>();
+
+    Renderer objectRenderer = new RendererImpl(screen.getGameLayer(),
+        r -> {
+          if (r instanceof TerrainBlock tb) {
+            Rectangle rect = new Rectangle(tb.getWidth(), tb.getHeight());
+            rect.setManaged(false);
+            rect.setStrokeWidth(0.5);
+            rect.setStroke(Color.BLACK);
+            rect.setFill(Paint.valueOf(tb.getColor()));
+            return rect;
+          }
+          if (r instanceof SpriteRenderable) {
+            Sprite sprite = spriteRegistry.resolve(r);
+            spritesByRenderable.put(r, sprite);
+            return sprite.render(spriteCache);
+          }
+          throw new IllegalStateException(
+              "No renderer for " + r.getClass().getName()
+                  + " — must be TerrainBlock or SpriteRenderable");
+        },
+        (r, node) -> {
+          Sprite sprite = spritesByRenderable.get(r);
+          if (sprite == null) {
+            return;
+          }
+          double speed = 0.0;
+          if (r instanceof GameObject go) {
+            Vector v = go.getState().getLinearVelocity();
+            speed = Math.hypot(v.x(), v.y());
+          }
+          sprite.update(node, speed);
+        });
 
     Renderer renderer = (cameraRef, objects) -> {
       objectRenderer.render(cameraRef, objects);
@@ -128,55 +181,98 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new GameplaySession(controller);
   }
 
-  private World buildWorldForCurrentLevel() {
+  private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
+    final double[] baseWidth = {Math.max(DEFAULT_VIEW_WIDTH, screen.getGameLayer().getWidth())};
+    final double[] baseHeight = {Math.max(DEFAULT_VIEW_HEIGHT, screen.getGameLayer().getHeight())};
+    final double[] zoom = {1.0};
+
+    Runnable applyViewport = () -> {
+      double viewWidth = Math.max(MIN_VIEWPORT_SIZE, baseWidth[0] / zoom[0]);
+      double viewHeight = Math.max(MIN_VIEWPORT_SIZE, baseHeight[0] / zoom[0]);
+      camera.setViewBoundaries(viewWidth, viewHeight);
+    };
+
+    screen.getGameLayer().widthProperty().addListener((obs, oldVal, newVal) -> {
+      if (newVal.doubleValue() > 0) {
+        baseWidth[0] = newVal.doubleValue();
+        applyViewport.run();
+      }
+    });
+    screen.getGameLayer().heightProperty().addListener((obs, oldVal, newVal) -> {
+      if (newVal.doubleValue() > 0) {
+        baseHeight[0] = newVal.doubleValue();
+        applyViewport.run();
+      }
+    });
+    screen.getGameLayer().setOnScroll(event -> {
+      if (!event.isControlDown()) {
+        return;
+      }
+      zoom[0] = event.getDeltaY() > 0 ? zoom[0] * ZOOM_STEP : zoom[0] / ZOOM_STEP;
+      zoom[0] = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom[0]));
+      applyViewport.run();
+      event.consume();
+    });
+
+    applyViewport.run();
+  }
+
+  /**
+   * Binds the on-screen tool button IDs to actions that activate or deactivate all matching
+   * Driveable components in the world. A button whose ID matches a component's display name
+   * (case-insensitive) toggles that component's drive state.
+   */
+  // package-private so unit tests can drive it directly against a constructed World.
+  void bindDriveActions(InputRouter inputRouter, World world) {
+    for (GameObject obj : world.getObjects()) {
+      if (!(obj instanceof Driveable driveable)) {
+        continue;
+      }
+      if (!driveable.isPlayerControllable()) {
+        continue;
+      }
+
+      String id = obj.getTag();
+      if (obj instanceof VehicleComponent vc) {
+        id = vc.getDisplayName().toLowerCase();
+      }
+
+      inputRouter.bind(id, new DriveAction(driveable));
+    }
+  }
+
+  private BuiltWorld buildWorld(GameConfig config, VehicleLayout layout) {
     World world = new WorldImpl();
 
-    // Followed "player" ball (first object is used by resolveControlledPlayer)
-    world.addComponent(createMovingCircle(350, 300, 180, 120));
+    String levelPath = levelPathSupplier.get();
+    if (levelPath != null && !levelPath.isBlank()) {
+      levelLoader.loadLevel(levelPath, world, config);
+    }
 
-    // Other moving balls
-    world.addComponent(createMovingCircle(900, 500, -140, 100));
-    world.addComponent(createMovingCircle(1500, 900, 160, -130));
-    world.addComponent(createMovingCircle(2100, 400, -120, -90));
-
-    // Idle balls (v=0) so camera motion is obvious
-    world.addComponent(createMovingCircle(200, 1200, 0, 0));
-    world.addComponent(createMovingCircle(1200, 200, 0, 0));
-    world.addComponent(createMovingCircle(2400, 1300, 0, 0));
-    world.addComponent(createMovingCircle(2500, 300, 0, 0));
-    return world;
+    LevelBounds bounds = computeLevelBounds(world);
+    // Vehicle bodies on this branch use centered polygons, so cell (0,0)'s center lands at
+    // (spawnX, spawnY). Offset by half a cell so the vehicle's top-left corner matches the
+    // historical spawn origin (350, 300) used when bodies were top-left-anchored.
+    vehicleFactory.buildVehicle(layout, world, 380, 330);
+    VehicleTerrainSupport.keepVehicleAssemblyAboveTerrainSurface(world);
+    return new BuiltWorld(world, bounds);
   }
 
-  private GameComponent createMovingCircle(double x, double y, double vx, double vy) {
-    DynamicComponent c = new DynamicComponent(x, y, 0, 1.0, 0.1) {
-    };
-    c.setAffectedByGravity(false);
-    c.getState().setLinearVelocity(new Vector(vx, vy));
-    return c;
-  }
-
-  private GameEngine buildEngine(World world) {
-    final double minX = BALL_RADIUS;
-    final double maxX = WORLD_WIDTH - BALL_RADIUS;
-    final double minY = BALL_RADIUS;
-    final double maxY = WORLD_HEIGHT - BALL_RADIUS;
-
-    return elapsedTime -> {
-      for (GameObject obj : world.getObjects()) {
-        obj.getState().integrateObjectState(elapsedTime);
-        double x = obj.getState().getLinearPosition().x();
-        double y = obj.getState().getLinearPosition().y();
-        double vx = obj.getState().getLinearVelocity().x();
-        double vy = obj.getState().getLinearVelocity().y();
-        if (x < minX || x > maxX) vx = -vx;
-        if (y < minY || y > maxY) vy = -vy;
-        obj.getState().setLinearPosition(new Vector(
-            Math.max(minX, Math.min(maxX, x)),
-            Math.max(minY, Math.min(maxY, y))
-        ));
-        obj.getState().setLinearVelocity(new Vector(vx, vy));
+  private LevelBounds computeLevelBounds(World world) {
+    double maxX = 0;
+    double maxY = 0;
+    for (GameComponent c : world.getAllComponents()) {
+      if (c instanceof TerrainBlock tb) {
+        maxX = Math.max(maxX, tb.getX() + tb.getWidth());
+        maxY = Math.max(maxY, tb.getY() + tb.getHeight());
+      } else if (c instanceof GoalLineComponent gl) {
+        maxX = Math.max(maxX, gl.getX() + gl.getWidth());
+        maxY = Math.max(maxY, gl.getY() + gl.getHeight());
       }
-    };
+    }
+    double width = maxX > 0 ? maxX + BOUNDS_PADDING : FALLBACK_WORLD_WIDTH;
+    double height = maxY > 0 ? maxY + BOUNDS_PADDING : FALLBACK_WORLD_HEIGHT;
+    return new LevelBounds(width, height);
   }
 
   private GameConfig buildConfig() {
@@ -189,13 +285,34 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     };
   }
 
-  private WinConditionChecker buildWinChecker() { return world -> false; }
+  private WinConditionChecker buildWinChecker() { return new FinishLineWinChecker(); }
 
-  private LossConditionChecker buildLossChecker() { return world -> false; }
+  private LossConditionChecker buildLossChecker(double worldHeight) {
+    return new FallOffWorldLossChecker(worldHeight);
+  }
 
   private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
 
+  // Hierarchy of objects to follow
   private GameObject resolveControlledPlayer(World world) {
+    GameObject pig = world.getObjectsByTag(DefaultTag.PIGS.value()).stream().findFirst()
+        .orElse(null);
+    if (pig != null) {
+      return pig;
+    }
+
+    GameObject vehicle = world.getObjectsByTag(DefaultTag.VEHICLE.value()).stream().findFirst()
+        .orElse(null);
+    if (vehicle != null) {
+      return vehicle;
+    }
+
+    GameObject dynamic = world.getObjectsByTag(DefaultTag.DYNAMIC.value()).stream().findFirst()
+        .orElse(null);
+    if (dynamic != null) {
+      return dynamic;
+    }
+
     return world.getObjects().stream().findFirst().orElse(null);
   }
 

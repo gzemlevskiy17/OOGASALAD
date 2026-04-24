@@ -1,7 +1,10 @@
 package oogasalad.view.authoring.internal;
 
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -9,6 +12,8 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -31,6 +36,8 @@ import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
  * Layout shell for the authoring environment.
+ *
+ * @author Emilio Garcia
  */
 public class AuthoringScreenImpl extends AbstractAppScreen {
 
@@ -75,10 +82,18 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private TerrainPropertiesPanel terrainPropertiesPanel;
   private World world;
   private AuthoringCanvasImpl canvas;
-
+  private ScrollPane canvasScrollPane;
+  private List<Button> toolButtons;
   private AuthoringMode currentMode;
   private LevelPaletteMode currentLevelPaletteMode;
+  private boolean preserveLoadedLevelOnNextEnter;
 
+  /**
+   * Creates the authoring screen.
+   *
+   * @param onOutcome callback used for navigation outcomes
+   * @author Emilio Garcia
+   */
   public AuthoringScreenImpl(Consumer<Outcome> onOutcome) {
     super(onOutcome);
   }
@@ -93,20 +108,15 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     layout.getStyleClass().add("screen-root");
     layout.setPadding(new Insets(d("rootPadding")));
 
-    VBox topSections = new VBox(
-        d("outerSectionSpacing"),
-        buildTopBar(),
-        buildScreenModeRow());
+    VBox topSections = new VBox(d("outerSectionSpacing"), buildTopBar(), buildScreenModeRow());
     topSections.getStyleClass().add("authoring-top-sections");
 
-    VBox bottomSections = new VBox(
-        d("outerSectionSpacing"),
-        paletteModeRow,
-        buildBottomRegion());
+    VBox bottomSections = new VBox(d("outerSectionSpacing"), paletteModeRow, buildBottomRegion());
     bottomSections.getStyleClass().add("authoring-bottom-sections");
 
     canvasHost.getStyleClass().add("authoring-canvas-host");
     VBox.setVgrow(canvasHost, Priority.ALWAYS);
+
     layout.setTop(topSections);
     layout.setCenter(canvasHost);
     layout.setBottom(bottomSections);
@@ -114,21 +124,45 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
     wireModeHandlers();
     refreshDisplayedMode();
+    controller.setToolChangeListener(type -> {
+      if (type == ToolType.DRAW && toolButtons != null && !toolButtons.isEmpty()) {
+        updateToolButtonStyles(toolButtons.get(0));
+      }
+    });
+
     return layout;
   }
 
-  /**
-   * Clears all placed objects and resets the canvas for a fresh level.
-   */
-  public void resetForNewLevel() {
-    world.clear();
-    terrainPropertiesPanel.hide();
-    canvas.refreshGrid();
+  @Override
+  public void onEnter() {
+    if (preserveLoadedLevelOnNextEnter) {
+      preserveLoadedLevelOnNextEnter = false;
+    } else {
+      resetForNewLevel();
+    }
+    canvas.setZoom(1.0);
   }
 
+  /**
+   * Clears the current level and resets the visible editor state.
+   *
+   * @author Emilio Garcia
+   */
+  public void resetForNewLevel() {
+    controller.clearLevel();
+    terrainPropertiesPanel.hide();
+  }
+
+  /**
+   * Loads a saved level into the authoring environment.
+   *
+   * @param path path to the level file
+   * @author Emilio Garcia
+   */
   public void loadLevelFromPath(String path) {
     try {
       controller.loadLevel(path);
+      preserveLoadedLevelOnNextEnter = true;
     } catch (LevelLoadException e) {
       alertService.showError(PROPS.getString("loadErrorTitle"), e.getMessage());
     }
@@ -151,17 +185,20 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
         message -> alertService.showWarning(s("placementWarningTitle"), message));
     controller.initializeCanvasHandlers();
 
-    ScrollPane canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
+    canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
     canvasScrollPane.setFitToWidth(false);
     canvasScrollPane.setFitToHeight(false);
-    canvasScrollPane.setPannable(true);
+    canvasScrollPane.setPannable(false);
     canvasScrollPane.getStyleClass().add("authoring-canvas-scroll");
+    wireEdgePan(canvasScrollPane);
+    wireZoomScroll(canvasScrollPane);
     canvasHost = new StackPane(canvasScrollPane);
 
     vehiclePalette = new VehicleComponentScrollPalette();
     vehiclePalette.setSelectedComponentsHandler(levelAttributes::setAllowedVehicleComponents);
-    levelAttributes.setMaxSelectableVehicleItems(vehiclePalette.getMaxSelectableItems());
     vehiclePalette.setSelectionSummaryHandler(this::updateSelectedItemsSummary);
+    levelAttributes.setMaxSelectableVehicleItems(vehiclePalette.getMaxSelectableItems());
+
     terrainPalette = new ComponentPaletteImpl();
     pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
     levelItemsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.LevelItemsPalette");
@@ -188,6 +225,77 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private void subscribePalette(ComponentPaletteImpl palette) {
     palette.subscribe(canvas::setSelectedPlaceable);
     palette.subscribe(controller::setSelectedPlaceable);
+  }
+
+  private void wireEdgePan(ScrollPane scroll) {
+    double threshold = d("edgePanThreshold");
+    double speed = d("edgePanSpeed");
+    double[] vel = {0, 0};
+
+    javafx.event.EventHandler<MouseEvent> edgeDetect = e -> {
+      double vw = scroll.getViewportBounds().getWidth();
+      double vh = scroll.getViewportBounds().getHeight();
+      vel[0] = edgeVelocity(e.getX(), vw, threshold, speed);
+      vel[1] = edgeVelocity(e.getY(), vh, threshold, speed);
+    };
+    scroll.addEventFilter(MouseEvent.MOUSE_MOVED, edgeDetect);
+    scroll.addEventFilter(MouseEvent.MOUSE_DRAGGED, edgeDetect);
+    scroll.addEventFilter(MouseEvent.MOUSE_EXITED, e -> {
+      vel[0] = 0;
+      vel[1] = 0;
+    });
+
+    new AnimationTimer() {
+      @Override
+      public void handle(long now) {
+        if (vel[0] != 0) {
+          scroll.setHvalue(clamp01(scroll.getHvalue() + vel[0]));
+        }
+        if (vel[1] != 0) {
+          scroll.setVvalue(clamp01(scroll.getVvalue() + vel[1]));
+        }
+      }
+    }.start();
+  }
+
+  private void wireZoomScroll(ScrollPane scroll) {
+    scroll.addEventFilter(ScrollEvent.SCROLL, e -> {
+      if (e.isControlDown()) {
+        double step = d("zoomStep");
+        double next = e.getDeltaY() > 0
+            ? canvas.getZoom() * step
+            : canvas.getZoom() / step;
+        canvas.setZoom(next);
+        e.consume();
+      }
+    });
+  }
+
+  private static double edgeVelocity(double pos, double size, double threshold, double speed) {
+    if (pos < threshold && threshold > 0) {
+      return -speed * (1 - pos / threshold);
+    }
+    if (pos > size - threshold && threshold > 0) {
+      return speed * (1 - (size - pos) / threshold);
+    }
+    return 0;
+  }
+
+  private static double clamp01(double value) {
+    return Math.max(0, Math.min(1, value));
+  }
+
+  private void fitCanvasToViewport() {
+    Platform.runLater(() -> {
+      if (canvasScrollPane == null) {
+        return;
+      }
+      double viewportWidth = canvasScrollPane.getViewportBounds().getWidth();
+      double canvasWidth = canvas.getVisualRoot().getBoundsInLocal().getWidth();
+      if (viewportWidth > 0 && canvasWidth > 0) {
+        canvas.setZoom(Math.min(1.0, viewportWidth / canvasWidth));
+      }
+    });
   }
 
   private void wireModeHandlers() {
@@ -222,15 +330,12 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private HBox buildTopBar() {
-    Button backButton = createSizedButton(
-        s("backButtonText"),
-        d("backButtonWidth"),
+    Button backButton = createSizedButton(s("backButtonText"), d("backButtonWidth"),
         d("backButtonHeight"));
     backButton.getStyleClass().add("authoring-back-button");
     backButton.setOnAction(event -> {
       if (!world.getObjects().isEmpty()) {
-        boolean confirmed = alertService.showConfirmation(
-            s("leaveWarningTitle"),
+        boolean confirmed = alertService.showConfirmation(s("leaveWarningTitle"),
             s("leaveWarningMessage"));
         if (!confirmed) {
           return;
@@ -244,10 +349,64 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
     Button drawButton = createSizedButton(s("drawButtonText"), actionWidth, actionHeight);
     Button eraseButton = createSizedButton(s("eraseButtonText"), actionWidth, actionHeight);
+    Button paintButton = createSizedButton(s("paintButtonText"), actionWidth, actionHeight);
     drawButton.getStyleClass().add("authoring-action-button");
     eraseButton.getStyleClass().add("authoring-action-button");
-    drawButton.setOnAction(event -> controller.setActiveTool(ToolType.DRAW));
-    eraseButton.setOnAction(event -> controller.setActiveTool(ToolType.ERASE));
+    paintButton.getStyleClass().add("authoring-action-button");
+
+    toolButtons = List.of(drawButton, eraseButton, paintButton);
+    drawButton.getStyleClass().add("tool-active");
+
+    drawButton.setOnAction(event -> {
+      controller.setActiveTool(ToolType.DRAW);
+      updateToolButtonStyles(drawButton);
+    });
+    eraseButton.setOnAction(event -> {
+      controller.setActiveTool(ToolType.ERASE);
+      updateToolButtonStyles(eraseButton);
+    });
+    paintButton.setOnAction(event -> {
+      controller.setActiveTool(ToolType.PAINT);
+      updateToolButtonStyles(paintButton);
+    });
+
+    Button undoButton = createSizedButton(s("undoButtonText"), actionWidth, actionHeight);
+    Button redoButton = createSizedButton(s("redoButtonText"), actionWidth, actionHeight);
+    undoButton.getStyleClass().add("authoring-action-button");
+    redoButton.getStyleClass().add("authoring-action-button");
+    undoButton.setOnAction(event -> {
+      controller.undo();
+      terrainPropertiesPanel.hide();
+    });
+    redoButton.setOnAction(event -> {
+      controller.redo();
+      terrainPropertiesPanel.hide();
+    });
+
+    Button clearButton = createSizedButton(s("clearButtonText"), actionWidth, actionHeight);
+    clearButton.getStyleClass().add("authoring-action-button");
+    clearButton.setOnAction(event -> {
+      if (!world.getObjects().isEmpty()) {
+        boolean confirmed = alertService.showConfirmation(
+            s("clearWarningTitle"), s("clearWarningMessage"));
+        if (!confirmed) {
+          return;
+        }
+      }
+      resetForNewLevel();
+    });
+
+    double zoomButtonWidth = d("zoomButtonWidth");
+    Button zoomInButton = createSizedButton(s("zoomInButtonText"), zoomButtonWidth, actionHeight);
+    Button zoomOutButton =
+        createSizedButton(s("zoomOutButtonText"), zoomButtonWidth, actionHeight);
+    Button fitButton = createSizedButton(s("fitButtonText"), zoomButtonWidth * 1.5, actionHeight);
+    zoomInButton.getStyleClass().add("authoring-action-button");
+    zoomOutButton.getStyleClass().add("authoring-action-button");
+    fitButton.getStyleClass().add("authoring-action-button");
+    zoomInButton.setOnAction(event -> canvas.setZoom(canvas.getZoom() * d("zoomStep")));
+    zoomOutButton.setOnAction(event -> canvas.setZoom(canvas.getZoom() / d("zoomStep")));
+    fitButton.setOnAction(event -> fitCanvasToViewport());
 
     Button saveButton = createSizedButton(s("saveButtonText"), actionWidth, actionHeight);
     Button runButton = createSizedButton(s("runButtonText"), actionWidth, actionHeight);
@@ -255,21 +414,21 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     saveButton.getStyleClass().add("authoring-action-button");
     runButton.getStyleClass().add("authoring-action-button");
     loadButton.getStyleClass().add("authoring-action-button");
-
     saveButton.setOnAction(event -> handleSave(saveButton.getScene().getWindow()));
     loadButton.setOnAction(event -> handleLoad(loadButton.getScene().getWindow()));
 
-    HBox toolButtons = new HBox(d("topBarSpacing"), drawButton, eraseButton);
-    toolButtons.setAlignment(Pos.CENTER_LEFT);
+    HBox toolButtonBox = new HBox(d("topBarSpacing"),
+        drawButton, eraseButton, paintButton, zoomOutButton, zoomInButton, fitButton);
+    toolButtonBox.setAlignment(Pos.CENTER_LEFT);
 
     HBox rightButtons = new HBox(
-        d("topBarSpacing"), saveButton, runButton, loadButton);
+        d("topBarSpacing"), undoButton, redoButton, clearButton, saveButton, runButton, loadButton);
     rightButtons.setAlignment(Pos.CENTER_RIGHT);
 
     Region spacer = new Region();
     HBox.setHgrow(spacer, Priority.ALWAYS);
 
-    HBox topBar = new HBox(backButton, toolButtons, spacer, rightButtons);
+    HBox topBar = new HBox(backButton, toolButtonBox, spacer, rightButtons);
     topBar.setAlignment(Pos.CENTER_LEFT);
     topBar.getStyleClass().add("authoring-top-bar");
     return topBar;
@@ -385,6 +544,13 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     button.setPrefHeight(height);
     button.getStyleClass().add("authoring-button");
     return button;
+  }
+
+  private void updateToolButtonStyles(Button activeButton) {
+    for (Button button : toolButtons) {
+      button.getStyleClass().remove("tool-active");
+    }
+    activeButton.getStyleClass().add("tool-active");
   }
 
   private String s(String key) {

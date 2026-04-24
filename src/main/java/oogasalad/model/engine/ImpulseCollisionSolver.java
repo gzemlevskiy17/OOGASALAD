@@ -79,7 +79,7 @@ public class ImpulseCollisionSolver implements CollisionSolver {
         referenceOutwardNormal);
     if (distanceFromRightPlane < 0) {
       ContactPointPhysics contactPointPhysics = new ContactPointPhysics(clippedIncidentEdge[1],
-          -distanceFromLeftPlane);
+          -distanceFromRightPlane);
       manifoldPoints.add(contactPointPhysics);
     }
 
@@ -225,6 +225,20 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       contactPoints.add(contactPointPhysics);
     }
 
+    if (totalDepth == 0 || contactPoints.isEmpty()) {
+      return;
+    }
+    // Only resolve if the pair is actually approaching along the normal.
+    // Otherwise the impulse would drag separating objects back together.
+    double approachSpeed = 0;
+    for (ContactPointPhysics contactPointPhysics : contactPoints) {
+      approachSpeed += contactPointPhysics.relativeVelocity.dot(referenceUnitNormal)
+          * (contactPointPhysics.depth / totalDepth);
+    }
+    if (approachSpeed >= 0) {
+      return;
+    }
+
     double impulseSum = 0;
     double referenceCrossProductSum = 0;
     double incidentCrossProductSum = 0;
@@ -235,26 +249,24 @@ public class ImpulseCollisionSolver implements CollisionSolver {
       referenceCrossProductSum +=
           contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse; //TODO: make impulse vector?
-      referenceCrossProductSum +=
+      incidentCrossProductSum +=
           contactPointPhysics.positionFromIncident.crossWithVector(referenceUnitNormal)
               * contactPointPhysics.impulse;
     }
 
-    double newReferenceAngularVelocity = referenceObjectState.getAngularVelocity()
-        - referenceCrossProductSum / referenceObject.getMomentOfInertia();
-    referenceObjectState.setAngularVelocity(newReferenceAngularVelocity);
+    if (invMOI(referenceObject) != 0) {
+      referenceObjectState.setAngularVelocity(referenceObjectState.getAngularVelocity()
+          - referenceCrossProductSum * invMOI(referenceObject));
+    }
+    if (invMOI(incidentObject) != 0) {
+      incidentObjectState.setAngularVelocity(incidentObjectState.getAngularVelocity()
+          + incidentCrossProductSum * invMOI(incidentObject));
+    }
 
-    double newIncidentAngularVelocity = incidentObjectState.getAngularVelocity()
-        + incidentCrossProductSum / incidentObject.getMomentOfInertia();
-    incidentObjectState.setAngularVelocity(newIncidentAngularVelocity);
-
-    Vector newReferenceLinearVelocity = referenceObjectState.getLinearVelocity()
-        .subtract(referenceUnitNormal.multiply(impulseSum / referenceObject.getMass()));
-    referenceObjectState.setLinearVelocity(newReferenceLinearVelocity);
-
-    Vector newIncidentLinearVelocity = incidentObjectState.getLinearVelocity()
-        .subtract(referenceUnitNormal.multiply(impulseSum / incidentObject.getMass()));
-    incidentObjectState.setLinearVelocity(newIncidentLinearVelocity);
+    referenceObjectState.setLinearVelocity(referenceObjectState.getLinearVelocity()
+        .subtract(referenceUnitNormal.multiply(impulseSum * invMass(referenceObject))));
+    incidentObjectState.setLinearVelocity(incidentObjectState.getLinearVelocity()
+        .add(referenceUnitNormal.multiply(impulseSum * invMass(incidentObject))));
   }
 
   /**
@@ -295,9 +307,9 @@ public class ImpulseCollisionSolver implements CollisionSolver {
         referenceUnitNormal);
     double referencePointMomentum = contactPointPhysics.positionFromReference.crossWithVector(
         referenceUnitNormal);
-    double inverseMass = 1 / referenceObject.getMass() + 1 / incidentObject.getMass()
-        + Math.pow(incidentPointMomentum, 2) / incidentObject.getMomentOfInertia()
-        + Math.pow(referencePointMomentum, 2) / referenceObject.getMomentOfInertia();
+    double inverseMass = invMass(referenceObject) + invMass(incidentObject)
+        + Math.pow(incidentPointMomentum, 2) * invMOI(incidentObject)
+        + Math.pow(referencePointMomentum, 2) * invMOI(referenceObject);
 
     return velocity / inverseMass;
   }
@@ -339,26 +351,39 @@ public class ImpulseCollisionSolver implements CollisionSolver {
    * @param collision detected collision pair
    */
   private void applyPositionalCorrection(Collision collision) {
-    double correctionFraction = 0.4; //TODO: put into properties file
+    double correctionFraction = 0.8; //TODO: put into properties file
+    double penetrationSlop = 0.01;
 
     GameObject referenceObject = collision.getReferenceObject();
     GameObject incidentObject = collision.getIncidentObject();
     ObjectState referenceObjectState = referenceObject.getState();
     ObjectState incidentObjectState = incidentObject.getState();
 
-    double massSum = incidentObject.getMass() + referenceObject.getMass();
+    double totalInvMass = invMass(referenceObject) + invMass(incidentObject);
+    if (totalInvMass == 0) {
+      return;
+    }
 
     Vector penetration = collision.getPenetration();
-    double correctionMagnitude = (penetration.magnitude() / (2 * massSum)) * correctionFraction;
-    Vector correction = penetration.normalize().multiply(correctionMagnitude);
+    double depth = penetration.magnitude();
+    if (depth <= penetrationSlop) {
+      return;
+    }
+    double magnitude = (depth - penetrationSlop) * correctionFraction / totalInvMass;
+    Vector correction = penetration.normalize().multiply(magnitude);
 
-    Vector newReferenceObjectState = referenceObjectState.getLinearPosition()
-        .subtract(correction.multiply(incidentObject.getMass()));
-    referenceObjectState.setLinearPosition(newReferenceObjectState);
+    referenceObjectState.setLinearPosition(referenceObjectState.getLinearPosition()
+        .subtract(correction.multiply(invMass(referenceObject))));
+    incidentObjectState.setLinearPosition(incidentObjectState.getLinearPosition()
+        .add(correction.multiply(invMass(incidentObject))));
+  }
 
-    Vector newIncidentObjectState = incidentObjectState.getLinearPosition()
-        .add(correction.multiply(referenceObject.getMass()));
-    incidentObjectState.setLinearPosition(newIncidentObjectState);
+  private static double invMass(GameObject obj) {
+    return obj.getMass() == 0 ? 0.0 : 1.0 / obj.getMass();
+  }
+
+  private static double invMOI(GameObject obj) {
+    return obj.getMomentOfInertia() == 0 ? 0.0 : 1.0 / obj.getMomentOfInertia();
   }
 
   /**

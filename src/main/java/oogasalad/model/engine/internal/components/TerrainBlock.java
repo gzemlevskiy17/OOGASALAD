@@ -1,5 +1,7 @@
 package oogasalad.model.engine.internal.components;
 
+import oogasalad.model.engine.ConvexPolygon;
+
 /**
  * Concrete static terrain object (ground, ramp, wall) created by LevelLoaderImpl
  * and placed by the authoring canvas.
@@ -34,7 +36,9 @@ public class TerrainBlock extends TerrainComponent {
    */
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction) {
+
     this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR);
+    setPolygon(ConvexPolygon.axisAlignedBox(x, y, width, height));
   }
 
   /**

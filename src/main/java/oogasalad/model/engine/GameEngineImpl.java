@@ -5,11 +5,14 @@ import java.util.List;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.CollisionSolver;
+import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.joints.DistanceJoint;
+import oogasalad.model.engine.internal.joints.RevoluteJoint;
 
 /**
  * Main physics-step orchestrator for simulation updates in a world.
@@ -40,9 +43,12 @@ import oogasalad.model.engine.api.World;
  */
 public class GameEngineImpl implements GameEngine {
 
-  private World world;
-  private CollisionDetector collisionDetector;
-  private CollisionSolver collisionSolver;
+  private static final double GRAVITY = 400.0;
+  private static final int JOINT_SOLVER_ITERATIONS = 8;
+
+  private final World world;
+  private final CollisionDetector collisionDetector;
+  private final CollisionSolver collisionSolver;
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -78,19 +84,48 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
-    applyJointConstraints(elapsedTime);
+    applyAllJointConstraints(elapsedTime, 1);
+
+    for (GameObject gameObject : world.getObjects()) {
+      gameObject.updatePolygon();
+    }
 
     handleCollisions();
 
     //TODO: do this only for dynamic objects
     for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
+      accumulateForces(gameObject);
+      applyForcesToAcceleration(gameObject);
       gameObject.getState().integrateObjectState(elapsedTime);
+      gameObject.setForce(new Vector(0, 0));
     }
+
+    // Positional constraints (rigid distance/revolute) need iterative post-integration stabilization.
+    applyPositionJointConstraints(elapsedTime, JOINT_SOLVER_ITERATIONS);
+
+    VehicleTerrainSupport.keepVehicleAssemblyAboveTerrainSurface(world);
 
 //    for (Constraint constraint : constraings) {
 //      enforceConstraint(constraint);
 //    }
 
+  }
+
+  private void accumulateForces(GameObject obj) {
+    if (obj.isAffectedByGravity()) {
+      obj.addForce(new Vector(0, GRAVITY * obj.getMass()));
+    }
+    if (obj instanceof Driveable driveable) {
+      obj.addForce(driveable.getDriveForce());
+    }
+  }
+
+  private void applyForcesToAcceleration(GameObject obj) {
+    double mass = obj.getMass();
+    if (mass > 0) {
+      Vector acc = obj.getForce().multiply(1.0 / mass);
+      obj.getState().setLinearAcceleration(acc);
+    }
   }
 
   //TODO: implement solving of collisions in multiple small steps
@@ -104,17 +139,62 @@ public class GameEngineImpl implements GameEngine {
     solveCollisions(collisions);
   }
 
-  private void applyJointConstraints(double elapsedTime) {
-    for (Joint joint : world.getJoints()) {
-      joint.apply(elapsedTime);
+  private void applyAllJointConstraints(double elapsedTime, int iterations) {
+    for (int i = 0; i < iterations; i++) {
+      for (Joint joint : world.getJoints()) {
+        joint.apply(elapsedTime);
+      }
     }
+  }
+
+  private void applyPositionJointConstraints(double elapsedTime, int iterations) {
+    for (int i = 0; i < iterations; i++) {
+      for (Joint joint : world.getJoints()) {
+        if (isPositionConstraintJoint(joint)) {
+          joint.apply(elapsedTime);
+        }
+      }
+    }
+  }
+
+  private boolean isPositionConstraintJoint(Joint joint) {
+    if (joint instanceof RevoluteJoint) {
+      return true;
+    }
+    return joint instanceof DistanceJoint distanceJoint && distanceJoint.isRigid();
+  }
+
+  private static final String VEHICLE_TAG = "vehicle";
+  private static final String PIGS_TAG = "pigs";
+
+  private static boolean isPigVehiclePair(String tagA, String tagB) {
+    return (PIGS_TAG.equals(tagA) && VEHICLE_TAG.equals(tagB))
+        || (VEHICLE_TAG.equals(tagA) && PIGS_TAG.equals(tagB));
   }
 
   private List<Collision> getCollisions() {
     List<Collision> collisions = new ArrayList<>();
-    for (GameObject objectA : world.getObjects()) {
-      for (GameObject objectB : world.getObjects()) {
-        Optional<Collision> collision = collisionDetector.detectCollision(objectA, objectB);
+    List<GameObject> objects = world.getObjects();
+    for (int i = 0; i < objects.size(); i++) {
+      GameObject a = objects.get(i);
+      if (a.isTrigger()) {
+        continue;
+      }
+      for (int j = i + 1; j < objects.size(); j++) {
+        GameObject b = objects.get(j);
+        if (b.isTrigger()) {
+          continue;
+        }
+        if (a.getMass() == 0 && b.getMass() == 0) {
+          continue;
+        }
+        if (VEHICLE_TAG.equals(a.getTag()) && VEHICLE_TAG.equals(b.getTag())) {
+          continue;
+        }
+        if (isPigVehiclePair(a.getTag(), b.getTag())) {
+          continue;
+        }
+        Optional<Collision> collision = collisionDetector.detectCollision(a, b);
         collision.ifPresent(collisions::add);
       }
     }

@@ -31,4 +31,11 @@ public class GameplaySession {
 
   /** Stops simulation immediately. */
   public void stop()  { controller.stopSimulation(); }
+
+  /**
+   * Forwards a tool button press to the controller's input router.
+   */
+  public void handleButtonPress(String buttonId) {
+    controller.handleButtonPress(buttonId);
+  }
 }

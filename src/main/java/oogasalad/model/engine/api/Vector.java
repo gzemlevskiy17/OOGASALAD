@@ -39,9 +39,12 @@ public record Vector(double x, double y) implements Comparable<Vector> {
     return Math.sqrt(Math.pow(this.x(), 2) + Math.pow(this.y(), 2));
   }
 
-  //TODO: handle 0 length vectors
   public Vector normalize() {
-    return new Vector(this.x() / magnitude(), this.y() / magnitude());
+    double mag = magnitude();
+    if (mag == 0) {
+      return new Vector(0, 0);
+    }
+    return new Vector(this.x() / mag, this.y() / mag);
   }
 
   public double dot(Vector other) {
