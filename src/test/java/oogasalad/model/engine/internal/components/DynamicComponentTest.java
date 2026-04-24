@@ -120,6 +120,37 @@ class DynamicComponentTest {
     assertEquals(0, a.y(), EPS);
   }
 
+  @Test
+  void updateSleepState_lowVelocityLongEnough_entersSleep() {
+    DynamicComponent body = newBody(1, 0, 0);
+
+    body.updateSleepState(0.6);
+
+    assertTrue(body.isSleeping());
+  }
+
+  @Test
+  void updateSleepState_highVelocity_keepsBodyAwake() {
+    DynamicComponent body = newBody(1, 0, 0);
+    body.getDynamicState().setLinearVelocity(new Vector(5, 0));
+
+    body.updateSleepState(1.0);
+
+    assertTrue(!body.isSleeping());
+  }
+
+  @Test
+  void setSleeping_trueClearsVelocityAndForces() {
+    DynamicComponent body = newBody(1, 0, 0);
+    body.getDynamicState().setLinearVelocity(new Vector(10, 0));
+    body.addForce(new Vector(5, 0));
+
+    body.setSleeping(true);
+
+    assertEquals(0, body.getDynamicState().getLinearVelocity().magnitude(), EPS);
+    assertEquals(0, body.getForce().magnitude(), EPS);
+  }
+
   @ParameterizedTest
   @MethodSource("forceMassToAcceleration")
   void applyForceToAcceleration_parameterized(

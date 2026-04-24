@@ -266,6 +266,14 @@ public class GameEngineImpl implements GameEngine {
     }
   }
 
+  private void updateSleepStates(Collection<GameObject> objects, double elapsedTime) {
+    for (GameObject object : objects) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.updateSleepState(elapsedTime);
+      }
+    }
+  }
+
   private static void applyDynamicDynamicPositionCorrection(DynamicComponent objectA,
       DynamicComponent objectB, Collision collision) {
     if (objectA == collision.getIncidentObject()) {
@@ -358,6 +366,7 @@ public class GameEngineImpl implements GameEngine {
       }
       handleCollisions(false);
     }
+    updateSleepStates(world.getObjects(), elapsedTime);
   }
 
   //TODO: implement solving of collisions in multiple small steps
