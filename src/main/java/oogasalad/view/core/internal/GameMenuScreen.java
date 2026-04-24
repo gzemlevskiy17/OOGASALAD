@@ -13,6 +13,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.view.accounts.api.AccountOutcome;
 import oogasalad.view.core.api.AppScreen;
 
 /**
@@ -25,7 +26,8 @@ public class GameMenuScreen implements AppScreen {
 
   private final Parent root;
 
-  public GameMenuScreen(Consumer<Outcome> onOutcome, BooleanSupplier isLoggedIn) {
+  public GameMenuScreen(Consumer<Outcome> onOutcome, Consumer<AccountOutcome> onAccountAction,
+      BooleanSupplier isLoggedIn) {
     BorderPane root = new BorderPane();
     root.getStylesheets().add(
         getClass().getResource("/oogasalad/view/core/game-menu.css").toExternalForm());
@@ -69,10 +71,10 @@ public class GameMenuScreen implements AppScreen {
     centerContent.getStyleClass().add("menu-center-region");
     root.setCenter(centerContent);
 
-    Button loginButton = new Button(PROPS.getString("loginButtonText"));
-    loginButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
-    loginButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_LOGIN));
-    root.setBottom(wrapBottomLeft(loginButton));
+    Button logoutButton = new Button(PROPS.getString("logoutButtonText"));
+    logoutButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    logoutButton.setOnAction(event -> onAccountAction.accept(new AccountOutcome.LogoutRequested()));
+    root.setBottom(wrapBottomLeft(logoutButton));
 
     this.root = root;
   }
