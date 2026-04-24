@@ -115,7 +115,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
   private HBox createTopControlsRegion() {
     HBox container = new HBox(d("top.controls.spacing"));
-    container.getStyleClass().add("hud-top");
+    container.getStyleClass().add("controlbuttons-top");
 
     container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
     container.setPickOnBounds(false);
@@ -150,7 +150,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
 
   private HBox createBottomControlsRegion() {
     HBox container = new HBox(d("bottom.controls.spacing"));
-    container.getStyleClass().add("hud-bottom");
+    container.getStyleClass().add("controlbuttons-bottom");
 
     container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
     container.setPickOnBounds(false);
