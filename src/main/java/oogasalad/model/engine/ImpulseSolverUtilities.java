@@ -142,8 +142,7 @@ public class ImpulseSolverUtilities {
     Vector cachedNormal = collision.getCachedNormal();
     return cachedNormal != null
         && cachedNormal.dot(referenceUnitNormal) > 0.5
-        && (collision.getCachedNormalImpulse() != 0.0
-        || collision.getCachedFrictionImpulse() != 0.0);
+        && collision.getCachedNormalImpulse() != 0.0;
   }
 
   private static void applyCachedImpulse(Collision collision, RigidBody referenceObject,
@@ -157,10 +156,8 @@ public class ImpulseSolverUtilities {
     if (contactCount == 0) {
       return;
     }
-    Vector tangent = referenceUnitNormal.rotateRight();
     Vector cachedImpulse = referenceUnitNormal.multiply(collision.getCachedNormalImpulse()
-            / contactCount)
-        .add(tangent.multiply(collision.getCachedFrictionImpulse() / contactCount));
+        / contactCount);
     for (Vector contactPoint : collision.getCollisionManifold().keySet()) {
       ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
           collision.getCollisionManifold().get(contactPoint));
@@ -238,7 +235,7 @@ public class ImpulseSolverUtilities {
         incidentDynamicState, incidentStaticState, referenceStaticState, referenceUnitNormal);
 
     double normalImpulseSum = collision.getCachedNormalImpulse();
-    double frictionImpulseSum = collision.getCachedFrictionImpulse();
+    double frictionImpulseSum = 0.0;
     for (Vector contactPoint : collision.getCollisionManifold().keySet()) {
       //TODO: should these method behaviors be consistent
       ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
