@@ -259,6 +259,41 @@ class VehicleFactoryPigPlacementTest {
     assertEquals(wheel.getY(), joint.getWorldAnchorB().y(), 1e-9);
   }
 
+  @Test
+  void wheelAttachedLeftOrRightOfFrame_usesWheelAsCanonicalRevoluteBody() {
+    assertWheelFrameJointUsesWheelAsBodyA(-1);
+    assertWheelFrameJointUsesWheelAsBodyA(1);
+  }
+
+  private void assertWheelFrameJointUsesWheelAsBodyA(int wheelCol) {
+    VehicleLayout layout = new VehicleLayout(List.of(
+        new PlacedComponent(0, 0, "Frame"),
+        new PlacedComponent(0, wheelCol, "Wood Wheel")
+    ));
+    World world = new WorldImpl();
+    new VehicleFactory().buildVehicle(layout, world, START_X, START_Y);
+
+    StructuralComponent wheel = world.getComponents().stream()
+        .filter(StructuralComponent.class::isInstance)
+        .map(StructuralComponent.class::cast)
+        .filter(s -> "Wood Wheel".equals(s.getDisplayName()))
+        .findFirst()
+        .orElseThrow();
+    RevoluteJoint joint = world.getJoints().stream()
+        .filter(RevoluteJoint.class::isInstance)
+        .map(RevoluteJoint.class::cast)
+        .findFirst()
+        .orElseThrow();
+
+    assertEquals(wheel, joint.getComponentA(),
+        "Wheel should always be body A so mirrored axles solve symmetrically");
+    assertEquals(new oogasalad.model.engine.api.Vector(0, 0), joint.getLocalAnchorA());
+    assertEquals(wheel.getX(), joint.getWorldAnchorA().x(), 1e-9);
+    assertEquals(wheel.getY(), joint.getWorldAnchorA().y(), 1e-9);
+    assertEquals(wheel.getX(), joint.getWorldAnchorB().x(), 1e-9);
+    assertEquals(wheel.getY(), joint.getWorldAnchorB().y(), 1e-9);
+  }
+
   private double[] polygonBounds(GameComponent c) {
     var pts = c.getPolygon().getPoints();
     double minX = pts.stream().mapToDouble(p -> p.x()).min().orElseThrow();
