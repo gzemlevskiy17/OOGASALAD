@@ -78,9 +78,7 @@ public class RevoluteJoint extends AbstractJoint {
       solveAngularLimit();
       return;
     }
-    double excessScale = (magnitude - ANCHOR_POSITION_SLOP) / magnitude;
-    Vector correction = delta.multiply(VECTOR_CORRECTION * excessScale);
-    applyLinearCorrection(correction, correction.multiply(-1));
+    applyAnchorPositionCorrection(VECTOR_CORRECTION);
     solveAngularLimit();
   }
 

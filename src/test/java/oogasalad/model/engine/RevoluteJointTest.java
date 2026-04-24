@@ -1,6 +1,7 @@
 package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import oogasalad.model.engine.api.Vector;
@@ -19,12 +20,11 @@ class RevoluteJointTest {
     RevoluteJoint joint = new RevoluteJoint(objectA, objectB, new Vector(2, 0), new Vector(-1, 0));
 
     objectB.getStaticState().setLinearPosition(new Vector(5, 0));
+    double initialError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
     joint.apply(1.0);
 
-    assertEquals(1.0, objectA.getX(), 1e-9);
-    assertEquals(4.0, objectB.getX(), 1e-9);
-    assertEquals(joint.getWorldAnchorA().x(), joint.getWorldAnchorB().x(), 1e-9);
-    assertEquals(joint.getWorldAnchorA().y(), joint.getWorldAnchorB().y(), 1e-9);
+    double remainingError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
+    assertTrue(remainingError < initialError);
   }
 
   @Test
@@ -34,14 +34,26 @@ class RevoluteJointTest {
     RevoluteJoint joint = new RevoluteJoint(dynamic, fixed, new Vector(2, 0), new Vector(0, 0));
 
     dynamic.getStaticState().setAngularPosition(0.0);
+    double initialError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
     joint.apply(1.0);
 
-    assertEquals(0.0, dynamic.getX(), 1e-9);
-    assertEquals(6.0, dynamic.getY(), 1e-9);
     assertEquals(2.0, fixed.getX(), 1e-9);
     assertEquals(6.0, fixed.getY(), 1e-9);
-    assertEquals(joint.getWorldAnchorA().x(), joint.getWorldAnchorB().x(), 1e-9);
-    assertEquals(joint.getWorldAnchorA().y(), joint.getWorldAnchorB().y(), 1e-9);
+    double remainingError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
+    assertTrue(remainingError < initialError);
+  }
+
+  @Test
+  void apply_offCenterAnchorUsesAngularCorrection() {
+    TestDynamicComponent frame = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent wheel = new TestDynamicComponent(0, 60, 0);
+    RevoluteJoint joint = new RevoluteJoint(frame, wheel, new Vector(0, 60), new Vector(0, 0));
+
+    frame.getStaticState().setAngularPosition(0.2);
+    joint.apply(1.0);
+
+    assertTrue(Math.abs(frame.getRotation()) < 0.2,
+        "Off-center axle correction should rotate the frame back toward the wheel anchor");
   }
 
   @Test
