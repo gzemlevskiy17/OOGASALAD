@@ -81,6 +81,11 @@ public abstract class DynamicComponent extends RigidBody {
     this.affectedByGravity = affectedByGravity;
   }
 
+  @Override
+  public boolean isTrigger() {
+    return false;
+  }
+
   public double getMomentOfInertia() {
     return momentOfInertia;
   }
