@@ -1,5 +1,6 @@
 package oogasalad.controller.core.internal;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -10,6 +11,7 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
+import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.model.auth.api.AuthFactory;
@@ -17,8 +19,11 @@ import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
 import oogasalad.model.player.api.PlayHistoryRepository;
 import oogasalad.model.player.api.ScoreCalculator;
+import oogasalad.model.player.api.UserProgression;
+import oogasalad.model.player.api.UserProgressionRepository;
 import oogasalad.model.player.internal.ScoreCalculatorImpl;
 import oogasalad.model.player.internal.SqlitePlayHistoryRepo;
+import oogasalad.model.player.internal.UserProgressionRepo;
 import oogasalad.view.accounts.internal.CreateAccountScreen;
 import oogasalad.view.accounts.internal.LoginScreen;
 import oogasalad.view.accounts.internal.ProfileScreen;
@@ -56,6 +61,7 @@ public class ScreenFactory {
   private final AuthController authController;
   private final PlayHistoryRepository playHistoryRepo = new SqlitePlayHistoryRepo();
   private final ScoreCalculator scoreCalculator = new ScoreCalculatorImpl();
+  private final UserProgressionRepository userProgressionRepo = new UserProgressionRepo();
 
   // Player screens stored as fields so the vehicle layout can be read before gameplay starts
   private VehicleBuilderAppScreen vehicleBuilderScreen;
@@ -104,6 +110,16 @@ public class ScreenFactory {
       throw new IllegalArgumentException("No level file mapped for: " + mapKey);
     }
     selectedLevelPath.set(levelPath);
+    saveUserProgressionCursor(worldKey, levelKey);
+  }
+
+  private void saveUserProgressionCursor(String worldKey, String levelKey) {
+    String username = currentUsernameOrNull();
+    if (username == null) {
+      return;
+    }
+    userProgressionRepo.save(new UserProgression(
+        username, new LevelId(worldKey, levelKey), Instant.now()));
   }
 
   /**
