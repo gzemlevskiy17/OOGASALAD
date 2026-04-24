@@ -3,6 +3,7 @@ package oogasalad.model.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,7 @@ public class GameEngineImpl implements GameEngine {
   private static final int DEFAULT_SUB_STEP_COUNT = 4;
   private static final double MAX_FRAME_TIME = 0.25;
   private static final double AABB_MARGIN = 1e-6;
+  private static final double CCD_SKIN = 1e-4;
 
   /**
    * Total order for building a stable key for the unordered pair {A, B}. Same two instances always
@@ -310,6 +312,7 @@ public class GameEngineImpl implements GameEngine {
     for (GameObject gameObject : world.getObjects()) {
       gameObject.updatePolygon();
     }
+    Map<DynamicComponent, MotionSnapshot> previousMotion = captureDynamicMotion();
 
     applyAllJointConstraints(elapsedTime, 1);
 
@@ -323,6 +326,8 @@ public class GameEngineImpl implements GameEngine {
         dynamicComponent.integrateObjectState(elapsedTime);
       }
     }
+
+    resolveSweptStaticCollisions(previousMotion);
 
     // update the polygon for the second time after the computation
     for (GameObject gameObject : world.getObjects()) {
@@ -473,6 +478,96 @@ public class GameEngineImpl implements GameEngine {
     return null;
   }
 
+  private Map<DynamicComponent, MotionSnapshot> captureDynamicMotion() {
+    Map<DynamicComponent, MotionSnapshot> motion = new HashMap<>();
+    for (GameObject object : world.getObjects()) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        motion.put(dynamicComponent, new MotionSnapshot(BoundingBox.from(dynamicComponent),
+            dynamicComponent.getStaticState().getLinearPosition()));
+      }
+    }
+    return motion;
+  }
+
+  private void resolveSweptStaticCollisions(Map<DynamicComponent, MotionSnapshot> previousMotion) {
+    for (GameObject dynamicObject : world.getObjects()) {
+      if (!(dynamicObject instanceof DynamicComponent dynamicComponent)) {
+        continue;
+      }
+      MotionSnapshot start = previousMotion.get(dynamicComponent);
+      if (start == null) {
+        continue;
+      }
+      BoundingBox end = BoundingBox.from(dynamicComponent);
+      Vector displacement = end.center().subtract(start.bounds().center());
+      SweptHit earliestHit = null;
+      for (GameObject staticObject : world.getObjects()) {
+        if (staticObject == dynamicObject || !(staticObject instanceof StaticComponent)) {
+          continue;
+        }
+        BoundingBox staticBounds = BoundingBox.from(staticObject);
+        if (end.overlaps(staticBounds)) {
+          continue;
+        }
+        SweptHit hit = sweepAgainstStatic(start.bounds(), staticBounds, displacement);
+        if (hit != null && (earliestHit == null || hit.time() < earliestHit.time())) {
+          earliestHit = hit;
+        }
+      }
+      if (earliestHit != null) {
+        applySweptHit(dynamicComponent, start.position(), displacement, earliestHit);
+      }
+    }
+  }
+
+  private SweptHit sweepAgainstStatic(BoundingBox movingStart, BoundingBox staticBounds,
+      Vector displacement) {
+    AxisSweep xSweep = sweepAxis(movingStart.minX(), movingStart.maxX(), staticBounds.minX(),
+        staticBounds.maxX(), displacement.x());
+    AxisSweep ySweep = sweepAxis(movingStart.minY(), movingStart.maxY(), staticBounds.minY(),
+        staticBounds.maxY(), displacement.y());
+    if (!xSweep.canHit() || !ySweep.canHit()) {
+      return null;
+    }
+
+    double entryTime = Math.max(xSweep.entryTime(), ySweep.entryTime());
+    double exitTime = Math.min(xSweep.exitTime(), ySweep.exitTime());
+    if (entryTime < 0.0 || entryTime > 1.0 || entryTime > exitTime) {
+      return null;
+    }
+
+    Vector normal = xSweep.entryTime() > ySweep.entryTime()
+        ? new Vector(-Math.signum(displacement.x()), 0)
+        : new Vector(0, -Math.signum(displacement.y()));
+    return new SweptHit(entryTime, normal);
+  }
+
+  private AxisSweep sweepAxis(double movingMin, double movingMax, double staticMin,
+      double staticMax, double delta) {
+    if (Math.abs(delta) <= AABB_MARGIN) {
+      boolean alreadyOverlapping = movingMax >= staticMin && staticMax >= movingMin;
+      return alreadyOverlapping
+          ? new AxisSweep(true, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)
+          : new AxisSweep(false, 0.0, 0.0);
+    }
+    double entryDistance = delta > 0.0 ? staticMin - movingMax : staticMax - movingMin;
+    double exitDistance = delta > 0.0 ? staticMax - movingMin : staticMin - movingMax;
+    return new AxisSweep(true, entryDistance / delta, exitDistance / delta);
+  }
+
+  private void applySweptHit(DynamicComponent component, Vector startCenter, Vector displacement,
+      SweptHit hit) {
+    double safeTime = Math.max(0.0, hit.time() - CCD_SKIN);
+    component.getStaticState().setLinearPosition(startCenter.add(displacement.multiply(safeTime)));
+    Vector velocity = component.getDynamicState().getLinearVelocity();
+    double normalVelocity = velocity.dot(hit.normal());
+    if (normalVelocity < 0.0) {
+      component.getDynamicState().setLinearVelocity(
+          velocity.subtract(hit.normal().multiply(normalVelocity)));
+    }
+    component.updatePolygon();
+  }
+
   private record BoundingBox(double minX, double minY, double maxX, double maxY) {
 
     private static BoundingBox from(GameObject object) {
@@ -495,5 +590,18 @@ public class GameEngineImpl implements GameEngine {
           && maxY + AABB_MARGIN >= other.minY
           && other.maxY + AABB_MARGIN >= minY;
     }
+
+    private Vector center() {
+      return new Vector((minX + maxX) / 2.0, (minY + maxY) / 2.0);
+    }
+  }
+
+  private record AxisSweep(boolean canHit, double entryTime, double exitTime) {
+  }
+
+  private record SweptHit(double time, Vector normal) {
+  }
+
+  private record MotionSnapshot(BoundingBox bounds, Vector position) {
   }
 }

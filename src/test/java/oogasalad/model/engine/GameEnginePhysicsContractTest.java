@@ -157,6 +157,24 @@ class GameEnginePhysicsContractTest {
             .y());
   }
 
+  @Test
+  void fastBody_sweptCollisionStopsBeforeThinStaticWall() {
+    World world = new WorldImpl();
+    TestBox body = new TestBox(0, 5, 1, 1, 1.0, 0.0, false);
+    body.getDynamicState().setLinearVelocity(new oogasalad.model.engine.api.Vector(1000, 0));
+    TerrainBlock wall = new TerrainBlock(10, 0, 1, 20, "wall.png", false, 0.4, "#888888", 0.0);
+    world.addComponent(body);
+    world.addComponent(wall);
+
+    GameEngineImpl engine = new GameEngineImpl(world, new CollisionDetectorImpl());
+    engine.step(DT);
+
+    assertTrue(body.getStaticState().getLinearPosition().x() + 1 <= 10.0,
+        "Fast body should stop before tunneling through the wall, got x="
+            + body.getStaticState().getLinearPosition().x());
+    assertEquals(0.0, body.getDynamicState().getLinearVelocity().x(), EPS);
+  }
+
   // --- Test: no lateral motion when the only net force is vertical gravity ---
 
   /**
