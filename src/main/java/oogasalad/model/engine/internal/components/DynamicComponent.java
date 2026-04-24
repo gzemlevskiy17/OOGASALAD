@@ -27,10 +27,18 @@ public abstract class DynamicComponent extends RigidBody {
       double restitution, boolean affectedByGravity) {
     super(x, y, rotation, polygon, tag, friction, restitution);
     this.dynamicState = new DynamicState();
-    this.mass = mass;
-    this.momentOfInertia = momentOfInertia;
+    setMass(mass);
+    setMomentOfInertia(momentOfInertia);
     this.affectedByGravity = affectedByGravity;
     this.force = new Vector(0, 0);
+  }
+
+  /**
+   * Compatibility constructor for lightweight engine tests.
+   */
+  public DynamicComponent(double x, double y, double rotation, double mass, double restitution) {
+    this(x, y, rotation, ConvexPolygon.axisAlignedBox(x, y, 1, 1), "", 0.0, mass, 1.0,
+        restitution, false);
   }
 
   /**
@@ -65,11 +73,17 @@ public abstract class DynamicComponent extends RigidBody {
 
   @Override
   public double getInverseMass() {
+    if (mass <= 0.0) {
+      return 0.0;
+    }
     return 1 / mass;
   }
 
   @Override
   public double getInverseMomentOfInertia() {
+    if (momentOfInertia <= 0.0) {
+      return 0.0;
+    }
     return 1 / momentOfInertia;
   }
 
@@ -81,11 +95,20 @@ public abstract class DynamicComponent extends RigidBody {
     this.affectedByGravity = affectedByGravity;
   }
 
+  @Override
+  public boolean isTrigger() {
+    return false;
+  }
+
   public double getMomentOfInertia() {
     return momentOfInertia;
   }
 
   public void setMomentOfInertia(double momentOfInertia) {
+    if (momentOfInertia < 0) {
+      throw new IllegalArgumentException(
+          EngineError.MOMENT_OF_INERTIA_MUST_BE_NON_NEGATIVE.message());
+    }
     this.momentOfInertia = momentOfInertia;
   }
 

@@ -52,6 +52,8 @@ import oogasalad.model.engine.internal.joints.RevoluteJoint;
  */
 public class GameEngineImpl implements GameEngine {
 
+  private static final Vector DEFAULT_GRAVITY = new Vector(0, 980);
+
   /**
    * Total order for building a stable key for the unordered pair {A, B}. Same two instances always
    * map to the same list regardless of which was passed as "first" in the double loop.
@@ -61,13 +63,12 @@ public class GameEngineImpl implements GameEngine {
           .thenComparingInt(Object::hashCode)
           .thenComparing(o -> o.getClass().getName())
           .thenComparing(GameObject::getTag, Comparator.nullsFirst(Comparator.naturalOrder()));
-  private final Vector gravityVector = new Vector(0,
-      980); // Change in the future (inject levelAttributes)
+  private final Vector gravityVector;
   private final World world;
   private final CollisionDetector collisionDetector;
   private static final int JOINT_SOLVER_ITERATIONS = 8;
   private final CollisionDispatcher collisionDispatcher;
-  private final boolean loggedPairsOnce = false;
+  private final CollisionSolver overrideCollisionSolver;
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -87,9 +88,31 @@ public class GameEngineImpl implements GameEngine {
    * @param collisionDetector pairwise detector used to build collision records
    */
   public GameEngineImpl(World world, CollisionDetector collisionDetector) {
+    this(world, collisionDetector, null, DEFAULT_GRAVITY);
+  }
+
+  /**
+   * Compatibility constructor for tests and callers that inject a single response strategy.
+   */
+  public GameEngineImpl(World world, CollisionDetector collisionDetector,
+      CollisionSolver collisionSolver) {
+    this(world, collisionDetector, collisionSolver, DEFAULT_GRAVITY);
+  }
+
+  /**
+   * Creates an engine with explicit gravity, keeping per-level physics configuration injectable.
+   */
+  public GameEngineImpl(World world, CollisionDetector collisionDetector, Vector gravityVector) {
+    this(world, collisionDetector, null, gravityVector);
+  }
+
+  private GameEngineImpl(World world, CollisionDetector collisionDetector,
+      CollisionSolver collisionSolver, Vector gravityVector) {
     this.world = world;
     this.collisionDetector = collisionDetector;
     this.collisionDispatcher = new CollisionDispatcher();
+    this.overrideCollisionSolver = collisionSolver;
+    this.gravityVector = gravityVector;
   }
 
   private static List<GameObject> canonicalUnorderedPair(GameObject a, GameObject b) {
@@ -180,9 +203,6 @@ public class GameEngineImpl implements GameEngine {
     return joint instanceof DistanceJoint distanceJoint && distanceJoint.isRigid();
   }
 
-  private static final String VEHICLE_TAG = "vehicle";
-  private static final String PIGS_TAG = "pigs";
-
   private void applyForces(Collection<GameObject> objects) {
     for (GameObject object : objects) {
       if (object instanceof DynamicComponent dynamicComponent) {
@@ -203,11 +223,6 @@ public class GameEngineImpl implements GameEngine {
         dynamicComponent.resetForce();
       }
     }
-  }
-
-  private static boolean isPigVehiclePair(String tagA, String tagB) {
-    return (PIGS_TAG.equals(tagA) && VEHICLE_TAG.equals(tagB))
-        || (VEHICLE_TAG.equals(tagA) && PIGS_TAG.equals(tagB));
   }
 
   private static void applyDynamicDynamicPositionCorrection(DynamicComponent objectA,
@@ -265,13 +280,11 @@ public class GameEngineImpl implements GameEngine {
       }
     }
 
+    handleCollisions(true);
+
     // ---- Collision + joint solve ----
-    // Exactly one impulse pass per frame. Applying impulse inside the iteration loop
-    // compounds it every iteration: the first impulse already zeros closing velocity,
-    // but re-detection picks up floating-point residuals and joint velocity equalization
-    // shuffles velocity between connected bodies, so another full impulse fires, and
-    // another. The body launches upward, gravity slams it back next frame, and the
-    // result is the visible jitter. The loop below refines geometry only.
+    // Exactly one impulse pass per frame. Later iterations only refine geometry, matching the
+    // split between velocity solve and positional correction used by sequential impulse engines.
     for (int i = 0; i < JOINT_SOLVER_ITERATIONS; i++) {
       applyVelocityJointConstraints();
       applyPositionJointConstraints(elapsedTime, 1);
@@ -280,7 +293,7 @@ public class GameEngineImpl implements GameEngine {
           go.updatePolygon();
         }
       }
-      handleCollisions(true);
+      handleCollisions(false);
     }
   }
 
@@ -345,6 +358,10 @@ public class GameEngineImpl implements GameEngine {
         collisionPair = findSuperClass(collisionPair);
       }
 
+      if (collisionPair == null) {
+        continue;
+      }
+
       if (!collisionPair.objectA().isAssignableFrom(objectA.getClass())) {
         GameObject temp = objectA;
         objectA = objectB;
@@ -352,7 +369,12 @@ public class GameEngineImpl implements GameEngine {
       }
 
       if (applyImpulse) {
-        collisionDispatcher.getSolverMap().get(collisionPair).solve(objectA, objectB, collision);
+        CollisionSolver solver = overrideCollisionSolver == null
+            ? collisionDispatcher.getSolverMap().get(collisionPair)
+            : overrideCollisionSolver;
+        if (solver != null) {
+          solver.solve(objectA, objectB, collision);
+        }
       } else {
         solveCollisionPositionOnly(collisionPair, objectA, objectB, collision);
       }
@@ -395,11 +417,5 @@ public class GameEngineImpl implements GameEngine {
           new CollisionPair(collisionPair.objectA(), collisionPair.objectB().getSuperclass()));
     }
     return null;
-  }
-
-  private void applyJointConstraints(double elapsedTime) {
-    for (Joint joint : world.getJoints()) {
-      joint.apply(elapsedTime);
-    }
   }
 }

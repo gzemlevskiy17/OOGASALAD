@@ -24,7 +24,7 @@ class GameEnginePhysicsContractTest {
    * Must match {@link GameEngineImpl}'s gravity force-per-mass in Y (see gravity vector in
    * engine).
    */
-  private static final double G = -9.8;
+  private static final double G = 980.0;
   private static final double DT = 1.0 / 60.0;
 
   private static int expectedUnorderedNonStaticPairs(int dynCount) {

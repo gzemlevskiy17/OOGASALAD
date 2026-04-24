@@ -19,12 +19,12 @@ class GameEngineImplTest {
 
   private static final double EPS = 1e-9;
   /**
-   * Must match {@link GameEngineImpl} hardcoded gravity (y acceleration).
+   * Must match {@link GameEngineImpl} default gravity (screen-space positive y).
    */
-  private static final double G = -9.8;
+  private static final double G = 980.0;
 
   private static final CollisionDetector NO_HITS = (a, b) -> Optional.empty();
-  private static final CollisionSolver NO_SOLVE = c -> {
+  private static final CollisionSolver NO_SOLVE = (a, b, c) -> {
   };
 
   private static DynamicComponent box(double mass, double x, double y, boolean gravity) {

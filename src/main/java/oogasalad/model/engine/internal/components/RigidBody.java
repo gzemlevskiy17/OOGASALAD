@@ -20,8 +20,8 @@ public abstract class RigidBody extends GameComponent {
   public RigidBody(double x, double y, double rotation, ConvexPolygon polygon,
       String tag, double friction, double restitution) {
     super(x, y, rotation, polygon, tag);
-    this.friction = friction;
-    this.restitution = restitution;
+    setFriction(friction);
+    setRestitution(restitution);
   }
 
 
@@ -41,6 +41,9 @@ public abstract class RigidBody extends GameComponent {
   }
 
   public void setRestitution(double restitution) {
+    if (restitution < 0 || restitution > 1) {
+      throw new IllegalArgumentException(EngineError.RESTITUTION_OUT_OF_RANGE.message());
+    }
     this.restitution = restitution;
   }
 
