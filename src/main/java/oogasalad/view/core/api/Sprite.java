@@ -13,6 +13,8 @@ import oogasalad.view.core.internal.SpriteCache;
  */
 public sealed interface Sprite permits SingleSprite, LayeredSprite {
 
+  String USES_RENDERABLE_ROTATION_KEY = "oogasalad.view.core.api.Sprite.usesRenderableRotation";
+
   double width();
 
   double height();
@@ -30,7 +32,15 @@ public sealed interface Sprite permits SingleSprite, LayeredSprite {
     node.setManaged(false);
     node.setTranslateX(-width() / 2);
     node.setTranslateY(-height() / 2);
+    node.getProperties().put(USES_RENDERABLE_ROTATION_KEY, usesRenderableRotation());
     return node;
+  }
+
+  /**
+   * Whether the renderer should rotate the entire sprite node using the body rotation.
+   */
+  default boolean usesRenderableRotation() {
+    return true;
   }
 
   /**

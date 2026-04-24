@@ -8,6 +8,7 @@ import javafx.scene.layout.Pane;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
+import oogasalad.view.core.api.Sprite;
 import org.junit.jupiter.api.Test;
 
 class RendererImplTest {
@@ -37,6 +38,22 @@ class RendererImplTest {
 
     assertEquals(15.0, layer.getChildren().getFirst().getLayoutX(), 1e-9);
     assertEquals(30.0, layer.getChildren().getFirst().getLayoutY(), 1e-9);
+  }
+
+  @Test
+  void render_respectsSpriteOptOutFromBodyRotation() {
+    Pane layer = new Pane();
+    RendererImpl renderer = new RendererImpl(layer, renderable -> {
+      Rectangle node = new Rectangle(10, 10);
+      node.getProperties().put(Sprite.USES_RENDERABLE_ROTATION_KEY, false);
+      return node;
+    }, (renderable, node) -> {
+    });
+    Renderable object = new RenderableImpl(25, 50, Math.PI / 2.0);
+
+    renderer.render(new FixedCamera(), List.of(object));
+
+    assertEquals(0.0, layer.getChildren().getFirst().getRotate(), 1e-9);
   }
 
   private static final class FixedCamera implements Camera {

@@ -14,6 +14,7 @@ import javafx.scene.shape.Circle;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
+import oogasalad.view.core.api.Sprite;
 
 public class RendererImpl implements Renderer {
 
@@ -68,9 +69,13 @@ public class RendererImpl implements Renderer {
     node.setManaged(false);
     node.setLayoutX(object.getX() - camera.getX());
     node.setLayoutY(object.getY() - camera.getY());
-    node.setRotate(Math.toDegrees(object.getRotation()));
+    node.setRotate(usesRenderableRotation(node) ? Math.toDegrees(object.getRotation()) : 0.0);
     node.setVisible(true);
     frameUpdater.accept(object, node);
+  }
+
+  private boolean usesRenderableRotation(Node node) {
+    return !Boolean.FALSE.equals(node.getProperties().get(Sprite.USES_RENDERABLE_ROTATION_KEY));
   }
 
   private Node createAndAttachNode(Renderable object) {

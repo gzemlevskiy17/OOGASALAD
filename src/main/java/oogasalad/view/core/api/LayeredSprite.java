@@ -30,6 +30,11 @@ public record LayeredSprite(String hubPath, String wheelPath, double width, doub
   }
 
   @Override
+  public boolean usesRenderableRotation() {
+    return false;
+  }
+
+  @Override
   public void update(Node node, double linearSpeed) {
     if (linearSpeed < STATIONARY_SPEED_THRESHOLD) {
       return;
