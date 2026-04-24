@@ -351,22 +351,21 @@ public class GameEngineImpl implements GameEngine {
       }
     }
 
-    handleCollisions(true);
+    solveConstraints(elapsedTime);
+    updateSleepStates(world.getObjects(), elapsedTime);
+  }
 
-    // ---- Collision + joint solve ----
-    // Exactly one impulse pass per frame. Later iterations only refine geometry, matching the
-    // split between velocity solve and positional correction used by sequential impulse engines.
+  private void solveConstraints(double elapsedTime) {
     for (int i = 0; i < JOINT_SOLVER_ITERATIONS; i++) {
       applyVelocityJointConstraints();
+      handleCollisions(i == 0);
       applyPositionJointConstraints(elapsedTime, 1);
       for (GameObject go : world.getObjects()) {
         if (go instanceof DynamicComponent) {
           go.updatePolygon();
         }
       }
-      handleCollisions(false);
     }
-    updateSleepStates(world.getObjects(), elapsedTime);
   }
 
   //TODO: implement solving of collisions in multiple small steps
