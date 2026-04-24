@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import oogasalad.model.engine.api.CollisionDetector;
+import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.PigComponent;
@@ -210,6 +211,25 @@ class GameEnginePhysicsContractTest {
     assertEquals(0.0, body.getDynamicState().getLinearVelocity().x(), EPS);
   }
 
+  @Test
+  void fastFallingBody_sweptGroundHitReachesContactSolver() {
+    World world = new WorldImpl();
+    TestBox body = new TestBox(0, 0, 1, 1, 1.0, 0.0, false);
+    body.getDynamicState().setLinearVelocity(new oogasalad.model.engine.api.Vector(0, 1000));
+    TerrainBlock floor = new TerrainBlock(-10, 10, 20, 1, "floor.png", false, 0.4, "#888888",
+        0.0);
+    world.addComponent(body);
+    world.addComponent(floor);
+    CountingCollisionSolver solver = new CountingCollisionSolver();
+
+    GameEngineImpl engine = new GameEngineImpl(world, new CollisionDetectorImpl(), solver);
+    engine.step(DT);
+
+    assertTrue(solver.getSolveCount() > 0,
+        "Swept vertical contacts should create a small overlap for the impulse solver, "
+            + "so off-center contact manifolds can generate angular response.");
+  }
+
   // --- Test: no lateral motion when the only net force is vertical gravity ---
 
   /**
@@ -273,6 +293,20 @@ class GameEnginePhysicsContractTest {
     public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
       narrowPhaseCalls.incrementAndGet();
       return inner.detectCollision(objectA, objectB);
+    }
+  }
+
+  private static final class CountingCollisionSolver implements CollisionSolver {
+
+    private final AtomicInteger solveCount = new AtomicInteger(0);
+
+    int getSolveCount() {
+      return solveCount.get();
+    }
+
+    @Override
+    public void solve(GameObject objectA, GameObject objectB, Collision collision) {
+      solveCount.incrementAndGet();
     }
   }
 }

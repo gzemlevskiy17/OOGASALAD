@@ -151,6 +151,18 @@ class DynamicComponentTest {
     assertEquals(0, body.getForce().magnitude(), EPS);
   }
 
+  @Test
+  void addForce_nonZeroForceWakesSleepingBody() {
+    DynamicComponent body = newBody(2, 0, 0);
+    body.setSleeping(true);
+
+    body.addForce(new Vector(0, 10));
+    body.applyForceToAcceleration();
+
+    assertTrue(!body.isSleeping());
+    assertEquals(5, body.getDynamicState().getLinearAcceleration().y(), EPS);
+  }
+
   @ParameterizedTest
   @MethodSource("forceMassToAcceleration")
   void applyForceToAcceleration_parameterized(

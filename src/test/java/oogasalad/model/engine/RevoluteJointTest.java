@@ -57,6 +57,22 @@ class RevoluteJointTest {
   }
 
   @Test
+  void apply_offCenterAnchorCorrectsMostErrorInOneSolve() {
+    TestDynamicComponent frame = new TestDynamicComponent(60, 0, 0);
+    TestDynamicComponent wheel = new TestDynamicComponent(0, 0, 0);
+    RevoluteJoint joint = new RevoluteJoint(wheel, frame, new Vector(0, 0), new Vector(-60, 0));
+
+    frame.getStaticState().setLinearPosition(new Vector(60, 10));
+    double initialError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
+    joint.apply(1.0);
+    double remainingError = joint.getWorldAnchorB().subtract(joint.getWorldAnchorA()).magnitude();
+
+    assertTrue(remainingError < initialError * 0.5,
+        "Axle constraint should quickly convert anchor error into translation/rotation. initial="
+            + initialError + " remaining=" + remainingError);
+  }
+
+  @Test
   void constructor_rejectsAnchorsThatDoNotInitiallyShareAPivot() {
     TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
     TestDynamicComponent objectB = new TestDynamicComponent(5, 0, 0);

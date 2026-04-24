@@ -31,4 +31,25 @@ class LayeredSpriteTest {
     assertEquals(Math.toDegrees((120.0 / 30.0) * (1.0 / 60.0)),
         node.getChildren().get(0).getRotate(), 1e-9);
   }
+
+  @Test
+  void update_negativeRollingSpeedSpinsWheelBackward() {
+    LayeredSprite sprite = new LayeredSprite("missing-hub.png", "missing-wheel.png", 60, 60);
+    Group node = (Group) sprite.render(new SpriteCache());
+
+    sprite.update(node, -120.0);
+
+    assertEquals(Math.toDegrees((-120.0 / 30.0) * (1.0 / 60.0)),
+        node.getChildren().get(0).getRotate(), 1e-9);
+  }
+
+  @Test
+  void update_zeroRollingSpeedDoesNotSpinWheel() {
+    LayeredSprite sprite = new LayeredSprite("missing-hub.png", "missing-wheel.png", 60, 60);
+    Group node = (Group) sprite.render(new SpriteCache());
+
+    sprite.update(node, 0.0);
+
+    assertEquals(0.0, node.getChildren().get(0).getRotate(), 1e-9);
+  }
 }

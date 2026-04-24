@@ -149,7 +149,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
           double speed = 0.0;
           if (r instanceof DynamicComponent dyn) {
             Vector v = dyn.getDynamicState().getLinearVelocity();
-            speed = Math.hypot(v.x(), v.y());
+            speed = v.x();
           }
           sprite.update(node, speed);
           Renderable connectorRotationSource = wheelConnectorRotationSources.get(r);
