@@ -117,16 +117,12 @@ public class VehicleFactory {
         || specB.jointStyle() == JointStyle.WHEEL;
 
     if (wheelInvolved) {
-      Vector localAnchorA;
-      Vector localAnchorB;
-      if (Math.abs(delta.x()) < 1e-6) {
-        double dir = Math.signum(delta.y());
-        localAnchorA = new Vector(0, dir * specA.bodyHeight() / 2.0);
-        localAnchorB = new Vector(0, -dir * specB.bodyHeight() / 2.0);
+      Vector localAnchorA = new Vector(0, 0);
+      Vector localAnchorB = new Vector(0, 0);
+      if (specA.jointStyle() == JointStyle.WHEEL) {
+        localAnchorB = posA.subtract(posB);
       } else {
-        double dir = Math.signum(delta.x());
-        localAnchorA = new Vector(dir * specA.bodyWidth() / 2.0, 0);
-        localAnchorB = new Vector(-dir * specB.bodyWidth() / 2.0, 0);
+        localAnchorA = delta;
       }
       return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
     }
