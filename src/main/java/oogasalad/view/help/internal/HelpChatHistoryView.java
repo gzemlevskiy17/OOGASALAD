@@ -5,8 +5,10 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import oogasalad.model.help.api.ChatMessage;
 
@@ -54,13 +56,20 @@ public class HelpChatHistoryView {
 
     Label bubble = new Label(message.content());
     bubble.setWrapText(true);
+    bubble.setTextOverrun(OverrunStyle.CLIP);
     bubble.setMaxWidth(d("messageMaxWidth"));
+    bubble.setMinHeight(Region.USE_PREF_SIZE);
+    bubble.setPrefHeight(Region.USE_COMPUTED_SIZE);
+    bubble.setMaxHeight(Region.USE_PREF_SIZE);
     bubble.getStyleClass().add(s("chatBubbleStyleClass"));
     bubble.getStyleClass().add(resolveRoleStyleClass(message.role()));
 
     HBox messageBox = new HBox(bubble);
+    messageBox.setFillHeight(true);
     messageBox.setAlignment(resolveAlignment(message.role()));
     chatHistory.getChildren().add(messageBox);
+    root.layout();
+    root.setVvalue(1.0);
   }
 
   /**
