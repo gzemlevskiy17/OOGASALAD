@@ -117,12 +117,14 @@ public class VehicleFactory {
         || specB.jointStyle() == JointStyle.WHEEL;
 
     if (wheelInvolved) {
-      GameComponent wheel = specA.jointStyle() == JointStyle.WHEEL ? a : b;
-      GameComponent chassis = wheel == a ? b : a;
-      Vector wheelPosition = wheel.getStaticState().getLinearPosition();
-      Vector chassisPosition = chassis.getStaticState().getLinearPosition();
-      return new RevoluteJoint(wheel, chassis, new Vector(0, 0),
-          wheelPosition.subtract(chassisPosition));
+      Vector localAnchorA = new Vector(0, 0);
+      Vector localAnchorB = new Vector(0, 0);
+      if (specA.jointStyle() == JointStyle.WHEEL) {
+        localAnchorB = posA.subtract(posB);
+      } else {
+        localAnchorA = delta;
+      }
+      return new RevoluteJoint(a, b, localAnchorA, localAnchorB);
     }
 
     Vector localAnchorA;

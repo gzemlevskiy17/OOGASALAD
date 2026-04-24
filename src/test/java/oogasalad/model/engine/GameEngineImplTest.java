@@ -21,7 +21,7 @@ class GameEngineImplTest {
   /**
    * Must match {@link GameEngineImpl} default gravity (screen-space positive y).
    */
-  private static final double G = 98.0;
+  private static final double G = 980.0;
   private static final double FIXED_DT = 1.0 / 60.0;
   private static final int SUB_STEPS = 4;
 

@@ -53,7 +53,7 @@ import oogasalad.model.engine.internal.joints.RevoluteJoint;
  */
 public class GameEngineImpl implements GameEngine {
 
-  private static final Vector DEFAULT_GRAVITY = new Vector(0, 98);
+  private static final Vector DEFAULT_GRAVITY = new Vector(0, 980);
   private static final double DEFAULT_FIXED_TIME_STEP = 1.0 / 60.0;
   private static final int DEFAULT_SUB_STEP_COUNT = 4;
   private static final double MAX_FRAME_TIME = 0.25;
