@@ -1,7 +1,7 @@
 package oogasalad.controller.core.internal;
 
+import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
@@ -14,6 +14,8 @@ import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelLoaderImpl;
+import oogasalad.data.internal.LevelProgression;
+import oogasalad.data.internal.LevelScanner;
 import oogasalad.model.auth.api.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
@@ -23,7 +25,7 @@ import oogasalad.model.player.api.UserProgression;
 import oogasalad.model.player.api.UserProgressionRepository;
 import oogasalad.model.player.internal.ScoreCalculatorImpl;
 import oogasalad.model.player.internal.SqlitePlayHistoryRepo;
-import oogasalad.model.player.internal.UserProgressionRepo;
+import oogasalad.model.player.internal.SqliteUserProgressionRepo;
 import oogasalad.view.accounts.internal.CreateAccountScreen;
 import oogasalad.view.accounts.internal.LoginScreen;
 import oogasalad.view.accounts.internal.ProfileScreen;
@@ -61,7 +63,7 @@ public class ScreenFactory {
   private final AuthController authController;
   private final PlayHistoryRepository playHistoryRepo = new SqlitePlayHistoryRepo();
   private final ScoreCalculator scoreCalculator = new ScoreCalculatorImpl();
-  private final UserProgressionRepository userProgressionRepo = new UserProgressionRepo();
+  private final UserProgressionRepository userProgressionRepo = new SqliteUserProgressionRepo();
 
   // Player screens stored as fields so the vehicle layout can be read before gameplay starts
   private VehicleBuilderAppScreen vehicleBuilderScreen;
@@ -82,17 +84,17 @@ public class ScreenFactory {
   private Consumer<String> activeErrorDisplay = msg -> {
   };
 
-  // LEVEL PATH MAP
-  private static final Map<String, String> LEVEL_PATHS = Map.of(
-      "forest_first", "data/levels/forest/first.json",
-      "desert_first", "data/levels/desert/first.json",
-      "moon_first", "data/levels/moon/first.json",
-      "glacier_first", "data/levels/glacier/first.json",
-      "mars_first", "data/levels/mars/first.json"
-  );
+  // Level catalog: scan the filesystem once, feed the result into LevelProgression so
+  // ordering/unlock logic can query it. Selected level is held as a LevelId; the path is
+  // computed only at the moment the gameplay session asks for it.
+  private final LevelProgression progression = new LevelProgression(
+      new LevelScanner().scan(Path.of("data", "levels")).worldsToLevels());
 
-  private final AtomicReference<String> selectedLevelPath =
-      new AtomicReference<>(LEVEL_PATHS.get("forest_first"));
+  private final AtomicReference<LevelId> selectedLevel = new AtomicReference<>(defaultLevel());
+
+  private LevelId defaultLevel() {
+    return progression.all().isEmpty() ? null : progression.all().get(0);
+  }
 
   public ScreenFactory(ScreenManager screenManager) {
     this.screenManager = screenManager;
@@ -104,12 +106,11 @@ public class ScreenFactory {
   }
 
   private void onLevelSelected(String worldKey, String levelKey) {
-    String mapKey = worldKey + "_" + levelKey;
-    String levelPath = LEVEL_PATHS.get(mapKey);
-    if (levelPath == null) {
-      throw new IllegalArgumentException("No level file mapped for: " + mapKey);
+    LevelId id = new LevelId(worldKey, levelKey);
+    if (!progression.all().contains(id)) {
+      throw new IllegalArgumentException("Unknown level: " + id);
     }
-    selectedLevelPath.set(levelPath);
+    selectedLevel.set(id);
     saveUserProgressionCursor(worldKey, levelKey);
   }
 
@@ -147,7 +148,7 @@ public class ScreenFactory {
     LevelLoader levelLoader = new LevelLoaderImpl();
     GameplaySessionFactoryImpl sessionFactory = new GameplaySessionFactoryImpl(
         levelLoader,
-        selectedLevelPath::get
+        () -> progression.pathFor(selectedLevel.get())
     );
 
     gameplayCoordinator = new GamePlayScreenCoordinator(this::guardedOutcome, sessionFactory,

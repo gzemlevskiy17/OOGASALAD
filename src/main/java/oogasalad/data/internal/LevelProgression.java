@@ -32,12 +32,12 @@ import oogasalad.model.player.api.PlayHistoryEntry;
  */
 public class LevelProgression {
 
-  /** Canonical world order. Extend by editing this list. */
-  private static final List<String> WORLD_ORDER =
+  /** Worlds in canonical play order. Also used by {@code LevelScanner} for filtering. */
+  public static final List<String> WORLD_ORDER =
       List.of("forest", "desert", "moon", "glacier", "mars");
 
-  /** Canonical level-within-world order. Extend by editing this list. */
-  private static final List<String> LEVEL_ORDER =
+  /** Level keys in canonical play order (within a world). Also used by scanner filtering. */
+  public static final List<String> LEVEL_ORDER =
       List.of("first", "second", "third", "fourth", "fifth");
 
   private final Map<String, List<String>> orderedLevelsByWorld;

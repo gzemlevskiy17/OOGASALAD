@@ -12,13 +12,13 @@ import oogasalad.model.player.api.UserProgressionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class UserProgressionRepoTest {
+class SqliteUserProgressionRepoTest {
 
   private UserProgressionRepository repo;
 
   @BeforeEach
   void setUp() {
-    repo = new UserProgressionRepo("jdbc:sqlite::memory:");
+    repo = new SqliteUserProgressionRepo("jdbc:sqlite::memory:");
   }
 
   @Test

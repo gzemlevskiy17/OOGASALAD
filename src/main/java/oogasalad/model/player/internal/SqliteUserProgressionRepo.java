@@ -19,18 +19,18 @@ import oogasalad.model.player.api.UserProgressionRepository;
  * a dedicated SQLite file kept separate from the user-account and play-history databases.
  * Schema is created lazily on first construction.
  */
-public class UserProgressionRepo implements UserProgressionRepository {
+public class SqliteUserProgressionRepo implements UserProgressionRepository {
 
   private static final String COLUMNS =
       "user_id, last_world_key, last_level_key, updated_at";
 
   private final Connection connection;
 
-  public UserProgressionRepo() {
+  public SqliteUserProgressionRepo() {
     this(defaultJdbcUrl());
   }
 
-  public UserProgressionRepo(String jdbcUrl) {
+  public SqliteUserProgressionRepo(String jdbcUrl) {
     try {
       this.connection = DriverManager.getConnection(jdbcUrl);
       initSchema();
