@@ -14,29 +14,30 @@ class VehicleComponentTest {
 
   @BeforeEach
   void setUp() {
-    vehicle = new DriveComponent(1.0, 2.0, 45.0, 10.0, 0.3, 100.0, "TestCar", 64.0, 48.0);
+    vehicle = new DriveComponent(1.0, 2.0, 45.0, 10.0, 0.3, 100.0, "TestCar", "car.png", 64.0,
+        48.0);
   }
 
-  // ── identity + body fields ────────────────────────────────────────────────
+  // ── sprite fields ─────────────────────────────────────────────────────────
 
   @Test
-  void getBodyWidth_returnsConstructorValue() {
-    assertEquals(64.0, vehicle.getBodyWidth(), 1e-9);
+  void getSpritePath_returnsConstructorValue() {
+    assertEquals("car.png", vehicle.getSpritePath());
   }
 
   @Test
-  void getBodyHeight_returnsConstructorValue() {
-    assertEquals(48.0, vehicle.getBodyHeight(), 1e-9);
+  void getSpriteWidth_returnsConstructorValue() {
+    assertEquals(64.0, vehicle.getSpriteWidth(), 1e-9);
+  }
+
+  @Test
+  void getSpriteHeight_returnsConstructorValue() {
+    assertEquals(48.0, vehicle.getSpriteHeight(), 1e-9);
   }
 
   @Test
   void getDisplayName_returnsConstructorValue() {
     assertEquals("TestCar", vehicle.getDisplayName());
-  }
-
-  @Test
-  void getComponentType_matchesDisplayName() {
-    assertEquals("TestCar", vehicle.getComponentType());
   }
 
   // ── initial HP state ──────────────────────────────────────────────────────
@@ -56,7 +57,7 @@ class VehicleComponentTest {
   @Test
   void negativeMaxHpInConstructor_throwsIllegalArgument() {
     assertThrows(IllegalArgumentException.class, () ->
-        new DriveComponent(0, 0, 0, 1, 0, -1, "X", 1, 1));
+        new DriveComponent(0, 0, 0, 1, 0, -1, "X", "x.png", 1, 1));
   }
 
   @Test

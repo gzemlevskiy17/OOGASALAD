@@ -10,32 +10,30 @@ import oogasalad.view.core.api.SpriteRenderable;
  */
 public abstract class VehicleComponent extends DynamicComponent implements SpriteRenderable {
   private static final Set<String> WHEEL_DISPLAY_NAMES = Set.of(
-      "Wood Wheel", "Metal Wheel");
+      "Wheel", "Small Wheel", "Large Wheel");
 
   private double maxHp;
   private double currentHp;
   private final String displayName;
-  private final double bodyWidth;
-  private final double bodyHeight;
+  private final String spritePath;
+  private final double spriteWidth;
+  private final double spriteHeight;
 
   public VehicleComponent(double x, double y, double rotation, double mass, double friction,
-      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
+      double maxHp, String displayName, String spritePath, double spriteWidth,
+      double spriteHeight) {
     super(x, y, rotation, mass, friction);
     setTag(DefaultTag.VEHICLE.value());
     if (maxHp < 0) {throw new IllegalArgumentException(EngineError.MAX_HP_MUST_BE_NON_NEGATIVE.message());}
     this.maxHp = maxHp;
     this.currentHp = maxHp;
     this.displayName = displayName;
-    this.bodyWidth = bodyWidth;
-    this.bodyHeight = bodyHeight;
+    this.spritePath = spritePath;
+    this.spriteWidth = spriteWidth;
+    this.spriteHeight = spriteHeight;
   }
 
   public String getDisplayName() {
-    return displayName;
-  }
-
-  @Override
-  public String getComponentType() {
     return displayName;
   }
 
@@ -45,17 +43,23 @@ public abstract class VehicleComponent extends DynamicComponent implements Sprit
   }
 
   @Override
+  public String getSpritePath() {
+    return spritePath;
+  }
+
+  @Override
   public void updatePolygon() {
-    setPolygon(ConvexPolygon.axisAlignedBox(
-        getX() - bodyWidth / 2, getY() - bodyHeight / 2, bodyWidth, bodyHeight));
+    setPolygon(ConvexPolygon.axisAlignedBox(getX(), getY(), spriteWidth, spriteHeight));
   }
 
-  public double getBodyWidth() {
-    return bodyWidth;
+  @Override
+  public double getSpriteWidth() {
+    return spriteWidth;
   }
 
-  public double getBodyHeight() {
-    return bodyHeight;
+  @Override
+  public double getSpriteHeight() {
+    return spriteHeight;
   }
 
   public double getMaxHp() {return maxHp;}

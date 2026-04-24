@@ -19,8 +19,10 @@ public class DriveComponent extends VehicleComponent implements Driveable {
   private boolean playerControllable;
 
   public DriveComponent(double x, double y, double rotation, double mass, double friction,
-      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
-    super(x, y, rotation, mass, friction, maxHp, displayName, bodyWidth, bodyHeight);
+      double maxHp, String displayName, String spritePath, double spriteWidth,
+      double spriteHeight) {
+    super(x, y, rotation, mass, friction, maxHp, displayName, spritePath, spriteWidth,
+        spriteHeight);
     this.thrustDirection = new Vector(1, 0);
     this.thrustForce = DEFAULT_THRUST_FORCE;
     this.driveEnabled = false;

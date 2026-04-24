@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
@@ -25,13 +24,11 @@ class LevelLoaderImplTest {
 
   private LevelLoaderImpl loader;
   private FakeWorld world;
-  private LevelAttributes levelAttributes;
 
   @BeforeEach
   void setUp() {
     loader = new LevelLoaderImpl();
     world = new FakeWorld();
-    levelAttributes = new LevelAttributes();
   }
 
   private File writeLevel(String json) throws IOException {
@@ -60,7 +57,7 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig());
 
     assertEquals(1, world.objectCount());
   }
@@ -86,7 +83,7 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig());
 
     assertEquals(2, world.objectCount());
   }
@@ -95,7 +92,7 @@ class LevelLoaderImplTest {
   void loadLevel_emptyTerrainArray_addsNoObjects() throws IOException {
     File level = writeLevel("{\"level\": {\"terrain\": []}}");
 
-    loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig());
 
     assertEquals(0, world.objectCount());
   }
@@ -105,13 +102,13 @@ class LevelLoaderImplTest {
     File level = writeLevel("{\"not_level\": {}}");
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig()));
   }
 
   @Test
   void loadLevel_nonExistentFile_throwsLevelLoadException() {
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel("ghost_file.json", world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel("ghost_file.json", world, new FakeGameConfig()));
   }
 
   @Test
@@ -119,7 +116,7 @@ class LevelLoaderImplTest {
     File level = writeLevel("not valid json {{{{");
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig()));
   }
 
   @Test
@@ -139,7 +136,7 @@ class LevelLoaderImplTest {
         """);
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig()));
   }
 
   @Test
@@ -154,27 +151,7 @@ class LevelLoaderImplTest {
         """);
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig()));
-  }
-
-  @Test
-  void loadLevel_vehiclePalette_populatesLevelAttributes() throws IOException {
-    File level = writeLevel("""
-        {
-          "level": {
-            "terrain": [],
-            "vehicle_palette": {
-              "max_selectable": 5,
-              "allowed_components": ["pig", "wheel", "fan"]
-            }
-          }
-        }
-        """);
-
-    loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig());
-
-    assertEquals(5, levelAttributes.getMaxSelectableVehicleItems());
-    assertEquals(List.of("pig", "wheel", "fan"), levelAttributes.getAllowedVehicleComponents());
+        () -> loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig()));
   }
 
   // --- Test doubles ---

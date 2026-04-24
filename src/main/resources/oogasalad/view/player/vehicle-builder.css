@@ -18,39 +18,20 @@
   -fx-font-family: "Serif";
 }
 
-/* Main vehicle build grid — cells are square (60x60, set in code) and abut so placed
-   components read as connected. The outer grid has a rounded border; inner cells have a
-   thin divider. */
+/* Main vehicle build grid */
 .vehicle-grid {
-  -fx-hgap: 0;
-  -fx-vgap: 0;
+  -fx-hgap: 4;
+  -fx-vgap: 4;
   -fx-alignment: center;
-  -fx-border-color: #707070;
-  -fx-border-width: 3;
-  -fx-border-radius: 10;
-  -fx-background-radius: 10;
-  -fx-background-color: white;
-  -fx-padding: 4;
-}
-
-.grid-cell {
-  -fx-background-color: white;
-  -fx-border-color: #cccccc;
-  -fx-border-width: 1;
-}
-
-.build-error {
-  -fx-text-fill: #d9534f;
-  -fx-font-family: "Serif";
-  -fx-font-size: 14px;
 }
 
 .component-grid {
-  -fx-hgap: 6;
-  -fx-vgap: 6;
+  -fx-hgap: 6;   /* was 15 */
+  -fx-vgap: 6;   /* was 15 */
   -fx-alignment: center;
 }
 
+.grid-cell,
 .component-cell {
   -fx-min-width: 90;
   -fx-min-height: 70;
@@ -59,7 +40,6 @@
   -fx-border-width: 3;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
-  -fx-padding: 6;
 }
 
 .selection-region {

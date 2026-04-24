@@ -11,6 +11,8 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -22,50 +24,67 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.model.player.api.BuildRulesRegistry;
-import oogasalad.model.player.api.Containment;
 import oogasalad.model.player.api.PlacedComponent;
-import oogasalad.model.player.api.ValidationResult;
 import oogasalad.model.player.api.VehicleLayout;
-import oogasalad.model.player.internal.DefaultBuildRulesRegistry;
-import oogasalad.model.player.internal.PlacementValidator;
 import oogasalad.view.core.internal.AbstractAppScreen;
-import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.SpriteCache;
 
 /**
- * Screen on which the player builds a vehicle.
- *
+ * Screen on which the player builds a vehicle
  * @author Iurii Beliaev
  * @author Paulina Vvedenskaya
  */
+
 public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
-  private static final ResourceBundle PROPS = ResourceBundle.getBundle(
-      "oogasalad.view.player.VehicleBuilderAppScreen");
+  private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.VehicleBuilderAppScreen");
   private static final ResourceBundle PALETTE_CONFIG = ResourceBundle.getBundle(
       "oogasalad.view.authoring.VehicleComponentPalette");
-  private static final double CELL_SIZE = 60.0;
-  private static final SpriteCache SPRITE_CACHE = new SpriteCache();
-  private static final PaletteSpriteRegistry SPRITE_REGISTRY = new PaletteSpriteRegistry();
-  private static final BuildRulesRegistry BUILD_RULES = new DefaultBuildRulesRegistry();
-  private static final String REMOVE_PAYLOAD = "__REMOVE__";
+  private static final SpriteCache spriteCache = new SpriteCache();
 
-  private final Map<String, List<String>> gridState = new HashMap<>();
-  private PlacementValidator validator;
-  private Label errorLabel;
+  private final Map<String, String> gridState = new HashMap<>();
 
   public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome) {
     super(onOutcome);
   }
 
-  private static String key(int row, int col) {
-    return row + "," + col;
+  /**
+   * Reads the current grid state and returns it as a VehicleLayout. Called by the gameplay factory
+   * just before the session starts.
+   */
+  public VehicleLayout getVehicleLayout() {
+    List<PlacedComponent> placements = new ArrayList<>();
+    for (Map.Entry<String, String> entry : gridState.entrySet()) {
+      String[] parts = entry.getKey().split(",");
+      int row = Integer.parseInt(parts[0]);
+      int col = Integer.parseInt(parts[1]);
+      placements.add(new PlacedComponent(row, col, entry.getValue()));
+    }
+    return new VehicleLayout(placements);
   }
 
-  private static int[] parseKey(String key) {
-    String[] parts = key.split(",");
-    return new int[]{Integer.parseInt(parts[0]), Integer.parseInt(parts[1])};
+  @Override
+  protected BorderPane createRoot() {
+    BorderPane root = new BorderPane();
+    root.getStylesheets().add(getClass().getResource("/oogasalad/view/player/vehicle-builder.css").toExternalForm());
+    root.getStyleClass().add("screen-root");
+
+    VBox mainContent = new VBox(d("main.content.spacing"));
+    mainContent.setAlignment(Pos.CENTER);
+
+    mainContent.getChildren().addAll(
+        createTitleRegion(),
+        createGridRegion(),
+        createComponentSection(),
+        createStartLevelRegion()
+    );
+
+    Node backButton = createBackButtonRegion();
+
+    root.setCenter(mainContent);
+    root.setBottom(backButton);
+
+    return root;
   }
 
   private Node createTitleRegion() {
@@ -85,6 +104,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     return container;
   }
 
+
   private VBox createComponentSection() {
     VBox container = new VBox(d("component.spacing"));
     container.setAlignment(Pos.CENTER);
@@ -97,6 +117,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     componentFlow.setVgap(8);
     componentFlow.setAlignment(Pos.CENTER);
     componentFlow.getStyleClass().add("component-grid");
+
     for (String name : PALETTE_CONFIG.getString("componentNames").split(",")) {
       componentFlow.getChildren().add(createDraggableComponentCell(name.trim()));
     }
@@ -112,46 +133,23 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     return container;
   }
 
-  /**
-   * Reads the current grid state and returns it as a VehicleLayout. Called by the gameplay factory
-   * just before the session starts. Each stacked component becomes its own {@link PlacedComponent}.
-   */
-  public VehicleLayout getVehicleLayout() {return getRawVehicleLayout();}
-  private VehicleLayout getRawVehicleLayout() {
-    List<PlacedComponent> placements = new ArrayList<>();
-    for (Map.Entry<String, List<String>> entry : gridState.entrySet()) {
-      int[] rc = parseKey(entry.getKey());
-      for (String type : entry.getValue()) {
-        placements.add(new PlacedComponent(rc[0], rc[1], type));
-      }
-    }return new VehicleLayout(placements);
-  }
-
-  @Override
-  protected BorderPane createRoot() {
-    BorderPane root = new BorderPane();
-    root.getStylesheets().add(getClass().getResource(
-        "/oogasalad/view/player/vehicle-builder.css").toExternalForm());
-    root.getStyleClass().add("screen-root");
-    VBox mainContent = new VBox(d("main.content.spacing"));
-    mainContent.setAlignment(Pos.CENTER);
-    mainContent.getChildren().addAll(
-        createTitleRegion(),
-        createGridRegion(),
-        createComponentSection(),
-        createStartLevelRegion()
-    );
-
-    root.setCenter(mainContent);
-    root.setBottom(createBackButtonRegion());
-    return root;
-  }
-
   private Node createDraggableComponentCell(String componentName) {
     VBox cell = new VBox(4);
     cell.setAlignment(Pos.CENTER);
     cell.getStyleClass().add("component-cell");
-    cell.getChildren().add(buildSpritePreview(componentName));
+
+    String spriteKey = componentName.replace(" ", "") + ".sprite";
+    if (PALETTE_CONFIG.containsKey(spriteKey)) {
+      Image img = spriteCache.get(PALETTE_CONFIG.getString(spriteKey));
+      if (img != null) {
+        double iconSize = Double.parseDouble(PALETTE_CONFIG.getString("cellIconSize"));
+        ImageView icon = new ImageView(img);
+        icon.setFitWidth(iconSize);
+        icon.setFitHeight(iconSize);
+        icon.setPreserveRatio(true);
+        cell.getChildren().add(icon);
+      }
+    }
 
     Label label = new Label(componentName);
     label.setWrapText(true);
@@ -165,53 +163,40 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       db.setContent(content);
       e.consume();
     });
+
     return cell;
   }
 
-  private Node buildSpritePreview(String componentName) {
-    return SPRITE_REGISTRY.resolveByType(componentName).renderPreview(SPRITE_CACHE);
-  }
-
-  private Node createGridRegion() {
+  private GridPane createGridRegion() {
     GridPane grid = new GridPane();
     grid.getStyleClass().add("vehicle-grid");
     grid.setAlignment(Pos.CENTER);
 
     int cols = (int) d("grid.columns");
     int rows = (int) d("grid.rows");
-    this.validator = new PlacementValidator(BUILD_RULES, rows, cols);
 
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
         StackPane cell = new StackPane();
         cell.getStyleClass().add("grid-cell");
-        cell.setMinSize(CELL_SIZE, CELL_SIZE);
-        cell.setPrefSize(CELL_SIZE, CELL_SIZE);
-        cell.setMaxSize(CELL_SIZE, CELL_SIZE);
-        wireCellHandlers(cell, row, col);
+        wireDropTarget(cell, row, col);
         grid.add(cell, col, row);
       }
     }
 
-    this.errorLabel = new Label();
-    errorLabel.getStyleClass().add("build-error");
-    errorLabel.setVisible(false);
-
-    VBox region = new VBox(6, grid, errorLabel);
-    region.setAlignment(Pos.CENTER);
-    return region;
+    return grid;
   }
 
-  private void wireCellHandlers(StackPane cell, int row, int col) {
+  private void wireDropTarget(StackPane cell, int row, int col) {
     cell.setOnDragOver(e -> {
-      if (isPaletteDrag(e.getDragboard())) {
+      if (e.getDragboard().hasString()) {
         e.acceptTransferModes(TransferMode.COPY);
       }
       e.consume();
     });
 
     cell.setOnDragEntered(e -> {
-      if (isPaletteDrag(e.getDragboard())) {
+      if (e.getDragboard().hasString()) {
         cell.getStyleClass().add("grid-cell-drag-hover");
       }
       e.consume();
@@ -224,85 +209,34 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
     cell.setOnDragDropped(e -> {
       Dragboard db = e.getDragboard();
-      boolean placed = isPaletteDrag(db) && placeComponentInCell(cell, db.getString(), row, col);
-      e.setDropCompleted(placed);
+      if (db.hasString()) {
+        placeComponentInCell(cell, db.getString(), row, col);
+        e.setDropCompleted(true);
+      } else {
+        e.setDropCompleted(false);
+      }
       e.consume();
     });
+  }
 
-    // Drag a placed component off the grid to remove it.
-    cell.setOnDragDetected(e -> {
-      if (!gridState.containsKey(key(row, col))) {
+  private void placeComponentInCell(StackPane cell, String componentName, int row, int col) {
+    gridState.put(row + "," + col, componentName);
+    cell.getChildren().clear();
+
+    String spriteKey = componentName.replace(" ", "") + ".sprite";
+    if (PALETTE_CONFIG.containsKey(spriteKey)) {
+      Image img = spriteCache.get(PALETTE_CONFIG.getString(spriteKey));
+      if (img != null) {
+        double iconSize = Double.parseDouble(PALETTE_CONFIG.getString("cellIconSize"));
+        ImageView icon = new ImageView(img);
+        icon.setFitWidth(iconSize);
+        icon.setFitHeight(iconSize);
+        icon.setPreserveRatio(true);
+        cell.getChildren().add(icon);
         return;
       }
-      Dragboard db = cell.startDragAndDrop(TransferMode.MOVE);
-      ClipboardContent content = new ClipboardContent();
-      content.putString(REMOVE_PAYLOAD);
-      db.setContent(content);
-      e.consume();
-    });
-
-    cell.setOnDragDone(e -> {
-      if (e.getTransferMode() == null) {
-        popTopComponent(cell, row, col);
-      }
-      e.consume();
-    });
-  }
-
-  private boolean isPaletteDrag(Dragboard db) {
-    String s = db.getString();
-    return s != null && !s.equals(REMOVE_PAYLOAD);
-  }
-
-  private boolean placeComponentInCell(StackPane cell, String componentName, int row, int col) {
-    PlacedComponent candidate = new PlacedComponent(row, col, componentName);
-    ValidationResult result = validator.canPlace(getVehicleLayout(), candidate, 0);
-    if (!result.valid()) {
-      showError(result.reason());
-      return false;
     }
-    clearError();
-
-    List<String> stack = gridState.computeIfAbsent(key(row, col), k -> new ArrayList<>());
-    if (BUILD_RULES.lookup(componentName).containment() == Containment.NONE) {
-      stack.clear();
-    }
-    stack.add(componentName);
-    renderStack(cell, stack);
-    return true;
-  }
-
-  private void popTopComponent(StackPane cell, int row, int col) {
-    String k = key(row, col);
-    List<String> stack = gridState.get(k);
-    if (stack == null || stack.isEmpty()) {
-      return;
-    }
-    stack.remove(stack.size() - 1);
-    if (stack.isEmpty()) {
-      gridState.remove(k);
-      cell.getChildren().clear();
-    } else {
-      renderStack(cell, stack);
-    }
-    clearError();
-  }
-
-  private void renderStack(StackPane cell, List<String> stack) {
-    cell.getChildren().clear();
-    for (String type : stack) {
-      cell.getChildren().add(buildSpritePreview(type));
-    }
-  }
-
-  private void showError(String reason) {
-    errorLabel.setText(reason);
-    errorLabel.setVisible(true);
-  }
-
-  private void clearError() {
-    errorLabel.setText("");
-    errorLabel.setVisible(false);
+    cell.getChildren().add(new Label(componentName));
   }
 
   private Node createBackButtonRegion() {

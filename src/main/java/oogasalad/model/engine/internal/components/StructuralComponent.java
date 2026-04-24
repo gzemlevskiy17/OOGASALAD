@@ -6,7 +6,9 @@ package oogasalad.model.engine.internal.components;
 public class StructuralComponent extends VehicleComponent {
 
   public StructuralComponent(double x, double y, double rotation, double mass, double friction,
-      double maxHp, String displayName, double bodyWidth, double bodyHeight) {
-    super(x, y, rotation, mass, friction, maxHp, displayName, bodyWidth, bodyHeight);
+      double maxHp,
+      String displayName, String spritePath, double spriteWidth, double spriteHeight) {
+    super(x, y, rotation, mass, friction, maxHp, displayName, spritePath, spriteWidth,
+        spriteHeight);
   }
 }
