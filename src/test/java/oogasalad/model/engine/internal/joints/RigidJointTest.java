@@ -79,10 +79,40 @@ class RigidJointTest {
     assertEquals(EngineError.NULL_PARAMETER.format("keyC"), ex.getMessage());
   }
 
+  @Test
+  void apply_preservesInitialRelativeRotation() {
+    TestBody objectA = new TestBody(0, 0, 0.0);
+    TestBody objectB = new TestBody(1, 0, 0.2);
+    RigidJoint joint = new RigidJoint(objectA, objectB);
+
+    objectB.getStaticState().setAngularPosition(0.8);
+    joint.apply(1.0);
+
+    assertEquals(0.2, objectB.getRotation() - objectA.getRotation(), 1e-9);
+  }
+
+  @Test
+  void applyVelocity_zeroesRelativeAngularVelocity() {
+    TestBody objectA = new TestBody(0, 0, 0.0);
+    TestBody objectB = new TestBody(1, 0, 0.0);
+    RigidJoint joint = new RigidJoint(objectA, objectB);
+    objectA.getDynamicState().setAngularVelocity(-3.0);
+    objectB.getDynamicState().setAngularVelocity(5.0);
+
+    joint.applyVelocity();
+
+    assertEquals(objectA.getDynamicState().getAngularVelocity(),
+        objectB.getDynamicState().getAngularVelocity(), 1e-9);
+  }
+
   private static final class TestBody extends DynamicComponent {
 
     TestBody(double x, double y) {
-      super(x, y, 0, 1.0, 0.3);
+      this(x, y, 0.0);
+    }
+
+    TestBody(double x, double y, double rotation) {
+      super(x, y, rotation, 1.0, 0.3);
     }
   }
 }
