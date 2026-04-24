@@ -37,7 +37,7 @@ public class ImpulseSolverUtilities {
    * Below this approach-speed threshold, contacts are treated as perfectly inelastic (e=0).
    * Prevents resting contacts from endlessly bouncing when gravity adds a small approach velocity
    * every frame that restitution would otherwise reflect into a persistent oscillation. Set above a
-   * single gravity impulse ({@code g·dt ≈ 16 px/s} at 60 Hz, g=980) but well under any real landing
+   * single gravity impulse ({@code g*dt ~= 1.6 px/s} at 60 Hz, g=98) but well under any real landing
    * or collision velocity.
    */
   private static final double RESTITUTION_APPROACH_THRESHOLD = 40.0;

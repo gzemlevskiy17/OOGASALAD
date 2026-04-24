@@ -24,7 +24,7 @@ class LandingStabilityTest {
 
   private static final double DT = 1.0 / 60.0;
   private static final int SIM_STEPS = 180;       // 3 seconds at 60 Hz
-  private static final double GRAVITY = 980.0;    // must match GameEngineImpl
+  private static final double GRAVITY = 98.0;     // must match GameEngineImpl
   private static final double TERMINAL_SPEED_BOUND = 5 * GRAVITY; // 5s of free-fall equivalent
 
   private static DynamicComponent fallingBox(double x, double y, double size, double mass) {

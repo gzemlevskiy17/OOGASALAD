@@ -25,7 +25,7 @@ class GameEnginePhysicsContractTest {
    * Must match {@link GameEngineImpl}'s gravity force-per-mass in Y (see gravity vector in
    * engine).
    */
-  private static final double G = 980.0;
+  private static final double G = 98.0;
   private static final double DT = 1.0 / 60.0;
   private static final int SUB_STEPS = 4;
   private static final int COLLISION_SOLVE_PASSES_PER_SUB_STEP = 9;
