@@ -3,7 +3,6 @@ package oogasalad.model.engine;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.PassThroughComponent;
@@ -61,6 +60,41 @@ class RevoluteJointTest {
     new RevoluteJoint(dynamic, passthrough);
   }
 
+  @Test
+  void apply_withLimitsClampsRelativeAngle() {
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 0, 0);
+    RevoluteJoint joint = new RevoluteJoint(objectA, objectB);
+    joint.setLimits(-0.1, 0.1);
+
+    objectB.getStaticState().setAngularPosition(0.5);
+    joint.apply(1.0);
+
+    assertEquals(0.1, objectB.getRotation() - objectA.getRotation(), 1e-9);
+  }
+
+  @Test
+  void applyVelocity_withMotorDrivesRelativeAngularVelocity() {
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 0, 0);
+    RevoluteJoint joint = new RevoluteJoint(objectA, objectB);
+    joint.setMotor(2.0, 10.0);
+
+    joint.applyVelocity();
+
+    assertEquals(2.0, objectB.getDynamicState().getAngularVelocity()
+        - objectA.getDynamicState().getAngularVelocity(), 1e-9);
+  }
+
+  @Test
+  void setLimits_rejectsInvertedRange() {
+    TestDynamicComponent objectA = new TestDynamicComponent(0, 0, 0);
+    TestDynamicComponent objectB = new TestDynamicComponent(0, 0, 0);
+    RevoluteJoint joint = new RevoluteJoint(objectA, objectB);
+
+    assertThrows(IllegalArgumentException.class, () -> joint.setLimits(1.0, -1.0));
+  }
+
   private static class TestDynamicComponent extends DynamicComponent {
     TestDynamicComponent(double x, double y, double rotation) {super(x, y, rotation, 1.0, 0.5);}
   }
@@ -69,7 +103,6 @@ class RevoluteJointTest {
 
     TestStaticComponent(double x, double y, double rotation) {
       super(x, y, rotation, 0.0, 0.5);
-      setAffectedByGravity(false);
     }
   }
 
@@ -80,6 +113,18 @@ class RevoluteJointTest {
     }
 
     @Override
-    public void applyEffect(GameObject target) {}
+    public void addForce(Vector force) {}
+
+    @Override
+    public void setRestitution(double restitution) {}
+
+    @Override
+    public double getFriction() {return 0.0;}
+
+    @Override
+    public boolean isAffectedByGravity() {return false;}
+
+    @Override
+    public boolean isTrigger() {return true;}
   }
 }
