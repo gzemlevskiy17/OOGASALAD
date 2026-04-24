@@ -53,6 +53,9 @@ import oogasalad.model.engine.internal.joints.RevoluteJoint;
 public class GameEngineImpl implements GameEngine {
 
   private static final Vector DEFAULT_GRAVITY = new Vector(0, 980);
+  private static final double DEFAULT_FIXED_TIME_STEP = 1.0 / 60.0;
+  private static final int DEFAULT_SUB_STEP_COUNT = 4;
+  private static final double MAX_FRAME_TIME = 0.25;
 
   /**
    * Total order for building a stable key for the unordered pair {A, B}. Same two instances always
@@ -69,6 +72,9 @@ public class GameEngineImpl implements GameEngine {
   private static final int JOINT_SOLVER_ITERATIONS = 8;
   private final CollisionDispatcher collisionDispatcher;
   private final CollisionSolver overrideCollisionSolver;
+  private final double fixedTimeStep;
+  private final int subStepCount;
+  private double accumulatedTime;
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -88,7 +94,8 @@ public class GameEngineImpl implements GameEngine {
    * @param collisionDetector pairwise detector used to build collision records
    */
   public GameEngineImpl(World world, CollisionDetector collisionDetector) {
-    this(world, collisionDetector, null, DEFAULT_GRAVITY);
+    this(world, collisionDetector, null, DEFAULT_GRAVITY, DEFAULT_FIXED_TIME_STEP,
+        DEFAULT_SUB_STEP_COUNT);
   }
 
   /**
@@ -96,23 +103,43 @@ public class GameEngineImpl implements GameEngine {
    */
   public GameEngineImpl(World world, CollisionDetector collisionDetector,
       CollisionSolver collisionSolver) {
-    this(world, collisionDetector, collisionSolver, DEFAULT_GRAVITY);
+    this(world, collisionDetector, collisionSolver, DEFAULT_GRAVITY, DEFAULT_FIXED_TIME_STEP,
+        DEFAULT_SUB_STEP_COUNT);
   }
 
   /**
    * Creates an engine with explicit gravity, keeping per-level physics configuration injectable.
    */
   public GameEngineImpl(World world, CollisionDetector collisionDetector, Vector gravityVector) {
-    this(world, collisionDetector, null, gravityVector);
+    this(world, collisionDetector, null, gravityVector, DEFAULT_FIXED_TIME_STEP,
+        DEFAULT_SUB_STEP_COUNT);
+  }
+
+  /**
+   * Creates an engine with explicit fixed-step settings.
+   */
+  public GameEngineImpl(World world, CollisionDetector collisionDetector, Vector gravityVector,
+      double fixedTimeStep, int subStepCount) {
+    this(world, collisionDetector, null, gravityVector, fixedTimeStep, subStepCount);
   }
 
   private GameEngineImpl(World world, CollisionDetector collisionDetector,
-      CollisionSolver collisionSolver, Vector gravityVector) {
+      CollisionSolver collisionSolver, Vector gravityVector, double fixedTimeStep,
+      int subStepCount) {
+    if (fixedTimeStep <= 0.0) {
+      throw new IllegalArgumentException("fixedTimeStep must be positive");
+    }
+    if (subStepCount <= 0) {
+      throw new IllegalArgumentException("subStepCount must be positive");
+    }
     this.world = world;
     this.collisionDetector = collisionDetector;
     this.collisionDispatcher = new CollisionDispatcher();
     this.overrideCollisionSolver = collisionSolver;
     this.gravityVector = gravityVector;
+    this.fixedTimeStep = fixedTimeStep;
+    this.subStepCount = subStepCount;
+    this.accumulatedTime = 0.0;
   }
 
   private static List<GameObject> canonicalUnorderedPair(GameObject a, GameObject b) {
@@ -254,6 +281,25 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
+    if (elapsedTime <= 0.0 || Double.isNaN(elapsedTime)) {
+      return;
+    }
+
+    accumulatedTime += Math.min(elapsedTime, MAX_FRAME_TIME);
+    while (accumulatedTime + 1e-12 >= fixedTimeStep) {
+      stepFixedTimeSlice();
+      accumulatedTime -= fixedTimeStep;
+    }
+  }
+
+  private void stepFixedTimeSlice() {
+    double subStepTime = fixedTimeStep / subStepCount;
+    for (int i = 0; i < subStepCount; i++) {
+      simulateSubStep(subStepTime);
+    }
+  }
+
+  private void simulateSubStep(double elapsedTime) {
     resetForces(world.getObjects());
 
     for (GameObject gameObject : world.getObjects()) {

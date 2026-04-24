@@ -26,6 +26,8 @@ class GameEnginePhysicsContractTest {
    */
   private static final double G = 980.0;
   private static final double DT = 1.0 / 60.0;
+  private static final int SUB_STEPS = 4;
+  private static final int COLLISION_SOLVE_PASSES_PER_SUB_STEP = 9;
 
   private static int expectedUnorderedNonStaticPairs(int dynCount) {
     // d dynamics, 1 static floor: (d choose 2) + d*1
@@ -33,6 +35,15 @@ class GameEnginePhysicsContractTest {
       return 0;
     }
     return dynCount * (dynCount - 1) / 2 + dynCount;
+  }
+
+  private static int expectedNarrowPhaseCallsPerFrame(int unorderedPairs) {
+    return unorderedPairs * SUB_STEPS * COLLISION_SOLVE_PASSES_PER_SUB_STEP;
+  }
+
+  private static double semiImplicitSubstepDisplacement(double acceleration) {
+    double h = DT / SUB_STEPS;
+    return acceleration * h * h * SUB_STEPS * (SUB_STEPS + 1) / 2.0;
   }
 
   @Test
@@ -49,8 +60,9 @@ class GameEnginePhysicsContractTest {
     GameEngineImpl engine = new GameEngineImpl(world, counting);
     engine.step(DT);
 
-    // 2 dynamics + 1 static -> (2 choose 2) + 2 = 1 + 2 = 3
-    assertEquals(3, counting.getNarrowPhaseCallCount());
+    // 2 dynamics + 1 static -> (2 choose 2) + 2 = 1 + 2 = 3 unordered pairs.
+    assertEquals(expectedNarrowPhaseCallsPerFrame(expectedUnorderedNonStaticPairs(2)),
+        counting.getNarrowPhaseCallCount());
   }
 
   @Test
@@ -67,7 +79,8 @@ class GameEnginePhysicsContractTest {
     engine.step(DT);
 
     int n = 5;
-    assertEquals(n * (n - 1) / 2, counting.getNarrowPhaseCallCount());
+    assertEquals(expectedNarrowPhaseCallsPerFrame(n * (n - 1) / 2),
+        counting.getNarrowPhaseCallCount());
   }
 
   // --- Tests: broad-phase (one narrow-phase per unordered pair) ---
@@ -85,8 +98,8 @@ class GameEnginePhysicsContractTest {
     assertEquals(G, body.getDynamicState().getLinearAcceleration().y(), EPS);
     double expectedVy = G * DT;
     assertEquals(expectedVy, body.getDynamicState().getLinearVelocity().y(), EPS);
-    // integrateObjectState: pos += (vel after update) * dt
-    double expectedY = 100 + expectedVy * DT;
+    // Fixed-step substepping integrates position once per substep.
+    double expectedY = 100 + semiImplicitSubstepDisplacement(G);
     assertEquals(expectedY, body.getStaticState().getLinearPosition().y(), EPS);
   }
 
