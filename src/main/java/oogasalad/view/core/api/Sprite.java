@@ -44,8 +44,9 @@ public sealed interface Sprite permits SingleSprite, LayeredSprite {
   }
 
   /**
-   * Optional per-frame update (e.g. spinning a tire). Called with the node returned by render.
+   * Optional per-frame update (e.g. spinning a tire). Called with the node returned by render and a
+   * signed animation speed chosen by the renderer.
    */
-  default void update(Node node, double linearSpeed) {
+  default void update(Node node, double animationSpeed) {
   }
 }
