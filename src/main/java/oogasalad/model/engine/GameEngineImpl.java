@@ -75,6 +75,7 @@ public class GameEngineImpl implements GameEngine {
   private static final int JOINT_SOLVER_ITERATIONS = 8;
   private final CollisionDispatcher collisionDispatcher;
   private final CollisionSolver overrideCollisionSolver;
+  private final Map<List<GameObject>, CachedCollisionImpulse> collisionImpulseCache;
   private final double fixedTimeStep;
   private final int subStepCount;
   private double accumulatedTime;
@@ -139,6 +140,7 @@ public class GameEngineImpl implements GameEngine {
     this.collisionDetector = collisionDetector;
     this.collisionDispatcher = new CollisionDispatcher();
     this.overrideCollisionSolver = collisionSolver;
+    this.collisionImpulseCache = new HashMap<>();
     this.gravityVector = gravityVector;
     this.fixedTimeStep = fixedTimeStep;
     this.subStepCount = subStepCount;
@@ -408,9 +410,11 @@ public class GameEngineImpl implements GameEngine {
   }
 
   private void solveCollisions(List<Collision> collisions, boolean applyImpulse) {
+    Set<List<GameObject>> activeImpulseKeys = new HashSet<>();
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
+      List<GameObject> pairKey = canonicalUnorderedPair(objectA, objectB);
       CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
           objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
@@ -428,16 +432,44 @@ public class GameEngineImpl implements GameEngine {
       }
 
       if (applyImpulse) {
+        applyCachedImpulse(pairKey, collision);
         CollisionSolver solver = overrideCollisionSolver == null
             ? collisionDispatcher.getSolverMap().get(collisionPair)
             : overrideCollisionSolver;
         if (solver != null) {
           solver.solve(objectA, objectB, collision);
+          storeCachedImpulse(pairKey, collision);
+          activeImpulseKeys.add(pairKey);
         }
       } else {
         solveCollisionPositionOnly(collisionPair, objectA, objectB, collision);
       }
     }
+    if (applyImpulse) {
+      collisionImpulseCache.keySet().retainAll(activeImpulseKeys);
+    }
+  }
+
+  private void applyCachedImpulse(List<GameObject> pairKey, Collision collision) {
+    CachedCollisionImpulse cachedImpulse = collisionImpulseCache.get(pairKey);
+    if (cachedImpulse == null) {
+      return;
+    }
+    collision.setCachedNormalImpulse(cachedImpulse.normalImpulse());
+    collision.setCachedFrictionImpulse(cachedImpulse.frictionImpulse());
+    collision.setCachedNormal(cachedImpulse.normal());
+  }
+
+  private void storeCachedImpulse(List<GameObject> pairKey, Collision collision) {
+    if (collision.getAppliedNormalImpulse() <= 0.0
+        && Math.abs(collision.getAppliedFrictionImpulse()) <= 1e-9) {
+      collisionImpulseCache.remove(pairKey);
+      return;
+    }
+    collisionImpulseCache.put(pairKey, new CachedCollisionImpulse(
+        collision.getAppliedNormalImpulse(),
+        collision.getAppliedFrictionImpulse(),
+        collision.getPenetration().normalize()));
   }
 
   private void solveCollisionPositionOnly(CollisionPair collisionPair, GameObject objectA,
@@ -603,5 +635,9 @@ public class GameEngineImpl implements GameEngine {
   }
 
   private record MotionSnapshot(BoundingBox bounds, Vector position) {
+  }
+
+  private record CachedCollisionImpulse(double normalImpulse, double frictionImpulse,
+                                        Vector normal) {
   }
 }

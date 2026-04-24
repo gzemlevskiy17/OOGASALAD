@@ -138,6 +138,38 @@ public class ImpulseSolverUtilities {
         * incidentObject.getInverseMomentOfInertia());
   }
 
+  private static boolean canWarmStart(Collision collision, Vector referenceUnitNormal) {
+    Vector cachedNormal = collision.getCachedNormal();
+    return cachedNormal != null
+        && cachedNormal.dot(referenceUnitNormal) > 0.5
+        && (collision.getCachedNormalImpulse() != 0.0
+        || collision.getCachedFrictionImpulse() != 0.0);
+  }
+
+  private static void applyCachedImpulse(Collision collision, RigidBody referenceObject,
+      RigidBody incidentObject, DynamicState referenceDynamicState, DynamicState incidentDynamicState,
+      StaticState incidentStaticState, StaticState referenceStaticState, Vector referenceUnitNormal) {
+    if (!canWarmStart(collision, referenceUnitNormal)) {
+      return;
+    }
+
+    int contactCount = collision.getCollisionManifold().size();
+    if (contactCount == 0) {
+      return;
+    }
+    Vector tangent = referenceUnitNormal.rotateRight();
+    Vector cachedImpulse = referenceUnitNormal.multiply(collision.getCachedNormalImpulse()
+            / contactCount)
+        .add(tangent.multiply(collision.getCachedFrictionImpulse() / contactCount));
+    for (Vector contactPoint : collision.getCollisionManifold().keySet()) {
+      ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
+          collision.getCollisionManifold().get(contactPoint));
+      setRelativePositions(contactPointPhysics, incidentStaticState, referenceStaticState);
+      applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
+          contactPointPhysics, cachedImpulse);
+    }
+  }
+
   /**
    * Moves objects out of overlap.
    *
@@ -202,6 +234,11 @@ public class ImpulseSolverUtilities {
       return;
     }
 
+    applyCachedImpulse(collision, referenceObject, incidentObject, referenceDynamicState,
+        incidentDynamicState, incidentStaticState, referenceStaticState, referenceUnitNormal);
+
+    double normalImpulseSum = collision.getCachedNormalImpulse();
+    double frictionImpulseSum = collision.getCachedFrictionImpulse();
     for (Vector contactPoint : collision.getCollisionManifold().keySet()) {
       //TODO: should these method behaviors be consistent
       ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
@@ -219,6 +256,7 @@ public class ImpulseSolverUtilities {
       Vector normalImpulse = referenceUnitNormal.multiply(contactPointPhysics.impulse);
       applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
           contactPointPhysics, normalImpulse);
+      normalImpulseSum += contactPointPhysics.impulse;
 
       contactPointPhysics.relativeVelocity = ImpulseSolverUtilities.computeRelativeVelocity(
           contactPointPhysics,
@@ -229,6 +267,9 @@ public class ImpulseSolverUtilities {
           contactPointPhysics, referenceUnitNormal, contactPointPhysics.impulse);
       applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
           contactPointPhysics, tangent.multiply(frictionImpulseMagnitude));
+      frictionImpulseSum += frictionImpulseMagnitude;
     }
+    collision.setAppliedNormalImpulse(Math.max(0.0, normalImpulseSum));
+    collision.setAppliedFrictionImpulse(frictionImpulseSum);
   }
 }
