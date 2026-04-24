@@ -1,18 +1,23 @@
 package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import oogasalad.model.engine.api.RecordingPickupEffect;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.PassThroughComponent;
+import oogasalad.model.engine.internal.components.PickupComponent;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test that PassThrough does not change the state of the model
  *
  * @author Iurii Beliaev
+ * @author Paulina Vvedenskaya
  */
 class DynamicPassthroughSolverTest {
 
@@ -77,6 +82,39 @@ class DynamicPassthroughSolverTest {
         p.getPolygon(),
         p.getTag(),
         p.isActive());
+  }
+
+  @Test
+  void solve_firesPickupEffectExactlyOnceAndConsumesPickup() {
+    DynamicComponent dynamic = newDynamic(1.0, 2.0);
+    RecordingPickupEffect effect = new RecordingPickupEffect();
+    PickupComponent pickup = new PickupComponent(4.0, 5.0, 0, unitSquare(), "", effect);
+    Collision collision = new Collision(dynamic, pickup);
+
+    DynamicSnapshot beforeDyn = snapshotDynamic(dynamic);
+
+    new DynamicPassthroughSolver().solve(dynamic, pickup, collision);
+
+    assertEquals(1, effect.callCount(), "effect must fire exactly once");
+    assertSame(dynamic, effect.lastTarget(), "effect must receive the dynamic body as target");
+    assertTrue(pickup.isConsumed(), "pickup must be marked consumed");
+    assertFalse(pickup.isActive(), "pickup must be deactivated");
+    assertEquals(beforeDyn, snapshotDynamic(dynamic),
+        "dynamic body state must remain untouched by pickup solver");
+  }
+
+  @Test
+  void solve_repeatedCallsOnSamePickupFireEffectOnlyOnce() {
+    DynamicComponent dynamic = newDynamic(1.0, 2.0);
+    RecordingPickupEffect effect = new RecordingPickupEffect();
+    PickupComponent pickup = new PickupComponent(4.0, 5.0, 0, unitSquare(), "", effect);
+    Collision collision = new Collision(dynamic, pickup);
+    DynamicPassthroughSolver solver = new DynamicPassthroughSolver();
+
+    solver.solve(dynamic, pickup, collision);
+    solver.solve(dynamic, pickup, collision);
+
+    assertEquals(1, effect.callCount());
   }
 
   @Test
