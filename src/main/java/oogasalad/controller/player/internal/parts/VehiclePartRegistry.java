@@ -20,7 +20,7 @@ public final class VehiclePartRegistry {
     register(new PigPartSpec("Small Pig"));
     register(new DrivePartSpec("Engine", new Vector(1, 0), 3000.0));
     register(new DrivePartSpec("Fan", new Vector(1, 0), 1500.0));
-    register(new DrivePartSpec("Balloon", new Vector(0, -1), 2500.0));
+    register(new DrivePartSpec("Balloon", new Vector(0, -1), 8000.0));
   }
 
   public VehiclePartSpec get(String paletteName) {

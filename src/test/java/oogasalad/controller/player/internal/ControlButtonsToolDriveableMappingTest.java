@@ -111,7 +111,7 @@ class ControlButtonsToolDriveableMappingTest {
 
   @Test
   void balloonTool_thrustForceExceedsItsWeight() {
-    // Gravity on a drive = mass * GRAVITY = 5 * 400 = 2000. For a balloon to actually lift
+    // Gravity on a drive = mass * GRAVITY = 5 * 980 = 4900. For a balloon to actually lift
     // its own body, thrustForce must exceed that; otherwise the button is cosmetic.
     World world = new WorldImpl();
     new VehicleFactory().buildVehicle(
@@ -119,7 +119,7 @@ class ControlButtonsToolDriveableMappingTest {
         world, START_X, START_Y);
     DriveComponent balloon = findDrive(world, "balloon");
 
-    double weight = balloon.getMass() * 400.0;
+    double weight = balloon.getMass() * 980.0;
     assertTrue(balloon.getThrustForce() > weight,
         "balloon thrust (" + balloon.getThrustForce() + ") must exceed its gravity weight ("
             + weight + ") or it cannot lift itself");
