@@ -1,9 +1,13 @@
 package oogasalad.view.player.internal;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -25,6 +29,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
   private Pane gameLayer;
+  private HBox bottomControls;
   private Runnable onPause = () -> { };
   private Runnable onResume = () -> { };
   private Runnable onReset = () -> { };
@@ -86,7 +91,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     gameLayer.prefHeightProperty().bind(root.heightProperty());
 
     HBox topControls = createTopControlsRegion();
-    HBox bottomControls = createBottomControlsRegion();
+    bottomControls = createBottomControlsRegion(null);
 
     Node backButton = createBackButtonRegion();
 
@@ -148,7 +153,8 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     return container;
   }
 
-  private HBox createBottomControlsRegion() {
+  // availableToolIds == null means "show every tool in the properties file" (startup default).
+  private HBox createBottomControlsRegion(Set<String> availableToolIds) {
     HBox container = new HBox(d("bottom.controls.spacing"));
     container.getStyleClass().add("controlbuttons-bottom");
 
@@ -156,6 +162,9 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     container.setPickOnBounds(false);
 
     for (String tool : getList("tools")) {
+      if (availableToolIds != null && !availableToolIds.contains(tool)) {
+        continue;
+      }
       ToggleButton toolBtn = new ToggleButton(s("tool." + tool));
       toolBtn.getStyleClass().add("tool-button");
 
@@ -171,6 +180,17 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
 
     return container;
+  }
+
+  public void setAvailableTools(Collection<String> toolIds) {
+    if (bottomControls == null) {
+      return;
+    }
+    Set<String> filter = toolIds == null
+        ? null
+        : toolIds.stream().map(String::toLowerCase).collect(Collectors.toCollection(HashSet::new));
+    HBox rebuilt = createBottomControlsRegion(filter);
+    bottomControls.getChildren().setAll(rebuilt.getChildren());
   }
 
   private List<String> getList(String key) { return Arrays.asList(s(key).split(",")); }

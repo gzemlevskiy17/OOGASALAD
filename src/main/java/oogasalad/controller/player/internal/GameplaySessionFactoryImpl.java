@@ -1,7 +1,9 @@
 package oogasalad.controller.player.internal;
 
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.scene.paint.Color;
@@ -102,6 +104,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     bindDriveActions(inputRouter, world);
     screen.setOnToolActivated(inputRouter::handleButtonPress);
     screen.setOnToolDeactivated(inputRouter::handleButtonPress);
+    screen.setAvailableTools(collectDriveToolIds(world));
 
     double viewWidth = screen.getGameLayer().getWidth();
     double viewHeight = screen.getGameLayer().getHeight();
@@ -198,6 +201,24 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     });
 
     applyViewport.run();
+  }
+
+  Set<String> collectDriveToolIds(World world) {
+    Set<String> ids = new HashSet<>();
+    for (GameObject obj : world.getObjects()) {
+      if (!(obj instanceof Driveable driveable)) {
+        continue;
+      }
+      if (!driveable.isPlayerControllable()) {
+        continue;
+      }
+      String id = obj.getTag();
+      if (obj instanceof VehicleComponent vc) {
+        id = vc.getDisplayName().toLowerCase();
+      }
+      ids.add(id);
+    }
+    return ids;
   }
 
   /**

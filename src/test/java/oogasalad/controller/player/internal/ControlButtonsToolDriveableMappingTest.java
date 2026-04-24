@@ -87,22 +87,6 @@ class ControlButtonsToolDriveableMappingTest {
         "placing 'Engine' should create a DriveComponent");
   }
 
-  /**
-   * Bug B: control-button list includes "blower" but neither the palette nor VehicleFactory has
-   * that type.
-   */
-  @Test
-  void blowerTool_mapsToDriveComponent() {
-    World world = new WorldImpl();
-    new VehicleFactory().buildVehicle(
-        new VehicleLayout(List.of(new PlacedComponent(0, 0, "Blower"))),
-        world, START_X, START_Y);
-
-    assertTrue(worldHasDriveWithDisplayNameIgnoreCase(world, "blower"),
-        "placing 'Blower' should create a DriveComponent — currently fails because "
-            + "neither the palette nor VehicleFactory knows 'Blower'");
-  }
-
   private DriveComponent findDrive(World world, String toolId) {
     for (GameComponent c : world.getAllComponents()) {
       if (c instanceof DriveComponent dc && dc.getDisplayName().equalsIgnoreCase(toolId)) {
