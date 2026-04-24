@@ -41,8 +41,8 @@ import org.apache.logging.log4j.Logger;
 public class AuthoringControllerImpl implements AuthoringController {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
-  private static final ResourceBundle MESSAGES = ResourceBundle.getBundle(
-      "oogasalad.controller.authoring.AuthoringController");
+  private static final ResourceBundle MESSAGES =
+      ResourceBundle.getBundle("oogasalad.controller.authoring.AuthoringController");
 
   private final World world;
   private final LevelLoader loader;
@@ -290,14 +290,14 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   @Override
   public void saveLevel(String fileName) {
-    saver.saveLevel(fileName, world, levelAttributes);
+    saver.saveLevel(fileName, world);
     LOG.info("Saved level to {}", fileName);
   }
 
   @Override
   public void loadLevel(String fileName) {
     world.clear();
-    loader.loadLevel(fileName, world, levelAttributes, null);
+    loader.loadLevel(fileName, world, null);
     history.clear();
     canvas.refreshGrid();
     LOG.info("Loaded level from {}", fileName);

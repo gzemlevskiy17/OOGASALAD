@@ -72,12 +72,6 @@
   -fx-font-size: 14px;
 }
 
-.authoring-selection-summary {
-  -fx-font-family: "Serif";
-  -fx-font-size: 13px;
-  -fx-text-fill: #333333;
-}
-
 .authoring-action-button {
   -fx-font-size: 15px;
 }

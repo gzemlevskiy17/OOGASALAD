@@ -4410,16 +4410,6 @@
         "tile_texture" : true,
         "friction" : 0.1
       }
-    } ],
-    "vehicle_palette" : {
-      "max_selectable" : 5,
-      "allowed_components" : [
-        "pig",
-        "wheel",
-        "wood_frame",
-        "fan",
-        "balloon"
-      ]
-    }
+    } ]
   }
 }

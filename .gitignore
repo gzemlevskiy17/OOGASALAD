@@ -137,6 +137,3 @@ hs_err_pid*
 # custom
 doc/gznotes.md
 doc/commenting_guidlines.md
-
-# secrets
-.env

@@ -25,8 +25,7 @@ public class GoalLineComponent extends FinishLineComponent implements SpriteRend
 
   @Override
   public void updatePolygon() {
-    setPolygon(ConvexPolygon.axisAlignedBox(
-        getX() - width / 2, getY() - height / 2, width, height));
+    setPolygon(ConvexPolygon.axisAlignedBox(getX(), getY(), width, height));
   }
 
   @Override
@@ -35,15 +34,17 @@ public class GoalLineComponent extends FinishLineComponent implements SpriteRend
   }
 
   @Override
-  public String getComponentType() {
-    return "GoalLine";
+  public String getSpritePath() {
+    return "";
   }
 
-  public double getWidth() {
+  @Override
+  public double getSpriteWidth() {
     return width;
   }
 
-  public double getHeight() {
+  @Override
+  public double getSpriteHeight() {
     return height;
   }
 }

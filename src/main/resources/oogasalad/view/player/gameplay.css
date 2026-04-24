@@ -9,11 +9,11 @@
   -fx-background-color: transparent;
 }
 
-.controlbuttons-top {
+.hud-top {
   -fx-padding: 20;
 }
 
-.controlbuttons-bottom {
+.hud-bottom {
   -fx-padding: 30;
 }
 
