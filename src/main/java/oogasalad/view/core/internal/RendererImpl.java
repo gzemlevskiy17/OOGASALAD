@@ -68,7 +68,7 @@ public class RendererImpl implements Renderer {
     node.setManaged(false);
     node.setLayoutX(object.getX() - camera.getX());
     node.setLayoutY(object.getY() - camera.getY());
-    node.setRotate(object.getRotation());
+    node.setRotate(Math.toDegrees(object.getRotation()));
     node.setVisible(true);
     frameUpdater.accept(object, node);
   }
