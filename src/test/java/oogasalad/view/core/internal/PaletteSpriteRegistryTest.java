@@ -62,4 +62,34 @@ class PaletteSpriteRegistryTest {
   void resolveByType_unknownType_throws() {
     assertThrows(IllegalArgumentException.class, () -> registry.resolveByType("NotARealType"));
   }
+
+  @Test
+  void resolveByType_bomb_returnsSingleSpriteAtBombAsset() {
+    SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("Bomb"));
+    assertEquals("data/assets/bp_bomb.png", sprite.path());
+  }
+
+  @Test
+  void resolveByType_coin_returnsSingleSpriteAtCoinAsset() {
+    SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("Coin"));
+    assertEquals("data/assets/bp_coin.png", sprite.path());
+  }
+
+  @Test
+  void resolveByType_heart_returnsSingleSpriteAtHeartAsset() {
+    SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("Heart"));
+    assertEquals("data/assets/bp_heart.png", sprite.path());
+  }
+
+  @Test
+  void resolveByType_rock_returnsSingleSpriteAtRockAsset() {
+    SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("Rock"));
+    assertEquals("data/assets/bp_rock.png", sprite.path());
+  }
+
+  @Test
+  void resolveByType_xpBoost_stripsSpaceAndResolvesToXpAsset() {
+    SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("XP Boost"));
+    assertEquals("data/assets/bp_xp.png", sprite.path());
+  }
 }
