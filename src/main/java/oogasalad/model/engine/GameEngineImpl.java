@@ -606,15 +606,24 @@ public class GameEngineImpl implements GameEngine {
 
   private void applySweptHit(DynamicComponent component, Vector startCenter, Vector displacement,
       SweptHit hit) {
-    double safeTime = Math.max(0.0, hit.time() - CCD_SKIN);
+    double safeTime = sweptContactTime(hit);
     component.getStaticState().setLinearPosition(startCenter.add(displacement.multiply(safeTime)));
     Vector velocity = component.getDynamicState().getLinearVelocity();
     double normalVelocity = velocity.dot(hit.normal());
-    if (normalVelocity < 0.0) {
+    if (normalVelocity < 0.0 && isHorizontalHit(hit)) {
       component.getDynamicState().setLinearVelocity(
           velocity.subtract(hit.normal().multiply(normalVelocity)));
     }
     component.updatePolygon();
+  }
+
+  private double sweptContactTime(SweptHit hit) {
+    double skinDirection = isHorizontalHit(hit) ? -CCD_SKIN : CCD_SKIN;
+    return Math.max(0.0, Math.min(1.0, hit.time() + skinDirection));
+  }
+
+  private boolean isHorizontalHit(SweptHit hit) {
+    return Math.abs(hit.normal().x()) > Math.abs(hit.normal().y());
   }
 
   private record BoundingBox(double minX, double minY, double maxX, double maxY) {
