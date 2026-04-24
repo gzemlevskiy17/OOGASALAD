@@ -248,7 +248,7 @@ public class GameEngineImpl implements GameEngine {
     for (GameObject object : objects) {
       if (object instanceof DynamicComponent dynamicComponent) {
         if (dynamicComponent.isAffectedByGravity()) {
-          dynamicComponent.addForce(gravityVector.multiply(dynamicComponent.getMass()), false);
+          dynamicComponent.addForce(gravityVector.multiply(dynamicComponent.getMass()));
         }
 
         if (object instanceof Driveable driveable) {
