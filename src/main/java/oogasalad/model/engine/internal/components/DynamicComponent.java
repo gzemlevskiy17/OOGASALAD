@@ -67,7 +67,11 @@ public abstract class DynamicComponent extends RigidBody {
   }
 
   public void addForce(Vector force) {
-    if (this.sleeping && force != null && force.magnitude() > 0.0) {
+    addForce(force, true);
+  }
+
+  public void addForce(Vector force, boolean wake) {
+    if (wake && this.sleeping && force != null && force.magnitude() > 0.0) {
       setSleeping(false);
     }
     this.force = this.force.add(force);

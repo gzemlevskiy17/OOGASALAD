@@ -100,6 +100,21 @@ class GameEngineImplTest {
   }
 
   @Test
+  void step_gravityDoesNotWakeSleepingBody() {
+    World world = new WorldImpl();
+    DynamicComponent body = box(1.0, 3, 4, true);
+    body.setSleeping(true);
+    world.addComponent(body);
+
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    engine.step(FIXED_DT);
+
+    assertEquals(3, body.getStaticState().getLinearPosition().x(), EPS);
+    assertEquals(4, body.getStaticState().getLinearPosition().y(), EPS);
+    assertEquals(0, body.getDynamicState().getLinearAcceleration().magnitude(), EPS);
+  }
+
+  @Test
   void step_driveableThrustAddsForceAndAcceleration() {
     World world = new WorldImpl();
     DriveBody body = new DriveBody(0, 0, 1.0, new Vector(0, 1), 5.0);
