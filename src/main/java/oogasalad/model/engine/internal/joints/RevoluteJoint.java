@@ -10,7 +10,7 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public class RevoluteJoint extends AbstractJoint {
 
-  private static final double VECTOR_CORRECTION = 0.2;
+  private static final double VECTOR_CORRECTION = 0.8;
   private static final double ANGULAR_SLOP = 1e-6;
 
   private final double referenceAngle;

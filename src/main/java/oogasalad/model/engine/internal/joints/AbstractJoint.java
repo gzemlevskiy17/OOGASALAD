@@ -12,9 +12,9 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public abstract class AbstractJoint implements Joint {
 
-  // Anchor violations below half a pixel are ignored so joints don't fight collision
-  // drift every frame.
-  protected static final double ANCHOR_POSITION_SLOP = 0.5;
+  // Keep joint anchors nearly coincident so support/contact impulses create torque
+  // instead of letting connected bodies drift through the axle.
+  protected static final double ANCHOR_POSITION_SLOP = 0.05;
 
   private final GameComponent objectA;
   private final GameComponent objectB;
