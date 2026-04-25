@@ -43,16 +43,18 @@ public class FillExecutor {
 
   /**
    * Computes all cells reachable from (startCol, startRow) via 4-connected
-   * BFS on unoccupied cells.
+   * BFS on unoccupied cells, restricted to rows >= minRow.
    *
    * @param grid      immutable occupancy snapshot
    * @param startCol  column of the clicked cell
    * @param startRow  row of the clicked cell
+   * @param minRow    rows below this index are excluded from the fill
    * @return list of [col, row] pairs to fill; empty if start is occupied or out of bounds
    * @throws AuthoringPlacementException if the fill region exceeds the configured maximum
    */
-  public List<int[]> computeFillRegion(OccupancyGrid grid, int startCol, int startRow) {
-    if (!grid.isInBounds(startCol, startRow) || grid.isOccupied(startCol, startRow)) {
+  public List<int[]> computeFillRegion(OccupancyGrid grid, int startCol, int startRow, int minRow) {
+    if (!grid.isInBounds(startCol, startRow) || grid.isOccupied(startCol, startRow)
+        || startRow < minRow) {
       return List.of();
     }
 
@@ -76,7 +78,7 @@ public class FillExecutor {
       for (int[] dir : DIRECTIONS) {
         int nc = cell[0] + dir[0];
         int nr = cell[1] + dir[1];
-        if (grid.isInBounds(nc, nr) && !visited[nc][nr] && !grid.isOccupied(nc, nr)) {
+        if (grid.isInBounds(nc, nr) && nr >= minRow && !visited[nc][nr] && !grid.isOccupied(nc, nr)) {
           visited[nc][nr] = true;
           queue.add(new int[]{nc, nr});
         }
@@ -84,6 +86,11 @@ public class FillExecutor {
     }
 
     return result;
+  }
+
+  /** Overload with no row restriction — fills the entire reachable region. */
+  public List<int[]> computeFillRegion(OccupancyGrid grid, int startCol, int startRow) {
+    return computeFillRegion(grid, startCol, startRow, 0);
   }
 
   /**

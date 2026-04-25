@@ -7,11 +7,21 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.ClosePath;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
+import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.TerrainSpline;
+import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 import org.apache.logging.log4j.LogManager;
@@ -62,6 +72,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private Rectangle hoverOverlay;
   private int hoverCol = -1;
   private int hoverRow = -1;
+  private final java.util.List<Node> transientOverlays = new java.util.ArrayList<>();
 
   public AuthoringCanvasImpl() {
     this(null);
@@ -124,15 +135,40 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     return root;
   }
 
-  /** Clears and redraws all authoring objects and grid lines from the current World state. */
+  /**
+   * Clears and redraws all authoring objects, the spawn reference guides, and grid lines
+   * from the current World state. Spawn guides sit above placed objects but below grid
+   * lines, so designers can always see where the vehicle will land relative to what they
+   * have drawn.
+   */
   @Override
   public void refreshGrid() {
     clearHoverPreview();
+    clearOverlays();
     root.getChildren().clear();
     if (world != null) {
       drawObjects();
     }
+    drawSpawnGuide();
     drawGridLines();
+  }
+
+  @Override
+  public void addOverlay(Node node) {
+    if (node == null) {
+      return;
+    }
+    transientOverlays.add(node);
+    root.getChildren().add(node);
+  }
+
+  @Override
+  public void clearOverlays() {
+    if (transientOverlays.isEmpty()) {
+      return;
+    }
+    root.getChildren().removeAll(transientOverlays);
+    transientOverlays.clear();
   }
 
   @Override
@@ -219,8 +255,44 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private void drawObjects() {
     for (GameObject obj : world.getObjects()) {
-      root.getChildren().add(drawObject((AuthoringPlaceable) obj));
+      if (obj instanceof TerrainSpline spline) {
+        root.getChildren().add(drawSplineObject(spline));
+      } else {
+        root.getChildren().add(drawObject((AuthoringPlaceable) obj));
+      }
     }
+  }
+
+  /**
+   * Draws a committed {@link TerrainSpline} as a quadratic-Bézier {@link Path} filled down to its
+   * baseline. Coordinates are scaled from the authoring grid-cell space into pixel space by
+   * {@link #cellSize}, so the committed curve sits in the canvas at the same location the
+   * designer drafted it.
+   */
+  private Path drawSplineObject(TerrainSpline terrainSpline) {
+    ParabolaSpline spline = terrainSpline.getSpline();
+    Path path = new Path();
+
+    Vector firstKnot = spline.knots().get(0);
+    path.getElements().add(new MoveTo(firstKnot.x() * cellSize, firstKnot.y() * cellSize));
+    for (int i = 0; i < spline.segmentCount(); i++) {
+      Vector control = spline.controls().get(i);
+      Vector next = spline.knots().get(i + 1);
+      path.getElements().add(new QuadCurveTo(
+          control.x() * cellSize, control.y() * cellSize,
+          next.x() * cellSize, next.y() * cellSize));
+    }
+    Vector lastKnot = spline.knots().get(spline.knots().size() - 1);
+    double baselinePx = spline.baselineY() * cellSize;
+    path.getElements().add(new LineTo(lastKnot.x() * cellSize, baselinePx));
+    path.getElements().add(new LineTo(firstKnot.x() * cellSize, baselinePx));
+    path.getElements().add(new ClosePath());
+
+    path.setFill(parseColor(terrainSpline.getColor()));
+    path.setStroke(TERRAIN_STROKE_COLOR);
+    path.setStrokeWidth(1.0);
+    path.setOnMousePressed(e -> onObjectSelected.accept(terrainSpline));
+    return path;
   }
 
   private Rectangle drawObject(AuthoringPlaceable placeable) {
@@ -293,6 +365,52 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
       LOG.warn("Could not load sprite: {}", spritePath);
     }
     return null;
+  }
+
+  /**
+   * Draws a dashed horizontal line at the vehicle's spawn Y and a small circle marker at the
+   * exact spawn point. The horizontal line is the "don't build above this" reference designers
+   * need to place terrain at or below; without it, authored levels routinely put the car in
+   * mid-air and the vehicle falls past the world floor before any terrain can catch it.
+   *
+   * <p>Values are read from AuthoringCanvas.properties so the marker always matches whatever
+   * the gameplay factory uses as the hard-coded spawn point. Keep the two in sync.
+   */
+  private void drawSpawnGuide() {
+    double spawnX = d("spawnX");
+    double spawnY = d("spawnY");
+    double markerRadius = d("spawnMarkerRadius");
+    double totalWidth = gridCols * cellSize;
+
+    Line ground = new Line(0, spawnY, totalWidth, spawnY);
+    ground.setStroke(Color.web(PROPS.getString("groundGuideColor")));
+    ground.setStrokeWidth(d("groundGuideStrokeWidth"));
+    ground.getStrokeDashArray().addAll(d("groundGuideDashOn"), d("groundGuideDashOff"));
+    ground.setMouseTransparent(true);
+    root.getChildren().add(ground);
+
+    Color markerColor = Color.web(PROPS.getString("spawnMarkerColor"));
+    Circle marker = new Circle(spawnX, spawnY, markerRadius, Color.TRANSPARENT);
+    marker.setStroke(markerColor);
+    marker.setStrokeWidth(2.0);
+    marker.setMouseTransparent(true);
+    root.getChildren().add(marker);
+
+    Circle markerDot = new Circle(spawnX, spawnY, markerRadius / 3.0, markerColor);
+    markerDot.setMouseTransparent(true);
+    root.getChildren().add(markerDot);
+
+    Text label = new Text(
+        spawnX + d("spawnLabelOffsetX"),
+        spawnY + d("spawnLabelOffsetY"),
+        "vehicle spawn");
+    label.setFill(markerColor);
+    label.setMouseTransparent(true);
+    root.getChildren().add(label);
+  }
+
+  private double d(String key) {
+    return Double.parseDouble(PROPS.getString(key));
   }
 
   private void drawGridLines() {

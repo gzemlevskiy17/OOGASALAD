@@ -10,7 +10,10 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
@@ -156,8 +159,14 @@ public class AuthoringScreenImpl implements AppScreen {
   }
 
   private AuthoringControllerImpl buildController() {
+    // JSON is the handoff between the authoring editor (grid-cell coordinates)
+    // and the gameplay runtime (world-pixel coordinates). Passing cellSize to
+    // both saver and loader centralizes that conversion in the data layer, so
+    // authored levels land on the ground the vehicle actually spawns on
+    // instead of appearing as a tiny glyph in the top-left corner.
+    double cellSize = canvas.getCellSize();
     AuthoringControllerImpl c = new AuthoringControllerImpl(
-        world, new LevelLoaderImpl(), new LevelSaverImpl(),
+        world, new LevelLoaderImpl(cellSize), new LevelSaverImpl(cellSize),
         levelAttributes, new ToolSelectorImpl(), canvas);
     c.setPlacementErrorHandler(
         message -> alertService.showWarning(s("placementWarningTitle"), message));
@@ -308,11 +317,35 @@ public class AuthoringScreenImpl implements AppScreen {
     Button drawButton = createSizedButton(s("drawButtonText"), actionWidth, actionHeight);
     Button eraseButton = createSizedButton(s("eraseButtonText"), actionWidth, actionHeight);
     Button paintButton = createSizedButton(s("paintButtonText"), actionWidth, actionHeight);
+    Button splineButton = createSizedButton(s("splineButtonText"), actionWidth, actionHeight);
     drawButton.getStyleClass().add("authoring-action-button");
     eraseButton.getStyleClass().add("authoring-action-button");
     paintButton.getStyleClass().add("authoring-action-button");
+    splineButton.getStyleClass().add("authoring-action-button");
 
-    toolButtons = List.of(drawButton, eraseButton, paintButton);
+    // Resolution spinner only influences future tessellations; shown inline with the tools and
+    // kept visible regardless of active tool so the designer can tune the value in advance.
+    Spinner<Integer> splineResolutionSpinner = new Spinner<>();
+    splineResolutionSpinner.setValueFactory(
+        new SpinnerValueFactory.IntegerSpinnerValueFactory(
+            1, 64, controller.getSplineDraft().getResolution(), 1));
+    splineResolutionSpinner.setEditable(true);
+    splineResolutionSpinner.setPrefWidth(72);
+    splineResolutionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+      if (newVal != null) {
+        controller.getSplineDraft().setResolution(newVal);
+      }
+    });
+    Label splineResolutionLabel = new Label(s("splineResolutionLabel"));
+    Button splineCommitButton = createSizedButton(
+        s("splineCommitButtonText"), actionWidth * 0.7, actionHeight);
+    splineCommitButton.getStyleClass().add("authoring-action-button");
+    splineCommitButton.setOnAction(event -> {
+      controller.getSplineDraft().commit();
+      canvas.refreshGrid();
+    });
+
+    toolButtons = List.of(drawButton, eraseButton, paintButton, splineButton);
     drawButton.getStyleClass().add("tool-active");
 
     drawButton.setOnAction(event -> {
@@ -326,6 +359,10 @@ public class AuthoringScreenImpl implements AppScreen {
     paintButton.setOnAction(event -> {
       controller.setActiveTool(ToolType.PAINT);
       updateToolButtonStyles(paintButton);
+    });
+    splineButton.setOnAction(event -> {
+      controller.setActiveTool(ToolType.SPLINE);
+      updateToolButtonStyles(splineButton);
     });
 
     Button undoButton = createSizedButton(s("undoButtonText"), actionWidth, actionHeight);
@@ -375,7 +412,9 @@ public class AuthoringScreenImpl implements AppScreen {
     loadButton.setOnAction(event -> handleLoad(loadButton.getScene().getWindow()));
 
     HBox toolButtonBox = new HBox(d("topBarSpacing"),
-        drawButton, eraseButton, paintButton, zoomOutButton, zoomInButton, fitButton);
+        drawButton, eraseButton, paintButton, splineButton,
+        splineResolutionLabel, splineResolutionSpinner, splineCommitButton,
+        zoomOutButton, zoomInButton, fitButton);
     toolButtonBox.setAlignment(Pos.CENTER_LEFT);
 
     HBox rightButtons = new HBox(

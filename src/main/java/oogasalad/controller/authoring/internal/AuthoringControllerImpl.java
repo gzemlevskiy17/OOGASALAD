@@ -52,6 +52,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final AuthoringCanvas canvas;
   private final PlacementValidator placementValidator;
   private final CanvasActionHistory history;
+  private final SplineDraftController splineDraft;
 
   private AuthoringPlaceable selectedPlaceable;
   private Consumer<String> placementErrorHandler = message -> { };
@@ -69,12 +70,24 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.canvas = canvas;
     this.placementValidator = new PlacementValidator();
     this.history = new CanvasActionHistory();
+    this.splineDraft = new SplineDraftController(world, canvas);
     double cellSize = canvas.getCellSize();
     this.selectedPlaceable = new TerrainPlaceable(
         cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
   }
 
+  /** @return the spline-draft controller, exposed so the UI shell can wire resolution edits. */
+  public SplineDraftController getSplineDraft() {
+    return splineDraft;
+  }
+
   public void setActiveTool(ToolSelector.ToolType type) {
+    // Cancel any in-progress spline draft when leaving SPLINE mode so stale knots don't persist
+    // as invisible overlays waiting for the next click.
+    if (toolSelector.getActiveTool() == ToolType.SPLINE && type != ToolType.SPLINE
+        && splineDraft.draftSize() > 0) {
+      splineDraft.cancel();
+    }
     toolSelector.setActiveTool(type);
   }
 
@@ -100,6 +113,11 @@ public class AuthoringControllerImpl implements AuthoringController {
     double cellSize = canvas.getCellSize();
 
     root.setOnMouseMoved(e -> {
+      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
+        canvas.clearHoverPreview();
+        splineDraft.moveCursor(e.getX() / cellSize, e.getY() / cellSize);
+        return;
+      }
       int col = (int) Math.floor(e.getX() / cellSize);
       int row = (int) Math.floor(e.getY() / cellSize);
       canvas.showHoverPreview(col, row);
@@ -112,18 +130,32 @@ public class AuthoringControllerImpl implements AuthoringController {
     // for object selection. Without this, drags starting on top of an
     // existing block would record each cell as its own undo step.
     root.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-      if (e.getButton() == MouseButton.PRIMARY) {
+      if (e.getButton() == MouseButton.PRIMARY
+          && toolSelector.getActiveTool() != ToolType.SPLINE) {
         history.beginBatch();
       }
     });
     root.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
-      if (e.getButton() == MouseButton.PRIMARY) {
+      if (e.getButton() == MouseButton.PRIMARY
+          && toolSelector.getActiveTool() != ToolType.SPLINE) {
         history.endBatch();
       }
     });
 
-    root.setOnMousePressed(e -> startStrokeAt(e.getX(), e.getY()));
-    root.setOnMouseDragged(e -> extendStrokeTo(e.getX(), e.getY()));
+    root.setOnMousePressed(e -> {
+      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
+        handleSplinePress(e);
+        return;
+      }
+      startStrokeAt(e.getX(), e.getY());
+    });
+    root.setOnMouseDragged(e -> {
+      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
+        splineDraft.moveCursor(e.getX() / cellSize, e.getY() / cellSize);
+        return;
+      }
+      extendStrokeTo(e.getX(), e.getY());
+    });
     root.setOnMouseReleased(e -> {
       if (toolSelector.getActiveTool() == ToolType.PAINT) {
         toolSelector.setActiveTool(ToolType.DRAW);
@@ -170,6 +202,23 @@ public class AuthoringControllerImpl implements AuthoringController {
       e.setDropCompleted(placed);
       e.consume();
     });
+  }
+
+  /**
+   * Primary click adds a knot at the sub-cell cursor position; secondary (right) click commits
+   * the current draft. This keeps the single-click flow fast ("place N knots, right-click to
+   * finalize") and avoids introducing keyboard handlers to the canvas.
+   */
+  private void handleSplinePress(MouseEvent e) {
+    double cellSize = canvas.getCellSize();
+    double col = e.getX() / cellSize;
+    double row = e.getY() / cellSize;
+    if (e.getButton() == MouseButton.PRIMARY) {
+      splineDraft.addKnot(col, row);
+    } else if (e.getButton() == MouseButton.SECONDARY) {
+      splineDraft.commit();
+      canvas.refreshGrid();
+    }
   }
 
   private void startStrokeAt(double x, double y) {
@@ -382,7 +431,8 @@ public class AuthoringControllerImpl implements AuthoringController {
     double cellSize = canvas.getCellSize();
     OccupancyGrid grid = buildOccupancyGrid();
     FillExecutor executor = new FillExecutor();
-    List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row);
+    int minRow = canvas.getGridRows() / 2;
+    List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row, minRow);
 
     TerrainPlaceable unitPlaceable = new TerrainPlaceable(
         cellSize, cellSize,

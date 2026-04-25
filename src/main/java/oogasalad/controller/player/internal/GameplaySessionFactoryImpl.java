@@ -4,8 +4,14 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.shape.ClosePath;
+import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
+import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
@@ -27,7 +33,9 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.components.VehicleComponent;
+import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
@@ -65,6 +73,14 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double BOUNDS_PADDING = 400.0;
   private static final double FALLBACK_WORLD_WIDTH = 2600.0;
   private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
+  // Regardless of how tiny the authored terrain is, the world must be at least one
+  // viewport + padding on each axis. Without this floor, a level with just a few
+  // blocks near the top of the canvas yields a world shorter than the viewport,
+  // which (a) clamps the follow-camera to y=0 and (b) lets the vehicle fall past
+  // the world floor before the loss checker can trigger, producing the
+  // "empty/black viewport" symptom during playtesting.
+  private static final double MIN_WORLD_WIDTH = DEFAULT_VIEW_WIDTH + BOUNDS_PADDING;
+  private static final double MIN_WORLD_HEIGHT = DEFAULT_VIEW_HEIGHT + BOUNDS_PADDING;
 
   private record LevelBounds(double width, double height) {}
 
@@ -80,6 +96,43 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   ) {
     this.levelLoader = levelLoader;
     this.levelPathSupplier = levelPathSupplier;
+  }
+
+  /**
+   * Builds a JavaFX {@link Path} tracing the spline curve at the top, dropping to the baseline
+   * on each end, and closing along the baseline. Coordinates are in the component's local space.
+   */
+  private static Node createSplineNode(TerrainSpline ts) {
+    ParabolaSpline spline = ts.getSpline();
+    double originX = ts.getX();
+    double originY = ts.getY();
+    double localBaselineY = spline.baselineY() - originY;
+
+    Path path = new Path();
+    path.setManaged(false);
+
+    Vector firstKnot = spline.knots().get(0);
+    path.getElements().add(new MoveTo(firstKnot.x() - originX, firstKnot.y() - originY));
+    for (int i = 0; i < spline.segmentCount(); i++) {
+      Vector control = spline.controls().get(i);
+      Vector next = spline.knots().get(i + 1);
+      path.getElements().add(new QuadCurveTo(
+          control.x() - originX, control.y() - originY,
+          next.x() - originX, next.y() - originY));
+    }
+    Vector lastKnot = spline.knots().get(spline.knots().size() - 1);
+    path.getElements().add(new LineTo(lastKnot.x() - originX, localBaselineY));
+    path.getElements().add(new LineTo(firstKnot.x() - originX, localBaselineY));
+    path.getElements().add(new ClosePath());
+
+    try {
+      path.setFill(Paint.valueOf(ts.getColor()));
+    } catch (IllegalArgumentException e) {
+      path.setFill(Color.SADDLEBROWN);
+    }
+    path.setStroke(Color.BLACK);
+    path.setStrokeWidth(1.0);
+    return path;
   }
 
   /**
@@ -135,6 +188,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     Renderer objectRenderer = new RendererImpl(screen.getGameLayer(),
         r -> {
+          if (r instanceof TerrainSpline ts) {
+            return createSplineNode(ts);
+          }
           if (r instanceof TerrainBlock tb) {
             Rectangle rect = new Rectangle(tb.getWidth(), tb.getHeight());
             rect.setManaged(false);
@@ -150,7 +206,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
           }
           throw new IllegalStateException(
               "No renderer for " + r.getClass().getName()
-                  + " — must be TerrainBlock or SpriteRenderable");
+                  + " — must be TerrainSpline, TerrainBlock, or SpriteRenderable");
         },
         (r, node) -> {
           Sprite sprite = spritesByRenderable.get(r);
@@ -265,13 +321,20 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       if (c instanceof TerrainBlock tb) {
         maxX = Math.max(maxX, tb.getX() + tb.getWidth());
         maxY = Math.max(maxY, tb.getY() + tb.getHeight());
+      } else if (c instanceof TerrainSpline ts) {
+        maxX = Math.max(maxX, ts.getX() + ts.getWidth());
+        maxY = Math.max(maxY, ts.getSpline().baselineY());
       } else if (c instanceof GoalLineComponent gl) {
         maxX = Math.max(maxX, gl.getX() + gl.getWidth());
         maxY = Math.max(maxY, gl.getY() + gl.getHeight());
       }
     }
-    double width = maxX > 0 ? maxX + BOUNDS_PADDING : FALLBACK_WORLD_WIDTH;
-    double height = maxY > 0 ? maxY + BOUNDS_PADDING : FALLBACK_WORLD_HEIGHT;
+    double width = Math.max(
+        MIN_WORLD_WIDTH,
+        maxX > 0 ? maxX + BOUNDS_PADDING : FALLBACK_WORLD_WIDTH);
+    double height = Math.max(
+        MIN_WORLD_HEIGHT,
+        maxY > 0 ? maxY + BOUNDS_PADDING : FALLBACK_WORLD_HEIGHT);
     return new LevelBounds(width, height);
   }
 

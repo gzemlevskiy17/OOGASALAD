@@ -8,8 +8,11 @@ import java.io.IOException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainSpline;
+import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,6 +23,12 @@ import org.apache.logging.log4j.Logger;
  * produces the same World. Only TerrainBlock objects are serialized; other
  * object types will be added as their implementations are introduced.
  *
+ * <p>A positive {@code scale} factor is applied to every position and size on
+ * write, so the authoring environment (which stores terrain in grid-cell
+ * units) can emit JSON in world-pixel units that the gameplay loader reads
+ * verbatim. The no-arg constructor uses {@code scale = 1}, preserving the
+ * pass-through behavior required by pre-existing level files and tests.
+ *
  * Throws LevelSaveException (unchecked) on any I/O failure.
  * Collaborators: WorldImpl (source of objects), TerrainBlock (serialized type).
  */
@@ -27,15 +36,39 @@ public class LevelSaverImpl implements LevelSaver {
 
   private static final Logger LOG = LogManager.getLogger(LevelSaverImpl.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final double DEFAULT_SCALE = 1.0;
+
+  private final double scale;
+
+  public LevelSaverImpl() {
+    this(DEFAULT_SCALE);
+  }
+
+  /**
+   * @param scale multiplier applied to every terrain position and size on
+   *              write; must be positive. Used by the authoring environment
+   *              to convert grid-cell units into world-pixel units.
+   */
+  public LevelSaverImpl(double scale) {
+    if (scale <= 0) {
+      throw new IllegalArgumentException("scale must be positive, got " + scale);
+    }
+    this.scale = scale;
+  }
 
   @Override
   public void saveLevel(String fileName, World world) {
     ObjectNode root = MAPPER.createObjectNode();
     ObjectNode level = root.putObject("level");
     ArrayNode terrain = level.putArray("terrain");
+    ArrayNode splines = level.putArray("splines");
 
     for (GameObject obj : world.getObjects()) {
-      if (obj instanceof TerrainBlock tb) {
+      if (obj instanceof TerrainSpline ts) {
+        // Serialize splines as their source data only; the runtime re-tessellates on load so we
+        // never have to write (or keep in sync) the derived slab polygons.
+        splines.add(serializeSpline(ts));
+      } else if (obj instanceof TerrainBlock tb) {
         terrain.add(serializeTerrain(tb));
       }
     }
@@ -48,16 +81,46 @@ public class LevelSaverImpl implements LevelSaver {
     }
   }
 
+  private ObjectNode serializeSpline(TerrainSpline ts) {
+    ObjectNode entry = MAPPER.createObjectNode();
+    ParabolaSpline spline = ts.getSpline();
+
+    ArrayNode knots = entry.putArray("knots");
+    for (Vector k : spline.knots()) {
+      ObjectNode point = knots.addObject();
+      point.put("x", k.x() * scale);
+      point.put("y", k.y() * scale);
+    }
+
+    ArrayNode controls = entry.putArray("controls");
+    for (Vector c : spline.controls()) {
+      ObjectNode point = controls.addObject();
+      point.put("x", c.x() * scale);
+      point.put("y", c.y() * scale);
+    }
+
+    entry.put("baselineY", spline.baselineY() * scale);
+    entry.put("resolution", spline.segmentsPerKnotPair());
+
+    ObjectNode props = entry.putObject("properties");
+    props.put("texture", ts.getSprite());
+    props.put("tile_texture", ts.isTiled());
+    props.put("friction", ts.getFriction());
+    props.put("color", ts.getColor());
+
+    return entry;
+  }
+
   private ObjectNode serializeTerrain(TerrainBlock tb) {
     ObjectNode entry = MAPPER.createObjectNode();
 
     ObjectNode pos = entry.putObject("position");
-    pos.put("x", tb.getX());
-    pos.put("y", tb.getY());
+    pos.put("x", tb.getX() * scale);
+    pos.put("y", tb.getY() * scale);
 
     ObjectNode size = entry.putObject("size");
-    size.put("width", tb.getWidth());
-    size.put("height", tb.getHeight());
+    size.put("width", tb.getWidth() * scale);
+    size.put("height", tb.getHeight() * scale);
 
     ObjectNode props = entry.putObject("properties");
     props.put("texture", tb.getSprite());

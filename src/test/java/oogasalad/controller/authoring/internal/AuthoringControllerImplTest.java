@@ -365,6 +365,8 @@ class AuthoringControllerImplTest {
     @Override public void setOnObjectSelected(java.util.function.Consumer<AuthoringPlaceable> handler) {}
     @Override public void setZoom(double factor) {}
     @Override public double getZoom() { return 1.0; }
+    @Override public void addOverlay(javafx.scene.Node node) {}
+    @Override public void clearOverlays() {}
   }
 
   /**
