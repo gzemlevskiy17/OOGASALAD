@@ -104,8 +104,11 @@ public class ScreenFactory {
         new GameMenuScreen(this::guardedOutcome, authService.session()::isLoggedIn));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
         new AuthoringEntryScreenImpl(this::guardedOutcome));
+    // The authoring screen's Run button saves a preview level and then opens the vehicle
+    // builder. Handing it a path setter lets the gameplay session pick up that preview
+    // without any knowledge leaking across package boundaries.
     screenManager.registerScreen(AUTHORING_SCREEN_KEY,
-        new AuthoringScreenImpl(this::guardedOutcome));
+        new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set));
 
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected));
