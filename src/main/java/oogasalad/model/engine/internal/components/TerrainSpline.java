@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.model.engine.internal.spline.SplineTessellator;
 
@@ -43,6 +44,11 @@ public class TerrainSpline extends TerrainComponent {
   private static final String DEFAULT_COLOR = "#4A2C0F";
   private static final String DEFAULT_SPRITE = "";
   private static final double DEFAULT_RESTITUTION = 0.5;
+  // The spline component is visual-only; physics runs against per-slab SplineSlabCollider
+  // instances spawned via spawnSlabColliders(World). This degenerate placeholder polygon keeps
+  // the StaticComponent contract satisfied without producing real overlaps with vehicles.
+  private static final ConvexPolygon NON_COLLIDING_POLYGON =
+      ConvexPolygon.axisAlignedBox(-1e9, -1e9, 1e-6, 1e-6);
 
   private final ParabolaSpline spline;
   private final List<ConvexPolygon> slabs;
@@ -62,10 +68,7 @@ public class TerrainSpline extends TerrainComponent {
   public TerrainSpline(ParabolaSpline spline, String sprite, boolean tiled, double friction,
       String color) {
     super(boundingMinX(Objects.requireNonNull(spline, "spline")), boundingMinY(spline), 0.0,
-        ConvexPolygon.axisAlignedBox(boundingMinX(spline), boundingMinY(spline),
-            boundingMaxX(spline) - boundingMinX(spline),
-            spline.baselineY() - boundingMinY(spline)),
-        "", friction, DEFAULT_RESTITUTION);
+        NON_COLLIDING_POLYGON, "", friction, DEFAULT_RESTITUTION);
     this.spline = spline;
     this.slabs = SplineTessellator.tessellate(spline);
     this.width = boundingMaxX(spline) - boundingMinX(spline);
@@ -73,9 +76,15 @@ public class TerrainSpline extends TerrainComponent {
     this.sprite = sprite == null ? DEFAULT_SPRITE : sprite;
     this.tiled = tiled;
     this.color = color == null ? DEFAULT_COLOR : color;
+  }
 
-    if (!slabs.isEmpty()) {
-      setPolygon(slabs.get(0));
+  /**
+   * Adds one {@link SplineSlabCollider} to {@code world} per tessellated slab. The visible spline
+   * carries no real collision polygon; the slabs do.
+   */
+  public void spawnSlabColliders(World world) {
+    for (ConvexPolygon slab : slabs) {
+      world.addObject(new SplineSlabCollider(slab, getFriction(), getRestitution()));
     }
   }
 

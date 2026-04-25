@@ -136,6 +136,7 @@ public class SplineDraftController {
       committed = new TerrainSpline(
           spline, DEFAULT_SPRITE, false, DEFAULT_FRICTION, DEFAULT_COLOR);
       world.addObject(committed);
+      committed.spawnSlabColliders(world);
     }
     cancel();
     return committed;

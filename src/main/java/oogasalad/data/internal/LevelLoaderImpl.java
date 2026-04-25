@@ -127,7 +127,9 @@ public class LevelLoaderImpl implements LevelLoader {
       return;
     }
     for (JsonNode entry : splineArray) {
-      world.addObject(parseSpline(entry));
+      TerrainSpline spline = parseSpline(entry);
+      world.addObject(spline);
+      spline.spawnSlabColliders(world);
     }
   }
 
