@@ -10,6 +10,7 @@ import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.StaticComponent;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -104,11 +105,9 @@ class FallOffWorldLossCheckerTest {
 
   // --- Test doubles ---
 
-  private static final class TaggedBody extends GameComponent {
+  private static final class TaggedBody extends StaticComponent {
     TaggedBody(String tag, double x, double y) {
-      super(x, y, 0, 1, 0);
-      setTag(tag);
-      setPolygon(ConvexPolygon.axisAlignedBox(x - 5, y - 5, 10, 10));
+      super(x, y, 0, ConvexPolygon.axisAlignedBox(x - 5, y - 5, 10, 10), tag, 0, 0);
     }
   }
 
