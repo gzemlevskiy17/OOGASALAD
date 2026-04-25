@@ -71,18 +71,6 @@ public class TerrainBlock extends TerrainComponent {
     return sprite;
   }
 
-  // AuthoringPlaceable still uses get-prefixed accessors; Renderable was renamed to x()/y().
-  // Delegate so TerrainBlock satisfies both interfaces without duplicating state.
-  @Override
-  public double getX() {
-    return x();
-  }
-
-  @Override
-  public double getY() {
-    return y();
-  }
-
   @Override
   public double getWidth() {
     // TODO: implement polygon width

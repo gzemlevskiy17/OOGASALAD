@@ -91,18 +91,6 @@ public class TerrainSpline extends TerrainComponent {
     return slabs;
   }
 
-  // AuthoringPlaceable still uses get-prefixed accessors; Renderable was renamed to x()/y().
-  // Delegate so TerrainSpline satisfies both interfaces without duplicating state.
-  @Override
-  public double getX() {
-    return x();
-  }
-
-  @Override
-  public double getY() {
-    return y();
-  }
-
   @Override
   public double getWidth() {
     return width;
