@@ -261,15 +261,10 @@ public abstract class DynamicComponent extends RigidBody {
     if (netForce == null) {
       dynamicState.setLinearAcceleration(new Vector(0, 0));
       return;
-    }
-
-    if (netTorque == 0) {
-      dynamicState.setAngularAcceleration(0.0);
-      return;
-    }
+    } //TODO: need this check?
 
     dynamicState.setLinearAcceleration(netForce.multiply(1.0 / m));
-    dynamicState.setAngularAcceleration(netTorque);
+    dynamicState.setAngularAcceleration(netTorque * getInverseMomentOfInertia());
   }
 
   public void resetForces() {
