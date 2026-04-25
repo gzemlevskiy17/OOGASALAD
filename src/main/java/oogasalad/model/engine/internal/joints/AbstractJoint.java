@@ -14,7 +14,7 @@ public abstract class AbstractJoint implements Joint {
 
   // Anchor violations below half a pixel are ignored so joints don't fight collision
   // drift every frame.
-  protected static final double ANCHOR_POSITION_SLOP = 0.5;
+  protected static final double ANCHOR_POSITION_SLOP = 0.1;
 
   private final GameComponent objectA;
   private final GameComponent objectB;
