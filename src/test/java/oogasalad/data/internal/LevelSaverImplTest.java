@@ -39,7 +39,8 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_singleTerrainBlock_writesCorrectJson() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(0, 0, 10, 2, "assets/terrain/grass.png", true, 0.6));
+    world.addObject(
+        new TerrainBlock(0, 0, 10, 2, "assets/terrain/grass.png", true, 0.6, 0.0));
     LevelAttributes levelAttributes = new LevelAttributes();
 
     File output = tempDir.resolve("saved_level.json").toFile();
@@ -59,8 +60,8 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_multipleBlocks_writesAllEntries() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(0, 0, 5, 1, "a.png", true, 0.5));
-    world.addObject(new TerrainBlock(5, 0, 5, 1, "b.png", false, 0.4));
+    world.addObject(new TerrainBlock(0, 0, 5, 1, "a.png", true, 0.5, 0.0));
+    world.addObject(new TerrainBlock(5, 0, 5, 1, "b.png", false, 0.4, 0.0));
     LevelAttributes levelAttributes = new LevelAttributes();
 
     File output = tempDir.resolve("saved_level.json").toFile();
@@ -85,7 +86,8 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_roundTrip_loaderRestoresSameBlockCount() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(3, 1, 4, 2, "assets/terrain/dirt.png", false, 0.3));
+    world.addObject(
+        new TerrainBlock(3, 1, 4, 2, "assets/terrain/dirt.png", false, 0.3, 0.0));
     LevelAttributes savedAttributes = new LevelAttributes();
     savedAttributes.setMaxSelectableVehicleItems(5);
     savedAttributes.setAllowedVehicleComponents(List.of("pig", "wheel"));
@@ -184,7 +186,7 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_mixedBlockAndSpline_writesBothInCorrectSections() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(0, 0, 10, 2, "a.png", true, 0.5));
+    world.addObject(new TerrainBlock(0, 0, 10, 2, "a.png", true, 0.5, 0.0));
     ParabolaSpline spline = new ParabolaSpline(
         List.of(new Vector(0, 10), new Vector(20, 10)), 100.0, 4);
     world.addObject(new TerrainSpline(spline, "", false, 0.5, "#fff"));
