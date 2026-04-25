@@ -83,8 +83,8 @@ class TerrainSplineTest {
     TerrainSpline terrain = new TerrainSpline(spline, 0.5);
 
     // min x across knots is 10, min y is 90
-    assertEquals(10.0, terrain.getX(), TOLERANCE);
-    assertEquals(90.0, terrain.getY(), TOLERANCE);
+    assertEquals(10.0, terrain.x(), TOLERANCE);
+    assertEquals(90.0, terrain.y(), TOLERANCE);
   }
 
   @Test

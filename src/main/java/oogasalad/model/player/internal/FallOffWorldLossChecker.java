@@ -34,7 +34,7 @@ public class FallOffWorldLossChecker implements LossConditionChecker {
       return false;
     }
     for (GameObject obj : tracked) {
-      if (obj.getY() <= worldHeight) {
+      if (obj.y() <= worldHeight) {
         return false;
       }
     }

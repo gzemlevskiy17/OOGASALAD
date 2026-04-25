@@ -47,8 +47,8 @@ class SplineTessellatorTest {
         List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 1);
 
     ConvexPolygon slab = SplineTessellator.tessellate(spline).get(0);
-    double maxY = slab.getPoints().stream().mapToDouble(Vector::y).max().orElseThrow();
-    double minY = slab.getPoints().stream().mapToDouble(Vector::y).min().orElseThrow();
+    double maxY = slab.points().stream().mapToDouble(Vector::y).max().orElseThrow();
+    double minY = slab.points().stream().mapToDouble(Vector::y).min().orElseThrow();
 
     assertEquals(SplineTessellator.DEFAULT_SLAB_THICKNESS, maxY - minY, TOLERANCE);
     assertFalse(maxY >= BASELINE, "slab must not reach the baseline");
@@ -60,8 +60,8 @@ class SplineTessellatorTest {
         List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 1);
 
     ConvexPolygon slab = SplineTessellator.tessellate(spline, 25.0).get(0);
-    double maxY = slab.getPoints().stream().mapToDouble(Vector::y).max().orElseThrow();
-    double minY = slab.getPoints().stream().mapToDouble(Vector::y).min().orElseThrow();
+    double maxY = slab.points().stream().mapToDouble(Vector::y).max().orElseThrow();
+    double minY = slab.points().stream().mapToDouble(Vector::y).min().orElseThrow();
 
     assertEquals(25.0, maxY - minY, TOLERANCE);
   }
@@ -74,7 +74,7 @@ class SplineTessellatorTest {
     ConvexPolygon slab = SplineTessellator.tessellate(spline).get(0);
 
     // The two top points (minimum Y) should sit on the spline endpoints.
-    List<Vector> points = slab.getPoints();
+    List<Vector> points = slab.points();
     double minY = points.stream().mapToDouble(Vector::y).min().orElseThrow();
     long tops = points.stream().filter(p -> Math.abs(p.y() - minY) < 50.0).count();
     assertTrue(tops >= 2);
@@ -141,8 +141,8 @@ class SplineTessellatorTest {
 
     ConvexPolygon slab = SplineTessellator.tessellate(spline).get(0);
 
-    assertEquals(5, slab.getPoints().size());
+    assertEquals(5, slab.points().size());
     // First and last point coincide to close the polygon.
-    assertEquals(slab.getPoints().get(0), slab.getPoints().get(4));
+    assertEquals(slab.points().get(0), slab.points().get(4));
   }
 }

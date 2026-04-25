@@ -68,8 +68,8 @@ public class LevelSaverImpl implements LevelSaver {
     for (GameObject obj : world.getObjects()) {
       if (obj instanceof SpawnPointComponent sp) {
         ObjectNode spawn = level.putObject("spawn");
-        spawn.put("x", sp.getX() * scale);
-        spawn.put("y", sp.getY() * scale);
+        spawn.put("x", sp.x() * scale);
+        spawn.put("y", sp.y() * scale);
       } else if (obj instanceof TerrainSpline ts) {
         // Serialize splines as their source data only; the runtime re-tessellates on load so we
         // never have to write (or keep in sync) the derived slab polygons.
@@ -123,8 +123,8 @@ public class LevelSaverImpl implements LevelSaver {
     ObjectNode entry = MAPPER.createObjectNode();
 
     ObjectNode pos = entry.putObject("position");
-    pos.put("x", tb.getX() * scale);
-    pos.put("y", tb.getY() * scale);
+    pos.put("x", tb.x() * scale);
+    pos.put("y", tb.y() * scale);
 
     ObjectNode size = entry.putObject("size");
     size.put("width", tb.getWidth() * scale);
