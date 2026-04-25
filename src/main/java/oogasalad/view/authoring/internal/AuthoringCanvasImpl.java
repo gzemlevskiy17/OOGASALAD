@@ -20,6 +20,7 @@ import javafx.scene.transform.Scale;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
@@ -136,10 +137,11 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   /**
-   * Clears and redraws all authoring objects, the spawn reference guides, and grid lines
-   * from the current World state. Spawn guides sit above placed objects but below grid
-   * lines, so designers can always see where the vehicle will land relative to what they
-   * have drawn.
+   * Clears and redraws all authoring objects, grid lines, and spawn reference guides
+   * from the current World state. The spawn guide is drawn LAST so the draggable marker
+   * sits above both placed objects and the grid lines — otherwise grid lines intercept
+   * clicks on the marker and the event bubbles up to the root's paint/draw handler,
+   * making the marker effectively un-draggable while the active tool is DRAW or PAINT.
    */
   @Override
   public void refreshGrid() {
@@ -149,8 +151,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     if (world != null) {
       drawObjects();
     }
-    drawSpawnGuide();
     drawGridLines();
+    drawSpawnGuide();
   }
 
   @Override
@@ -257,9 +259,13 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     for (GameObject obj : world.getObjects()) {
       if (obj instanceof TerrainSpline spline) {
         root.getChildren().add(drawSplineObject(spline));
-      } else {
-        root.getChildren().add(drawObject((AuthoringPlaceable) obj));
+      } else if (obj instanceof AuthoringPlaceable placeable) {
+        root.getChildren().add(drawObject(placeable));
       }
+      // Non-visual markers (e.g. SpawnPointComponent) live in the world for
+      // save/load and lookup but have no grid representation; drawSpawnGuide()
+      // renders them separately. Blind-casting here previously crashed
+      // refreshGrid(), which left the canvas frozen and un-clickable.
     }
   }
 
@@ -368,17 +374,21 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   /**
-   * Draws a dashed horizontal line at the vehicle's spawn Y and a small circle marker at the
-   * exact spawn point. The horizontal line is the "don't build above this" reference designers
-   * need to place terrain at or below; without it, authored levels routinely put the car in
-   * mid-air and the vehicle falls past the world floor before any terrain can catch it.
-   *
-   * <p>Values are read from AuthoringCanvas.properties so the marker always matches whatever
-   * the gameplay factory uses as the hard-coded spawn point. Keep the two in sync.
+   * Draws a draggable spawn marker. Position is read from the world's SpawnPointComponent so
+   * it persists across save/load. Dragging the marker updates the component directly and
+   * redraws the canvas.
    */
   private void drawSpawnGuide() {
-    double spawnX = d("spawnX");
-    double spawnY = d("spawnY");
+    SpawnPointComponent spawnComp = world == null ? null :
+        world.getAllComponents().stream()
+            .filter(SpawnPointComponent.class::isInstance)
+            .map(SpawnPointComponent.class::cast)
+            .findFirst().orElse(null);
+
+    // SpawnPointComponent stores grid-cell units (same as TerrainBlock); multiply by cellSize
+    // to get canvas pixel coordinates for rendering.
+    double spawnX = spawnComp != null ? spawnComp.getX() * cellSize : d("spawnX");
+    double spawnY = spawnComp != null ? spawnComp.getY() * cellSize : d("spawnY");
     double markerRadius = d("spawnMarkerRadius");
     double totalWidth = gridCols * cellSize;
 
@@ -407,6 +417,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     label.setFill(markerColor);
     label.setMouseTransparent(true);
     root.getChildren().add(label);
+
   }
 
   private double d(String key) {
