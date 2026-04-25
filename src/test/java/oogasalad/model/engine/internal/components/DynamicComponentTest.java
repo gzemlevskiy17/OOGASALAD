@@ -12,7 +12,9 @@ import java.util.stream.Stream;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.DynamicState;
 import oogasalad.model.engine.EngineError;
+import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.api.World;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -292,4 +294,56 @@ class DynamicComponentTest {
         assertThrows(IllegalArgumentException.class, () -> body.setFriction(-0.1));
     assertTrue(ex.getMessage().contains(EngineError.FRICTION_MUST_BE_NON_NEGATIVE.message()));
   }
+
+
+  @Test
+  void linearDrag_slowsDown_body() {
+    DynamicComponent body = newBody(1, 0, 0);
+    World world = new WorldImpl();
+
+    Vector linearVelocity = new Vector(5, 0);
+    double linearVelocityX = linearVelocity.x();
+    int timeStep = 1;
+    body.getDynamicState().setLinearVelocity(linearVelocity);
+
+    double dragCoefficient = world.getDragCoefficient();
+    double expectedLinearAcceleration = -linearVelocityX * dragCoefficient / body.getMass();
+    body.addForce(body.getDynamicState().getLinearVelocity().multiply(-dragCoefficient));
+    body.applyForceToAcceleration();
+
+    body.integrateObjectState(timeStep);
+    assertEquals(expectedLinearAcceleration,
+        body.getDynamicState().getLinearAcceleration().x(), EPS);
+    assertEquals(linearVelocityX + expectedLinearAcceleration * timeStep,
+        body.getDynamicState().getLinearVelocity().x(), EPS);
+  }
+
+  @Test
+  void angularDrag_slowsDown_body() {
+    DynamicComponent body = newBody(1, 0, 0);
+    double momentOfInertia = 2;
+    double angularVelocity = 5;
+    int timeStep = 1;
+
+    World world = new WorldImpl();
+    body.setMomentOfInertia(momentOfInertia);
+    body.getDynamicState().setAngularVelocity(angularVelocity);
+
+    double dragCoefficient = world.getDragCoefficient();
+    double expectedAngularAcceleration = -angularVelocity * dragCoefficient / momentOfInertia;
+    body.addTorque(-dragCoefficient * body.getDynamicState().getAngularVelocity());
+    body.applyForceToAcceleration();
+
+    body.integrateObjectState(timeStep);
+    assertEquals(expectedAngularAcceleration,
+        body.getDynamicState().getAngularAcceleration(), EPS);
+    assertEquals(
+        angularVelocity + expectedAngularAcceleration * timeStep,
+        body.getDynamicState().getAngularVelocity(), EPS);
+    assertEquals(angularVelocity + expectedAngularAcceleration * timeStep,
+        body.getStaticState().getAngularPosition(), EPS);
+
+  }
+
 }
+
