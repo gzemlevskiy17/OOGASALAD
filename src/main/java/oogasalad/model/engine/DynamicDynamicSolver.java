@@ -79,14 +79,10 @@ public class DynamicDynamicSolver {
    * @param collision detected collision pair
    */
   private void resolveImpulseAtContacts(Collision collision) {
-    //TODO: refactor
-    StaticState referenceStaticState = referenceObject.getStaticState();
-    StaticState incidentStaticState = incidentObject.getStaticState();
     DynamicState referenceDynamicState = referenceObject.getDynamicState();
     DynamicState incidentDynamicState = incidentObject.getDynamicState();
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(collision, referenceObject,
-        incidentObject, incidentStaticState,
-        referenceStaticState, incidentDynamicState, referenceDynamicState);
+        incidentObject, incidentDynamicState, referenceDynamicState);
   }
 }

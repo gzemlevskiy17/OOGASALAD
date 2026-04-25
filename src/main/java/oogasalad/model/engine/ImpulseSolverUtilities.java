@@ -7,6 +7,7 @@ import oogasalad.model.engine.internal.components.RigidBody;
 
 public class ImpulseSolverUtilities {
 //TODO: comment
+
   /**
    * Computes the contact-relative positions from each object's center of mass.
    *
@@ -30,20 +31,18 @@ public class ImpulseSolverUtilities {
    * n)^2/I_incident). e is the average coefficient of restitution of the two objects.
    *
    * @param contactPointPhysics contact data with relative velocity and offsets
-   * @param referenceUnitNormal collision normal used for the impulse calculation
-   * @return impulse magnitude along the collision normal
+   * @param direction           vector along which to return impulse
+   * @return impulse magnitude along the given direction
    */
   private static double computeImpulse(RigidBody referenceObject, RigidBody incidentObject,
-      ContactPointPhysics contactPointPhysics,
-      Vector referenceUnitNormal) {
-    double restitution = (incidentObject.getRestitution() + referenceObject.getRestitution()) / 2;
+      ContactPointPhysics contactPointPhysics, Vector direction, double restitution) {
     double velocity =
-        -(1 + restitution) * contactPointPhysics.relativeVelocity.dot(referenceUnitNormal);
+        -(1 + restitution) * contactPointPhysics.relativeVelocity.dot(direction);
 
     double incidentPointMomentum = contactPointPhysics.positionFromIncident.crossWithVector(
-        referenceUnitNormal);
+        direction);
     double referencePointMomentum = contactPointPhysics.positionFromReference.crossWithVector(
-        referenceUnitNormal);
+        direction);
     double inverseMass = referenceObject.getInverseMass() + incidentObject.getInverseMass()
         + Math.pow(incidentPointMomentum, 2) * incidentObject.getInverseMomentOfInertia()
         + Math.pow(referencePointMomentum, 2) * referenceObject.getInverseMomentOfInertia();
@@ -79,13 +78,13 @@ public class ImpulseSolverUtilities {
   /**
    * Moves objects out of overlap.
    *
-   * <p>Uses Baumgarte-style positional projection: each frame resolves {@code correctionFraction}
-   * of the remaining penetration (above a small {@code slop} tolerance), and splits the motion
-   * between the two bodies proportionally to their inverse masses. Static bodies (inverse mass 0)
-   * therefore absorb none of the correction, while lighter dynamic bodies absorb more than heavier
-   * ones. This method is expected to be called multiple times per frame (either by the solver
-   * iteration loop or by the joint/collision interleave in the engine) so the remaining penetration
-   * decays geometrically to zero.
+   * <p>Uses Baumgarte-style positional projection: each frame resolves
+   * {@code correctionFraction} of the remaining penetration (above a small {@code slop} tolerance),
+   * and splits the motion between the two bodies proportionally to their inverse masses. Static
+   * bodies (inverse mass 0) therefore absorb none of the correction, while lighter dynamic bodies
+   * absorb more than heavier ones. This method is expected to be called multiple times per frame
+   * (either by the solver iteration loop or by the joint/collision interleave in the engine) so the
+   * remaining penetration decays geometrically to zero.
    *
    * @param collision       detected collision pair; penetration must point from the reference body
    *                        outward toward the incident body (true MTV direction)
@@ -130,45 +129,68 @@ public class ImpulseSolverUtilities {
   }
 
   public static void resolveImpulseAtContactsHelper(Collision collision, RigidBody referenceObject,
-      RigidBody incidentObject, StaticState incidentStaticState,
-      StaticState referenceStaticState, DynamicState incidentDynamicState,
+      RigidBody incidentObject, DynamicState incidentDynamicState,
       DynamicState referenceDynamicState) {
-    Vector referenceUnitNormal = collision.getPenetration().normalize();
+
+    Vector normal = collision.getPenetration().normalize();
+    StaticState incidentStaticState = incidentObject.getStaticState();
+    StaticState referenceStaticState = referenceObject.getStaticState();
 
     double totalDepth = 0;
-    List<ContactPointPhysics> contactPoints = new ArrayList<>(); //TODO: rename
+    List<ContactPointPhysics> physicsAtPoints = new ArrayList<>();
     for (Vector contactPoint : collision.getCollisionManifold().keySet()) {
-      //TODO: should these method behaviors be consistent
       ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
           collision.getCollisionManifold().get(contactPoint));
-      ImpulseSolverUtilities.setRelativePositions(contactPointPhysics, incidentStaticState,
-          referenceStaticState);
-
-      contactPointPhysics.relativeVelocity = ImpulseSolverUtilities.computeRelativeVelocity(
-          contactPointPhysics,
-          incidentDynamicState, referenceDynamicState);
-      contactPointPhysics.impulse = computeImpulse(referenceObject, incidentObject,
-          contactPointPhysics,
-          referenceUnitNormal);
-
       totalDepth += contactPointPhysics.depth;
-      contactPoints.add(contactPointPhysics);
+
+      setRelativePositions(contactPointPhysics, incidentStaticState, referenceStaticState);
+      contactPointPhysics.relativeVelocity = computeRelativeVelocity(contactPointPhysics,
+          incidentDynamicState, referenceDynamicState);
+
+      physicsAtPoints.add(contactPointPhysics);
     }
 
+    aggregateAndApplyImpulse(referenceObject, incidentObject, incidentDynamicState,
+        referenceDynamicState, normal, physicsAtPoints, totalDepth, false);
+    aggregateAndApplyImpulse(referenceObject, incidentObject, incidentDynamicState,
+        referenceDynamicState, normal, physicsAtPoints, totalDepth, true);
+  }
+
+  private static void aggregateAndApplyImpulse(RigidBody referenceObject, RigidBody incidentObject,
+      DynamicState incidentDynamicState, DynamicState referenceDynamicState, Vector normal,
+      List<ContactPointPhysics> physicsAtPoints, double totalDepth, boolean computingFriction) {
     double impulseSum = 0;
     double referenceCrossProductSum = 0;
     double incidentCrossProductSum = 0;
-    for (ContactPointPhysics contactPointPhysics : contactPoints) {
-      contactPointPhysics.impulse *= contactPointPhysics.depth / totalDepth;
 
-      impulseSum += contactPointPhysics.impulse;
+    for (ContactPointPhysics contactPointPhysics : physicsAtPoints) {
+      double impulse;
+      if (computingFriction) {
+        Vector tangent = computeTangent(contactPointPhysics.relativeVelocity, normal);
+        impulse = computeImpulse(referenceObject, incidentObject,
+            contactPointPhysics, tangent, 0) * contactPointPhysics.depth;
+      } else {
+        double restitution = referenceObject.getRestitution() + incidentObject.getRestitution();
+        impulse = computeImpulse(referenceObject, incidentObject,
+            contactPointPhysics, normal, restitution) * contactPointPhysics.depth / totalDepth;
+      }
+
+      impulseSum += impulse;
       referenceCrossProductSum +=
-          contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
-              * contactPointPhysics.impulse; //TODO: make impulse vector?
+          contactPointPhysics.positionFromReference.crossWithVector(normal)
+              * impulse; //TODO: make impulse vector?
       incidentCrossProductSum +=
-          contactPointPhysics.positionFromIncident.crossWithVector(referenceUnitNormal)
-              * contactPointPhysics.impulse;
+          contactPointPhysics.positionFromIncident.crossWithVector(normal)
+              * impulse;
     }
+
+    applyImpulse(referenceObject, incidentObject, incidentDynamicState, referenceDynamicState,
+        normal, referenceCrossProductSum, incidentCrossProductSum, impulseSum);
+  }
+
+  private static void applyImpulse(RigidBody referenceObject, RigidBody incidentObject,
+      DynamicState incidentDynamicState, DynamicState referenceDynamicState, Vector normal,
+      double referenceCrossProductSum, double incidentCrossProductSum, double impulseSum) {
 
     double newReferenceAngularVelocity = referenceDynamicState.getAngularVelocity()
         - referenceCrossProductSum * referenceObject.getInverseMomentOfInertia();
@@ -179,11 +201,21 @@ public class ImpulseSolverUtilities {
     incidentDynamicState.setAngularVelocity(newIncidentAngularVelocity);
 
     Vector newReferenceLinearVelocity = referenceDynamicState.getLinearVelocity()
-        .subtract(referenceUnitNormal.multiply(impulseSum * referenceObject.getInverseMass()));
+        .subtract(normal.multiply(impulseSum * referenceObject.getInverseMass()));
     referenceDynamicState.setLinearVelocity(newReferenceLinearVelocity);
 
     Vector newIncidentLinearVelocity = incidentDynamicState.getLinearVelocity()
-        .add(referenceUnitNormal.multiply(impulseSum * incidentObject.getInverseMass()));
+        .add(normal.multiply(impulseSum * incidentObject.getInverseMass()));
     incidentDynamicState.setLinearVelocity(newIncidentLinearVelocity);
+  }
+
+  private static Vector computeTangent(Vector relativeVelocity, Vector normal) {
+    Vector candidateTangent = normal.rotateLeft();
+    if (candidateTangent.dot(relativeVelocity) > 0) {
+      return candidateTangent;
+    } else if (candidateTangent.dot(relativeVelocity) < 0) {
+      return normal.rotateRight();
+    }
+    return new Vector(0, 0);
   }
 }
