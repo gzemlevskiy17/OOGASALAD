@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import oogasalad.data.api.LevelId;
-import oogasalad.model.player.api.PlayHistoryEntry;
 
 /**
  * Computes level ordering and unlock state from two inputs:
@@ -100,17 +99,21 @@ public class LevelProgression {
     return Optional.of(flatOrder.get(index + 1));
   }
 
-  /** True if {@code id} is the very first level, or its predecessor was won at least once. */
-  public boolean isUnlocked(LevelId id, List<PlayHistoryEntry> history) {
+  /**
+   * Cursor-based unlock: a level is unlocked iff its index in the current play order is at most
+   * one past the user's {@code furthestReached} cursor. {@code null} cursor (brand-new user) is
+   * treated as -1, leaving only the very first level unlocked. A cursor that doesn't appear in
+   * the current play order (e.g., a renamed level) is also treated as -1 — defensive.
+   *
+   * <p>Choosing the cursor over a "predecessor was won" rule means inserting new levels into
+   * earlier worlds doesn't re-lock downstream levels the user already cleared.
+   */
+  public boolean isUnlocked(LevelId id, LevelId furthestReached) {
     int index = flatOrder.indexOf(id);
     if (index < 0) {
       return false;
     }
-    if (index == 0) {
-      return true;
-    }
-    String prevPath = pathFor(flatOrder.get(index - 1));
-    return history.stream()
-        .anyMatch(entry -> entry.won() && prevPath.equals(entry.levelId()));
+    int cursorIndex = furthestReached != null ? flatOrder.indexOf(furthestReached) : -1;
+    return index <= cursorIndex + 1;
   }
 }

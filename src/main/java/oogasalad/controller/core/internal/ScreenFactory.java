@@ -116,8 +116,11 @@ public class ScreenFactory {
       throw new IllegalArgumentException("Unknown level: " + id);
     }
     String username = currentUsernameOrNull();
-    if (username != null && !progression.isUnlocked(id, playHistoryRepo.findAllByUser(username))) {
-      throw new LevelLockedException(id, furthestReachedForUser(username));
+    if (username != null) {
+      LevelId furthest = furthestReachedForUser(username);
+      if (!progression.isUnlocked(id, furthest)) {
+        throw new LevelLockedException(id, furthest);
+      }
     }
     selectedLevel.set(id);
     saveLastClickedCursor(username, id);
