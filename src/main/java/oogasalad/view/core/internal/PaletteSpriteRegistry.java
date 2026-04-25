@@ -2,17 +2,17 @@ package oogasalad.view.core.internal;
 
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import oogasalad.model.engine.api.TypedComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.view.core.api.LayeredSprite;
 import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.SingleSprite;
 import oogasalad.view.core.api.Sprite;
 import oogasalad.view.core.api.SpriteRegistry;
-import oogasalad.view.core.api.SpriteRenderable;
 
 /**
  * {@link SpriteRegistry} backed by the VehicleComponentPalette resource bundle. Handles
- * palette-driven components (via {@link SpriteRenderable#getComponentType()}) and
+ * palette-driven components (via {@link TypedComponent#getComponentType()}) and
  * {@link GoalLineComponent}, whose dimensions come from the component instance rather than the
  * palette.
  *
@@ -37,8 +37,8 @@ public class PaletteSpriteRegistry implements SpriteRegistry {
     if (renderable instanceof GoalLineComponent gl) {
       return new SingleSprite(require("GoalLine.sprite"), gl.getWidth(), gl.getHeight());
     }
-    if (renderable instanceof SpriteRenderable sr) {
-      return resolveByType(sr.getComponentType());
+    if (renderable instanceof TypedComponent tc) {
+      return resolveByType(tc.getComponentType());
     }
     throw new IllegalArgumentException("No sprite registered for renderable: " + renderable);
   }

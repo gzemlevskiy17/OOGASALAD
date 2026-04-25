@@ -3,7 +3,13 @@ package oogasalad.model.help.internal;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import oogasalad.model.help.api.ChatMessage;
 import oogasalad.model.help.api.HelpChatConfigurationException;
@@ -22,6 +28,8 @@ public class HelpLLMService {
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.model.help.HelpChat");
 
+  private static final Map<String, String> DOT_ENV = loadDotEnv();
+
   private final OpenAIClient client;
   private final String modelName;
 
@@ -31,10 +39,15 @@ public class HelpLLMService {
    * @author Emilio Garcia
    */
   public HelpLLMService() {
-    validateRuntimeConfiguration();
+    String apiKey = getEnv(PROPS.getString("apiKeyEnvVarName"));
+    String baseUrl = getEnv(PROPS.getString("baseUrlEnvVarName"));
+    validateRuntimeConfiguration(apiKey, baseUrl);
     modelName = PROPS.getString("modelName");
     try {
-      client = OpenAIOkHttpClient.fromEnv();
+      client = OpenAIOkHttpClient.builder()
+          .apiKey(apiKey)
+          .baseUrl(baseUrl)
+          .build();
     } catch (RuntimeException exception) {
       String message = PROPS.getString("llmRequestFailureError");
       LOG.error("Failed to initialize help chat LLM client", exception);
@@ -84,21 +97,47 @@ public class HelpLLMService {
     }
   }
 
-  private void validateRuntimeConfiguration() {
-    String apiKeyEnvVar = PROPS.getString("apiKeyEnvVarName");
-    String baseUrlEnvVar = PROPS.getString("baseUrlEnvVarName");
+  /**
+   * Reads from OS env first, falls back to .env file in the working directory.
+   */
+  private static String getEnv(String key) {
+    String val = System.getenv(key);
+    return (val != null) ? val : DOT_ENV.get(key);
+  }
 
-    String apiKey = System.getenv(apiKeyEnvVar);
+  private static Map<String, String> loadDotEnv() {
+    Map<String, String> map = new HashMap<>();
+    File file = new File(".env");
+    if (!file.exists()) {
+      return map;
+    }
+    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        line = line.strip();
+        if (line.isEmpty() || line.startsWith("#")) {
+          continue;
+        }
+        int eq = line.indexOf('=');
+        if (eq > 0) {
+          map.put(line.substring(0, eq).strip(), line.substring(eq + 1).strip());
+        }
+      }
+    } catch (IOException e) {
+      LOG.warn("Could not read .env file: {}", e.getMessage());
+    }
+    return map;
+  }
+
+  private void validateRuntimeConfiguration(String apiKey, String baseUrl) {
     if (apiKey == null || apiKey.isBlank()) {
       String message = PROPS.getString("missingApiKeyError");
-      LOG.error("{} envVar={}", message, apiKeyEnvVar);
+      LOG.error("{} envVar={}", message, PROPS.getString("apiKeyEnvVarName"));
       throw new HelpChatConfigurationException(message);
     }
-
-    String baseUrl = System.getenv(baseUrlEnvVar);
     if (baseUrl == null || baseUrl.isBlank()) {
       String message = PROPS.getString("missingBaseUrlError");
-      LOG.error("{} envVar={}", message, baseUrlEnvVar);
+      LOG.error("{} envVar={}", message, PROPS.getString("baseUrlEnvVarName"));
       throw new HelpChatConfigurationException(message);
     }
   }

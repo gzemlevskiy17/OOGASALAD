@@ -11,16 +11,10 @@ public class SpawnPointComponent extends StaticComponent {
 
   public SpawnPointComponent(double x, double y) {
     super(x, y, 0, 0, 0);
-    setAffectedByGravity(false);
     setTag(DefaultTag.STATIC.value());
   }
 
   public void moveTo(double x, double y) {
     setPosition(x, y, 0);
-  }
-
-  @Override
-  public String getComponentType() {
-    return "SpawnPoint";
   }
 }

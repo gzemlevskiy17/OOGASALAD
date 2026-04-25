@@ -14,6 +14,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.model.help.internal.HelpChatModel;
+import oogasalad.view.accounts.api.AccountOutcome;
 import oogasalad.view.help.internal.HelpChatWindow;
 
 /**
@@ -26,23 +27,30 @@ public class GameMenuScreen extends AbstractAppScreen {
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.core.GameMenu");
   private static final ThreadLocal<BooleanSupplier> PENDING_LOGIN_STATE = new ThreadLocal<>();
+  private static final ThreadLocal<Consumer<AccountOutcome>> PENDING_ACCOUNT_ACTION =
+      new ThreadLocal<>();
 
   private HelpChatWindow helpChatWindow;
 
-  public GameMenuScreen(Consumer<Outcome> onOutcome, BooleanSupplier isLoggedIn) {
-    super(prepare(onOutcome, isLoggedIn));
+  public GameMenuScreen(Consumer<Outcome> onOutcome, Consumer<AccountOutcome> onAccountAction,
+      BooleanSupplier isLoggedIn) {
+    super(prepare(onOutcome, onAccountAction, isLoggedIn));
     PENDING_LOGIN_STATE.remove();
+    PENDING_ACCOUNT_ACTION.remove();
   }
 
   private static Consumer<Outcome> prepare(Consumer<Outcome> onOutcome,
-      BooleanSupplier isLoggedIn) {
+      Consumer<AccountOutcome> onAccountAction, BooleanSupplier isLoggedIn) {
     PENDING_LOGIN_STATE.set(isLoggedIn);
+    PENDING_ACCOUNT_ACTION.set(onAccountAction);
     return onOutcome;
   }
 
   @Override
   protected Parent createRoot() {
     BooleanSupplier isLoggedIn = PENDING_LOGIN_STATE.get();
+    Consumer<AccountOutcome> onAccountAction = PENDING_ACCOUNT_ACTION.get();
+    Consumer<Outcome> onOutcome = this.onOutcome;
     BorderPane menuLayout = new BorderPane();
     menuLayout.getStylesheets().add(
         getClass().getResource("/oogasalad/view/core/game-menu.css").toExternalForm());
@@ -89,10 +97,10 @@ public class GameMenuScreen extends AbstractAppScreen {
     centerContent.getStyleClass().add("menu-center-region");
     menuLayout.setCenter(centerContent);
 
-    Button loginButton = new Button(PROPS.getString("loginButtonText"));
-    loginButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
-    loginButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_LOGIN));
-    menuLayout.setBottom(wrapBottomLeft(loginButton));
+    Button logoutButton = new Button(PROPS.getString("logoutButtonText"));
+    logoutButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    logoutButton.setOnAction(event -> onAccountAction.accept(new AccountOutcome.LogoutRequested()));
+    menuLayout.setBottom(wrapBottomLeft(logoutButton));
 
     return new StackPane(menuLayout, helpChatWindow.getRoot());
   }

@@ -42,6 +42,7 @@ public class TerrainSpline extends TerrainComponent {
 
   private static final String DEFAULT_COLOR = "#4A2C0F";
   private static final String DEFAULT_SPRITE = "";
+  private static final double DEFAULT_RESTITUTION = 0.5;
 
   private final ParabolaSpline spline;
   private final List<ConvexPolygon> slabs;
@@ -60,9 +61,11 @@ public class TerrainSpline extends TerrainComponent {
    */
   public TerrainSpline(ParabolaSpline spline, String sprite, boolean tiled, double friction,
       String color) {
-    super(boundingMinX(spline), boundingMinY(spline), 0.0, 0.0, friction);
-    Objects.requireNonNull(spline, "spline");
-    setAffectedByGravity(false);
+    super(boundingMinX(Objects.requireNonNull(spline, "spline")), boundingMinY(spline), 0.0,
+        ConvexPolygon.axisAlignedBox(boundingMinX(spline), boundingMinY(spline),
+            boundingMaxX(spline) - boundingMinX(spline),
+            spline.baselineY() - boundingMinY(spline)),
+        "", friction, DEFAULT_RESTITUTION);
     this.spline = spline;
     this.slabs = SplineTessellator.tessellate(spline);
     this.width = boundingMaxX(spline) - boundingMinX(spline);
@@ -84,7 +87,6 @@ public class TerrainSpline extends TerrainComponent {
     return spline;
   }
 
-  @Override
   public List<ConvexPolygon> getCollisionPolygons() {
     return slabs;
   }

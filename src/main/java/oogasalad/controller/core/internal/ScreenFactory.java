@@ -101,7 +101,8 @@ public class ScreenFactory {
   private void registerNonAuthScreens() {
     AuthoringScreenImpl authoringScreen = new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set);
     screenManager.registerScreen(MENU_SCREEN_KEY,
-        new GameMenuScreen(this::guardedOutcome, authService.session()::isLoggedIn));
+        new GameMenuScreen(this::guardedOutcome, authController::handle,
+            authService.session()::isLoggedIn));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
         new AuthoringEntryScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);

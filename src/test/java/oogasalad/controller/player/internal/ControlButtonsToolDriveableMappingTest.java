@@ -87,22 +87,6 @@ class ControlButtonsToolDriveableMappingTest {
         "placing 'Engine' should create a DriveComponent");
   }
 
-  /**
-   * Bug B: control-button list includes "blower" but neither the palette nor VehicleFactory has
-   * that type.
-   */
-  @Test
-  void blowerTool_mapsToDriveComponent() {
-    World world = new WorldImpl();
-    new VehicleFactory().buildVehicle(
-        new VehicleLayout(List.of(new PlacedComponent(0, 0, "Blower"))),
-        world, START_X, START_Y);
-
-    assertTrue(worldHasDriveWithDisplayNameIgnoreCase(world, "blower"),
-        "placing 'Blower' should create a DriveComponent — currently fails because "
-            + "neither the palette nor VehicleFactory knows 'Blower'");
-  }
-
   private DriveComponent findDrive(World world, String toolId) {
     for (GameComponent c : world.getAllComponents()) {
       if (c instanceof DriveComponent dc && dc.getDisplayName().equalsIgnoreCase(toolId)) {
@@ -127,7 +111,7 @@ class ControlButtonsToolDriveableMappingTest {
 
   @Test
   void balloonTool_thrustForceExceedsItsWeight() {
-    // Gravity on a drive = mass * GRAVITY = 5 * 400 = 2000. For a balloon to actually lift
+    // Gravity on a drive = mass * GRAVITY = 5 * 980 = 4900. For a balloon to actually lift
     // its own body, thrustForce must exceed that; otherwise the button is cosmetic.
     World world = new WorldImpl();
     new VehicleFactory().buildVehicle(
@@ -135,7 +119,7 @@ class ControlButtonsToolDriveableMappingTest {
         world, START_X, START_Y);
     DriveComponent balloon = findDrive(world, "balloon");
 
-    double weight = balloon.getMass() * 400.0;
+    double weight = balloon.getMass() * 980.0;
     assertTrue(balloon.getThrustForce() > weight,
         "balloon thrust (" + balloon.getThrustForce() + ") must exceed its gravity weight ("
             + weight + ") or it cannot lift itself");

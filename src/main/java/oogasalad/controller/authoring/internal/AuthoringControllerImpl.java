@@ -75,7 +75,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.splineDraft = new SplineDraftController(world, canvas);
     double cellSize = canvas.getCellSize();
     this.selectedPlaceable = new TerrainPlaceable(
-        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
+        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.5);
     ensureSpawnPoint();
   }
 
@@ -90,8 +90,8 @@ public class AuthoringControllerImpl implements AuthoringController {
     SpawnPointComponent sp = getSpawnPoint();
     if (sp == null) return false;
     double cellSize = canvas.getCellSize();
-    double spawnPx = sp.getX() * cellSize;
-    double spawnPy = sp.getY() * cellSize;
+    double spawnPx = sp.x() * cellSize;
+    double spawnPy = sp.y() * cellSize;
     double hitRadius = cellSize * 1.5;
     double dx = canvasX - spawnPx;
     double dy = canvasY - spawnPy;
@@ -472,7 +472,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         action.col(), action.row(),
         action.width(), action.height(),
         action.sprite(), action.tiled(),
-        action.friction(), action.color());
+        action.friction(), action.color(), action.restitution());
     world.addObject(block);
   }
 
@@ -508,7 +508,8 @@ public class AuthoringControllerImpl implements AuthoringController {
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),
         selectedPlaceable.isTiled(),
-        selectedPlaceable.getFriction());
+        selectedPlaceable.getFriction(),
+        selectedPlaceable.getRestitution());
 
     history.beginBatch();
     try {
@@ -552,7 +553,8 @@ public class AuthoringControllerImpl implements AuthoringController {
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),
         selectedPlaceable.isTiled(),
-        selectedPlaceable.getFriction());
+        selectedPlaceable.getFriction(),
+        selectedPlaceable.getRestitution());
     history.beginBatch();
     try {
       for (int[] cell : best.cells()) {

@@ -97,10 +97,11 @@ public class ComponentPaletteImpl implements ComponentPallete {
       String sprite = TERRAIN_PROPS.getString(name + ".sprite");
       boolean tiled = Boolean.parseBoolean(TERRAIN_PROPS.getString(name + ".tiled"));
       double friction = Double.parseDouble(TERRAIN_PROPS.getString(name + ".friction"));
+      double restitution = Double.parseDouble(TERRAIN_PROPS.getString(name + ".restitution"));
       int blockCols = Integer.parseInt(TERRAIN_PROPS.getString(name + ".blockCols"));
       int blockRows = Integer.parseInt(TERRAIN_PROPS.getString(name + ".blockRows"));
       entries.put(name, new PaletteEntry(name, color, cols, rows,
-          sprite, tiled, friction, blockCols, blockRows));
+          sprite, tiled, friction, restitution, blockCols, blockRows));
     }
   }
 
@@ -143,7 +144,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
     PaletteEntry entry = entries.get(name);
     AuthoringPlaceable placeable = new TerrainPlaceable(
         entry.blockCols() * cellSize, entry.blockRows() * cellSize,
-        entry.color(), entry.sprite(), entry.tiled(), entry.friction());
+        entry.color(), entry.sprite(), entry.tiled(), entry.friction(), entry.restitution());
 
     // Redraw all samplees to update selection highlight
     int i = 0;
@@ -178,7 +179,8 @@ public class ComponentPaletteImpl implements ComponentPallete {
   }
 
   private record PaletteEntry(String name, String color, int cols, int rows,
-      String sprite, boolean tiled, double friction, int blockCols, int blockRows) {
+                              String sprite, boolean tiled, double friction, double restitution,
+                              int blockCols, int blockRows) {
   }
 
   private String s(String key) {

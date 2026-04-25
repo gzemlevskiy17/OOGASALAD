@@ -37,14 +37,14 @@ Our design prioritizes **encapsulation of core simulation logic** while enabling
 
 ### Closed for Modification (Encapsulated)
 
-| Subsystem | Encapsulated Responsibility | Why Closed |
-|---|---|---|
-| **PhysicsEngine** (implements `GameEngine`) | Numerical integration of motion (velocity, force, mass), applies gravity, integrates velocity, resolves Joints as constraints. | Physics is domain-agnostic; it should work identically for any game using realistic motion. Changing its internal algorithm should not affect game-specific code. |
-| **CollisionDetector** (interface + `CollisionDetectorImpl`) | Loops through hitboxes to check for intersections, returns collision pairs. Delegates resolution to `CollisionStrategy` instances. | The detection logic is independent of what happens after a collision. It produces raw collision events but does not interpret them. |
-| **World** (interface + `WorldImpl`) | Memory container for all active GameObjects and Joints. Manages adding/removing items. Provides read-only views for rendering and simulation. | World state management is a fixed service. How objects are stored or enumerated should not vary by game type. |
-| **Renderer** (interface + `RendererImplementation`) | Paints `Renderable` objects using JavaFX tools. Reads `tile_texture` and `render_mode` flags to determine tiled vs. sprite drawing. Applies `Camera` viewport transform before drawing. | The view layer consumes read-only graphical data. It does not contain game logic and can be swapped for different front-ends. |
-| **LevelLoader / LevelSaver** (interfaces + Impl classes) | Translates JSON files to/from in-memory World state. | The format for storing levels is stable; saving and loading should work consistently across authoring and runtime modes. |
-| **ScreenManager** (interface + `ScreenManagerClass`) | Routes between `AppScreen` instances. | Screen routing logic is fixed. New screens are added by implementing `AppScreen`, not by modifying the manager. |
+| Subsystem                                                   | Encapsulated Responsibility                                                                                                                                                               | Why Closed                                                                                                                                                        |
+|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **PhysicsEngine** (implements `GameEngine`)                 | Numerical integration of motion (velocity, force, mass), applies gravity, integrates velocity, resolves Joints as constraints.                                                            | Physics is domain-agnostic; it should work identically for any game using realistic motion. Changing its internal algorithm should not affect game-specific code. |
+| **CollisionDetector** (interface + `CollisionDetectorImpl`) | Loops through hitboxes to check for intersections, returns collision pairs. Delegates resolution to `CollisionStrategy` instances.                                                        | The detection logic is independent of what happens after a collision. It produces raw collision events but does not interpret them.                               |
+| **World** (interface + `WorldImpl`)                         | Memory container for all active GameObjects and Joints. Manages adding/removing items. Provides read-only views for rendering and simulation.                                             | World state management is a fixed service. How objects are stored or enumerated should not vary by game type.                                                     |
+| **Renderer** (interface + `RendererImplementation`)         | Paints `Renderable` objects using JavaFX tools. Reads `tile_texture` and `render_mode` flags to determine tiled vs. sprite drawing. Applies `Camera` viewport staticState before drawing. | The view layer consumes read-only graphical data. It does not contain game logic and can be swapped for different front-ends.                                     |
+| **LevelLoader / LevelSaver** (interfaces + Impl classes)    | Translates JSON files to/from in-memory World state.                                                                                                                                      | The format for storing levels is stable; saving and loading should work consistently across authoring and runtime modes.                                          |
+| **ScreenManager** (interface + `ScreenManagerClass`)        | Routes between `AppScreen` instances.                                                                                                                                                     | Screen routing logic is fixed. New screens are added by implementing `AppScreen`, not by modifying the manager.                                                   |
 
 ### Open for Extension (Flexible)
 
@@ -174,7 +174,9 @@ For triangle-shaped objects (ramps, spikes), the `direction` field (`"up"`, `"do
 
 ### Camera System
 
-The **Camera** (interface) determines which portion of the World is visible. It provides a viewport transform that the `Renderer` applies before drawing. The Camera delegates its movement logic to a **CameraBehavior** (interface):
+The **Camera** (interface) determines which portion of the World is visible. It provides a viewport
+staticState that the `Renderer` applies before drawing. The Camera delegates its movement logic to a
+**CameraBehavior** (interface):
 
 - **FollowPlayerBehavior**: Viewport centers on the player's vehicle, with optional lead-ahead in the direction of motion. Used for Bad Piggies.
 - **AutoScrollBehavior**: Viewport moves rightward at a constant speed defined in the config, independent of player position. Used for Geometry Dash and Jetpack Joyride.
