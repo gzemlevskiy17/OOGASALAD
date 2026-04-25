@@ -45,16 +45,19 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   // Wrapper HBox that gets cleared and re-populated when the world changes. Assigned inside
   // createLevelButtonRegion (called via the super constructor's createRoot, which runs BEFORE
   // subclass field initializers, so a field initializer here would still be null at use time).
+  private HBox worldBox;
   private HBox levelButtonsContainer;
   private Button selectedWorldButton;
   private Button selectedLevelButton;
   private Button startButton;
   private String selectedWorldKey;
   private String selectedLevelKey;
-  // Captured during createWorldButtonRegion; used to auto-select the first world after createRoot
-  // finishes so the user sees a populated level region instead of a blank one.
+  // Captured during createWorldButtonRegion; used by onEnter to auto-select the first world.
   private Button firstWorldButton;
   private String firstWorldKey;
+  // Guards the one-time additions done in onEnter (Others button) so re-entries don't double up.
+  // Boolean default value (false) is fine without an explicit initializer here.
+  private boolean postConstructDone;
 
   public PlayerEntryAppScreen(Consumer<Outcome> onOutcome,
       BiConsumer<String, String> onSelectionConfirmed,
@@ -85,15 +88,35 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     root.setCenter(mainContent);
     root.setBottom(createBackButtonRegion());
 
-    // Auto-select the first world so the level region isn't blank on entry. Equivalent to a
-    // synthetic click on the first world button — selectWorld handles styling, level rebuild,
-    // and start-button state. Done here (after every region exists) rather than inside
-    // createWorldButtonRegion, where levelButtonsContainer hadn't been created yet.
-    if (firstWorldButton != null) {
+    return root;
+  }
+
+  /**
+   * Lifecycle hook from {@link oogasalad.view.core.api.AppScreen}, called by the screen
+   * manager every time this screen becomes active. We use it for two things that can't happen
+   * inside {@code createRoot()}: (1) appending the Others world button (depends on
+   * {@code otherLevelFiles}, which is assigned in the constructor body — not yet set when
+   * super calls createRoot); (2) auto-selecting the first world so the level region renders
+   * populated. Both are gated for idempotency so re-entries don't duplicate work.
+   */
+  @Override
+  public void onEnter() {
+    if (!postConstructDone) {
+      if (!otherLevelFiles.isEmpty() && worldBox != null) {
+        Button othersBtn = new Button(s("world.button.others"));
+        othersBtn.getStyleClass().add("world-button");
+        othersBtn.getStyleClass().add("world-" + OTHERS_WORLD_KEY);
+        othersBtn.setOnAction(e -> selectWorld(othersBtn, OTHERS_WORLD_KEY));
+        worldBox.getChildren().add(othersBtn);
+      }
+      postConstructDone = true;
+    }
+    // Auto-select the first world only when nothing is currently selected — first entry, or
+    // a state where the previous selection got cleared. Re-entries that already have a
+    // selection (user came back from gameplay) are left alone.
+    if (selectedWorldButton == null && firstWorldButton != null) {
       selectWorld(firstWorldButton, firstWorldKey);
     }
-
-    return root;
   }
 
   private VBox createLevelChoiceContentRegion() {
@@ -131,7 +154,7 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   }
 
   private HBox createWorldButtonRegion() {
-    HBox worldBox = new HBox(d("world.region.spacing"));
+    worldBox = new HBox(d("world.region.spacing"));
     worldBox.setAlignment(Pos.CENTER);
 
     for (String world : getList("worlds")) {
@@ -141,24 +164,14 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
       worldBox.getChildren().add(btn);
 
       btn.setOnAction(e -> selectWorld(btn, world));
-      // Remember the first world button so createRoot can auto-select it once everything is
-      // built — gives the user a populated level region on entry instead of a blank space.
+      // Remember the first world button so onEnter can auto-select it.
       if (firstWorldButton == null) {
         firstWorldButton = btn;
         firstWorldKey = world;
       }
     }
-
-    // "Others" world button only appears when there's something to show. Hidden when the
-    // others/ folder is empty or missing.
-    if (!otherLevelFiles.isEmpty()) {
-      Button othersBtn = new Button(s("world.button.others"));
-      othersBtn.getStyleClass().add("world-button");
-      othersBtn.getStyleClass().add("world-" + OTHERS_WORLD_KEY);
-      othersBtn.setOnAction(e -> selectWorld(othersBtn, OTHERS_WORLD_KEY));
-      worldBox.getChildren().add(othersBtn);
-    }
-
+    // The Others button is appended later by onEnter — it depends on otherLevelFiles, which
+    // isn't assigned yet at this point in the super constructor.
     return worldBox;
   }
 

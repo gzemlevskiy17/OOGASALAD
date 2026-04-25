@@ -242,17 +242,41 @@ public class ScreenFactory {
   /**
    * Intercepts BACK_TO_MENU and redirects to the login screen when no player is logged in. Also
    * delegates terminal gameplay outcomes (win/loss) to {@link TerminalResultHandler} so the run
-   * gets scored, recorded, and surfaced on the result screen before navigation.
+   * gets scored, recorded, and surfaced on the result screen before navigation. Intercepts
+   * OPEN_NEXT_LEVEL to advance the cursor before routing — without this, "Continue" on the win
+   * screen would replay the level the user just won.
    */
   private void guardedOutcome(Outcome outcome) {
     if (terminalResultHandler != null && gameplayCoordinator != null) {
       terminalResultHandler.handle(
           outcome, selectedLevel.get(), gameplayCoordinator.getLastGameplayScore());
     }
+    if (outcome == Outcome.OPEN_NEXT_LEVEL) {
+      advanceToNextLevelAndRoute();
+      return;
+    }
     if (outcome == Outcome.BACK_TO_MENU && !authService.session().isLoggedIn()) {
       screenManager.onOutcome(Outcome.OPEN_LOGIN);
     } else {
       screenManager.onOutcome(outcome);
+    }
+  }
+
+  /**
+   * Bumps {@link #selectedLevel} to {@code progression.nextAfter(current)} and routes to the
+   * vehicle builder so the user can play it. If there is no next level (the user just cleared
+   * the last one, or the current selection is unknown), routes to the player entry screen so
+   * they can pick something else.
+   */
+  private void advanceToNextLevelAndRoute() {
+    LevelId current = selectedLevel.get();
+    java.util.Optional<LevelId> next =
+        current != null ? progression.nextAfter(current) : java.util.Optional.empty();
+    if (next.isPresent()) {
+      selectedLevel.set(next.get());
+      screenManager.onOutcome(Outcome.OPEN_VEHICLE_BUILDER);
+    } else {
+      screenManager.onOutcome(Outcome.OPEN_PLAYER_ENTRY);
     }
   }
 

@@ -47,7 +47,7 @@ public class WinAppScreen extends AbstractAppScreen {
 
     Button continueButton = new Button(s("continue.button.text"));
     continueButton.getStyleClass().add("result-button");
-    continueButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER));
+    continueButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_NEXT_LEVEL));
 
     Button playSomethingButton = new Button(s("play.something.button.text"));
     playSomethingButton.getStyleClass().add("result-button");
