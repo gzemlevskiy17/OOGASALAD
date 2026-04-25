@@ -57,7 +57,6 @@ public class ScreenFactory {
   private CreateAccountScreen createAccountScreen;
   private UpdateProfileScreen updateProfileScreen;
 
-  // Routes auth errors to whichever screen triggered the action
   private Consumer<String> activeErrorDisplay = msg -> {
   };
 
@@ -100,16 +99,12 @@ public class ScreenFactory {
   }
 
   private void registerNonAuthScreens() {
+    AuthoringScreenImpl authoringScreen = new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set);
     screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authService.session()::isLoggedIn));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
-        new AuthoringEntryScreenImpl(this::guardedOutcome));
-    // The authoring screen's Run button saves a preview level and then opens the vehicle
-    // builder. Handing it a path setter lets the gameplay session pick up that preview
-    // without any knowledge leaking across package boundaries.
-    screenManager.registerScreen(AUTHORING_SCREEN_KEY,
-        new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set));
-
+        new AuthoringEntryScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
+    screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected));
 
@@ -131,8 +126,6 @@ public class ScreenFactory {
   }
 
   private void registerAuthScreens() {
-    // Each screen binds its own error display before delegating to the controller,
-    // so handleAuthError always reaches the screen that triggered the action.
     loginScreen = new LoginScreen(this::guardedOutcome, intent -> {
       activeErrorDisplay = loginScreen::displayError;
       authController.handle(intent);
@@ -146,11 +139,10 @@ public class ScreenFactory {
       authController.handle(intent);
     });
 
-    // ProfileScreen gets a live supplier for the current user — no direct model access in view
     screenManager.registerScreen(PROFILE_SCREEN_KEY,
         new ProfileScreen(this::guardedOutcome, intent -> {
           activeErrorDisplay = msg -> {
-          }; // profile screen has no error label; log only
+          };
           authController.handle(intent);
         }, authService.session()::currentUser));
 

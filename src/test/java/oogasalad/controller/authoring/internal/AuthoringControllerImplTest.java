@@ -342,12 +342,12 @@ class AuthoringControllerImplTest {
 
   private static class SpyLevelLoader implements LevelLoader {
     String lastFileName;
-    @Override public void loadLevel(String f, World w, GameConfig c) { lastFileName = f; }
+    @Override public void loadLevel(String f, World w, LevelAttributes a, GameConfig c) { lastFileName = f; }
   }
 
   private static class SpyLevelSaver implements LevelSaver {
     String lastFileName;
-    @Override public void saveLevel(String f, World w) { lastFileName = f; }
+    @Override public void saveLevel(String f, World w, LevelAttributes a) { lastFileName = f; }
   }
 
   private static class SpyCanvas implements AuthoringCanvas {

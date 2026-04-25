@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.IOException;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
@@ -58,7 +59,7 @@ public class LevelSaverImpl implements LevelSaver {
   }
 
   @Override
-  public void saveLevel(String fileName, World world) {
+  public void saveLevel(String fileName, World world, LevelAttributes levelAttributes) {
     ObjectNode root = MAPPER.createObjectNode();
     ObjectNode level = root.putObject("level");
     ArrayNode terrain = level.putArray("terrain");
@@ -77,6 +78,8 @@ public class LevelSaverImpl implements LevelSaver {
         terrain.add(serializeTerrain(tb));
       }
     }
+
+    serializeVehiclePalette(level, levelAttributes);
 
     try {
       MAPPER.writerWithDefaultPrettyPrinter().writeValue(new File(fileName), root);
@@ -133,5 +136,18 @@ public class LevelSaverImpl implements LevelSaver {
     props.put("friction", tb.getFriction());
 
     return entry;
+  }
+
+  private void serializeVehiclePalette(ObjectNode level, LevelAttributes levelAttributes) {
+    if (levelAttributes == null) {
+      return;
+    }
+
+    ObjectNode vehiclePalette = level.putObject("vehicle_palette");
+    vehiclePalette.put("max_selectable", levelAttributes.getMaxSelectableVehicleItems());
+    ArrayNode allowedComponents = vehiclePalette.putArray("allowed_components");
+    for (String componentId : levelAttributes.getAllowedVehicleComponents()) {
+      allowedComponents.add(componentId);
+    }
   }
 }

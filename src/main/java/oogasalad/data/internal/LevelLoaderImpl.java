@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.api.Vector;
@@ -62,6 +63,7 @@ public class LevelLoaderImpl implements LevelLoader {
   private static final int DEFAULT_SPLINE_RESOLUTION = 8;
   private static final double DEFAULT_SPAWN_X = 350.0;
   private static final double DEFAULT_SPAWN_Y = 300.0;
+  private static final int DEFAULT_MAX_SELECTABLE = 5;
 
   private final double scale;
 
@@ -82,14 +84,19 @@ public class LevelLoaderImpl implements LevelLoader {
   }
 
   @Override
-  public void loadLevel(String fileName, World world, GameConfig config) {
+  public void loadLevel(String fileName, World world, LevelAttributes levelAttributes,
+      GameConfig config) {
     JsonNode root = parseFile(fileName);
     VALIDATOR.validate(root);
 
-    loadTerrain(root.path("level").path("terrain"), world, fileName);
-    loadSplines(root.path("level").path("splines"), world);
-    loadFinishLine(root.path("level").path("finish_line"), world);
-    loadSpawnPoint(root.path("level").path("spawn"), world);
+    JsonNode levelNode = root.path("level");
+    loadTerrain(levelNode.path("terrain"), world, fileName);
+    loadSplines(levelNode.path("splines"), world);
+    loadFinishLine(levelNode.path("finish_line"), world);
+    loadSpawnPoint(levelNode.path("spawn"), world);
+    if (levelAttributes != null) {
+      loadVehiclePalette(levelNode.path("vehicle_palette"), levelAttributes);
+    }
     LOG.info("Level loaded from {}", fileName);
   }
 
@@ -184,5 +191,25 @@ public class LevelLoaderImpl implements LevelLoader {
     double friction = props.path("friction").asDouble(DEFAULT_FRICTION);
 
     return new TerrainBlock(x, y, width, height, texture, tiled, friction);
+  }
+
+  private void loadVehiclePalette(JsonNode vehiclePaletteNode, LevelAttributes levelAttributes) {
+    if (vehiclePaletteNode.isMissingNode()) {
+      levelAttributes.setMaxSelectableVehicleItems(DEFAULT_MAX_SELECTABLE);
+      levelAttributes.setAllowedVehicleComponents(java.util.List.of());
+      return;
+    }
+
+    levelAttributes.setMaxSelectableVehicleItems(
+        vehiclePaletteNode.path("max_selectable").asInt(DEFAULT_MAX_SELECTABLE));
+
+    java.util.List<String> allowedComponents = new java.util.ArrayList<>();
+    JsonNode allowedComponentsNode = vehiclePaletteNode.path("allowed_components");
+    if (allowedComponentsNode.isArray()) {
+      for (JsonNode componentNode : allowedComponentsNode) {
+        allowedComponents.add(componentNode.asText());
+      }
+    }
+    levelAttributes.setAllowedVehicleComponents(allowedComponents);
   }
 }

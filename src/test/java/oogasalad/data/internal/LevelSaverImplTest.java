@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
@@ -39,9 +40,10 @@ class LevelSaverImplTest {
   void saveLevel_singleTerrainBlock_writesCorrectJson() throws IOException {
     FakeWorld world = new FakeWorld();
     world.addObject(new TerrainBlock(0, 0, 10, 2, "assets/terrain/grass.png", true, 0.6));
+    LevelAttributes levelAttributes = new LevelAttributes();
 
     File output = tempDir.resolve("saved_level.json").toFile();
-    saver.saveLevel(output.getAbsolutePath(), world);
+    saver.saveLevel(output.getAbsolutePath(), world, levelAttributes);
 
     assertTrue(output.exists());
     JsonNode root = new ObjectMapper().readTree(output);
@@ -59,9 +61,10 @@ class LevelSaverImplTest {
     FakeWorld world = new FakeWorld();
     world.addObject(new TerrainBlock(0, 0, 5, 1, "a.png", true, 0.5));
     world.addObject(new TerrainBlock(5, 0, 5, 1, "b.png", false, 0.4));
+    LevelAttributes levelAttributes = new LevelAttributes();
 
     File output = tempDir.resolve("saved_level.json").toFile();
-    saver.saveLevel(output.getAbsolutePath(), world);
+    saver.saveLevel(output.getAbsolutePath(), world, levelAttributes);
 
     JsonNode terrain = new ObjectMapper().readTree(output).path("level").path("terrain");
     assertEquals(2, terrain.size());
@@ -70,9 +73,10 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_emptyWorld_writesEmptyTerrainArray() throws IOException {
     FakeWorld world = new FakeWorld();
+    LevelAttributes levelAttributes = new LevelAttributes();
 
     File output = tempDir.resolve("saved_level.json").toFile();
-    saver.saveLevel(output.getAbsolutePath(), world);
+    saver.saveLevel(output.getAbsolutePath(), world, levelAttributes);
 
     JsonNode terrain = new ObjectMapper().readTree(output).path("level").path("terrain");
     assertEquals(0, terrain.size());
@@ -82,22 +86,44 @@ class LevelSaverImplTest {
   void saveLevel_roundTrip_loaderRestoresSameBlockCount() throws IOException {
     FakeWorld world = new FakeWorld();
     world.addObject(new TerrainBlock(3, 1, 4, 2, "assets/terrain/dirt.png", false, 0.3));
+    LevelAttributes savedAttributes = new LevelAttributes();
+    savedAttributes.setMaxSelectableVehicleItems(5);
+    savedAttributes.setAllowedVehicleComponents(List.of("pig", "wheel"));
 
     File output = tempDir.resolve("round_trip.json").toFile();
-    saver.saveLevel(output.getAbsolutePath(), world);
+    saver.saveLevel(output.getAbsolutePath(), world, savedAttributes);
 
     FakeWorld reloaded = new FakeWorld();
-    new LevelLoaderImpl().loadLevel(output.getAbsolutePath(), reloaded, new FakeGameConfig());
+    LevelAttributes reloadedAttributes = new LevelAttributes();
+    new LevelLoaderImpl().loadLevel(output.getAbsolutePath(), reloaded, reloadedAttributes,
+        new FakeGameConfig());
 
     assertEquals(1, reloaded.objectCount());
+    assertEquals(List.of("pig", "wheel"), reloadedAttributes.getAllowedVehicleComponents());
   }
 
   @Test
   void saveLevel_invalidPath_throwsLevelSaveException() {
     FakeWorld world = new FakeWorld();
+    LevelAttributes levelAttributes = new LevelAttributes();
 
     assertThrows(LevelSaveException.class,
-        () -> saver.saveLevel("/invalid:/path/level.json", world));
+        () -> saver.saveLevel("/invalid:/path/level.json", world, levelAttributes));
+  }
+
+  @Test
+  void saveLevel_vehiclePalette_writesVehiclePaletteBlock() throws IOException {
+    FakeWorld world = new FakeWorld();
+    LevelAttributes levelAttributes = new LevelAttributes();
+    levelAttributes.setMaxSelectableVehicleItems(5);
+    levelAttributes.setAllowedVehicleComponents(List.of("pig", "wheel", "fan"));
+
+    File output = tempDir.resolve("saved_level.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), world, levelAttributes);
+
+    JsonNode vehiclePalette = new ObjectMapper().readTree(output).path("level").path("vehicle_palette");
+    assertEquals(5, vehiclePalette.path("max_selectable").asInt());
+    assertEquals(3, vehiclePalette.path("allowed_components").size());
   }
 
   // --- Spline serialization ---
