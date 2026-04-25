@@ -13,29 +13,36 @@ import java.util.stream.Stream;
 /**
  * Walks the levels directory tree and reports what's on disk.
  *
- * <p>Convention: each immediate subdirectory under the root is one world, and each
- * {@code .json} file inside a world directory whose basename appears in
- * {@link LevelProgression#LEVEL_ORDER} is one level. Level files whose names don't match the
- * convention (e.g. {@code A.json}, {@code scratch.json}) are ignored — they exist on disk but
- * are not reported. Files placed directly at the root (not inside a world) are collected under
- * {@link ScanResult#others()} without any convention filter, as a placeholder for future
- * handling. Non-JSON files anywhere are ignored.
+ * <p>Convention:
+ * <ul>
+ *   <li>Each immediate subdirectory under the root is one world, and each {@code .json} file
+ *       inside it whose basename appears in {@link LevelProgression#LEVEL_ORDER} is one level.
+ *       Level files whose names don't match the convention are ignored.</li>
+ *   <li>The reserved subdirectory named {@value #OTHERS_DIRECTORY_NAME} is NOT treated as a
+ *       world. Its {@code .json} contents are collected into {@link ScanResult#others()} with
+ *       no convention filter — sandbox files for one-off plays.</li>
+ *   <li>Loose {@code .json} files at the root (not inside any subdirectory) are ignored. Drop
+ *       them into the {@code others/} folder if they should appear as sandbox levels.</li>
+ *   <li>Non-JSON files anywhere are ignored.</li>
+ * </ul>
  *
  * <p>A missing root directory returns an empty result rather than throwing. Per-call sort
- * order is alphabetical so repeated scans produce stable output; downstream consumers (e.g.
- * {@code LevelProgression}) re-sort against their own canonical orders anyway.
+ * order is alphabetical so repeated scans produce stable output.
  */
 public class LevelScanner {
 
   private static final String JSON_SUFFIX = ".json";
 
+  /** Reserved directory name whose contents become {@link ScanResult#others()}. */
+  public static final String OTHERS_DIRECTORY_NAME = "others";
+
   /**
    * Output of a scan.
    *
    * @param worldsToLevels world-key → level-keys (no extensions), ready to plug into
-   *     {@link LevelProgression}'s constructor.
-   * @param others filenames of JSON files found directly at the root (no world) — placeholder
-   *     category for items that don't fit the world/level shape; currently unused downstream.
+   *     {@link LevelProgression}'s constructor. The "others" directory is never a world.
+   * @param others filenames (with {@code .json} extension) of files inside the "others"
+   *     directory. Empty if the directory doesn't exist or has no JSON files.
    */
   public record ScanResult(Map<String, List<String>> worldsToLevels, List<String> others) {}
 
@@ -48,16 +55,36 @@ public class LevelScanner {
     List<String> others = new ArrayList<>();
     try (Stream<Path> entries = Files.list(rootDir)) {
       entries.sorted().forEach(entry -> {
-        if (Files.isDirectory(entry)) {
-          worlds.put(entry.getFileName().toString(), scanWorld(entry));
-        } else if (isJsonFile(entry)) {
-          others.add(entry.getFileName().toString());
+        if (!Files.isDirectory(entry)) {
+          // Loose root-level files (JSON or otherwise) are ignored — drop them into others/.
+          return;
+        }
+        String name = entry.getFileName().toString();
+        if (OTHERS_DIRECTORY_NAME.equals(name)) {
+          others.addAll(listJsonFilenames(entry));
+        } else {
+          worlds.put(name, scanWorld(entry));
         }
       });
     } catch (IOException e) {
       throw new RuntimeException("Failed to scan levels root " + rootDir, e);
     }
     return new ScanResult(Collections.unmodifiableMap(worlds), List.copyOf(others));
+  }
+
+  /** Returns every {@code .json} filename (with extension) directly inside {@code dir}. */
+  private List<String> listJsonFilenames(Path dir) {
+    List<String> filenames = new ArrayList<>();
+    try (Stream<Path> entries = Files.list(dir)) {
+      entries.sorted().forEach(entry -> {
+        if (isJsonFile(entry)) {
+          filenames.add(entry.getFileName().toString());
+        }
+      });
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to scan others directory " + dir, e);
+    }
+    return filenames;
   }
 
   private List<String> scanWorld(Path worldDir) {

@@ -82,15 +82,16 @@ class LevelScannerTest {
   }
 
   @Test
-  void scan_jsonAtRoot_isCapturedInOthers_notWorlds() throws IOException {
+  void scan_jsonAtRoot_isIgnored_neitherWorldNorOthers() throws IOException {
     mkWorld("forest", "first.json");
     Files.createFile(tempRoot.resolve("level.json"));
     Files.createFile(tempRoot.resolve("scratch.json"));
 
     ScanResult result = scanner.scan(tempRoot);
 
+    // Loose root-level JSONs are dropped entirely under the new convention.
     assertEquals(1, result.worldsToLevels().size());
-    assertEquals(java.util.List.of("level.json", "scratch.json"), result.others());
+    assertTrue(result.others().isEmpty());
   }
 
   @Test
@@ -126,17 +127,48 @@ class LevelScannerTest {
   }
 
   @Test
-  void scan_othersAtRoot_areNotFilteredByLevelConvention() throws IOException {
-    // Root-level JSONs land in `others` regardless of whether their names are canonical levels —
-    // "others" is the catch-all for non-world JSON files, with no naming rules applied.
-    Files.createFile(tempRoot.resolve("A.json"));
-    Files.createFile(tempRoot.resolve("first.json"));
-    Files.createFile(tempRoot.resolve("random-thing.json"));
+  void scan_othersDirectory_filenamesAreCollectedWithoutConventionFilter() throws IOException {
+    // The reserved "others" directory is not a world. Its JSON files become the others list,
+    // with no LEVEL_ORDER filter applied — names like "A" or "random-thing" are kept.
+    mkWorld(LevelScanner.OTHERS_DIRECTORY_NAME,
+        "A.json", "first.json", "random-thing.json");
 
     ScanResult result = scanner.scan(tempRoot);
 
     assertEquals(
         java.util.List.of("A.json", "first.json", "random-thing.json"),
         result.others());
+    // And it does NOT show up as a world.
+    assertTrue(result.worldsToLevels().isEmpty()
+        || !result.worldsToLevels().containsKey(LevelScanner.OTHERS_DIRECTORY_NAME));
+  }
+
+  @Test
+  void scan_missingOthersDirectory_yieldsEmptyOthersList() throws IOException {
+    mkWorld("forest", "first.json");
+    // No "others" directory created.
+
+    ScanResult result = scanner.scan(tempRoot);
+
+    assertTrue(result.others().isEmpty());
+  }
+
+  @Test
+  void scan_emptyOthersDirectory_yieldsEmptyOthersList() throws IOException {
+    mkWorld("forest", "first.json");
+    mkWorld(LevelScanner.OTHERS_DIRECTORY_NAME);  // exists but no files inside
+
+    ScanResult result = scanner.scan(tempRoot);
+
+    assertTrue(result.others().isEmpty());
+  }
+
+  @Test
+  void scan_othersDirectory_ignoresNonJsonFiles() throws IOException {
+    mkWorld(LevelScanner.OTHERS_DIRECTORY_NAME, "level.json", "notes.txt", "README.md");
+
+    ScanResult result = scanner.scan(tempRoot);
+
+    assertEquals(java.util.List.of("level.json"), result.others());
   }
 }

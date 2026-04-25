@@ -1,9 +1,7 @@
 package oogasalad.view.player.internal;
 
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -13,6 +11,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -33,25 +32,38 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.PlayerEntryScreen");
 
+  /** Sentinel world key for the "Others" bucket — files at the root of {@code data/levels/}. */
+  public static final String OTHERS_WORLD_KEY = "others";
+
   private final BiConsumer<String, String> onSelectionConfirmed;
   private final LevelProgression progression;
-  // Insertion-ordered so iteration matches the layout order on screen.
-  // NOT a field initializer — AbstractAppScreen's constructor calls createRoot() (which fills
-  // this map) BEFORE subclass field initializers run, so an `= new LinkedHashMap<>()` here
-  // would still be null at use time. Assigned inside createLevelButtonRegion instead.
-  private Map<String, Button> levelButtons;
+  // The list of root-level JSON filenames (with .json extension) reported by LevelScanner's
+  // ScanResult.others(). Each becomes one button under the "Others" world; basename-without-.json
+  // is used for both the button label and the levelKey passed to onSelectionConfirmed.
+  private final List<String> otherLevelFiles;
+
+  // Wrapper HBox that gets cleared and re-populated when the world changes. Assigned inside
+  // createLevelButtonRegion (called via the super constructor's createRoot, which runs BEFORE
+  // subclass field initializers, so a field initializer here would still be null at use time).
+  private HBox levelButtonsContainer;
   private Button selectedWorldButton;
   private Button selectedLevelButton;
   private Button startButton;
   private String selectedWorldKey;
   private String selectedLevelKey;
+  // Captured during createWorldButtonRegion; used to auto-select the first world after createRoot
+  // finishes so the user sees a populated level region instead of a blank one.
+  private Button firstWorldButton;
+  private String firstWorldKey;
 
   public PlayerEntryAppScreen(Consumer<Outcome> onOutcome,
       BiConsumer<String, String> onSelectionConfirmed,
-      LevelProgression progression) {
+      LevelProgression progression,
+      List<String> otherLevelFiles) {
     super(onOutcome);
     this.onSelectionConfirmed = onSelectionConfirmed;
     this.progression = progression;
+    this.otherLevelFiles = List.copyOf(otherLevelFiles);
   }
 
   @Override
@@ -72,6 +84,14 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
 
     root.setCenter(mainContent);
     root.setBottom(createBackButtonRegion());
+
+    // Auto-select the first world so the level region isn't blank on entry. Equivalent to a
+    // synthetic click on the first world button — selectWorld handles styling, level rebuild,
+    // and start-button state. Done here (after every region exists) rather than inside
+    // createWorldButtonRegion, where levelButtonsContainer hadn't been created yet.
+    if (firstWorldButton != null) {
+      selectWorld(firstWorldButton, firstWorldKey);
+    }
 
     return root;
   }
@@ -121,7 +141,24 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
       worldBox.getChildren().add(btn);
 
       btn.setOnAction(e -> selectWorld(btn, world));
+      // Remember the first world button so createRoot can auto-select it once everything is
+      // built — gives the user a populated level region on entry instead of a blank space.
+      if (firstWorldButton == null) {
+        firstWorldButton = btn;
+        firstWorldKey = world;
+      }
     }
+
+    // "Others" world button only appears when there's something to show. Hidden when the
+    // others/ folder is empty or missing.
+    if (!otherLevelFiles.isEmpty()) {
+      Button othersBtn = new Button(s("world.button.others"));
+      othersBtn.getStyleClass().add("world-button");
+      othersBtn.getStyleClass().add("world-" + OTHERS_WORLD_KEY);
+      othersBtn.setOnAction(e -> selectWorld(othersBtn, OTHERS_WORLD_KEY));
+      worldBox.getChildren().add(othersBtn);
+    }
+
     return worldBox;
   }
 
@@ -132,7 +169,7 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     selectedWorldButton = btn;
     selectedWorldKey = worldKey;
     selectedWorldButton.getStyleClass().add("world-selected");
-    refreshLevelAvailability(worldKey);
+    refreshLevelButtons(worldKey);
     updateStartButtonState();
   }
 
@@ -143,48 +180,74 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   }
 
   private HBox createLevelButtonRegion() {
-    HBox levelBox = new HBox(d("level.region.spacing"));
-    levelBox.setAlignment(Pos.CENTER);
-    levelButtons = new LinkedHashMap<>();
-
-    // Render every label declared in the bundle, but start every button disabled — they enable
-    // only when the selected world actually contains that level on disk (see
-    // refreshLevelAvailability). The old `locked.levels=` properties hardcode is gone:
-    // availability now comes from LevelProgression / what the LevelScanner found.
-    for (String level : getList("levels")) {
-      Button btn = new Button(s("level.button." + level));
-      btn.getStyleClass().add("level-button");
-      btn.getStyleClass().add("locked-level");
-      btn.setDisable(true);
-      btn.setOnAction(e -> selectLevel(btn, level));
-      levelButtons.put(level, btn);
-      levelBox.getChildren().add(btn);
-    }
-    return levelBox;
+    levelButtonsContainer = new HBox(d("level.region.spacing"));
+    levelButtonsContainer.setAlignment(Pos.CENTER);
+    // Empty until a world is picked — selectWorld populates it via refreshLevelButtons.
+    return levelButtonsContainer;
   }
 
   /**
-   * Greys out level buttons whose key isn't in {@code progression.levelsIn(worldKey)}; enables
-   * the rest. If the currently-selected level button gets disabled by the world swap, drops
-   * the selection so the Start button can't fire on a now-invalid (world, level) pair.
+   * Rebuilds the level button region for the chosen world. Always clears any prior selection
+   * (the previous buttons are gone from the tree). For canonical worlds, renders the labelled
+   * buttons from properties with disable state driven by {@code progression.levelsIn}. For the
+   * "Others" world, renders a horizontal scroll pane of one button per file in
+   * {@link #otherLevelFiles} — basename text, no progression coupling.
    */
-  private void refreshLevelAvailability(String worldKey) {
+  private void refreshLevelButtons(String worldKey) {
+    selectedLevelButton = null;
+    selectedLevelKey = null;
+    levelButtonsContainer.getChildren().clear();
+    if (OTHERS_WORLD_KEY.equals(worldKey)) {
+      populateOthersLevels();
+    } else {
+      populateStandardLevels(worldKey);
+    }
+  }
+
+  private void populateStandardLevels(String worldKey) {
     List<String> available = progression.levelsIn(worldKey);
-    for (Map.Entry<String, Button> entry : levelButtons.entrySet()) {
-      Button btn = entry.getValue();
-      boolean enabled = available.contains(entry.getKey());
+    for (String level : getList("levels")) {
+      Button btn = new Button(s("level.button." + level));
+      btn.getStyleClass().add("level-button");
+      boolean enabled = available.contains(level);
       btn.setDisable(!enabled);
-      if (enabled) {
-        btn.getStyleClass().remove("locked-level");
-      } else if (!btn.getStyleClass().contains("locked-level")) {
+      if (!enabled) {
         btn.getStyleClass().add("locked-level");
       }
-      if (!enabled && btn == selectedLevelButton) {
-        btn.getStyleClass().remove("level-selected");
-        selectedLevelButton = null;
-        selectedLevelKey = null;
-      }
+      btn.setOnAction(e -> selectLevel(btn, level));
+      levelButtonsContainer.getChildren().add(btn);
     }
+  }
+
+  private void populateOthersLevels() {
+    HBox row = new HBox(d("level.region.spacing"));
+    row.setAlignment(Pos.CENTER);
+    row.setPadding(new javafx.geometry.Insets(0, d("level.region.padding"), 0,
+        d("level.region.padding")));
+    for (String filename : otherLevelFiles) {
+      String basename = stripJsonExtension(filename);
+      Button btn = new Button(basename);
+      btn.getStyleClass().add("level-button");
+      btn.setOnAction(e -> selectLevel(btn, basename));
+      row.getChildren().add(btn);
+    }
+    ScrollPane scroll = new ScrollPane(row);
+    scroll.getStyleClass().add("others-scroll");
+    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    scroll.setFitToHeight(true);
+    scroll.setPannable(true);
+    scroll.setMaxWidth(d("level.region.others.width"));
+    // Make the ScrollPane visually transparent so the row of buttons doesn't sit on a grey
+    // panel — the rest of the level region has no background of its own.
+    scroll.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+    levelButtonsContainer.getChildren().add(scroll);
+  }
+
+  private static String stripJsonExtension(String filename) {
+    return filename.endsWith(".json")
+        ? filename.substring(0, filename.length() - ".json".length())
+        : filename;
   }
 
   private void selectLevel(Button btn, String levelKey) {

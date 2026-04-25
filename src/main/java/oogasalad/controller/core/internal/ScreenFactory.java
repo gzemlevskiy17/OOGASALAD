@@ -85,10 +85,14 @@ public class ScreenFactory {
   };
 
   // Level catalog: scan the filesystem once, feed the result into LevelProgression so
-  // ordering/unlock logic can query it. Selected level is held as a LevelId; the path is
-  // computed only at the moment the gameplay session asks for it.
-  private final LevelProgression progression = new LevelProgression(
-      new LevelScanner().scan(Path.of("data", "levels")).worldsToLevels());
+  // ordering/unlock logic can query it. The "others" list (root-level JSONs that don't fit
+  // the world/level shape) is passed to PlayerEntryAppScreen for its sandbox bucket. Selected
+  // level is held as a LevelId; the path is computed only at the moment the gameplay session
+  // asks for it.
+  private final LevelScanner.ScanResult scanResult =
+      new LevelScanner().scan(Path.of("data", "levels"));
+  private final LevelProgression progression =
+      new LevelProgression(scanResult.worldsToLevels());
 
   private final AtomicReference<LevelId> selectedLevel = new AtomicReference<>(defaultLevel());
 
@@ -107,6 +111,13 @@ public class ScreenFactory {
 
   private void onLevelSelected(String worldKey, String levelKey) {
     LevelId id = new LevelId(worldKey, levelKey);
+    if (PlayerEntryAppScreen.OTHERS_WORLD_KEY.equals(worldKey)) {
+      // "Others" levels are sandboxed — they live outside progression rules. Skip the
+      // unlock check and the cursor save; just remember the selection so the path supplier
+      // can resolve it to data/levels/<basename>.json at session creation time.
+      selectedLevel.set(id);
+      return;
+    }
     if (!progression.all().contains(id)) {
       // TODO: PlayerEntryAppScreen now greys out levels missing from disk, so reaching this
       // throw should be impossible from the UI. The entry screen's try/catch only catches
@@ -124,6 +135,22 @@ public class ScreenFactory {
     }
     selectedLevel.set(id);
     saveLastClickedCursor(username, id);
+  }
+
+  /**
+   * Resolves the currently-selected level to a JSON path. Standard worlds delegate to
+   * {@link LevelProgression#pathFor}; the "Others" sandbox bypasses the world subdirectory and
+   * reads files directly from the levels root.
+   */
+  private String pathForSelectedLevel() {
+    LevelId id = selectedLevel.get();
+    if (id == null) {
+      return null;
+    }
+    if (PlayerEntryAppScreen.OTHERS_WORLD_KEY.equals(id.worldKey())) {
+      return "data/levels/" + id.levelKey() + ".json";
+    }
+    return progression.pathFor(id);
   }
 
   private void saveLastClickedCursor(String username, LevelId clicked) {
@@ -156,7 +183,8 @@ public class ScreenFactory {
         new AuthoringScreenImpl(this::guardedOutcome));
 
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
-        new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression));
+        new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression,
+            scanResult.others()));
 
     vehicleBuilderScreen = new VehicleBuilderAppScreen(this::guardedOutcome);
     screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);
@@ -164,7 +192,7 @@ public class ScreenFactory {
     LevelLoader levelLoader = new LevelLoaderImpl();
     GameplaySessionFactoryImpl sessionFactory = new GameplaySessionFactoryImpl(
         levelLoader,
-        () -> progression.pathFor(selectedLevel.get())
+        this::pathForSelectedLevel
     );
 
     gameplayCoordinator = new GamePlayScreenCoordinator(this::guardedOutcome, sessionFactory,
