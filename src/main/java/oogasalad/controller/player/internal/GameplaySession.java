@@ -1,6 +1,9 @@
 package oogasalad.controller.player.internal;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import oogasalad.controller.player.api.GameController;
+import oogasalad.model.player.api.GameplayScore;
 
 /**
  * Lightweight lifecycle wrapper around a {@link GameController} for a single gameplay run.
@@ -37,5 +40,21 @@ public class GameplaySession {
    */
   public void handleButtonPress(String buttonId) {
     controller.handleButtonPress(buttonId);
+  }
+
+  /**
+   * Subscribes to per-tick {@code (elapsedSeconds, progressPercent)} updates for HUD display.
+   * Pass null to disable.
+   */
+  public void setOnStatsTick(BiConsumer<Double, Double> callback) {
+    controller.setOnStatsTick(callback);
+  }
+
+  /**
+   * Subscribes to the one-shot terminal score produced when the run ends. Fires before the
+   * outcome callback so consumers can persist or compare the score before navigation.
+   */
+  public void setOnTerminalScore(Consumer<GameplayScore> callback) {
+    controller.setOnTerminalScore(callback);
   }
 }
