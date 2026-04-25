@@ -9,6 +9,7 @@ import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
+import oogasalad.model.engine.internal.components.RockComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +48,9 @@ public class LevelLoaderImpl implements LevelLoader {
   private static final double DEFAULT_FRICTION = 0.5;
   private static final double DEFAULT_SIZE = 1.0;
   private static final double DEFAULT_RESTITUTION = 0.5;
+  private static final double DEFAULT_ROCK_RESTITUTION = 0.3;
+  private static final double DEFAULT_ROCK_DAMAGE = 10.0;
+  private static final int DEFAULT_ROCK_COOLDOWN_FRAMES = 30;
 
   @Override
   public void loadLevel(String fileName, World world, GameConfig config) {
@@ -54,6 +58,7 @@ public class LevelLoaderImpl implements LevelLoader {
     VALIDATOR.validate(root);
 
     loadTerrain(root.path("level").path("terrain"), world, fileName);
+    loadRocks(root.path("level").path("rocks"), world);
     loadFinishLine(root.path("level").path("finish_line"), world);
     LOG.info("Level loaded from {}", fileName);
   }
@@ -85,6 +90,32 @@ public class LevelLoaderImpl implements LevelLoader {
     double width = node.path("width").asDouble(20);
     double height = node.path("height").asDouble(400);
     world.addObject(new GoalLineComponent(x, y, width, height));
+  }
+
+  private void loadRocks(JsonNode rocksArray, World world) {
+    if (rocksArray.isMissingNode()) {
+      return;
+    }
+    for (JsonNode entry : rocksArray) {
+      world.addObject(parseRock(entry));
+    }
+  }
+
+  private RockComponent parseRock(JsonNode entry) {
+    JsonNode pos = entry.path("position");
+    JsonNode size = entry.path("size");
+    JsonNode props = entry.path("properties");
+
+    double x = pos.path("x").asDouble(0);
+    double y = pos.path("y").asDouble(0);
+    double width = size.path("width").asDouble(DEFAULT_SIZE);
+    double height = size.path("height").asDouble(DEFAULT_SIZE);
+    double friction = props.path("friction").asDouble(DEFAULT_FRICTION);
+    double restitution = props.path("restitution").asDouble(DEFAULT_ROCK_RESTITUTION);
+    double damage = props.path("damage").asDouble(DEFAULT_ROCK_DAMAGE);
+    int cooldownFrames = props.path("cooldown_frames").asInt(DEFAULT_ROCK_COOLDOWN_FRAMES);
+
+    return new RockComponent(x, y, width, height, friction, restitution, damage, cooldownFrames);
   }
 
   private TerrainBlock parseTerrain(JsonNode entry) {

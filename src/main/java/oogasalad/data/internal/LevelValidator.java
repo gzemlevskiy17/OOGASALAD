@@ -12,7 +12,8 @@ import oogasalad.data.api.LevelLoadException;
  * <ol>
  *   <li>Root has a {@code level} object.</li>
  *   <li>If present, {@code level.terrain} is an array (absent is allowed).</li>
- *   <li>Each terrain entry has positive {@code size.width} and {@code size.height}.</li>
+ *   <li>If present, {@code level.rocks} is an array (absent is allowed).</li>
+ *   <li>Each terrain or rock entry has positive {@code size.width} and {@code size.height}.</li>
  * </ol>
  */
 public class LevelValidator {
@@ -23,21 +24,24 @@ public class LevelValidator {
       throw new LevelLoadException("Level file missing required 'level' root object");
     }
 
-    JsonNode terrain = level.path("terrain");
-    if (terrain.isMissingNode()) {
+    validateSizedArray(level.path("terrain"), "terrain");
+    validateSizedArray(level.path("rocks"), "rocks");
+  }
+
+  private void validateSizedArray(JsonNode array, String fieldName) {
+    if (array.isMissingNode()) {
       return;
     }
-    if (!terrain.isArray()) {
-      throw new LevelLoadException("'terrain' must be an array");
+    if (!array.isArray()) {
+      throw new LevelLoadException("'" + fieldName + "' must be an array");
     }
-
-    for (int i = 0; i < terrain.size(); i++) {
-      JsonNode entry = terrain.get(i);
+    for (int i = 0; i < array.size(); i++) {
+      JsonNode entry = array.get(i);
       JsonNode size = entry.path("size");
       double width = size.path("width").asDouble(0);
       double height = size.path("height").asDouble(0);
       if (width <= 0 || height <= 0) {
-        throw new LevelLoadException("terrain[" + i + "] has non-positive size");
+        throw new LevelLoadException(fieldName + "[" + i + "] has non-positive size");
       }
     }
   }
