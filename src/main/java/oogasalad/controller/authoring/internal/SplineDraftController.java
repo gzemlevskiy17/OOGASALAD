@@ -49,9 +49,6 @@ public class SplineDraftController {
   private static final Color GHOST_FILL_COLOR = Color.rgb(70, 130, 180, 0.35);
   private static final Color CURSOR_HINT_COLOR = Color.rgb(100, 100, 100, 0.55);
   private static final int MIN_KNOTS_TO_COMMIT = 2;
-  private static final int MIN_RESOLUTION = 1;
-  private static final int MAX_RESOLUTION = 64;
-  private static final int DEFAULT_RESOLUTION = 10;
   private static final String DEFAULT_COLOR = "#4A2C0F";
   private static final String DEFAULT_SPRITE = "";
   private static final double DEFAULT_FRICTION = 0.6;
@@ -62,7 +59,6 @@ public class SplineDraftController {
   private final double spawnYCells;
 
   private final List<Vector> draftKnots = new ArrayList<>();
-  private int resolution = DEFAULT_RESOLUTION;
   private Vector cursorHint;
 
   /**
@@ -83,20 +79,6 @@ public class SplineDraftController {
   /** @return the number of draft knots currently placed. */
   public int draftSize() {
     return draftKnots.size();
-  }
-
-  /** @return current tessellation resolution applied to future tessellations. */
-  public int getResolution() {
-    return resolution;
-  }
-
-  /**
-   * Updates the resolution (clamped to a reasonable range) and re-renders the draft ghost so the
-   * designer sees the effect immediately.
-   */
-  public void setResolution(int newResolution) {
-    this.resolution = Math.max(MIN_RESOLUTION, Math.min(MAX_RESOLUTION, newResolution));
-    renderDraftOverlay();
   }
 
   /** Adds a knot at the given grid-cell coordinate. */
@@ -132,11 +114,10 @@ public class SplineDraftController {
     TerrainSpline committed = null;
     if (draftKnots.size() >= MIN_KNOTS_TO_COMMIT) {
       ParabolaSpline spline = new ParabolaSpline(
-          new ArrayList<>(draftKnots), baselineYCells, resolution);
+          new ArrayList<>(draftKnots), baselineYCells);
       committed = new TerrainSpline(
           spline, DEFAULT_SPRITE, false, DEFAULT_FRICTION, DEFAULT_COLOR);
       world.addObject(committed);
-      committed.spawnSlabColliders(world);
     }
     cancel();
     return committed;

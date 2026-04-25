@@ -1,6 +1,7 @@
 package oogasalad.controller.authoring.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -63,9 +64,8 @@ class SplineDraftControllerTest {
   }
 
   @Test
-  void initialState_emptyDraft_defaultResolution() {
+  void initialState_emptyDraft() {
     assertEquals(0, controller.draftSize());
-    assertTrue(controller.getResolution() >= 1);
   }
 
   @Test
@@ -120,22 +120,6 @@ class SplineDraftControllerTest {
   }
 
   @Test
-  void setResolution_clampedToValidRange() {
-    controller.setResolution(-5);
-    assertEquals(1, controller.getResolution());
-
-    controller.setResolution(9999);
-    assertTrue(controller.getResolution() <= 64);
-  }
-
-  @Test
-  void setResolution_triggersOverlayRender() {
-    int before = canvas.overlaysCleared;
-    controller.setResolution(10);
-    assertTrue(canvas.overlaysCleared > before);
-  }
-
-  @Test
   void commit_withFewerThanTwoKnots_returnsNullAndDoesNotTouchWorld() {
     controller.addKnot(10.0, 20.0);
 
@@ -155,7 +139,7 @@ class SplineDraftControllerTest {
 
     assertNotNull(committed);
     assertEquals(1, world.components.size());
-    assertTrue(world.components.get(0) instanceof TerrainSpline);
+    assertInstanceOf(TerrainSpline.class, world.components.get(0));
     assertEquals(0, controller.draftSize(), "draft should be cleared after commit");
   }
 

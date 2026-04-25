@@ -48,17 +48,28 @@ public class CollisionDetectorImpl implements CollisionDetector {
    */
   @Override
   public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
-    Optional<Collision> collision = findSatCollision(objectA, objectB);
-    collision.ifPresent(this::addManifold);
-    collision.ifPresent(c -> {
-      String aName = objectA.getClass().getSimpleName();
-      String bName = objectB.getClass().getSimpleName();
-      if (aName.contains("Drive") || aName.contains("Structural")
-          || bName.contains("Drive") || bName.contains("Structural")) {
-        System.out.println("[detect] " + aName + " vs " + bName);
+    if (objectA == objectB) {
+      return Optional.empty();
+    }
+    Collision deepest = null;
+    double deepestDepth = -1.0;
+    for (ConvexPolygon polygonA : objectA.getCollisionPolygons()) {
+      for (ConvexPolygon polygonB : objectB.getCollisionPolygons()) {
+        Optional<Collision> candidate = findSatCollision(objectA, objectB, polygonA, polygonB);
+        if (candidate.isEmpty()) {
+          continue;
+        }
+        double depth = candidate.get().getPenetration().magnitude();
+        if (depth > deepestDepth) {
+          deepest = candidate.get();
+          deepestDepth = depth;
+        }
       }
-    });
-    return collision;
+    }
+    if (deepest != null) {
+      addManifold(deepest);
+    }
+    return Optional.ofNullable(deepest);
   }
 
   /**
@@ -97,13 +108,16 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @param objectB second object to test
    * @return a collision record when all axes overlap, otherwise {@link Optional#empty()}
    */
-  private Optional<Collision> findSatCollision(GameObject objectA, GameObject objectB) {
-    Optional<SatCandidate> collisionOnAxesOfA = buildCollision(objectA, objectB);
+  private Optional<Collision> findSatCollision(GameObject objectA, GameObject objectB,
+      ConvexPolygon polygonA, ConvexPolygon polygonB) {
+    Optional<SatCandidate> collisionOnAxesOfA = buildCollision(objectA, objectB, polygonA,
+        polygonB);
     if (collisionOnAxesOfA.isEmpty()) {
       return Optional.empty();
     }
 
-    Optional<SatCandidate> collisionOnAxesOfB = buildCollision(objectB, objectA);
+    Optional<SatCandidate> collisionOnAxesOfB = buildCollision(objectB, objectA, polygonB,
+        polygonA);
     if (collisionOnAxesOfB.isEmpty()) {
       return Optional.empty();
     }
@@ -118,8 +132,8 @@ public class CollisionDetectorImpl implements CollisionDetector {
     collision.setPenetration(
         minimumTranslation.normal().multiply(minimumTranslation.depth()));
     collision.setReferenceEdge(minimumTranslation.referenceEdge());
-    collision.setIncidentEdge(findIncidentEdge(minimumTranslation.incidentObject().getPolygon(),
-        minimumTranslation.normal()));
+    collision.setIncidentEdge(
+        findIncidentEdge(minimumTranslation.incidentPolygon(), minimumTranslation.normal()));
     return Optional.of(collision);
   }
 
@@ -136,11 +150,8 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @return a collision record when projections overlap on every tested axis, otherwise empty
    */
   private Optional<SatCandidate> buildCollision(GameObject referenceObject,
-      GameObject incidentObject) {
+      GameObject incidentObject, ConvexPolygon referencePolygon, ConvexPolygon incidentPolygon) {
     //TODO: rename method (setters in the end)
-    ConvexPolygon referencePolygon = referenceObject.getPolygon();
-    ConvexPolygon incidentPolygon = incidentObject.getPolygon();
-
     double minPenetrationDepth = Double.MAX_VALUE;
     Vector normal = null;
     Vector[] minReferenceEdge = new Vector[2];
@@ -184,7 +195,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
       return Optional.empty();
     }
 
-    return Optional.of(new SatCandidate(referenceObject, incidentObject, normal,
+    return Optional.of(new SatCandidate(referenceObject, incidentObject, incidentPolygon, normal,
         minPenetrationDepth, minReferenceEdge));
   }
 
@@ -384,7 +395,8 @@ public class CollisionDetectorImpl implements CollisionDetector {
     return Optional.of(start.add(edgeDirection.multiply(fractionAlongIncidentEdge)));
   }
 
-  private record SatCandidate(GameObject referenceObject, GameObject incidentObject, Vector normal,
+  private record SatCandidate(GameObject referenceObject, GameObject incidentObject,
+                              ConvexPolygon incidentPolygon, Vector normal,
                               double depth, Vector[] referenceEdge) {
 
   }

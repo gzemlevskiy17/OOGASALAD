@@ -43,7 +43,6 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
-import oogasalad.model.engine.internal.components.SplineSlabCollider;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.components.VehicleComponent;
@@ -218,10 +217,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             rect.setFill(Paint.valueOf(tb.getColor()));
             return rect;
           }
-          // Non-visual markers (e.g. SpawnPointComponent, SplineSlabCollider) live in the
-          // world for physics or lookup but have no sprite. Return an invisible stub so the
-          // render loop doesn't abort the frame, which would leave the vehicle unrendered.
-          if (r instanceof SpawnPointComponent || r instanceof SplineSlabCollider) {
+          // Non-visual markers (e.g. SpawnPointComponent) live in the world for save/load and
+          // lookup but have no sprite. Return an invisible stub so the render loop doesn't abort
+          // the frame, which would leave the vehicle unrendered.
+          if (r instanceof SpawnPointComponent) {
             Group stub = new Group();
             stub.setManaged(false);
             stub.setVisible(false);

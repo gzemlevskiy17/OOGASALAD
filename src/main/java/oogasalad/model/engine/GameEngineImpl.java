@@ -633,11 +633,13 @@ public class GameEngineImpl implements GameEngine {
       double minY = Double.POSITIVE_INFINITY;
       double maxX = Double.NEGATIVE_INFINITY;
       double maxY = Double.NEGATIVE_INFINITY;
-      for (Vector point : object.getPolygon().points()) {
-        minX = Math.min(minX, point.x());
-        minY = Math.min(minY, point.y());
-        maxX = Math.max(maxX, point.x());
-        maxY = Math.max(maxY, point.y());
+      for (ConvexPolygon polygon : object.getCollisionPolygons()) {
+        for (Vector point : polygon.points()) {
+          minX = Math.min(minX, point.x());
+          minY = Math.min(minY, point.y());
+          maxX = Math.max(maxX, point.x());
+          maxY = Math.max(maxY, point.y());
+        }
       }
       return new BoundingBox(minX, minY, maxX, maxY);
     }
