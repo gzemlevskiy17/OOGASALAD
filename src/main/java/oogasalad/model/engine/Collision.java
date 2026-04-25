@@ -35,6 +35,11 @@ public class Collision {
   private Vector[] referenceEdge;
   private Vector[] incidentEdge;
   private Map<Vector, Double> collisionManifold;
+  private double cachedNormalImpulse;
+  private double cachedFrictionImpulse;
+  private Vector cachedNormal;
+  private double appliedNormalImpulse;
+  private double appliedFrictionImpulse;
 
   /**
    * Creates a collision record for two objects.
@@ -85,5 +90,45 @@ public class Collision {
 
   public void setManifold(Map<Vector, Double> collisionManifold) {
     this.collisionManifold = collisionManifold;
+  }
+
+  public double getCachedNormalImpulse() {
+    return cachedNormalImpulse;
+  }
+
+  public void setCachedNormalImpulse(double cachedNormalImpulse) {
+    this.cachedNormalImpulse = cachedNormalImpulse;
+  }
+
+  public double getCachedFrictionImpulse() {
+    return cachedFrictionImpulse;
+  }
+
+  public void setCachedFrictionImpulse(double cachedFrictionImpulse) {
+    this.cachedFrictionImpulse = cachedFrictionImpulse;
+  }
+
+  public Vector getCachedNormal() {
+    return cachedNormal;
+  }
+
+  public void setCachedNormal(Vector cachedNormal) {
+    this.cachedNormal = cachedNormal;
+  }
+
+  public double getAppliedNormalImpulse() {
+    return appliedNormalImpulse;
+  }
+
+  public void setAppliedNormalImpulse(double appliedNormalImpulse) {
+    this.appliedNormalImpulse = appliedNormalImpulse;
+  }
+
+  public double getAppliedFrictionImpulse() {
+    return appliedFrictionImpulse;
+  }
+
+  public void setAppliedFrictionImpulse(double appliedFrictionImpulse) {
+    this.appliedFrictionImpulse = appliedFrictionImpulse;
   }
 }

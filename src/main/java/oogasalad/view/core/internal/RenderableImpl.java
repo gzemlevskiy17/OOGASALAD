@@ -18,7 +18,7 @@ public class RenderableImpl implements Renderable {
    *
    * @param x world x-coordinate
    * @param y world y-coordinate
-   * @param rotation rotation in degrees
+   * @param rotation rotation in radians
    */
   public RenderableImpl(double x, double y, double rotation) {
     this.x = x;

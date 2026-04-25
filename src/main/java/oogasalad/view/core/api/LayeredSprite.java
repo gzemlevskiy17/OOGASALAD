@@ -9,7 +9,7 @@ import oogasalad.view.core.internal.SpriteCache;
 
 /**
  * A two-layer sprite: a tire/wheel image that spins plus a hub image that stays rigid. The tire's
- * spin is cosmetic and derived from linear speed via {@code angularVelocity = speed / r}.
+ * spin is cosmetic and derived from signed rolling speed via {@code angularVelocity = speed / r}.
  *
  * @author Paulina Vvedenskaya
  */
@@ -30,8 +30,13 @@ public record LayeredSprite(String hubPath, String wheelPath, double width, doub
   }
 
   @Override
-  public void update(Node node, double linearSpeed) {
-    if (linearSpeed < STATIONARY_SPEED_THRESHOLD) {
+  public boolean usesRenderableRotation() {
+    return false;
+  }
+
+  @Override
+  public void update(Node node, double rollingSpeed) {
+    if (Math.abs(rollingSpeed) < STATIONARY_SPEED_THRESHOLD) {
       return;
     }
     if (!(node instanceof Group group) || group.getChildren().isEmpty()) {
@@ -39,7 +44,7 @@ public record LayeredSprite(String hubPath, String wheelPath, double width, doub
     }
     Node tire = group.getChildren().get(0);
     double radius = Math.max(width, height) / 2.0;
-    double angularVelocity = linearSpeed / Math.max(radius, 1.0);
+    double angularVelocity = rollingSpeed / Math.max(radius, 1.0);
     double deltaDeg = Math.toDegrees(angularVelocity) * FRAME_SECONDS;
     tire.setRotate(tire.getRotate() + deltaDeg);
   }

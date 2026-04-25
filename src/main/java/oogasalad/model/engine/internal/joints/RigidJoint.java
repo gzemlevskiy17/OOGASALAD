@@ -6,6 +6,7 @@ import java.util.Set;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 
 /**
@@ -22,11 +23,16 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public class RigidJoint extends DistanceJoint {
 
+  private static final double ANGULAR_SLOP = 1e-6;
+
+  private final double referenceAngle;
+
   /**
    * Creates a rigid joint that locks the initial anchor separation.
    */
   public RigidJoint(GameComponent objectA, GameComponent objectB) {
     super(objectA, objectB, 0.0, 0.0);
+    this.referenceAngle = objectB.getRotation() - objectA.getRotation();
   }
 
   /**
@@ -35,6 +41,7 @@ public class RigidJoint extends DistanceJoint {
   public RigidJoint(GameComponent objectA, GameComponent objectB, double minDistance,
       double maxDistance) {
     super(objectA, objectB, minDistance, maxDistance, 0.0, 0.0);
+    this.referenceAngle = objectB.getRotation() - objectA.getRotation();
   }
 
   /**
@@ -44,6 +51,83 @@ public class RigidJoint extends DistanceJoint {
       Vector localAnchorB,
       double minDistance, double maxDistance) {
     super(objectA, objectB, localAnchorA, localAnchorB, minDistance, maxDistance, 0.0, 0.0);
+    this.referenceAngle = objectB.getRotation() - objectA.getRotation();
+  }
+
+  /**
+   * Solves the weld form: distance plus relative angle.
+   */
+  @Override
+  public void apply(double dt) {
+    super.apply(dt);
+    solveRelativeAngle();
+  }
+
+  @Override
+  public void applyVelocity() {
+    super.applyVelocity();
+    equalizeRelativeAngularVelocity();
+  }
+
+  private void solveRelativeAngle() {
+    double error = (getComponentB().getRotation() - getComponentA().getRotation()) - referenceAngle;
+    if (Math.abs(error) <= ANGULAR_SLOP) {
+      return;
+    }
+
+    double inverseInertiaA = inverseInertia(getComponentA());
+    double inverseInertiaB = inverseInertia(getComponentB());
+    double totalInverseInertia = inverseInertiaA + inverseInertiaB;
+    if (totalInverseInertia == 0.0) {
+      return;
+    }
+
+    if (getComponentA() instanceof DynamicComponent) {
+      getComponentA().getStaticState().setAngularPosition(getComponentA().getRotation()
+          + error * inverseInertiaA / totalInverseInertia);
+    }
+    if (getComponentB() instanceof DynamicComponent) {
+      getComponentB().getStaticState().setAngularPosition(getComponentB().getRotation()
+          - error * inverseInertiaB / totalInverseInertia);
+    }
+  }
+
+  private void equalizeRelativeAngularVelocity() {
+    double inverseInertiaA = inverseInertia(getComponentA());
+    double inverseInertiaB = inverseInertia(getComponentB());
+    double totalInverseInertia = inverseInertiaA + inverseInertiaB;
+    if (totalInverseInertia == 0.0) {
+      return;
+    }
+
+    double relativeAngularVelocity = angularVelocity(getComponentB()) - angularVelocity(
+        getComponentA());
+    if (Math.abs(relativeAngularVelocity) <= ANGULAR_SLOP) {
+      return;
+    }
+
+    if (getComponentA() instanceof DynamicComponent dynamicA) {
+      dynamicA.getDynamicState().setAngularVelocity(dynamicA.getDynamicState().getAngularVelocity()
+          + relativeAngularVelocity * inverseInertiaA / totalInverseInertia);
+    }
+    if (getComponentB() instanceof DynamicComponent dynamicB) {
+      dynamicB.getDynamicState().setAngularVelocity(dynamicB.getDynamicState().getAngularVelocity()
+          - relativeAngularVelocity * inverseInertiaB / totalInverseInertia);
+    }
+  }
+
+  private static double inverseInertia(GameComponent component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getInverseMomentOfInertia();
+    }
+    return 0.0;
+  }
+
+  private static double angularVelocity(GameComponent component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getDynamicState().getAngularVelocity();
+    }
+    return 0.0;
   }
 
   /**

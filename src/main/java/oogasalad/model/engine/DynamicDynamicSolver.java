@@ -38,6 +38,7 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  * apart incrementally.
  *
  * @author Georgiy Zemlevskiy
+ *
  */
 public class DynamicDynamicSolver {
 

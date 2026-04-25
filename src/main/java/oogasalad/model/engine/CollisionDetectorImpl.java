@@ -1,5 +1,6 @@
 package oogasalad.model.engine;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class CollisionDetectorImpl implements CollisionDetector {
   //TODO: test & refactor
   //TODO: tolerances
   //TODO: update javadoc once complete
+  private static final double GEOMETRY_EPSILON = 1e-9;
 
   /**
    * Returns a collision if detected by {@code findSatCollision}.
@@ -87,11 +89,29 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @return a collision record when all axes overlap, otherwise {@link Optional#empty()}
    */
   private Optional<Collision> findSatCollision(GameObject objectA, GameObject objectB) {
-    Optional<Collision> collisionOnAxesOfA = buildCollision(objectA, objectB);
-    if (collisionOnAxesOfA.isPresent()) {
-      return collisionOnAxesOfA;
+    Optional<SatCandidate> collisionOnAxesOfA = buildCollision(objectA, objectB);
+    if (collisionOnAxesOfA.isEmpty()) {
+      return Optional.empty();
     }
-    return buildCollision(objectB, objectA);
+
+    Optional<SatCandidate> collisionOnAxesOfB = buildCollision(objectB, objectA);
+    if (collisionOnAxesOfB.isEmpty()) {
+      return Optional.empty();
+    }
+
+    SatCandidate minimumTranslation =
+        collisionOnAxesOfA.get().depth() <= collisionOnAxesOfB.get().depth()
+            ? collisionOnAxesOfA.get()
+            : collisionOnAxesOfB.get();
+
+    Collision collision =
+        new Collision(minimumTranslation.referenceObject(), minimumTranslation.incidentObject());
+    collision.setPenetration(
+        minimumTranslation.normal().multiply(minimumTranslation.depth()));
+    collision.setReferenceEdge(minimumTranslation.referenceEdge());
+    collision.setIncidentEdge(findIncidentEdge(minimumTranslation.incidentObject().getPolygon(),
+        minimumTranslation.normal()));
+    return Optional.of(collision);
   }
 
   /**
@@ -106,29 +126,36 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @param incidentObject  object projected against those axes
    * @return a collision record when projections overlap on every tested axis, otherwise empty
    */
-  private Optional<Collision> buildCollision(GameObject referenceObject,
+  private Optional<SatCandidate> buildCollision(GameObject referenceObject,
       GameObject incidentObject) {
     //TODO: rename method (setters in the end)
     ConvexPolygon referencePolygon = referenceObject.getPolygon();
     ConvexPolygon incidentPolygon = incidentObject.getPolygon();
 
-    Collision collision = new Collision(referenceObject, incidentObject);
     double minPenetrationDepth = Double.MAX_VALUE;
-    Vector penetration = null;
+    Vector normal = null;
     Vector[] minReferenceEdge = new Vector[2];
-    for (int i = 0; i < referencePolygon.getPoints().size() - 1;
-        i++) { // Looping over edges clockwise
-      Vector point1 = referencePolygon.getPoints().get(i);
-      Vector point2 = referencePolygon.getPoints().get(i + 1);
-      Vector tangent = point2.subtract(point1).normalize();
-      Vector outwardUnitNormal = tangent.rotateRight(); //Find the inward normal along which to compute the penetration depth
-      //TODO: TEST
+    List<Vector> referencePoints = uniqueVertices(referencePolygon);
+    Vector referenceCenter = centroid(referencePoints);
+    Vector incidentCenter = centroid(uniqueVertices(incidentPolygon));
+
+    for (int i = 0; i < referencePoints.size(); i++) { // Looping over polygon edges
+      Vector point1 = referencePoints.get(i);
+      Vector point2 = referencePoints.get((i + 1) % referencePoints.size());
+      Vector edge = point2.subtract(point1);
+      if (edge.magnitude() <= GEOMETRY_EPSILON) {
+        continue;
+      }
+      Vector outwardUnitNormal = outwardNormal(point1, point2, referenceCenter);
+      if (outwardUnitNormal.dot(incidentCenter.subtract(referenceCenter)) < 0) {
+        outwardUnitNormal = outwardUnitNormal.multiply(-1);
+      }
 
       double[] projectionA = projectPolygonAlongVector(referencePolygon, outwardUnitNormal);
       double[] projectionB = projectPolygonAlongVector(incidentPolygon, outwardUnitNormal);
       boolean noOverlap =
-          projectionA[1] <= projectionB[0]
-              || projectionB[1] <= projectionA[0]; //TODO: make easier to understand
+          projectionA[1] <= projectionB[0] + GEOMETRY_EPSILON
+              || projectionB[1] <= projectionA[0] + GEOMETRY_EPSILON;
       if (noOverlap) { //if the shadows don't overlap in at least one axis, there is no collision by the SAT
         return Optional.empty();
       }
@@ -137,21 +164,51 @@ public class CollisionDetectorImpl implements CollisionDetector {
           Math.min(projectionA[1], projectionB[1]) - Math.max(projectionA[0],
               projectionB[0]);
       if (currentPenetrationDepth < minPenetrationDepth) {
-        penetration = outwardUnitNormal.multiply(currentPenetrationDepth);
+        normal = outwardUnitNormal;
         minPenetrationDepth = currentPenetrationDepth;
         minReferenceEdge[0] = point1;
         minReferenceEdge[1] = point2;
       }
     }
 
-    if (penetration == null) {
+    if (normal == null) {
       return Optional.empty();
     }
 
-    collision.setPenetration(penetration);
-    collision.setReferenceEdge(minReferenceEdge);
-    collision.setIncidentEdge(findIncidentEdge(incidentPolygon, penetration));
-    return Optional.of(collision);
+    return Optional.of(new SatCandidate(referenceObject, incidentObject, normal,
+        minPenetrationDepth, minReferenceEdge));
+  }
+
+  private record SatCandidate(GameObject referenceObject, GameObject incidentObject, Vector normal,
+                              double depth, Vector[] referenceEdge) {
+  }
+
+  private List<Vector> uniqueVertices(ConvexPolygon polygon) {
+    List<Vector> points = polygon.getPoints();
+    if (points.size() > 1 && points.getFirst().equals(points.getLast())) {
+      return points.subList(0, points.size() - 1);
+    }
+    return points;
+  }
+
+  private Vector centroid(List<Vector> points) {
+    double x = 0;
+    double y = 0;
+    for (Vector point : points) {
+      x += point.x();
+      y += point.y();
+    }
+    return new Vector(x / points.size(), y / points.size());
+  }
+
+  private Vector outwardNormal(Vector point1, Vector point2, Vector polygonCenter) {
+    Vector edge = point2.subtract(point1);
+    Vector normal = edge.normalize().rotateRight();
+    Vector midpoint = point1.add(point2).multiply(0.5);
+    if (normal.dot(midpoint.subtract(polygonCenter)) < 0) {
+      normal = normal.multiply(-1);
+    }
+    return normal;
   }
 
   /**
@@ -167,15 +224,20 @@ public class CollisionDetectorImpl implements CollisionDetector {
     Vector[] incidentEdge = new Vector[2];
     double minimumDotProduct = Double.MAX_VALUE;
 
-    List<Vector> points = incidentPolygon.getPoints();
-    for (int i = 0; i < points.size() - 1; i++) {
-      Vector incidentNormal = points.get(i + 1).subtract(points.get(i)).normalize()
-          .rotateRight(); // maybe rotateLeft
+    List<Vector> points = uniqueVertices(incidentPolygon);
+    Vector center = centroid(points);
+    for (int i = 0; i < points.size(); i++) {
+      Vector point1 = points.get(i);
+      Vector point2 = points.get((i + 1) % points.size());
+      if (point2.subtract(point1).magnitude() <= GEOMETRY_EPSILON) {
+        continue;
+      }
+      Vector incidentNormal = outwardNormal(point1, point2, center);
       double dotWithIncident = penetrationNormal.dot(incidentNormal);
       if (dotWithIncident < minimumDotProduct) {
         minimumDotProduct = dotWithIncident;
-        incidentEdge[0] = points.get(i);
-        incidentEdge[1] = points.get(i + 1);
+        incidentEdge[0] = point1;
+        incidentEdge[1] = point2;
       }
     }
     return incidentEdge;
@@ -192,20 +254,15 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @param referenceEdge       reference edge used to compute contact depth
    * @return contact points that lie behind the reference edge
    */
-  private Map<Vector, Double> faceClip(Vector[] clippedIncidentEdge, Vector[] referenceEdge) {
-    Vector referenceOutwardNormal = referenceEdge[1].subtract(referenceEdge[0]).normalize()
-        .rotateRight();
+  private Map<Vector, Double> faceClip(Vector[] clippedIncidentEdge, Vector[] referenceEdge,
+      Vector referenceOutwardNormal) {
     Map<Vector, Double> manifoldPoints = new HashMap<>();
-    double distanceFromLeftPlane = distanceFromPlane(clippedIncidentEdge[0], referenceEdge[0],
-        referenceOutwardNormal);
-    if (distanceFromLeftPlane < 0) {
-      manifoldPoints.put(clippedIncidentEdge[0], -distanceFromLeftPlane);
-    }
-
-    double distanceFromRightPlane = distanceFromPlane(clippedIncidentEdge[1], referenceEdge[0],
-        referenceOutwardNormal);
-    if (distanceFromRightPlane < 0) {
-      manifoldPoints.put(clippedIncidentEdge[1], -distanceFromRightPlane);
+    for (Vector clippedPoint : clippedIncidentEdge) {
+      double distanceFromFace = distanceFromPlane(clippedPoint, referenceEdge[0],
+          referenceOutwardNormal);
+      if (distanceFromFace <= GEOMETRY_EPSILON) {
+        manifoldPoints.put(clippedPoint, Math.max(0.0, -distanceFromFace));
+      }
     }
 
     return manifoldPoints;
@@ -241,7 +298,12 @@ public class CollisionDetectorImpl implements CollisionDetector {
     Vector[] incidentEdge = collision.getIncidentEdge();
     Vector[] referenceEdge = collision.getReferenceEdge();
     Vector[] clippedIncidentEdge = clipToReferenceEdge(incidentEdge, referenceEdge);
-    collision.setManifold(faceClip(clippedIncidentEdge, referenceEdge));
+    if (clippedIncidentEdge.length == 0) {
+      collision.setManifold(new HashMap<>());
+      return;
+    }
+    collision.setManifold(faceClip(clippedIncidentEdge, referenceEdge,
+        collision.getPenetration().normalize()));
   }
 
 
@@ -256,39 +318,11 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @return the incident edge clipped to the reference edge extents
    */
   private Vector[] clipToReferenceEdge(Vector[] incidentEdge, Vector[] referenceEdge) {
-    // 4 situations: incident edge has both, either, or no endpoints outside of reference edge.
-    // Assuming that the incident edge will intersect the reference edge, and at least some part of
-    // the incident edge is within the reference edge endpoints
-    Vector sideANormal = referenceEdge[0].subtract(referenceEdge[1]);
-    Vector sideBNormal = referenceEdge[1].subtract(referenceEdge[0]);
-
-    //find where the endpoints of the incident edge are relative to the planes
-    Vector unclippedSideAEndpoint = null;
-    Vector unclippedSideBEndpoint = null;
-    if (incidentEdge[0].subtract(referenceEdge[0]).dot(sideANormal) > incidentEdge[1].subtract(
-        referenceEdge[0]).dot(
-        sideANormal)) { //the more positive dot product with the outward A normal, the farthest that point is in the outward direction
-      unclippedSideAEndpoint = incidentEdge[0];
-      unclippedSideBEndpoint = incidentEdge[1];
-    } else {
-      unclippedSideAEndpoint = incidentEdge[1];
-      unclippedSideBEndpoint = incidentEdge[0];
-    }
-    Vector clippedIncidentAEndpoint = unclippedSideAEndpoint;
-    if (distanceFromPlane(unclippedSideAEndpoint, referenceEdge[0], sideANormal) > 0) {
-      //compute the point of intersection of the incident edge and the side A plane
-      clippedIncidentAEndpoint = computeLineIntersection(incidentEdge, referenceEdge[0],
-          sideANormal);
-    }
-
-    Vector clippedIncidentBEndpoint = unclippedSideBEndpoint;
-    if (distanceFromPlane(unclippedSideBEndpoint, referenceEdge[1], sideBNormal) > 0) {
-      //compute the point of intersection of the incident edge and the side B plane
-      clippedIncidentBEndpoint = computeLineIntersection(incidentEdge, referenceEdge[1],
-          sideBNormal);
-    }
-
-    return new Vector[]{clippedIncidentAEndpoint, clippedIncidentBEndpoint};
+    Vector referenceDirection = referenceEdge[1].subtract(referenceEdge[0]).normalize();
+    List<Vector> clipped = clipSegmentToPlane(List.of(incidentEdge[0], incidentEdge[1]),
+        referenceDirection.multiply(-1), referenceEdge[0]);
+    clipped = clipSegmentToPlane(clipped, referenceDirection, referenceEdge[1]);
+    return clipped.toArray(Vector[]::new);
   }
 
   /**
@@ -305,14 +339,45 @@ public class CollisionDetectorImpl implements CollisionDetector {
    * @param outwardPlaneNormal         clipping plane normal
    * @return intersection point along the incident edge
    */
-  private Vector computeLineIntersection(Vector[] incidentEdge, Vector referencePlaneIntersection,
+  private List<Vector> clipSegmentToPlane(List<Vector> segment, Vector outwardPlaneNormal,
+      Vector planePoint) {
+    if (segment.isEmpty()) {
+      return List.of();
+    }
+    List<Vector> output = new ArrayList<>();
+    Vector previous = segment.getLast();
+    double previousDistance = distanceFromPlane(previous, planePoint, outwardPlaneNormal);
+    for (Vector current : segment) {
+      double currentDistance = distanceFromPlane(current, planePoint, outwardPlaneNormal);
+      boolean currentInside = currentDistance <= GEOMETRY_EPSILON;
+      boolean previousInside = previousDistance <= GEOMETRY_EPSILON;
+
+      if (currentInside != previousInside) {
+        computeLineIntersection(previous, current, planePoint, outwardPlaneNormal)
+            .ifPresent(output::add);
+      }
+      if (currentInside) {
+        output.add(current);
+      }
+
+      previous = current;
+      previousDistance = currentDistance;
+    }
+    return output;
+  }
+
+  private Optional<Vector> computeLineIntersection(Vector start, Vector end,
+      Vector referencePlaneIntersection,
       Vector outwardPlaneNormal) {
     //TODO: referencePlaneIntersection should be an endpoint of the reference edge? put in documentation
-    Vector edgeDirection = incidentEdge[1].subtract(incidentEdge[0]);
+    Vector edgeDirection = end.subtract(start);
     double edgeLengthInPlaneNormalDirection = edgeDirection.dot(outwardPlaneNormal);
-    double fractionAlongIncidentEdge = (referencePlaneIntersection.subtract(incidentEdge[0])).dot(
+    if (Math.abs(edgeLengthInPlaneNormalDirection) <= GEOMETRY_EPSILON) {
+      return Optional.empty();
+    }
+    double fractionAlongIncidentEdge = (referencePlaneIntersection.subtract(start)).dot(
         outwardPlaneNormal) / edgeLengthInPlaneNormalDirection; //
 
-    return incidentEdge[0].add(edgeDirection.multiply(fractionAlongIncidentEdge));
+    return Optional.of(start.add(edgeDirection.multiply(fractionAlongIncidentEdge)));
   }
 }

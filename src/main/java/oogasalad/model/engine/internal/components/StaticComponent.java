@@ -18,6 +18,14 @@ public abstract class StaticComponent extends RigidBody {
     super(x, y, rotation, polygon, tag, friction, restitution);
   }
 
+  /**
+   * Compatibility constructor for lightweight engine tests.
+   */
+  public StaticComponent(double x, double y, double rotation, double friction,
+      double restitution) {
+    this(x, y, rotation, ConvexPolygon.axisAlignedBox(x, y, 1, 1), "", friction, restitution);
+  }
+
 
   //TODO: comment
   @Override

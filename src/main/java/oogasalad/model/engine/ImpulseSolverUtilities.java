@@ -1,12 +1,11 @@
 package oogasalad.model.engine;
 
-import java.util.ArrayList;
-import java.util.List;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.RigidBody;
 
 public class ImpulseSolverUtilities {
 //TODO: comment
+  private static final double SOLVER_EPSILON = 1e-9;
 
   /**
    * Computes the contact-relative positions from each object's center of mass.
@@ -43,6 +42,17 @@ public class ImpulseSolverUtilities {
    */
   private static final double RESTITUTION_APPROACH_THRESHOLD = 40.0;
 
+  private static double computeImpulseDenominator(RigidBody referenceObject,
+      RigidBody incidentObject, ContactPointPhysics contactPointPhysics, Vector unitDirection) {
+    double incidentPointMomentum = contactPointPhysics.positionFromIncident.crossWithVector(
+        unitDirection);
+    double referencePointMomentum = contactPointPhysics.positionFromReference.crossWithVector(
+        unitDirection);
+    return referenceObject.getInverseMass() + incidentObject.getInverseMass()
+        + Math.pow(incidentPointMomentum, 2) * incidentObject.getInverseMomentOfInertia()
+        + Math.pow(referencePointMomentum, 2) * referenceObject.getInverseMomentOfInertia();
+  }
+
   private static double computeImpulse(RigidBody referenceObject, RigidBody incidentObject,
       ContactPointPhysics contactPointPhysics,
       Vector referenceUnitNormal) {
@@ -56,15 +66,35 @@ public class ImpulseSolverUtilities {
       return 0;
     }
 
-    double incidentPointMomentum = contactPointPhysics.positionFromIncident.crossWithVector(
-        referenceUnitNormal);
-    double referencePointMomentum = contactPointPhysics.positionFromReference.crossWithVector(
-        referenceUnitNormal);
-    double inverseMass = referenceObject.getInverseMass() + incidentObject.getInverseMass()
-        + Math.pow(incidentPointMomentum, 2) * incidentObject.getInverseMomentOfInertia()
-        + Math.pow(referencePointMomentum, 2) * referenceObject.getInverseMomentOfInertia();
+    double inverseMass = computeImpulseDenominator(referenceObject, incidentObject,
+        contactPointPhysics, referenceUnitNormal);
+    if (inverseMass <= SOLVER_EPSILON) {
+      return 0;
+    }
 
     return velocity / inverseMass;
+  }
+
+  private static double computeFrictionImpulse(RigidBody referenceObject, RigidBody incidentObject,
+      ContactPointPhysics contactPointPhysics, Vector referenceUnitNormal, double normalImpulse) {
+    Vector tangent = contactPointPhysics.relativeVelocity.subtract(referenceUnitNormal.multiply(
+        contactPointPhysics.relativeVelocity.dot(referenceUnitNormal)));
+    double tangentMagnitude = tangent.magnitude();
+    if (tangentMagnitude <= SOLVER_EPSILON || normalImpulse <= 0.0) {
+      return 0.0;
+    }
+
+    Vector unitTangent = tangent.multiply(1.0 / tangentMagnitude);
+    double inverseMass = computeImpulseDenominator(referenceObject, incidentObject,
+        contactPointPhysics, unitTangent);
+    if (inverseMass <= SOLVER_EPSILON) {
+      return 0.0;
+    }
+
+    double tangentImpulse = -contactPointPhysics.relativeVelocity.dot(unitTangent) / inverseMass;
+    double friction = Math.sqrt(referenceObject.getFriction() * incidentObject.getFriction());
+    double maximumFriction = normalImpulse * friction;
+    return Math.max(-maximumFriction, Math.min(tangentImpulse, maximumFriction));
   }
 
   /**
@@ -90,6 +120,51 @@ public class ImpulseSolverUtilities {
         .add(crossWithReference);
 
     return incidentPointVelocity.subtract(referencePointVelocity);
+  }
+
+  private static void applyImpulse(RigidBody referenceObject, RigidBody incidentObject,
+      DynamicState referenceDynamicState, DynamicState incidentDynamicState,
+      ContactPointPhysics contactPointPhysics, Vector impulse) {
+    referenceDynamicState.setLinearVelocity(referenceDynamicState.getLinearVelocity()
+        .subtract(impulse.multiply(referenceObject.getInverseMass())));
+    referenceDynamicState.setAngularVelocity(referenceDynamicState.getAngularVelocity()
+        - contactPointPhysics.positionFromReference.crossWithVector(impulse)
+        * referenceObject.getInverseMomentOfInertia());
+
+    incidentDynamicState.setLinearVelocity(incidentDynamicState.getLinearVelocity()
+        .add(impulse.multiply(incidentObject.getInverseMass())));
+    incidentDynamicState.setAngularVelocity(incidentDynamicState.getAngularVelocity()
+        + contactPointPhysics.positionFromIncident.crossWithVector(impulse)
+        * incidentObject.getInverseMomentOfInertia());
+  }
+
+  private static boolean canWarmStart(Collision collision, Vector referenceUnitNormal) {
+    Vector cachedNormal = collision.getCachedNormal();
+    return cachedNormal != null
+        && cachedNormal.dot(referenceUnitNormal) > 0.5
+        && collision.getCachedNormalImpulse() != 0.0;
+  }
+
+  private static void applyCachedImpulse(Collision collision, RigidBody referenceObject,
+      RigidBody incidentObject, DynamicState referenceDynamicState, DynamicState incidentDynamicState,
+      StaticState incidentStaticState, StaticState referenceStaticState, Vector referenceUnitNormal) {
+    if (!canWarmStart(collision, referenceUnitNormal)) {
+      return;
+    }
+
+    int contactCount = collision.getCollisionManifold().size();
+    if (contactCount == 0) {
+      return;
+    }
+    Vector cachedImpulse = referenceUnitNormal.multiply(collision.getCachedNormalImpulse()
+        / contactCount);
+    for (Vector contactPoint : collision.getCollisionManifold().keySet()) {
+      ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
+          collision.getCollisionManifold().get(contactPoint));
+      setRelativePositions(contactPointPhysics, incidentStaticState, referenceStaticState);
+      applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
+          contactPointPhysics, cachedImpulse);
+    }
   }
 
   /**
@@ -150,9 +225,17 @@ public class ImpulseSolverUtilities {
       StaticState referenceStaticState, DynamicState incidentDynamicState,
       DynamicState referenceDynamicState) {
     Vector referenceUnitNormal = collision.getPenetration().normalize();
+    if (referenceUnitNormal.magnitude() <= SOLVER_EPSILON
+        || collision.getCollisionManifold() == null
+        || collision.getCollisionManifold().isEmpty()) {
+      return;
+    }
 
-    double totalDepth = 0;
-    List<ContactPointPhysics> contactPoints = new ArrayList<>(); //TODO: rename
+    applyCachedImpulse(collision, referenceObject, incidentObject, referenceDynamicState,
+        incidentDynamicState, incidentStaticState, referenceStaticState, referenceUnitNormal);
+
+    double normalImpulseSum = collision.getCachedNormalImpulse();
+    double frictionImpulseSum = 0.0;
     for (Vector contactPoint : collision.getCollisionManifold().keySet()) {
       //TODO: should these method behaviors be consistent
       ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
@@ -167,39 +250,23 @@ public class ImpulseSolverUtilities {
           contactPointPhysics,
           referenceUnitNormal);
 
-      totalDepth += contactPointPhysics.depth;
-      contactPoints.add(contactPointPhysics);
+      Vector normalImpulse = referenceUnitNormal.multiply(contactPointPhysics.impulse);
+      applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
+          contactPointPhysics, normalImpulse);
+      normalImpulseSum += contactPointPhysics.impulse;
+
+      contactPointPhysics.relativeVelocity = ImpulseSolverUtilities.computeRelativeVelocity(
+          contactPointPhysics,
+          incidentDynamicState, referenceDynamicState);
+      Vector tangent = contactPointPhysics.relativeVelocity.subtract(referenceUnitNormal.multiply(
+          contactPointPhysics.relativeVelocity.dot(referenceUnitNormal))).normalize();
+      double frictionImpulseMagnitude = computeFrictionImpulse(referenceObject, incidentObject,
+          contactPointPhysics, referenceUnitNormal, contactPointPhysics.impulse);
+      applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
+          contactPointPhysics, tangent.multiply(frictionImpulseMagnitude));
+      frictionImpulseSum += frictionImpulseMagnitude;
     }
-
-    double impulseSum = 0;
-    double referenceCrossProductSum = 0;
-    double incidentCrossProductSum = 0;
-    for (ContactPointPhysics contactPointPhysics : contactPoints) {
-      contactPointPhysics.impulse *= contactPointPhysics.depth / totalDepth;
-
-      impulseSum += contactPointPhysics.impulse;
-      referenceCrossProductSum +=
-          contactPointPhysics.positionFromReference.crossWithVector(referenceUnitNormal)
-              * contactPointPhysics.impulse; //TODO: make impulse vector?
-      incidentCrossProductSum +=
-          contactPointPhysics.positionFromIncident.crossWithVector(referenceUnitNormal)
-              * contactPointPhysics.impulse;
-    }
-
-    double newReferenceAngularVelocity = referenceDynamicState.getAngularVelocity()
-        - referenceCrossProductSum * referenceObject.getInverseMomentOfInertia();
-    referenceDynamicState.setAngularVelocity(newReferenceAngularVelocity);
-
-    double newIncidentAngularVelocity = incidentDynamicState.getAngularVelocity()
-        + incidentCrossProductSum * incidentObject.getInverseMomentOfInertia();
-    incidentDynamicState.setAngularVelocity(newIncidentAngularVelocity);
-
-    Vector newReferenceLinearVelocity = referenceDynamicState.getLinearVelocity()
-        .subtract(referenceUnitNormal.multiply(impulseSum * referenceObject.getInverseMass()));
-    referenceDynamicState.setLinearVelocity(newReferenceLinearVelocity);
-
-    Vector newIncidentLinearVelocity = incidentDynamicState.getLinearVelocity()
-        .add(referenceUnitNormal.multiply(impulseSum * incidentObject.getInverseMass()));
-    incidentDynamicState.setLinearVelocity(newIncidentLinearVelocity);
+    collision.setAppliedNormalImpulse(Math.max(0.0, normalImpulseSum));
+    collision.setAppliedFrictionImpulse(frictionImpulseSum);
   }
 }

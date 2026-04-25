@@ -13,6 +13,9 @@ import oogasalad.model.engine.api.TypedComponent;
  */
 public abstract class VehicleComponent extends DynamicComponent
     implements TypedComponent, Damageable {
+
+  private static final int WHEEL_COLLIDER_SIDES = 16;
+
   private static final Set<String> WHEEL_DISPLAY_NAMES = Set.of(
       "Wood Wheel", "Metal Wheel");
 
@@ -55,6 +58,12 @@ public abstract class VehicleComponent extends DynamicComponent
 
   @Override
   public void updatePolygon() {
+    if (isWheel()) {
+      double radius = Math.min(bodyWidth, bodyHeight) / 2.0;
+      setPolygon(ConvexPolygon.regularPolygon(getX(), getY(), radius, WHEEL_COLLIDER_SIDES,
+          getRotation()));
+      return;
+    }
     setPolygon(ConvexPolygon.rotatedBox(
         getX(), getY(), bodyWidth, bodyHeight, getRotation()));
   }

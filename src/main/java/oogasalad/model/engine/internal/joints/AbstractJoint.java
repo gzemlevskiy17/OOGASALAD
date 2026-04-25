@@ -12,15 +12,16 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public abstract class AbstractJoint implements Joint {
 
-  // Anchor violations below half a pixel are ignored so joints don't fight collision
-  // drift every frame.
-  protected static final double ANCHOR_POSITION_SLOP = 0.5;
+  // Keep joint anchors nearly coincident so support/contact impulses create torque
+  // instead of letting connected bodies drift through the axle.
+  protected static final double ANCHOR_POSITION_SLOP = 0.05;
 
   private final GameComponent objectA;
   private final GameComponent objectB;
   private final oogasalad.model.engine.api.Vector localAnchorA;
   private final oogasalad.model.engine.api.Vector localAnchorB;
   private final double restDistance;
+  private boolean collideConnected;
 
   /**
    * Creates a joint whose anchors default to each component's local origin.
@@ -49,6 +50,7 @@ public abstract class AbstractJoint implements Joint {
     this.localAnchorA = localAnchorA;
     this.localAnchorB = localAnchorB;
     this.restDistance = getWorldAnchorB().subtract(getWorldAnchorA()).magnitude();
+    this.collideConnected = false;
   }
 
   @Override
@@ -59,6 +61,16 @@ public abstract class AbstractJoint implements Joint {
   @Override
   public GameComponent getComponentB() {
     return objectB;
+  }
+
+  @Override
+  public boolean isCollideConnected() {
+    return collideConnected;
+  }
+
+  @Override
+  public void setCollideConnected(boolean collideConnected) {
+    this.collideConnected = collideConnected;
   }
 
   /**
@@ -251,6 +263,58 @@ public abstract class AbstractJoint implements Joint {
     if (objectB instanceof DynamicComponent dB) {
       dB.getDynamicState().setLinearVelocity(vB.add(impulse.multiply(invMB)));
       dB.getDynamicState().setAngularVelocity(wB + rB.crossWithVector(impulse) * invIB);
+    }
+  }
+
+  /**
+   * Corrects the world-anchor separation using the same point-to-point effective mass as the
+   * velocity solve, so off-center anchors may rotate bodies instead of only translating them.
+   */
+  protected void applyAnchorPositionCorrection(double correctionFraction) {
+    double invMA = inverseMass(objectA);
+    double invMB = inverseMass(objectB);
+    double invIA = inverseInertia(objectA);
+    double invIB = inverseInertia(objectB);
+    if (invMA + invMB == 0.0) {
+      return;
+    }
+
+    oogasalad.model.engine.api.Vector delta = getAnchorDelta();
+    double magnitude = delta.magnitude();
+    if (magnitude <= ANCHOR_POSITION_SLOP) {
+      return;
+    }
+    oogasalad.model.engine.api.Vector constraintError = delta.multiply(
+        correctionFraction * (magnitude - ANCHOR_POSITION_SLOP) / magnitude);
+
+    oogasalad.model.engine.api.Vector rA =
+        getWorldAnchorA().subtract(objectA.getStaticState().getLinearPosition());
+    oogasalad.model.engine.api.Vector rB =
+        getWorldAnchorB().subtract(objectB.getStaticState().getLinearPosition());
+
+    double k00 = invMA + invMB + rA.y() * rA.y() * invIA + rB.y() * rB.y() * invIB;
+    double k11 = invMA + invMB + rA.x() * rA.x() * invIA + rB.x() * rB.x() * invIB;
+    double k01 = -rA.x() * rA.y() * invIA - rB.x() * rB.y() * invIB;
+    double det = k00 * k11 - k01 * k01;
+    if (Math.abs(det) < 1e-12) {
+      return;
+    }
+    double invDet = 1.0 / det;
+    double px = -invDet * (k11 * constraintError.x() - k01 * constraintError.y());
+    double py = -invDet * (-k01 * constraintError.x() + k00 * constraintError.y());
+    oogasalad.model.engine.api.Vector impulse = new oogasalad.model.engine.api.Vector(px, py);
+
+    if (objectA instanceof DynamicComponent dA) {
+      dA.getStaticState().setLinearPosition(dA.getStaticState().getLinearPosition()
+          .subtract(impulse.multiply(invMA)));
+      dA.getStaticState().setAngularPosition(dA.getRotation()
+          - rA.crossWithVector(impulse) * invIA);
+    }
+    if (objectB instanceof DynamicComponent dB) {
+      dB.getStaticState().setLinearPosition(dB.getStaticState().getLinearPosition()
+          .add(impulse.multiply(invMB)));
+      dB.getStaticState().setAngularPosition(dB.getRotation()
+          + rB.crossWithVector(impulse) * invIB);
     }
   }
 }

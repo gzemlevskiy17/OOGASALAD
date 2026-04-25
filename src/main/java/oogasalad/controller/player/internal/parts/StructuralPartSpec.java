@@ -20,9 +20,12 @@ public final class StructuralPartSpec extends AbstractVehiclePartSpec {
 
   @Override
   public GameComponent create(double x, double y) {
+    ConvexPolygon collider = jointStyle() == JointStyle.WHEEL
+        ? ConvexPolygon.regularPolygon(x, y, Math.min(bodyWidth(), bodyHeight()) / 2.0, 16, 0)
+        : ConvexPolygon.rotatedBox(x, y, bodyWidth(), bodyHeight(), 0);
     return new StructuralComponent(
         x, y, 0,
-        ConvexPolygon.rotatedBox(x, y, bodyWidth(), bodyHeight(), 0),
+        collider,
         "",
         FRICTION,
         MASS,
