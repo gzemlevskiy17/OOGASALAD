@@ -13,9 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainSpline;
+import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -95,6 +98,77 @@ class LevelSaverImplTest {
 
     assertThrows(LevelSaveException.class,
         () -> saver.saveLevel("/invalid:/path/level.json", world));
+  }
+
+  // --- Spline serialization ---
+
+  @Test
+  void saveLevel_terrainSpline_writesSplineEntry() throws IOException {
+    FakeWorld world = new FakeWorld();
+    ParabolaSpline spline = new ParabolaSpline(
+        List.of(new Vector(0, 10), new Vector(20, 15), new Vector(40, 10)), 100.0, 6);
+    world.addObject(new TerrainSpline(spline, "assets/dirt.png", true, 0.7, "#ffaa00"));
+
+    File output = tempDir.resolve("splined.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), world);
+
+    JsonNode root = new ObjectMapper().readTree(output);
+    JsonNode splines = root.path("level").path("splines");
+
+    assertEquals(1, splines.size());
+    JsonNode entry = splines.get(0);
+    assertEquals(3, entry.path("knots").size());
+    assertEquals(2, entry.path("controls").size());
+    assertEquals(100.0, entry.path("baselineY").asDouble(), 0.001);
+    assertEquals(6, entry.path("resolution").asInt());
+    assertEquals("assets/dirt.png", entry.path("properties").path("texture").asText());
+    assertTrue(entry.path("properties").path("tile_texture").asBoolean());
+    assertEquals("#ffaa00", entry.path("properties").path("color").asText());
+  }
+
+  @Test
+  void saveLevel_terrainSpline_withScaleFactor_convertsCoordinatesToWorldUnits() throws IOException {
+    LevelSaverImpl scalingSaver = new LevelSaverImpl(20.0); // simulate authoring cellSize=20
+    FakeWorld world = new FakeWorld();
+    ParabolaSpline spline = new ParabolaSpline(
+        List.of(new Vector(1, 2), new Vector(5, 3)), 10.0, 4);
+    world.addObject(new TerrainSpline(spline, "", false, 0.5, "#fff"));
+
+    File output = tempDir.resolve("scaled.json").toFile();
+    scalingSaver.saveLevel(output.getAbsolutePath(), world);
+
+    JsonNode entry = new ObjectMapper().readTree(output).path("level").path("splines").get(0);
+    JsonNode firstKnot = entry.path("knots").get(0);
+
+    assertEquals(20.0, firstKnot.path("x").asDouble(), 0.001);
+    assertEquals(40.0, firstKnot.path("y").asDouble(), 0.001);
+    assertEquals(200.0, entry.path("baselineY").asDouble(), 0.001);
+  }
+
+  @Test
+  void saveLevel_noSplines_writesEmptySplineArray() throws IOException {
+    FakeWorld world = new FakeWorld();
+    File output = tempDir.resolve("empty_splines.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), world);
+
+    JsonNode splines = new ObjectMapper().readTree(output).path("level").path("splines");
+    assertEquals(0, splines.size());
+  }
+
+  @Test
+  void saveLevel_mixedBlockAndSpline_writesBothInCorrectSections() throws IOException {
+    FakeWorld world = new FakeWorld();
+    world.addObject(new TerrainBlock(0, 0, 10, 2, "a.png", true, 0.5));
+    ParabolaSpline spline = new ParabolaSpline(
+        List.of(new Vector(0, 10), new Vector(20, 10)), 100.0, 4);
+    world.addObject(new TerrainSpline(spline, "", false, 0.5, "#fff"));
+
+    File output = tempDir.resolve("mixed.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), world);
+
+    JsonNode level = new ObjectMapper().readTree(output).path("level");
+    assertEquals(1, level.path("terrain").size());
+    assertEquals(1, level.path("splines").size());
   }
 
   // --- Test doubles ---

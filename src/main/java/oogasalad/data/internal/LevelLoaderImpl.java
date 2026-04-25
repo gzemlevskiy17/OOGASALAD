@@ -12,6 +12,7 @@ import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
+import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
@@ -59,6 +60,8 @@ public class LevelLoaderImpl implements LevelLoader {
   private static final double DEFAULT_SIZE = 1.0;
   private static final double DEFAULT_SCALE = 1.0;
   private static final int DEFAULT_SPLINE_RESOLUTION = 8;
+  private static final double DEFAULT_SPAWN_X = 350.0;
+  private static final double DEFAULT_SPAWN_Y = 300.0;
 
   private final double scale;
 
@@ -86,6 +89,7 @@ public class LevelLoaderImpl implements LevelLoader {
     loadTerrain(root.path("level").path("terrain"), world, fileName);
     loadSplines(root.path("level").path("splines"), world);
     loadFinishLine(root.path("level").path("finish_line"), world);
+    loadSpawnPoint(root.path("level").path("spawn"), world);
     LOG.info("Level loaded from {}", fileName);
   }
 
@@ -147,6 +151,12 @@ public class LevelLoaderImpl implements LevelLoader {
     for (JsonNode entry : terrainArray) {
       world.addObject(parseTerrain(entry));
     }
+  }
+
+  private void loadSpawnPoint(JsonNode node, World world) {
+    double x = node.isMissingNode() ? DEFAULT_SPAWN_X : node.path("x").asDouble(DEFAULT_SPAWN_X) / scale;
+    double y = node.isMissingNode() ? DEFAULT_SPAWN_Y : node.path("y").asDouble(DEFAULT_SPAWN_Y) / scale;
+    world.addObject(new SpawnPointComponent(x, y));
   }
 
   private void loadFinishLine(JsonNode node, World world) {

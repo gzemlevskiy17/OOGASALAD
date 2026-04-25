@@ -10,6 +10,7 @@ import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
@@ -64,7 +65,11 @@ public class LevelSaverImpl implements LevelSaver {
     ArrayNode splines = level.putArray("splines");
 
     for (GameObject obj : world.getObjects()) {
-      if (obj instanceof TerrainSpline ts) {
+      if (obj instanceof SpawnPointComponent sp) {
+        ObjectNode spawn = level.putObject("spawn");
+        spawn.put("x", sp.getX() * scale);
+        spawn.put("y", sp.getY() * scale);
+      } else if (obj instanceof TerrainSpline ts) {
         // Serialize splines as their source data only; the runtime re-tessellates on load so we
         // never have to write (or keep in sync) the derived slab polygons.
         splines.add(serializeSpline(ts));
