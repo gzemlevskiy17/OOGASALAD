@@ -108,6 +108,11 @@ public class ScreenFactory {
   private void onLevelSelected(String worldKey, String levelKey) {
     LevelId id = new LevelId(worldKey, levelKey);
     if (!progression.all().contains(id)) {
+      // TODO: PlayerEntryAppScreen now greys out levels missing from disk, so reaching this
+      // throw should be impossible from the UI. The entry screen's try/catch only catches
+      // LevelLockedException, so an IllegalArgumentException here would bubble up unhandled.
+      // If we ever expose a way to enter a level outside the entry screen (URL handler, restart,
+      // etc.), wrap this in a user-facing exception or extend the entry screen's catch.
       throw new IllegalArgumentException("Unknown level: " + id);
     }
     String username = currentUsernameOrNull();
@@ -148,7 +153,7 @@ public class ScreenFactory {
         new AuthoringScreenImpl(this::guardedOutcome));
 
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
-        new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected));
+        new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression));
 
     vehicleBuilderScreen = new VehicleBuilderAppScreen(this::guardedOutcome);
     screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);

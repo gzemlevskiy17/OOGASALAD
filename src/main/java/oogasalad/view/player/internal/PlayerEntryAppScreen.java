@@ -1,7 +1,9 @@
 package oogasalad.view.player.internal;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -19,6 +21,7 @@ import javafx.scene.text.Text;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLockedException;
+import oogasalad.data.internal.LevelProgression;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
@@ -31,6 +34,9 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.PlayerEntryScreen");
 
   private final BiConsumer<String, String> onSelectionConfirmed;
+  private final LevelProgression progression;
+  // Insertion-ordered so iteration matches the layout order on screen.
+  private final Map<String, Button> levelButtons = new LinkedHashMap<>();
   private Button selectedWorldButton;
   private Button selectedLevelButton;
   private Button startButton;
@@ -38,9 +44,11 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   private String selectedLevelKey;
 
   public PlayerEntryAppScreen(Consumer<Outcome> onOutcome,
-      BiConsumer<String, String> onSelectionConfirmed) {
+      BiConsumer<String, String> onSelectionConfirmed,
+      LevelProgression progression) {
     super(onOutcome);
     this.onSelectionConfirmed = onSelectionConfirmed;
+    this.progression = progression;
   }
 
   @Override
@@ -121,6 +129,7 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     selectedWorldButton = btn;
     selectedWorldKey = worldKey;
     selectedWorldButton.getStyleClass().add("world-selected");
+    refreshLevelAvailability(worldKey);
     updateStartButtonState();
   }
 
@@ -134,24 +143,44 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     HBox levelBox = new HBox(d("level.region.spacing"));
     levelBox.setAlignment(Pos.CENTER);
 
-    List<String> lockedLevels = getList("locked.levels");
-
+    // Render every label declared in the bundle, but start every button disabled — they enable
+    // only when the selected world actually contains that level on disk (see
+    // refreshLevelAvailability). The old `locked.levels=` properties hardcode is gone:
+    // availability now comes from LevelProgression / what the LevelScanner found.
     for (String level : getList("levels")) {
       Button btn = new Button(s("level.button." + level));
       btn.getStyleClass().add("level-button");
-
-      if (lockedLevels.contains(level)) {
-        btn.getStyleClass().add("locked-level");
-        btn.setDisable(true);
-      }
-
-      if (!lockedLevels.contains(level)) {
-        btn.setOnAction(e -> selectLevel(btn, level));
-      }
-
+      btn.getStyleClass().add("locked-level");
+      btn.setDisable(true);
+      btn.setOnAction(e -> selectLevel(btn, level));
+      levelButtons.put(level, btn);
       levelBox.getChildren().add(btn);
     }
     return levelBox;
+  }
+
+  /**
+   * Greys out level buttons whose key isn't in {@code progression.levelsIn(worldKey)}; enables
+   * the rest. If the currently-selected level button gets disabled by the world swap, drops
+   * the selection so the Start button can't fire on a now-invalid (world, level) pair.
+   */
+  private void refreshLevelAvailability(String worldKey) {
+    List<String> available = progression.levelsIn(worldKey);
+    for (Map.Entry<String, Button> entry : levelButtons.entrySet()) {
+      Button btn = entry.getValue();
+      boolean enabled = available.contains(entry.getKey());
+      btn.setDisable(!enabled);
+      if (enabled) {
+        btn.getStyleClass().remove("locked-level");
+      } else if (!btn.getStyleClass().contains("locked-level")) {
+        btn.getStyleClass().add("locked-level");
+      }
+      if (!enabled && btn == selectedLevelButton) {
+        btn.getStyleClass().remove("level-selected");
+        selectedLevelButton = null;
+        selectedLevelKey = null;
+      }
+    }
   }
 
   private void selectLevel(Button btn, String levelKey) {
