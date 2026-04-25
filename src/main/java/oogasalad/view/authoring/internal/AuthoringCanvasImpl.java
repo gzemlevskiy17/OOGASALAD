@@ -302,8 +302,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   private Rectangle drawObject(AuthoringPlaceable placeable) {
-    double px = placeable.getX() * cellSize;
-    double py = placeable.getY() * cellSize;
+    double px = placeable.x() * cellSize;
+    double py = placeable.y() * cellSize;
     double pw = placeable.getWidth() * cellSize;
     double ph = placeable.getHeight() * cellSize;
 

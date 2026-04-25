@@ -1,5 +1,7 @@
 package oogasalad.view.authoring.api;
 
+import oogasalad.view.core.api.Renderable;
+
 /**
  * Represents a placeable object in the authoring environment.
  *
@@ -9,11 +11,7 @@ package oogasalad.view.authoring.api;
  *
  * @author Emilio Garcia
  */
-public interface AuthoringPlaceable {
-
-  double getX();
-
-  double getY();
+public interface AuthoringPlaceable extends Renderable {
 
   double getWidth();
 
@@ -28,11 +26,11 @@ public interface AuthoringPlaceable {
   }
 
   default double left() {
-    return getX();
+    return x();
   }
 
   default double top() {
-    return getY();
+    return y();
   }
 
   default double right() {

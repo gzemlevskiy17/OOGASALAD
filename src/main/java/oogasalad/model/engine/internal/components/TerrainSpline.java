@@ -19,7 +19,7 @@ import oogasalad.model.engine.internal.spline.SplineTessellator;
  * polygon continue to work, but collision detection should go through
  * {@link #getCollisionPolygons()} via {@link oogasalad.model.engine.CollisionDetectorImpl}.
  *
- * <p>The component's position ({@link #getX()}, {@link #getY()}) is the axis-aligned bounding-box
+ * <p>The component's position ({@link #x()}, {@link #y()}) is the axis-aligned bounding-box
  * top-left corner of the spline curve. {@link #getWidth()} and {@link #getHeight()} describe the
  * bounding box down to the baseline — these are what the gameplay factory uses to compute world
  * bounds, and what the authoring canvas uses for the fallback rectangle drawing path.
