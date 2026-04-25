@@ -193,6 +193,40 @@ class ImpulseSolverUtilitiesTest {
   }
 
   @Test
+  void resolveImpulse_warmStartsWithCachedNormalImpulse() {
+    DynamicComponent box = newBox(0, 0, 0.0);
+    TerrainBlock ground = newGround(-1000, BOX_SIZE / 2 - 1.0, 0.0);
+    Collision collision = landingCollisionFor(box, ground, 1.0);
+    collision.setCachedNormal(new Vector(0, -1));
+    collision.setCachedNormalImpulse(20.0);
+
+    ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
+        collision, ground, box,
+        box.getStaticState(), ground.getStaticState(),
+        box.getDynamicState(), dummyDynamicState());
+
+    assertEquals(-10.0, box.getDynamicState().getLinearVelocity().y(), 1e-3);
+    assertTrue(collision.getAppliedNormalImpulse() >= 20.0);
+  }
+
+  @Test
+  void resolveImpulse_cachedFrictionDoesNotInjectSidewaysVelocity() {
+    DynamicComponent box = newBox(0, 0, 0.0);
+    TerrainBlock ground = newGround(-1000, BOX_SIZE / 2 - 1.0, 0.0);
+    Collision collision = landingCollisionFor(box, ground, 1.0);
+    collision.setCachedNormal(new Vector(0, -1));
+    collision.setCachedNormalImpulse(20.0);
+    collision.setCachedFrictionImpulse(50.0);
+
+    ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
+        collision, ground, box,
+        box.getStaticState(), ground.getStaticState(),
+        box.getDynamicState(), dummyDynamicState());
+
+    assertEquals(0.0, box.getDynamicState().getLinearVelocity().x(), 1e-9);
+  }
+
+  @Test
   void applyPositionalCorrection_staticReference_movesOnlyIncident() {
     DynamicComponent box = newBox(0, 0, 0.5);
     TerrainBlock ground = newGround(-1000, BOX_SIZE / 2 - 5.0, 0.0);

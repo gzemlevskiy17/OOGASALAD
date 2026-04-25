@@ -19,12 +19,14 @@ class GameEngineImplTest {
 
   private static final double EPS = 1e-9;
   /**
-   * Must match {@link GameEngineImpl} hardcoded gravity (y acceleration).
+   * Must match {@link GameEngineImpl} default gravity (screen-space positive y).
    */
-  private static final double G = -9.8;
+  private static final double G = 980.0;
+  private static final double FIXED_DT = 1.0 / 60.0;
+  private static final int SUB_STEPS = 4;
 
   private static final CollisionDetector NO_HITS = (a, b) -> Optional.empty();
-  private static final CollisionSolver NO_SOLVE = c -> {
+  private static final CollisionSolver NO_SOLVE = (a, b, c) -> {
   };
 
   private static DynamicComponent box(double mass, double x, double y, boolean gravity) {
@@ -42,6 +44,12 @@ class GameEngineImplTest {
     return b;
   }
 
+  private static double semiImplicitSubstepDisplacement(double acceleration, int fixedSteps) {
+    double h = FIXED_DT / SUB_STEPS;
+    int totalSubSteps = fixedSteps * SUB_STEPS;
+    return acceleration * h * h * totalSubSteps * (totalSubSteps + 1) / 2.0;
+  }
+
   @Test
   void step_gravityProducesExpectedVerticalAccelerationAndDisplacement() {
     World world = new WorldImpl();
@@ -49,12 +57,31 @@ class GameEngineImplTest {
     world.addComponent(body);
 
     GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
-    double dt = 1.0 / 60.0;
-    engine.step(dt);
+    engine.step(FIXED_DT);
 
     assertEquals(G, body.getDynamicState().getLinearAcceleration().y(), EPS);
-    assertEquals(G * dt, body.getDynamicState().getLinearVelocity().y(), EPS);
-    assertEquals(G * dt * dt, body.getStaticState().getLinearPosition().y() - 100, EPS);
+    assertEquals(G * FIXED_DT, body.getDynamicState().getLinearVelocity().y(), EPS);
+    assertEquals(semiImplicitSubstepDisplacement(G, 1),
+        body.getStaticState().getLinearPosition().y() - 100, EPS);
+  }
+
+  @Test
+  void step_accumulatesPartialFramesUntilFixedStepIsAvailable() {
+    World world = new WorldImpl();
+    DynamicComponent body = box(2.0, 0, 100, true);
+    world.addComponent(body);
+
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    engine.step(FIXED_DT / 2.0);
+
+    assertEquals(100, body.getStaticState().getLinearPosition().y(), EPS);
+    assertEquals(0, body.getDynamicState().getLinearVelocity().y(), EPS);
+
+    engine.step(FIXED_DT / 2.0);
+
+    assertEquals(G * FIXED_DT, body.getDynamicState().getLinearVelocity().y(), EPS);
+    assertEquals(100 + semiImplicitSubstepDisplacement(G, 1),
+        body.getStaticState().getLinearPosition().y(), EPS);
   }
 
   @Test
@@ -83,7 +110,8 @@ class GameEngineImplTest {
     engine.step(dt);
 
     assertEquals(5.0, body.getDynamicState().getLinearAcceleration().y(), EPS);
-    assertEquals(5.0 * dt * dt, body.getStaticState().getLinearPosition().y(), EPS);
+    assertEquals(semiImplicitSubstepDisplacement(5.0, 3),
+        body.getStaticState().getLinearPosition().y(), EPS);
   }
 
   @Test

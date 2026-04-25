@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import oogasalad.model.engine.api.CollisionDetector;
+import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.joints.RigidJoint;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -24,8 +26,10 @@ class GameEnginePhysicsContractTest {
    * Must match {@link GameEngineImpl}'s gravity force-per-mass in Y (see gravity vector in
    * engine).
    */
-  private static final double G = -9.8;
+  private static final double G = 980.0;
   private static final double DT = 1.0 / 60.0;
+  private static final int SUB_STEPS = 4;
+  private static final int COLLISION_SOLVE_PASSES_PER_SUB_STEP = 9;
 
   private static int expectedUnorderedNonStaticPairs(int dynCount) {
     // d dynamics, 1 static floor: (d choose 2) + d*1
@@ -35,8 +39,17 @@ class GameEnginePhysicsContractTest {
     return dynCount * (dynCount - 1) / 2 + dynCount;
   }
 
+  private static int expectedNarrowPhaseCallsPerFrame(int unorderedPairs) {
+    return unorderedPairs * SUB_STEPS * COLLISION_SOLVE_PASSES_PER_SUB_STEP;
+  }
+
+  private static double semiImplicitSubstepDisplacement(double acceleration) {
+    double h = DT / SUB_STEPS;
+    return acceleration * h * h * SUB_STEPS * (SUB_STEPS + 1) / 2.0;
+  }
+
   @Test
-  void engine_invokesNarrowPhaseOncePerUnorderedPair_twoDynamicPlusFloor() {
+  void broadPhase_skipsSeparatedPairs_twoDynamicPlusFloor() {
     World world = new WorldImpl();
     TerrainBlock floor = new TerrainBlock(0, 0, 400, 1, "floor.png", false, 0.4, "#888888", 0.0);
     TestBox a = new TestBox(5, 4, 1, 1, 1.0, 0.0, true);
@@ -49,12 +62,11 @@ class GameEnginePhysicsContractTest {
     GameEngineImpl engine = new GameEngineImpl(world, counting);
     engine.step(DT);
 
-    // 2 dynamics + 1 static -> (2 choose 2) + 2 = 1 + 2 = 3
-    assertEquals(3, counting.getNarrowPhaseCallCount());
+    assertEquals(0, counting.getNarrowPhaseCallCount());
   }
 
   @Test
-  void engine_invokesNarrowPhaseOncePerUnorderedPair_fiveIsolatedDynamicBodies() {
+  void broadPhase_skipsSeparatedPairs_fiveIsolatedDynamicBodies() {
     World world = new WorldImpl();
     for (int i = 0; i < 5; i++) {
       // Spaced 50 units — no broad-phase culling, but no overlap either.
@@ -66,11 +78,60 @@ class GameEnginePhysicsContractTest {
     GameEngineImpl engine = new GameEngineImpl(world, counting);
     engine.step(DT);
 
-    int n = 5;
-    assertEquals(n * (n - 1) / 2, counting.getNarrowPhaseCallCount());
+    assertEquals(0, counting.getNarrowPhaseCallCount());
   }
 
-  // --- Tests: broad-phase (one narrow-phase per unordered pair) ---
+  @Test
+  void broadPhase_invokesNarrowPhaseForOverlappingAabbs() {
+    World world = new WorldImpl();
+    TerrainBlock floor = new TerrainBlock(0, 0, 10, 10, "floor.png", false, 0.4, "#888888", 0.0);
+    TestBox body = new TestBox(5, 5, 1, 1, 1.0, 0.0, false);
+    world.addComponent(floor);
+    world.addComponent(body);
+
+    CountingCollisionDetector counting = new CountingCollisionDetector((a, b) -> Optional.empty());
+    GameEngineImpl engine = new GameEngineImpl(world, counting);
+    engine.step(DT);
+
+    assertEquals(expectedNarrowPhaseCallsPerFrame(expectedUnorderedNonStaticPairs(1)),
+        counting.getNarrowPhaseCallCount());
+  }
+
+  @Test
+  void collisionFilter_maskExcludesPairBeforeNarrowPhase() {
+    World world = new WorldImpl();
+    TerrainBlock floor = new TerrainBlock(0, 0, 10, 10, "floor.png", false, 0.4, "#888888", 0.0);
+    TestBox body = new TestBox(5, 5, 1, 1, 1.0, 0.0, false);
+    body.setCollisionFilter(0x0002, 0x0000);
+    world.addComponent(floor);
+    world.addComponent(body);
+
+    CountingCollisionDetector counting = new CountingCollisionDetector((a, b) -> Optional.empty());
+    GameEngineImpl engine = new GameEngineImpl(world, counting);
+    engine.step(DT);
+
+    assertEquals(0, counting.getNarrowPhaseCallCount());
+  }
+
+  @Test
+  void collideConnected_allowsJointedPairToReachNarrowPhase() {
+    WorldImpl world = new WorldImpl();
+    TestBox objectA = new TestBox(0, 0, 1, 1, 1.0, 0.0, false);
+    TestBox objectB = new TestBox(0, 0, 1, 1, 1.0, 0.0, false);
+    RigidJoint joint = new RigidJoint(objectA, objectB);
+    joint.setCollideConnected(true);
+    world.addComponent(objectA);
+    world.addComponent(objectB);
+    world.addJoint(joint);
+
+    CountingCollisionDetector counting = new CountingCollisionDetector((a, b) -> Optional.empty());
+    GameEngineImpl engine = new GameEngineImpl(world, counting);
+    engine.step(DT);
+
+    assertEquals(expectedNarrowPhaseCallsPerFrame(1), counting.getNarrowPhaseCallCount());
+  }
+
+  // --- Tests: broad-phase AABB culling ---
 
   @Test
   void firstStepOfFreeFall_matchesSemiImplicitEuler() {
@@ -85,8 +146,8 @@ class GameEnginePhysicsContractTest {
     assertEquals(G, body.getDynamicState().getLinearAcceleration().y(), EPS);
     double expectedVy = G * DT;
     assertEquals(expectedVy, body.getDynamicState().getLinearVelocity().y(), EPS);
-    // integrateObjectState: pos += (vel after update) * dt
-    double expectedY = 100 + expectedVy * DT;
+    // Fixed-step substepping integrates position once per substep.
+    double expectedY = 100 + semiImplicitSubstepDisplacement(G);
     assertEquals(expectedY, body.getStaticState().getLinearPosition().y(), EPS);
   }
 
@@ -130,6 +191,43 @@ class GameEnginePhysicsContractTest {
         Math.abs(body.getDynamicState().getLinearVelocity().y()) < 2.0,
         "Unbounded vertical velocity after settle: " + body.getDynamicState().getLinearVelocity()
             .y());
+  }
+
+  @Test
+  void fastBody_sweptCollisionStopsBeforeThinStaticWall() {
+    World world = new WorldImpl();
+    TestBox body = new TestBox(0, 5, 1, 1, 1.0, 0.0, false);
+    body.getDynamicState().setLinearVelocity(new oogasalad.model.engine.api.Vector(1000, 0));
+    TerrainBlock wall = new TerrainBlock(10, 0, 1, 20, "wall.png", false, 0.4, "#888888", 0.0);
+    world.addComponent(body);
+    world.addComponent(wall);
+
+    GameEngineImpl engine = new GameEngineImpl(world, new CollisionDetectorImpl());
+    engine.step(DT);
+
+    assertTrue(body.getStaticState().getLinearPosition().x() + 1 <= 10.0,
+        "Fast body should stop before tunneling through the wall, got x="
+            + body.getStaticState().getLinearPosition().x());
+    assertEquals(0.0, body.getDynamicState().getLinearVelocity().x(), EPS);
+  }
+
+  @Test
+  void fastFallingBody_sweptGroundHitReachesContactSolver() {
+    World world = new WorldImpl();
+    TestBox body = new TestBox(0, 0, 1, 1, 1.0, 0.0, false);
+    body.getDynamicState().setLinearVelocity(new oogasalad.model.engine.api.Vector(0, 1000));
+    TerrainBlock floor = new TerrainBlock(-10, 10, 20, 1, "floor.png", false, 0.4, "#888888",
+        0.0);
+    world.addComponent(body);
+    world.addComponent(floor);
+    CountingCollisionSolver solver = new CountingCollisionSolver();
+
+    GameEngineImpl engine = new GameEngineImpl(world, new CollisionDetectorImpl(), solver);
+    engine.step(DT);
+
+    assertTrue(solver.getSolveCount() > 0,
+        "Swept vertical contacts should create a small overlap for the impulse solver, "
+            + "so off-center contact manifolds can generate angular response.");
   }
 
   // --- Test: no lateral motion when the only net force is vertical gravity ---
@@ -195,6 +293,20 @@ class GameEnginePhysicsContractTest {
     public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
       narrowPhaseCalls.incrementAndGet();
       return inner.detectCollision(objectA, objectB);
+    }
+  }
+
+  private static final class CountingCollisionSolver implements CollisionSolver {
+
+    private final AtomicInteger solveCount = new AtomicInteger(0);
+
+    int getSolveCount() {
+      return solveCount.get();
+    }
+
+    @Override
+    public void solve(GameObject objectA, GameObject objectB, Collision collision) {
+      solveCount.incrementAndGet();
     }
   }
 }

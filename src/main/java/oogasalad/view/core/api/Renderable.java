@@ -4,5 +4,9 @@ package oogasalad.view.core.api;
 public interface Renderable {
   double getX();
   double getY();
+
+  /**
+   * @return rotation in radians, matching the physics engine's angular state
+   */
   double getRotation();
 }

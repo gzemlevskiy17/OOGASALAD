@@ -120,6 +120,49 @@ class DynamicComponentTest {
     assertEquals(0, a.y(), EPS);
   }
 
+  @Test
+  void updateSleepState_lowVelocityLongEnough_entersSleep() {
+    DynamicComponent body = newBody(1, 0, 0);
+
+    body.updateSleepState(0.6);
+
+    assertTrue(body.isSleeping());
+  }
+
+  @Test
+  void updateSleepState_highVelocity_keepsBodyAwake() {
+    DynamicComponent body = newBody(1, 0, 0);
+    body.getDynamicState().setLinearVelocity(new Vector(5, 0));
+
+    body.updateSleepState(1.0);
+
+    assertTrue(!body.isSleeping());
+  }
+
+  @Test
+  void setSleeping_trueClearsVelocityAndForces() {
+    DynamicComponent body = newBody(1, 0, 0);
+    body.getDynamicState().setLinearVelocity(new Vector(10, 0));
+    body.addForce(new Vector(5, 0));
+
+    body.setSleeping(true);
+
+    assertEquals(0, body.getDynamicState().getLinearVelocity().magnitude(), EPS);
+    assertEquals(0, body.getForce().magnitude(), EPS);
+  }
+
+  @Test
+  void addForce_nonZeroForceWakesSleepingBody() {
+    DynamicComponent body = newBody(2, 0, 0);
+    body.setSleeping(true);
+
+    body.addForce(new Vector(0, 10));
+    body.applyForceToAcceleration();
+
+    assertTrue(!body.isSleeping());
+    assertEquals(5, body.getDynamicState().getLinearAcceleration().y(), EPS);
+  }
+
   @ParameterizedTest
   @MethodSource("forceMassToAcceleration")
   void applyForceToAcceleration_parameterized(
@@ -187,6 +230,13 @@ class DynamicComponentTest {
   }
 
   @Test
+  void inverseMass_zeroMass_returnsZeroInsteadOfInfinity() {
+    DynamicComponent body = newBody(0, 0, 0);
+
+    assertEquals(0.0, body.getInverseMass(), EPS);
+  }
+
+  @Test
   void affectedByGravity_roundTrip() {
     DynamicComponent body = newBody(1, 0, 0);
     body.setAffectedByGravity(true);
@@ -200,6 +250,31 @@ class DynamicComponentTest {
     body.setRestitution(0.8);
     assertEquals(2.5, body.getMomentOfInertia(), EPS);
     assertEquals(0.8, body.getRestitution(), EPS);
+  }
+
+  @Test
+  void inverseMomentOfInertia_zeroMoment_returnsZeroInsteadOfInfinity() {
+    DynamicComponent body = newBody(1, 0, 0);
+    body.setMomentOfInertia(0.0);
+
+    assertEquals(0.0, body.getInverseMomentOfInertia(), EPS);
+  }
+
+  @Test
+  void setMomentOfInertia_negative_throws() {
+    DynamicComponent body = newBody(1, 0, 0);
+    IllegalArgumentException ex =
+        assertThrows(IllegalArgumentException.class, () -> body.setMomentOfInertia(-1));
+    assertTrue(ex.getMessage()
+        .contains(EngineError.MOMENT_OF_INERTIA_MUST_BE_NON_NEGATIVE.message()));
+  }
+
+  @Test
+  void setRestitution_outOfRange_throws() {
+    DynamicComponent body = newBody(1, 0, 0);
+
+    assertThrows(IllegalArgumentException.class, () -> body.setRestitution(-0.1));
+    assertThrows(IllegalArgumentException.class, () -> body.setRestitution(1.1));
   }
 
   @Test

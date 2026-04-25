@@ -3,6 +3,7 @@ package oogasalad.model.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,13 @@ import oogasalad.model.engine.internal.joints.RevoluteJoint;
  */
 public class GameEngineImpl implements GameEngine {
 
+  private static final Vector DEFAULT_GRAVITY = new Vector(0, 980);
+  private static final double DEFAULT_FIXED_TIME_STEP = 1.0 / 60.0;
+  private static final int DEFAULT_SUB_STEP_COUNT = 4;
+  private static final double MAX_FRAME_TIME = 0.25;
+  private static final double AABB_MARGIN = 1e-6;
+  private static final double CCD_SKIN = 1e-4;
+
   /**
    * Total order for building a stable key for the unordered pair {A, B}. Same two instances always
    * map to the same list regardless of which was passed as "first" in the double loop.
@@ -61,13 +69,16 @@ public class GameEngineImpl implements GameEngine {
           .thenComparingInt(Object::hashCode)
           .thenComparing(o -> o.getClass().getName())
           .thenComparing(GameObject::getTag, Comparator.nullsFirst(Comparator.naturalOrder()));
-  private final Vector gravityVector = new Vector(0,
-      980); // Change in the future (inject levelAttributes)
+  private final Vector gravityVector;
   private final World world;
   private final CollisionDetector collisionDetector;
   private static final int JOINT_SOLVER_ITERATIONS = 8;
   private final CollisionDispatcher collisionDispatcher;
-  private final boolean loggedPairsOnce = false;
+  private final CollisionSolver overrideCollisionSolver;
+  private final Map<List<GameObject>, CachedCollisionImpulse> collisionImpulseCache;
+  private final double fixedTimeStep;
+  private final int subStepCount;
+  private double accumulatedTime;
 
   /**
    * Creates an engine with explicit simulation dependencies.
@@ -87,9 +98,53 @@ public class GameEngineImpl implements GameEngine {
    * @param collisionDetector pairwise detector used to build collision records
    */
   public GameEngineImpl(World world, CollisionDetector collisionDetector) {
+    this(world, collisionDetector, null, DEFAULT_GRAVITY, DEFAULT_FIXED_TIME_STEP,
+        DEFAULT_SUB_STEP_COUNT);
+  }
+
+  /**
+   * Compatibility constructor for tests and callers that inject a single response strategy.
+   */
+  public GameEngineImpl(World world, CollisionDetector collisionDetector,
+      CollisionSolver collisionSolver) {
+    this(world, collisionDetector, collisionSolver, DEFAULT_GRAVITY, DEFAULT_FIXED_TIME_STEP,
+        DEFAULT_SUB_STEP_COUNT);
+  }
+
+  /**
+   * Creates an engine with explicit gravity, keeping per-level physics configuration injectable.
+   */
+  public GameEngineImpl(World world, CollisionDetector collisionDetector, Vector gravityVector) {
+    this(world, collisionDetector, null, gravityVector, DEFAULT_FIXED_TIME_STEP,
+        DEFAULT_SUB_STEP_COUNT);
+  }
+
+  /**
+   * Creates an engine with explicit fixed-step settings.
+   */
+  public GameEngineImpl(World world, CollisionDetector collisionDetector, Vector gravityVector,
+      double fixedTimeStep, int subStepCount) {
+    this(world, collisionDetector, null, gravityVector, fixedTimeStep, subStepCount);
+  }
+
+  private GameEngineImpl(World world, CollisionDetector collisionDetector,
+      CollisionSolver collisionSolver, Vector gravityVector, double fixedTimeStep,
+      int subStepCount) {
+    if (fixedTimeStep <= 0.0) {
+      throw new IllegalArgumentException("fixedTimeStep must be positive");
+    }
+    if (subStepCount <= 0) {
+      throw new IllegalArgumentException("subStepCount must be positive");
+    }
     this.world = world;
     this.collisionDetector = collisionDetector;
     this.collisionDispatcher = new CollisionDispatcher();
+    this.overrideCollisionSolver = collisionSolver;
+    this.collisionImpulseCache = new HashMap<>();
+    this.gravityVector = gravityVector;
+    this.fixedTimeStep = fixedTimeStep;
+    this.subStepCount = subStepCount;
+    this.accumulatedTime = 0.0;
   }
 
   private static List<GameObject> canonicalUnorderedPair(GameObject a, GameObject b) {
@@ -97,6 +152,10 @@ public class GameEngineImpl implements GameEngine {
       return List.of(a, b);
     }
     return List.of(b, a);
+  }
+
+  private static boolean aabbsOverlap(GameObject objectA, GameObject objectB) {
+    return BoundingBox.from(objectA).overlaps(BoundingBox.from(objectB));
   }
 
   private static boolean isDynamicDynamicPair(CollisionPair pair, GameObject objectA,
@@ -108,14 +167,14 @@ public class GameEngineImpl implements GameEngine {
   }
 
   /**
-   * Returns the set of unordered (A, B) pairs that are currently linked by at least one joint. Used
-   * to suppress collision detection between bodies glued together by a RigidJoint / RevoluteJoint /
-   * DistanceJoint, whose positional constraint fights the impulse solver and causes
-   * positive-feedback blow-up of velocities.
+   * Returns jointed unordered pairs whose joint does not opt into connected-body collision.
    */
   private Set<List<GameObject>> buildJointedPairs() {
     Set<List<GameObject>> pairs = new HashSet<>();
     for (Joint joint : world.getJoints()) {
+      if (joint.isCollideConnected()) {
+        continue;
+      }
       GameObject a = joint.getComponentA();
       GameObject b = joint.getComponentB();
       if (a == null || b == null || a == b) {
@@ -149,6 +208,11 @@ public class GameEngineImpl implements GameEngine {
         && StaticComponent.class.isAssignableFrom(pair.objectB());
   }
 
+  private boolean shouldCollideByFilter(GameObject objectA, GameObject objectB) {
+    return (objectA.getCollisionMaskBits() & objectB.getCollisionCategoryBits()) != 0
+        && (objectB.getCollisionMaskBits() & objectA.getCollisionCategoryBits()) != 0;
+  }
+
   private void applyAllJointConstraints(double elapsedTime, int iterations) {
     for (int i = 0; i < iterations; i++) {
       for (Joint joint : world.getJoints()) {
@@ -180,9 +244,6 @@ public class GameEngineImpl implements GameEngine {
     return joint instanceof DistanceJoint distanceJoint && distanceJoint.isRigid();
   }
 
-  private static final String VEHICLE_TAG = "vehicle";
-  private static final String PIGS_TAG = "pigs";
-
   private void applyForces(Collection<GameObject> objects) {
     for (GameObject object : objects) {
       if (object instanceof DynamicComponent dynamicComponent) {
@@ -205,9 +266,12 @@ public class GameEngineImpl implements GameEngine {
     }
   }
 
-  private static boolean isPigVehiclePair(String tagA, String tagB) {
-    return (PIGS_TAG.equals(tagA) && VEHICLE_TAG.equals(tagB))
-        || (VEHICLE_TAG.equals(tagA) && PIGS_TAG.equals(tagB));
+  private void updateSleepStates(Collection<GameObject> objects, double elapsedTime) {
+    for (GameObject object : objects) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        dynamicComponent.updateSleepState(elapsedTime);
+      }
+    }
   }
 
   private static void applyDynamicDynamicPositionCorrection(DynamicComponent objectA,
@@ -239,11 +303,31 @@ public class GameEngineImpl implements GameEngine {
    */
   @Override
   public void step(double elapsedTime) {
+    if (elapsedTime <= 0.0 || Double.isNaN(elapsedTime)) {
+      return;
+    }
+
+    accumulatedTime += Math.min(elapsedTime, MAX_FRAME_TIME);
+    while (accumulatedTime + 1e-12 >= fixedTimeStep) {
+      stepFixedTimeSlice();
+      accumulatedTime -= fixedTimeStep;
+    }
+  }
+
+  private void stepFixedTimeSlice() {
+    double subStepTime = fixedTimeStep / subStepCount;
+    for (int i = 0; i < subStepCount; i++) {
+      simulateSubStep(subStepTime);
+    }
+  }
+
+  private void simulateSubStep(double elapsedTime) {
     resetForces(world.getObjects());
 
     for (GameObject gameObject : world.getObjects()) {
       gameObject.updatePolygon();
     }
+    Map<DynamicComponent, MotionSnapshot> previousMotion = captureDynamicMotion();
 
     applyAllJointConstraints(elapsedTime, 1);
 
@@ -258,6 +342,8 @@ public class GameEngineImpl implements GameEngine {
       }
     }
 
+    resolveSweptStaticCollisions(previousMotion);
+
     // update the polygon for the second time after the computation
     for (GameObject gameObject : world.getObjects()) {
       if (gameObject instanceof DynamicComponent) {
@@ -265,22 +351,20 @@ public class GameEngineImpl implements GameEngine {
       }
     }
 
-    // ---- Collision + joint solve ----
-    // Exactly one impulse pass per frame. Applying impulse inside the iteration loop
-    // compounds it every iteration: the first impulse already zeros closing velocity,
-    // but re-detection picks up floating-point residuals and joint velocity equalization
-    // shuffles velocity between connected bodies, so another full impulse fires, and
-    // another. The body launches upward, gravity slams it back next frame, and the
-    // result is the visible jitter. The loop below refines geometry only.
+    solveConstraints(elapsedTime);
+    updateSleepStates(world.getObjects(), elapsedTime);
+  }
+
+  private void solveConstraints(double elapsedTime) {
     for (int i = 0; i < JOINT_SOLVER_ITERATIONS; i++) {
       applyVelocityJointConstraints();
+      handleCollisions(i == 0);
       applyPositionJointConstraints(elapsedTime, 1);
       for (GameObject go : world.getObjects()) {
         if (go instanceof DynamicComponent) {
           go.updatePolygon();
         }
       }
-      handleCollisions(true);
     }
   }
 
@@ -314,6 +398,10 @@ public class GameEngineImpl implements GameEngine {
           continue;
         }
 
+        if (!shouldCollideByFilter(objectA, objectB)) {
+          continue;
+        }
+
         List<GameObject> pairKey = canonicalUnorderedPair(objectA, objectB);
         if (!seenUnorderedPairs.add(pairKey)) {
           continue;
@@ -326,7 +414,10 @@ public class GameEngineImpl implements GameEngine {
           continue;
         }
 
-        // TODO: Temporary debug - delete larted
+        if (!aabbsOverlap(objectA, objectB)) {
+          continue;
+        }
+
         collisionDetector.detectCollision(objectA, objectB).ifPresent(c -> {
           collisions.add(c);
         });
@@ -336,13 +427,19 @@ public class GameEngineImpl implements GameEngine {
   }
 
   private void solveCollisions(List<Collision> collisions, boolean applyImpulse) {
+    Set<List<GameObject>> activeImpulseKeys = new HashSet<>();
     for (Collision collision : collisions) {
       GameObject objectA = collision.getReferenceObject();
       GameObject objectB = collision.getIncidentObject();
+      List<GameObject> pairKey = canonicalUnorderedPair(objectA, objectB);
       CollisionPair collisionPair = CollisionPair.of(objectA.getClass(),
           objectB.getClass());
       if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
         collisionPair = findSuperClass(collisionPair);
+      }
+
+      if (collisionPair == null) {
+        continue;
       }
 
       if (!collisionPair.objectA().isAssignableFrom(objectA.getClass())) {
@@ -352,11 +449,44 @@ public class GameEngineImpl implements GameEngine {
       }
 
       if (applyImpulse) {
-        collisionDispatcher.getSolverMap().get(collisionPair).solve(objectA, objectB, collision);
+        applyCachedImpulse(pairKey, collision);
+        CollisionSolver solver = overrideCollisionSolver == null
+            ? collisionDispatcher.getSolverMap().get(collisionPair)
+            : overrideCollisionSolver;
+        if (solver != null) {
+          solver.solve(objectA, objectB, collision);
+          storeCachedImpulse(pairKey, collision);
+          activeImpulseKeys.add(pairKey);
+        }
       } else {
         solveCollisionPositionOnly(collisionPair, objectA, objectB, collision);
       }
     }
+    if (applyImpulse) {
+      collisionImpulseCache.keySet().retainAll(activeImpulseKeys);
+    }
+  }
+
+  private void applyCachedImpulse(List<GameObject> pairKey, Collision collision) {
+    CachedCollisionImpulse cachedImpulse = collisionImpulseCache.get(pairKey);
+    if (cachedImpulse == null) {
+      return;
+    }
+    collision.setCachedNormalImpulse(cachedImpulse.normalImpulse());
+    collision.setCachedFrictionImpulse(cachedImpulse.frictionImpulse());
+    collision.setCachedNormal(cachedImpulse.normal());
+  }
+
+  private void storeCachedImpulse(List<GameObject> pairKey, Collision collision) {
+    if (collision.getAppliedNormalImpulse() <= 0.0
+        && Math.abs(collision.getAppliedFrictionImpulse()) <= 1e-9) {
+      collisionImpulseCache.remove(pairKey);
+      return;
+    }
+    collisionImpulseCache.put(pairKey, new CachedCollisionImpulse(
+        collision.getAppliedNormalImpulse(),
+        collision.getAppliedFrictionImpulse(),
+        collision.getPenetration().normalize()));
   }
 
   private void solveCollisionPositionOnly(CollisionPair collisionPair, GameObject objectA,
@@ -397,9 +527,143 @@ public class GameEngineImpl implements GameEngine {
     return null;
   }
 
-  private void applyJointConstraints(double elapsedTime) {
-    for (Joint joint : world.getJoints()) {
-      joint.apply(elapsedTime);
+  private Map<DynamicComponent, MotionSnapshot> captureDynamicMotion() {
+    Map<DynamicComponent, MotionSnapshot> motion = new HashMap<>();
+    for (GameObject object : world.getObjects()) {
+      if (object instanceof DynamicComponent dynamicComponent) {
+        motion.put(dynamicComponent, new MotionSnapshot(BoundingBox.from(dynamicComponent),
+            dynamicComponent.getStaticState().getLinearPosition()));
+      }
     }
+    return motion;
+  }
+
+  private void resolveSweptStaticCollisions(Map<DynamicComponent, MotionSnapshot> previousMotion) {
+    for (GameObject dynamicObject : world.getObjects()) {
+      if (!(dynamicObject instanceof DynamicComponent dynamicComponent)) {
+        continue;
+      }
+      MotionSnapshot start = previousMotion.get(dynamicComponent);
+      if (start == null) {
+        continue;
+      }
+      BoundingBox end = BoundingBox.from(dynamicComponent);
+      Vector displacement = end.center().subtract(start.bounds().center());
+      SweptHit earliestHit = null;
+      for (GameObject staticObject : world.getObjects()) {
+        if (staticObject == dynamicObject || !(staticObject instanceof StaticComponent)) {
+          continue;
+        }
+        BoundingBox staticBounds = BoundingBox.from(staticObject);
+        if (end.overlaps(staticBounds)) {
+          continue;
+        }
+        SweptHit hit = sweepAgainstStatic(start.bounds(), staticBounds, displacement);
+        if (hit != null && (earliestHit == null || hit.time() < earliestHit.time())) {
+          earliestHit = hit;
+        }
+      }
+      if (earliestHit != null) {
+        applySweptHit(dynamicComponent, start.position(), displacement, earliestHit);
+      }
+    }
+  }
+
+  private SweptHit sweepAgainstStatic(BoundingBox movingStart, BoundingBox staticBounds,
+      Vector displacement) {
+    AxisSweep xSweep = sweepAxis(movingStart.minX(), movingStart.maxX(), staticBounds.minX(),
+        staticBounds.maxX(), displacement.x());
+    AxisSweep ySweep = sweepAxis(movingStart.minY(), movingStart.maxY(), staticBounds.minY(),
+        staticBounds.maxY(), displacement.y());
+    if (!xSweep.canHit() || !ySweep.canHit()) {
+      return null;
+    }
+
+    double entryTime = Math.max(xSweep.entryTime(), ySweep.entryTime());
+    double exitTime = Math.min(xSweep.exitTime(), ySweep.exitTime());
+    if (entryTime < 0.0 || entryTime > 1.0 || entryTime > exitTime) {
+      return null;
+    }
+
+    Vector normal = xSweep.entryTime() > ySweep.entryTime()
+        ? new Vector(-Math.signum(displacement.x()), 0)
+        : new Vector(0, -Math.signum(displacement.y()));
+    return new SweptHit(entryTime, normal);
+  }
+
+  private AxisSweep sweepAxis(double movingMin, double movingMax, double staticMin,
+      double staticMax, double delta) {
+    if (Math.abs(delta) <= AABB_MARGIN) {
+      boolean alreadyOverlapping = movingMax >= staticMin && staticMax >= movingMin;
+      return alreadyOverlapping
+          ? new AxisSweep(true, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)
+          : new AxisSweep(false, 0.0, 0.0);
+    }
+    double entryDistance = delta > 0.0 ? staticMin - movingMax : staticMax - movingMin;
+    double exitDistance = delta > 0.0 ? staticMax - movingMin : staticMin - movingMax;
+    return new AxisSweep(true, entryDistance / delta, exitDistance / delta);
+  }
+
+  private void applySweptHit(DynamicComponent component, Vector startCenter, Vector displacement,
+      SweptHit hit) {
+    double safeTime = sweptContactTime(hit);
+    component.getStaticState().setLinearPosition(startCenter.add(displacement.multiply(safeTime)));
+    Vector velocity = component.getDynamicState().getLinearVelocity();
+    double normalVelocity = velocity.dot(hit.normal());
+    if (normalVelocity < 0.0 && isHorizontalHit(hit)) {
+      component.getDynamicState().setLinearVelocity(
+          velocity.subtract(hit.normal().multiply(normalVelocity)));
+    }
+    component.updatePolygon();
+  }
+
+  private double sweptContactTime(SweptHit hit) {
+    double skinDirection = isHorizontalHit(hit) ? -CCD_SKIN : CCD_SKIN;
+    return Math.max(0.0, Math.min(1.0, hit.time() + skinDirection));
+  }
+
+  private boolean isHorizontalHit(SweptHit hit) {
+    return Math.abs(hit.normal().x()) > Math.abs(hit.normal().y());
+  }
+
+  private record BoundingBox(double minX, double minY, double maxX, double maxY) {
+
+    private static BoundingBox from(GameObject object) {
+      double minX = Double.POSITIVE_INFINITY;
+      double minY = Double.POSITIVE_INFINITY;
+      double maxX = Double.NEGATIVE_INFINITY;
+      double maxY = Double.NEGATIVE_INFINITY;
+      for (Vector point : object.getPolygon().getPoints()) {
+        minX = Math.min(minX, point.x());
+        minY = Math.min(minY, point.y());
+        maxX = Math.max(maxX, point.x());
+        maxY = Math.max(maxY, point.y());
+      }
+      return new BoundingBox(minX, minY, maxX, maxY);
+    }
+
+    private boolean overlaps(BoundingBox other) {
+      return maxX + AABB_MARGIN >= other.minX
+          && other.maxX + AABB_MARGIN >= minX
+          && maxY + AABB_MARGIN >= other.minY
+          && other.maxY + AABB_MARGIN >= minY;
+    }
+
+    private Vector center() {
+      return new Vector((minX + maxX) / 2.0, (minY + maxY) / 2.0);
+    }
+  }
+
+  private record AxisSweep(boolean canHit, double entryTime, double exitTime) {
+  }
+
+  private record SweptHit(double time, Vector normal) {
+  }
+
+  private record MotionSnapshot(BoundingBox bounds, Vector position) {
+  }
+
+  private record CachedCollisionImpulse(double normalImpulse, double frictionImpulse,
+                                        Vector normal) {
   }
 }

@@ -31,6 +31,7 @@ public class WorldImpl implements World {
   /** Returns a read-only active components list. */
   @Override
   public List<GameComponent> getComponents() {
+    synchronizeAllActiveMembership();
     return List.copyOf(activeComponents);
   }
 
@@ -45,6 +46,7 @@ public class WorldImpl implements World {
   /** Returns a read-only snapshot of components whose active flag is currently true. */
   @Override
   public List<GameComponent> getActiveComponents() {
+    synchronizeAllActiveMembership();
     return List.copyOf(activeComponents);
   }
 
@@ -156,5 +158,13 @@ public class WorldImpl implements World {
       }
     } else {
       activeComponents.remove(component);}
+  }
+
+  private void synchronizeAllActiveMembership() {
+    activeComponents.removeIf(component -> !allComponents.contains(component)
+        || !component.isActive());
+    for (GameComponent component : allComponents) {
+      synchronizeActiveMembership(component);
+    }
   }
 }
