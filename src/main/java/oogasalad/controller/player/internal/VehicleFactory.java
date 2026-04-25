@@ -3,6 +3,7 @@ package oogasalad.controller.player.internal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,14 @@ public class VehicleFactory {
     this.registry = registry;
   }
 
-  public void buildVehicle(VehicleLayout layout, World world, double startX, double startY) {
+  /**
+   * Builds the vehicle and returns each placement mapped to its created component, in placement
+   * order (structurals first, pigs last), so HUD/UI code can look up per-cell HP without
+   * re-deriving the mapping. Returned map is a {@link LinkedHashMap} so iteration order is
+   * deterministic.
+   */
+  public Map<PlacedComponent, GameComponent> buildVehicle(VehicleLayout layout, World world,
+      double startX, double startY) {
     List<PlacedComponent> structuralPlacements = new ArrayList<>();
     List<PlacedComponent> pigPlacements = new ArrayList<>();
     for (PlacedComponent p : layout.placements()) {
@@ -51,6 +59,7 @@ public class VehicleFactory {
     }
     Map<String, GameComponent> placed = new HashMap<>();
     Map<String, VehiclePartSpec> specByKey = new HashMap<>();
+    Map<PlacedComponent, GameComponent> placementToComponent = new LinkedHashMap<>();
 
     for (PlacedComponent p : structuralPlacements) {
       double worldX = startX + p.col() * CELL_SIZE;
@@ -61,6 +70,7 @@ public class VehicleFactory {
       String key = toKey(p.row(), p.col());
       placed.put(key, component);
       specByKey.put(key, spec);
+      placementToComponent.put(p, component);
     }
 
     Set<String> edgeKeys = new HashSet<>();
@@ -75,7 +85,8 @@ public class VehicleFactory {
     }
     addRightAngleRigidChords(structuralPlacements, world, placed, specByKey, edgeKeys);
     addAntiRotationJoints(structuralPlacements, world, placed, specByKey, edgeKeys);
-    attachPigsToHostCells(pigPlacements, placed, world, startX, startY);
+    attachPigsToHostCells(pigPlacements, placed, world, startX, startY, placementToComponent);
+    return placementToComponent;
   }
 
   private void addCardinalNeighbor(World world, Map<String, GameComponent> placed,
@@ -94,12 +105,14 @@ public class VehicleFactory {
   }
 
   private void attachPigsToHostCells(List<PlacedComponent> pigPlacements,
-      Map<String, GameComponent> placed, World world, double startX, double startY) {
+      Map<String, GameComponent> placed, World world, double startX, double startY,
+      Map<PlacedComponent, GameComponent> placementToComponent) {
     for (PlacedComponent p : pigPlacements) {
       double worldX = startX + p.col() * CELL_SIZE;
       double worldY = startY + p.row() * CELL_SIZE;
       GameComponent pig = registry.get(p.componentType()).create(worldX, worldY);
       world.addComponent(pig);
+      placementToComponent.put(p, pig);
       GameComponent host = placed.get(toKey(p.row(), p.col()));
       if (host != null) {
         world.addJoint(new RigidJoint(pig, host));

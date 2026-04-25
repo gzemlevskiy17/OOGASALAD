@@ -104,6 +104,18 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     return root;
   }
 
+  /**
+   * Adds an overlay node (e.g. a HUD) on top of the game layer at the given alignment within the
+   * root StackPane. Idempotent: a previously attached node at the same identity is removed first to
+   * support fresh sessions on level restart.
+   */
+  public void attachOverlay(Node overlay, Pos alignment) {
+    StackPane root = (StackPane) getRoot();
+    root.getChildren().remove(overlay);
+    StackPane.setAlignment(overlay, alignment);
+    root.getChildren().add(overlay);
+  }
+
   private Node createBackButtonRegion() {
     Button backButton = new Button(s("back.button.text"));
     backButton.getStyleClass().add("back-button");

@@ -2,10 +2,15 @@ package oogasalad.controller.player.internal;
 
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
@@ -18,6 +23,7 @@ import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.Damageable;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
@@ -31,6 +37,7 @@ import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.VehicleComponent;
 import oogasalad.model.player.api.LossConditionChecker;
+import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.model.player.internal.FallOffWorldLossChecker;
@@ -47,6 +54,7 @@ import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.RendererImpl;
 import oogasalad.view.core.internal.SpriteCache;
 import oogasalad.view.player.internal.GamePlayAppScreen;
+import oogasalad.view.player.internal.VehicleHpHud;
 
 /**
  * Default factory that assembles the full gameplay runtime graph (world, engine, camera,
@@ -68,20 +76,6 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
 
   private record LevelBounds(double width, double height) {}
-
-  private record BuiltWorld(World world, LevelBounds bounds) {}
-
-  private final VehicleFactory vehicleFactory = new VehicleFactory();
-  private final LevelLoader levelLoader;
-  private final Supplier<String> levelPathSupplier;
-
-  public GameplaySessionFactoryImpl(
-      LevelLoader levelLoader,
-      Supplier<String> levelPathSupplier
-  ) {
-    this.levelLoader = levelLoader;
-    this.levelPathSupplier = levelPathSupplier;
-  }
 
   /**
    * Builds and wires one gameplay session using the supplied screen and outcome callback.
@@ -164,7 +158,55 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     );
     controller.setOnOutcome(onOutcome);
 
+    attachVehicleHpHud(screen, built.placements());
+
     return new GameplaySession(controller);
+  }
+
+  private final VehicleFactory vehicleFactory = new VehicleFactory();
+  private final LevelLoader levelLoader;
+  private final Supplier<String> levelPathSupplier;
+
+  public GameplaySessionFactoryImpl(
+      LevelLoader levelLoader,
+      Supplier<String> levelPathSupplier
+  ) {
+    this.levelLoader = levelLoader;
+    this.levelPathSupplier = levelPathSupplier;
+  }
+
+  private void attachVehicleHpHud(GamePlayAppScreen screen,
+      Map<PlacedComponent, GameComponent> placements) {
+    Map<PlacedComponent, Damageable> placementHp = new LinkedHashMap<>();
+    for (Map.Entry<PlacedComponent, GameComponent> entry : placements.entrySet()) {
+      if (entry.getValue() instanceof Damageable d) {
+        placementHp.put(entry.getKey(), d);
+      }
+    }
+    ResourceBundle builderProps =
+        ResourceBundle.getBundle("oogasalad.view.player.VehicleBuilderAppScreen");
+    int rows = (int) Double.parseDouble(builderProps.getString("grid.rows"));
+    int cols = (int) Double.parseDouble(builderProps.getString("grid.columns"));
+    VehicleHpHud hud = new VehicleHpHud(rows, cols, placementHp);
+    StackPane.setMargin(hud, new Insets(0, 0, 16, 16));
+    screen.attachOverlay(hud, Pos.BOTTOM_LEFT);
+  }
+
+  private BuiltWorld buildWorld(GameConfig config, VehicleLayout layout) {
+    World world = new WorldImpl();
+
+    String levelPath = levelPathSupplier.get();
+    if (levelPath != null && !levelPath.isBlank()) {
+      levelLoader.loadLevel(levelPath, world, config);
+    }
+
+    LevelBounds bounds = computeLevelBounds(world);
+    // Vehicle bodies on this branch use centered polygons, so cell (0,0)'s center lands at
+    // (spawnX, spawnY). Offset by half a cell so the vehicle's top-left corner matches the
+    // historical spawn origin (350, 300) used when bodies were top-left-anchored.
+    Map<PlacedComponent, GameComponent> placements =
+        vehicleFactory.buildVehicle(layout, world, 380, 330);
+    return new BuiltWorld(world, bounds, placements);
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
@@ -245,20 +287,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     }
   }
 
-  private BuiltWorld buildWorld(GameConfig config, VehicleLayout layout) {
-    World world = new WorldImpl();
+  private record BuiltWorld(World world, LevelBounds bounds,
+                            Map<PlacedComponent, GameComponent> placements) {
 
-    String levelPath = levelPathSupplier.get();
-    if (levelPath != null && !levelPath.isBlank()) {
-      levelLoader.loadLevel(levelPath, world, config);
-    }
-
-    LevelBounds bounds = computeLevelBounds(world);
-    // Vehicle bodies on this branch use centered polygons, so cell (0,0)'s center lands at
-    // (spawnX, spawnY). Offset by half a cell so the vehicle's top-left corner matches the
-    // historical spawn origin (350, 300) used when bodies were top-left-anchored.
-    vehicleFactory.buildVehicle(layout, world, 380, 330);
-    return new BuiltWorld(world, bounds);
   }
 
   private LevelBounds computeLevelBounds(World world) {
