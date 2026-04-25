@@ -36,7 +36,9 @@ class PaletteSpriteRegistryTest {
         mass,
         mass * (w * w + h * h) / 12.0,
         0.5,
-        true);
+        true,
+        100.0,
+        "Pig");
     Sprite sprite = registry.resolve(pig);
     assertNotNull(sprite);
     SingleSprite single = assertInstanceOf(SingleSprite.class, sprite);

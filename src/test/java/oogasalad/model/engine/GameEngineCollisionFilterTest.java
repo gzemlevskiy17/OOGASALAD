@@ -42,7 +42,9 @@ class GameEngineCollisionFilterTest {
         2.0,
         boxMoI(2.0, pw, ph),
         0.5,
-        true);
+        true,
+        100.0,
+        "Pig");
     double fw = 60.0;
     double fh = 60.0;
     StructuralComponent frame =
@@ -137,7 +139,9 @@ class GameEngineCollisionFilterTest {
         2.0,
         boxMoI(2.0, pw, ph),
         0.5,
-        true);
+        true,
+        100.0,
+        "Pig");
     oogasalad.model.engine.internal.components.TerrainBlock terrain =
         new oogasalad.model.engine.internal.components.TerrainBlock(
             0, 200, 400, 20, "t.png", false, 0.5, 0.5);

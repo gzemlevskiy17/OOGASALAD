@@ -28,7 +28,9 @@ class PigComponentTest {
         mass,
         mass * (w * w + h * h) / 12.0,
         0.5,
-        true);
+        true,
+        100.0,
+        "Pig");
   }
 
   @Test
