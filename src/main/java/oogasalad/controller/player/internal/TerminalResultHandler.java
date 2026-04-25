@@ -4,10 +4,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.data.api.LevelId;
+import oogasalad.data.internal.LevelProgression;
 import oogasalad.model.player.api.GameplayScore;
 import oogasalad.model.player.api.PlayHistoryEntry;
 import oogasalad.model.player.api.PlayHistoryRepository;
 import oogasalad.model.player.api.ScoreCalculator;
+import oogasalad.model.player.api.UserProgressionRepository;
 
 /**
  * Handles what happens at the end of a gameplay run: computes the numeric score, checks whether
@@ -33,21 +36,31 @@ public class TerminalResultHandler {
 
   private final ScoreCalculator calculator;
   private final PlayHistoryRepository repository;
+  private final UserProgressionRepository progressionRepo;
+  private final LevelProgression progression;
   private final Supplier<String> userIdSupplier;
   private final StatsReceiver winReceiver;
   private final StatsReceiver loseReceiver;
 
   public TerminalResultHandler(ScoreCalculator calculator, PlayHistoryRepository repository,
+      UserProgressionRepository progressionRepo, LevelProgression progression,
       Supplier<String> userIdSupplier, StatsReceiver winReceiver, StatsReceiver loseReceiver) {
     this.calculator = calculator;
     this.repository = repository;
+    this.progressionRepo = progressionRepo;
+    this.progression = progression;
     this.userIdSupplier = userIdSupplier;
     this.winReceiver = winReceiver;
     this.loseReceiver = loseReceiver;
   }
 
-  /** Terminal-outcome entry point. No-op for non-GAME_WON/GAME_LOST outcomes or null scores. */
-  public void handle(Outcome outcome, GameplayScore runScore) {
+  /**
+   * Terminal-outcome entry point. No-op for non-GAME_WON/GAME_LOST outcomes or null scores.
+   *
+   * @param levelId the level the user just played; used to advance the furthest-reached cursor
+   *     on a win. May be null, in which case the cursor isn't touched.
+   */
+  public void handle(Outcome outcome, LevelId levelId, GameplayScore runScore) {
     if (outcome != Outcome.GAME_WON && outcome != Outcome.GAME_LOST) {
       return;
     }
@@ -71,6 +84,11 @@ public class TerminalResultHandler {
           null, userId, runScore.levelId(),
           runScore.distanceTraveled(), runScore.elapsedSeconds(), displayProgress,
           score, runScore.won(), Instant.now()));
+    }
+
+    if (outcome == Outcome.GAME_WON && userId != null && levelId != null
+        && progressionRepo != null && progression != null) {
+      progressionRepo.advanceFurthestReached(userId, levelId, progression.all());
     }
   }
 

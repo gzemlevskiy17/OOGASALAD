@@ -1,10 +1,10 @@
 package oogasalad.model.player.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import oogasalad.data.api.LevelId;
 import oogasalad.model.player.api.UserProgression;
@@ -14,6 +14,12 @@ import org.junit.jupiter.api.Test;
 
 class SqliteUserProgressionRepoTest {
 
+  private static final List<LevelId> PLAY_ORDER = List.of(
+      new LevelId("forest", "first"),
+      new LevelId("forest", "second"),
+      new LevelId("forest", "third"),
+      new LevelId("desert", "first"));
+
   private UserProgressionRepository repo;
 
   @BeforeEach
@@ -22,75 +28,92 @@ class SqliteUserProgressionRepoTest {
   }
 
   @Test
-  void save_andFindByUser_roundtrip() {
-    UserProgression cursor = new UserProgression(
-        "alice", new LevelId("forest", "second"), Instant.ofEpochMilli(100));
-
-    repo.save(cursor);
-    Optional<UserProgression> loaded = repo.findByUser("alice");
-
-    assertTrue(loaded.isPresent());
-    assertEquals(cursor, loaded.get());
-  }
-
-  @Test
-  void save_upserts_keepingOnlyLatestRowPerUser() {
-    repo.save(new UserProgression(
-        "alice", new LevelId("forest", "first"), Instant.ofEpochMilli(100)));
-    repo.save(new UserProgression(
-        "alice", new LevelId("desert", "first"), Instant.ofEpochMilli(200)));
-
-    Optional<UserProgression> latest = repo.findByUser("alice");
-
-    assertTrue(latest.isPresent());
-    assertEquals(new LevelId("desert", "first"), latest.get().lastLevel());
-    assertEquals(200L, latest.get().updatedAt().toEpochMilli());
-  }
-
-  @Test
   void findByUser_returnsEmpty_whenDatabaseHasNoRows() {
     assertTrue(repo.findByUser("nobody").isEmpty());
   }
 
   @Test
-  void twoUsers_haveIndependentCursors() {
-    repo.save(new UserProgression(
-        "alice", new LevelId("forest", "first"), Instant.ofEpochMilli(100)));
-    repo.save(new UserProgression(
-        "bob", new LevelId("mars", "first"), Instant.ofEpochMilli(200)));
+  void saveLastClicked_insertsRowWithNullFurthest_forFirstTimeUser() {
+    repo.saveLastClicked("alice", new LevelId("forest", "first"));
 
-    assertEquals(new LevelId("forest", "first"), repo.findByUser("alice").get().lastLevel());
-    assertEquals(new LevelId("mars", "first"), repo.findByUser("bob").get().lastLevel());
+    Optional<UserProgression> loaded = repo.findByUser("alice");
+    assertTrue(loaded.isPresent());
+    assertNull(loaded.get().furthestReached());
+    assertEquals(new LevelId("forest", "first"), loaded.get().lastClicked());
   }
 
   @Test
-  void save_withNullUserId_surfacesErrorAsRuntimeException() {
-    UserProgression bad = new UserProgression(
-        null, new LevelId("forest", "first"), Instant.EPOCH);
+  void saveLastClicked_preservesFurthest_onExistingRow() {
+    repo.advanceFurthestReached("alice", new LevelId("forest", "second"), PLAY_ORDER);
+    repo.saveLastClicked("alice", new LevelId("forest", "first"));
 
-    assertThrows(RuntimeException.class, () -> repo.save(bad));
+    UserProgression loaded = repo.findByUser("alice").orElseThrow();
+    assertEquals(new LevelId("forest", "second"), loaded.furthestReached());
+    assertEquals(new LevelId("forest", "first"), loaded.lastClicked());
   }
 
   @Test
-  void findByUser_forExistingUser_returnsTheirStoredCursor() {
-    UserProgression saved = new UserProgression(
-        "alice", new LevelId("forest", "third"), Instant.ofEpochMilli(500));
-    repo.save(saved);
+  void advanceFurthestReached_insertsRow_forFirstTimeUser() {
+    repo.advanceFurthestReached("alice", new LevelId("forest", "first"), PLAY_ORDER);
 
-    Optional<UserProgression> found = repo.findByUser("alice");
+    UserProgression loaded = repo.findByUser("alice").orElseThrow();
+    assertEquals(new LevelId("forest", "first"), loaded.furthestReached());
+    // lastClicked defaults to the advanced level on first-row creation.
+    assertEquals(new LevelId("forest", "first"), loaded.lastClicked());
+  }
 
-    assertTrue(found.isPresent());
-    assertEquals("alice", found.get().userId());
-    assertEquals(new LevelId("forest", "third"), found.get().lastLevel());
-    assertEquals(500L, found.get().updatedAt().toEpochMilli());
+  @Test
+  void advanceFurthestReached_advancesToGreaterLevel_keepingLastClicked() {
+    repo.saveLastClicked("alice", new LevelId("forest", "first"));
+    repo.advanceFurthestReached("alice", new LevelId("forest", "second"), PLAY_ORDER);
+
+    UserProgression loaded = repo.findByUser("alice").orElseThrow();
+    assertEquals(new LevelId("forest", "second"), loaded.furthestReached());
+    assertEquals(new LevelId("forest", "first"), loaded.lastClicked());
+  }
+
+  @Test
+  void advanceFurthestReached_ignoresEarlierLevel() {
+    repo.advanceFurthestReached("alice", new LevelId("forest", "third"), PLAY_ORDER);
+    repo.advanceFurthestReached("alice", new LevelId("forest", "first"), PLAY_ORDER);
+
+    UserProgression loaded = repo.findByUser("alice").orElseThrow();
+    assertEquals(new LevelId("forest", "third"), loaded.furthestReached());
+  }
+
+  @Test
+  void advanceFurthestReached_ignoresEqualLevel() {
+    repo.advanceFurthestReached("alice", new LevelId("forest", "second"), PLAY_ORDER);
+    repo.advanceFurthestReached("alice", new LevelId("forest", "second"), PLAY_ORDER);
+
+    UserProgression loaded = repo.findByUser("alice").orElseThrow();
+    assertEquals(new LevelId("forest", "second"), loaded.furthestReached());
+  }
+
+  @Test
+  void advanceFurthestReached_ignoresLevelNotInPlayOrder() {
+    repo.saveLastClicked("alice", new LevelId("forest", "first"));
+    repo.advanceFurthestReached("alice", new LevelId("atlantis", "first"), PLAY_ORDER);
+
+    UserProgression loaded = repo.findByUser("alice").orElseThrow();
+    assertNull(loaded.furthestReached());
+  }
+
+  @Test
+  void twoUsers_haveIndependentProgression() {
+    repo.advanceFurthestReached("alice", new LevelId("forest", "second"), PLAY_ORDER);
+    repo.advanceFurthestReached("bob", new LevelId("desert", "first"), PLAY_ORDER);
+
+    assertEquals(new LevelId("forest", "second"),
+        repo.findByUser("alice").orElseThrow().furthestReached());
+    assertEquals(new LevelId("desert", "first"),
+        repo.findByUser("bob").orElseThrow().furthestReached());
   }
 
   @Test
   void findByUser_forUnknownUser_whenOtherUsersExist_returnsEmpty() {
-    repo.save(new UserProgression(
-        "alice", new LevelId("forest", "first"), Instant.ofEpochMilli(100)));
-    repo.save(new UserProgression(
-        "bob", new LevelId("desert", "first"), Instant.ofEpochMilli(200)));
+    repo.saveLastClicked("alice", new LevelId("forest", "first"));
+    repo.saveLastClicked("bob", new LevelId("desert", "first"));
 
     assertTrue(repo.findByUser("charlie").isEmpty());
   }

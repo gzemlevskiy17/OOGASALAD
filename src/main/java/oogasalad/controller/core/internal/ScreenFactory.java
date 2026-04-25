@@ -1,7 +1,6 @@
 package oogasalad.controller.core.internal;
 
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
@@ -21,7 +20,6 @@ import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
 import oogasalad.model.player.api.PlayHistoryRepository;
 import oogasalad.model.player.api.ScoreCalculator;
-import oogasalad.model.player.api.UserProgression;
 import oogasalad.model.player.api.UserProgressionRepository;
 import oogasalad.model.player.internal.ScoreCalculatorImpl;
 import oogasalad.model.player.internal.SqlitePlayHistoryRepo;
@@ -111,16 +109,15 @@ public class ScreenFactory {
       throw new IllegalArgumentException("Unknown level: " + id);
     }
     selectedLevel.set(id);
-    saveUserProgressionCursor(worldKey, levelKey);
+    saveLastClickedCursor(id);
   }
 
-  private void saveUserProgressionCursor(String worldKey, String levelKey) {
+  private void saveLastClickedCursor(LevelId clicked) {
     String username = currentUsernameOrNull();
     if (username == null) {
       return;
     }
-    userProgressionRepo.save(new UserProgression(
-        username, new LevelId(worldKey, levelKey), Instant.now()));
+    userProgressionRepo.saveLastClicked(username, clicked);
   }
 
   /**
@@ -161,7 +158,8 @@ public class ScreenFactory {
     screenManager.registerScreen(LOSE_APP_SCREEN_KEY, loseScreen);
 
     terminalResultHandler = new TerminalResultHandler(
-        scoreCalculator, playHistoryRepo, this::currentUsernameOrNull,
+        scoreCalculator, playHistoryRepo, userProgressionRepo, progression,
+        this::currentUsernameOrNull,
         winScreen::setStats, loseScreen::setStats);
   }
 
@@ -201,7 +199,8 @@ public class ScreenFactory {
    */
   private void guardedOutcome(Outcome outcome) {
     if (terminalResultHandler != null && gameplayCoordinator != null) {
-      terminalResultHandler.handle(outcome, gameplayCoordinator.getLastGameplayScore());
+      terminalResultHandler.handle(
+          outcome, selectedLevel.get(), gameplayCoordinator.getLastGameplayScore());
     }
     if (outcome == Outcome.BACK_TO_MENU && !authService.session().isLoggedIn()) {
       screenManager.onOutcome(Outcome.OPEN_LOGIN);
