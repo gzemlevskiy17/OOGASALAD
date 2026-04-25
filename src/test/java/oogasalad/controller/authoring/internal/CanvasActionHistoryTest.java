@@ -21,7 +21,8 @@ class CanvasActionHistoryTest {
   }
 
   private static CanvasAction place(int col, int row) {
-    return new CanvasAction(ActionType.PLACE, col, row, 1, 1, "#000", "sprite", false, 0.5);
+    return new CanvasAction(
+        ActionType.PLACE, col, row, 1.0, 1.0, "#000", "sprite", false, 0.5, 0.0);
   }
 
   @Test
