@@ -1,13 +1,8 @@
 package oogasalad.model.player.api;
 
-import oogasalad.model.engine.api.World;
-// import oogasalad.model.api.GameConfig;
-
-/** Calculates points based on distance, time, or collected items. */
+/** Computes a numeric score from a finished gameplay run. */
 public interface ScoreCalculator {
-  /**
-   * Computes the current score based on the simulation state and game rules.
-   * @return the current numerical score.
-   */
-  // double calculateScore(World world, GameConfig config);
+
+  /** Returns the score for the given run. */
+  double score(GameplayScore run);
 }
