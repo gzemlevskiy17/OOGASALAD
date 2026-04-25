@@ -53,7 +53,7 @@ public class FollowPlayerCameraBehavior extends AbstractCameraBehavior {
       return camera.getX(); // keep current position if no player available
     }
 
-    double desired = player.getX() - camera.getViewWidth() / 2.0 + offsetX;
+    double desired = player.x() - camera.getViewWidth() / 2.0 + offsetX;
     return clampToWorldX(desired, camera.getViewWidth());
   }
 
@@ -65,7 +65,7 @@ public class FollowPlayerCameraBehavior extends AbstractCameraBehavior {
       return camera.getY();// keep current position if no player available
     }
 
-    double desired = player.getY() - camera.getViewHeight() / 2.0 + offsetY;
+    double desired = player.y() - camera.getViewHeight() / 2.0 + offsetY;
     return clampToWorldY(desired, camera.getViewHeight());
   }
 

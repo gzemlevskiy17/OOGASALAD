@@ -7,38 +7,16 @@ import oogasalad.view.core.api.Renderable;
  *
  * @author Iurii Beliaev
  */
-public class RenderableImpl implements Renderable {
-
-  private final double x;
-  private final double y;
-  private final double rotation;
+public record RenderableImpl(double x, double y, double rotation) implements Renderable {
 
   /**
    * Creates a renderable snapshot.
    *
-   * @param x world x-coordinate
-   * @param y world y-coordinate
-   * @param rotation rotation in degrees
+   * @param x        world x-coordinate
+   * @param y        world y-coordinate
+   * @param rotation rotation in radians
    */
-  public RenderableImpl(double x, double y, double rotation) {
-    this.x = x;
-    this.y = y;
-    this.rotation = rotation;
-  }
-
-  @Override
-  public double getX() {
-    return x;
-  }
-
-  @Override
-  public double getY() {
-    return y;
-  }
-
-  @Override
-  public double getRotation() {
-    return rotation;
+  public RenderableImpl {
   }
 
 }

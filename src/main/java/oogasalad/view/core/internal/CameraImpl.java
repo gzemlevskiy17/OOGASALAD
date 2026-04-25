@@ -78,17 +78,17 @@ public class CameraImpl implements Camera {
     double bottom = y + viewHeight;
 
     if (object instanceof TerrainBlock tb) {
-      double objLeft = tb.getX();
-      double objRight = tb.getX() + tb.getWidth();
-      double objTop = tb.getY();
-      double objBottom = tb.getY() + tb.getHeight();
+      double objLeft = tb.x();
+      double objRight = tb.x() + tb.getWidth();
+      double objTop = tb.y();
+      double objBottom = tb.y() + tb.getHeight();
 
       return objRight >= left && objLeft <= right
           && objBottom >= top && objTop <= bottom;
     }
 
-    double objectX = object.getX();
-    double objectY = object.getY();
+    double objectX = object.x();
+    double objectY = object.y();
     return objectX >= left && objectX <= right && objectY >= top && objectY <= bottom;
   }
 }

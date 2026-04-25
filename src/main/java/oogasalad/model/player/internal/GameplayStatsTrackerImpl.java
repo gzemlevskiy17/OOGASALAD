@@ -37,13 +37,13 @@ public class GameplayStatsTrackerImpl implements GameplayStatsTracker {
     if (pigs.isEmpty() || finishes.isEmpty()) {
       return;
     }
-    double pigX = pigs.get(0).getX();
-    double pigY = pigs.get(0).getY();
+    double pigX = pigs.get(0).x();
+    double pigY = pigs.get(0).y();
     if (startX == null) {
       startX = pigX;
       startY = pigY;
-      finishX = finishes.get(0).getX();
-      finishY = finishes.get(0).getY();
+      finishX = finishes.get(0).x();
+      finishY = finishes.get(0).y();
       lastPigX = pigX;
       lastPigY = pigY;
     } else {

@@ -80,7 +80,6 @@ public class ScreenFactory {
   private CreateAccountScreen createAccountScreen;
   private UpdateProfileScreen updateProfileScreen;
 
-  // Routes auth errors to whichever screen triggered the action
   private Consumer<String> activeErrorDisplay = msg -> {
   };
 
@@ -95,6 +94,12 @@ public class ScreenFactory {
       new LevelProgression(scanResult.worldsToLevels());
 
   private final AtomicReference<LevelId> selectedLevel = new AtomicReference<>(defaultLevel());
+
+  // Override slot for paths that don't belong to LevelProgression at all — e.g., a level the
+  // authoring screen just saved and wants to play. When non-null, takes precedence over
+  // selectedLevel in pathForSelectedLevel(). Cleared whenever the user picks a regular level
+  // via the entry screen so the override doesn't outlast the authoring session.
+  private final AtomicReference<String> selectedLevelPath = new AtomicReference<>();
 
   private LevelId defaultLevel() {
     return progression.all().isEmpty() ? null : progression.all().get(0);
@@ -116,6 +121,7 @@ public class ScreenFactory {
       // unlock check and the cursor save; just remember the selection so the path supplier
       // can resolve it to data/levels/<basename>.json at session creation time.
       selectedLevel.set(id);
+      selectedLevelPath.set(null);
       return;
     }
     if (!progression.all().contains(id)) {
@@ -134,15 +140,24 @@ public class ScreenFactory {
       }
     }
     selectedLevel.set(id);
+    selectedLevelPath.set(null);
     saveLastClickedCursor(username, id);
   }
 
   /**
-   * Resolves the currently-selected level to a JSON path. Standard worlds delegate to
-   * {@link LevelProgression#pathFor}; the "Others" sandbox bypasses the world subdirectory and
-   * reads files directly from the levels root.
+   * Resolves the currently-selected level to a JSON path. Order of precedence:
+   * <ol>
+   *   <li>{@link #selectedLevelPath} override (set by the authoring screen for a freshly-saved
+   *       level whose path doesn't fit any progression world);</li>
+   *   <li>"Others" sandbox: read directly from {@code data/levels/<basename>.json};</li>
+   *   <li>Standard worlds: delegate to {@link LevelProgression#pathFor}.</li>
+   * </ol>
    */
   private String pathForSelectedLevel() {
+    String overridePath = selectedLevelPath.get();
+    if (overridePath != null) {
+      return overridePath;
+    }
     LevelId id = selectedLevel.get();
     if (id == null) {
       return null;
@@ -175,13 +190,13 @@ public class ScreenFactory {
   }
 
   private void registerNonAuthScreens() {
+    AuthoringScreenImpl authoringScreen = new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set);
     screenManager.registerScreen(MENU_SCREEN_KEY,
-        new GameMenuScreen(this::guardedOutcome, authService.session()::isLoggedIn));
+        new GameMenuScreen(this::guardedOutcome, authController::handle,
+            authService.session()::isLoggedIn));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
-        new AuthoringEntryScreenImpl(this::guardedOutcome));
-    screenManager.registerScreen(AUTHORING_SCREEN_KEY,
-        new AuthoringScreenImpl(this::guardedOutcome));
-
+        new AuthoringEntryScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
+    screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression,
             scanResult.others()));
@@ -211,8 +226,6 @@ public class ScreenFactory {
   }
 
   private void registerAuthScreens() {
-    // Each screen binds its own error display before delegating to the controller,
-    // so handleAuthError always reaches the screen that triggered the action.
     loginScreen = new LoginScreen(this::guardedOutcome, intent -> {
       activeErrorDisplay = loginScreen::displayError;
       authController.handle(intent);
@@ -226,11 +239,10 @@ public class ScreenFactory {
       authController.handle(intent);
     });
 
-    // ProfileScreen gets a live supplier for the current user — no direct model access in view
     screenManager.registerScreen(PROFILE_SCREEN_KEY,
         new ProfileScreen(this::guardedOutcome, intent -> {
           activeErrorDisplay = msg -> {
-          }; // profile screen has no error label; log only
+          };
           authController.handle(intent);
         }, authService.session()::currentUser));
 

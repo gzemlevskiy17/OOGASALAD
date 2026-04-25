@@ -13,24 +13,51 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.view.core.api.AppScreen;
+import oogasalad.model.help.internal.HelpChatModel;
+import oogasalad.view.accounts.api.AccountOutcome;
+import oogasalad.view.help.internal.HelpChatWindow;
 
 /**
  * Basic start menu screen for the application.
+ *
+ * @author Iurii Beliaev
  */
-public class GameMenuScreen implements AppScreen {
+public class GameMenuScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.core.GameMenu");
+  private static final ThreadLocal<BooleanSupplier> PENDING_LOGIN_STATE = new ThreadLocal<>();
+  private static final ThreadLocal<Consumer<AccountOutcome>> PENDING_ACCOUNT_ACTION =
+      new ThreadLocal<>();
 
-  private final Parent root;
+  private HelpChatWindow helpChatWindow;
 
-  public GameMenuScreen(Consumer<Outcome> onOutcome, BooleanSupplier isLoggedIn) {
-    BorderPane root = new BorderPane();
-    root.getStylesheets().add(
+  public GameMenuScreen(Consumer<Outcome> onOutcome, Consumer<AccountOutcome> onAccountAction,
+      BooleanSupplier isLoggedIn) {
+    super(prepare(onOutcome, onAccountAction, isLoggedIn));
+    PENDING_LOGIN_STATE.remove();
+    PENDING_ACCOUNT_ACTION.remove();
+  }
+
+  private static Consumer<Outcome> prepare(Consumer<Outcome> onOutcome,
+      Consumer<AccountOutcome> onAccountAction, BooleanSupplier isLoggedIn) {
+    PENDING_LOGIN_STATE.set(isLoggedIn);
+    PENDING_ACCOUNT_ACTION.set(onAccountAction);
+    return onOutcome;
+  }
+
+  @Override
+  protected Parent createRoot() {
+    BooleanSupplier isLoggedIn = PENDING_LOGIN_STATE.get();
+    Consumer<AccountOutcome> onAccountAction = PENDING_ACCOUNT_ACTION.get();
+    Consumer<Outcome> onOutcome = this.onOutcome;
+    BorderPane menuLayout = new BorderPane();
+    menuLayout.getStylesheets().add(
         getClass().getResource("/oogasalad/view/core/game-menu.css").toExternalForm());
-    root.getStyleClass().add("screen-root");
-    root.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
+    menuLayout.getStyleClass().add("screen-root");
+    menuLayout.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
+
+    helpChatWindow = new HelpChatWindow(new HelpChatModel());
 
     Button settingsButton = new Button(PROPS.getString("settingsButtonText"));
     Button helpButton = new Button(PROPS.getString("helpButtonText"));
@@ -38,6 +65,7 @@ public class GameMenuScreen implements AppScreen {
     settingsButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     helpButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     profileButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    helpButton.setOnAction(event -> helpChatWindow.toggle());
     profileButton.setOnAction(event -> {
       if (isLoggedIn.getAsBoolean()) {
         onOutcome.accept(Outcome.OPEN_PROFILE);
@@ -45,7 +73,7 @@ public class GameMenuScreen implements AppScreen {
         onOutcome.accept(Outcome.OPEN_LOGIN);
       }
     });
-    root.setTop(wrapTopLeft(settingsButton, helpButton, profileButton));
+    menuLayout.setTop(wrapTopLeft(settingsButton, helpButton, profileButton));
 
     Label title = new Label(PROPS.getString("menuTitle"));
     title.setFont(Font.font(Double.parseDouble(PROPS.getString("titleFontSize"))));
@@ -67,19 +95,14 @@ public class GameMenuScreen implements AppScreen {
         Double.parseDouble(PROPS.getString("buttonSpacing")), title, playButton, createButton);
     centerContent.setAlignment(Pos.CENTER);
     centerContent.getStyleClass().add("menu-center-region");
-    root.setCenter(centerContent);
+    menuLayout.setCenter(centerContent);
 
-    Button loginButton = new Button(PROPS.getString("loginButtonText"));
-    loginButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
-    loginButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_LOGIN));
-    root.setBottom(wrapBottomLeft(loginButton));
+    Button logoutButton = new Button(PROPS.getString("logoutButtonText"));
+    logoutButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    logoutButton.setOnAction(event -> onAccountAction.accept(new AccountOutcome.LogoutRequested()));
+    menuLayout.setBottom(wrapBottomLeft(logoutButton));
 
-    this.root = root;
-  }
-
-  @Override
-  public Parent getRoot() {
-    return root;
+    return new StackPane(menuLayout, helpChatWindow.getRoot());
   }
 
   private VBox wrapTopLeft(Button... buttons) {

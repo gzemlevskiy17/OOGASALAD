@@ -10,7 +10,7 @@ import oogasalad.controller.authoring.api.ToolSelector;
  */
 public class ToolSelectorImpl implements ToolSelector {
 
-  private ToolType activeTool = ToolType.DRAW;
+  private ToolType activeTool = ToolType.SELECT;
 
   @Override
   public void setActiveTool(ToolType type) {

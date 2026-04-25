@@ -16,6 +16,7 @@ import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
@@ -52,12 +53,14 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final AuthoringCanvas canvas;
   private final PlacementValidator placementValidator;
   private final CanvasActionHistory history;
+  private final SplineDraftController splineDraft;
 
   private AuthoringPlaceable selectedPlaceable;
   private Consumer<String> placementErrorHandler = message -> { };
   private Consumer<ToolType> toolChangeListener;
   private int lastDragCol = -1;
   private int lastDragRow = -1;
+  private boolean spawnDragActive = false;
 
   public AuthoringControllerImpl(World world, LevelLoader loader, LevelSaver saver,
       LevelAttributes levelAttributes, ToolSelector toolSelector, AuthoringCanvas canvas) {
@@ -69,12 +72,63 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.canvas = canvas;
     this.placementValidator = new PlacementValidator();
     this.history = new CanvasActionHistory();
+    this.splineDraft = new SplineDraftController(world, canvas);
     double cellSize = canvas.getCellSize();
     this.selectedPlaceable = new TerrainPlaceable(
-        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6);
+        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.5);
+    ensureSpawnPoint();
+  }
+
+  private SpawnPointComponent getSpawnPoint() {
+    return world.getAllComponents().stream()
+        .filter(SpawnPointComponent.class::isInstance)
+        .map(SpawnPointComponent.class::cast)
+        .findFirst().orElse(null);
+  }
+
+  private boolean isNearSpawnMarker(double canvasX, double canvasY) {
+    SpawnPointComponent sp = getSpawnPoint();
+    if (sp == null) return false;
+    double cellSize = canvas.getCellSize();
+    double spawnPx = sp.x() * cellSize;
+    double spawnPy = sp.y() * cellSize;
+    double hitRadius = cellSize * 1.5;
+    double dx = canvasX - spawnPx;
+    double dy = canvasY - spawnPy;
+    return dx * dx + dy * dy <= hitRadius * hitRadius;
+  }
+
+  private void moveSpawnTo(double canvasX, double canvasY) {
+    SpawnPointComponent sp = getSpawnPoint();
+    if (sp == null) return;
+    double cellSize = canvas.getCellSize();
+    sp.moveTo(canvasX / cellSize, canvasY / cellSize);
+    canvas.refreshGrid();
+  }
+
+  private boolean hasSpawnPoint() {
+    return world.getAllComponents().stream().anyMatch(SpawnPointComponent.class::isInstance);
+  }
+
+  private void ensureSpawnPoint() {
+    if (!hasSpawnPoint()) {
+      double cellSize = canvas.getCellSize();
+      world.addObject(new SpawnPointComponent(350.0 / cellSize, 300.0 / cellSize));
+    }
+  }
+
+  /** @return the spline-draft controller, exposed so the UI shell can wire resolution edits. */
+  public SplineDraftController getSplineDraft() {
+    return splineDraft;
   }
 
   public void setActiveTool(ToolSelector.ToolType type) {
+    // Cancel any in-progress spline draft when leaving SPLINE mode so stale knots don't persist
+    // as invisible overlays waiting for the next click.
+    if (toolSelector.getActiveTool() == ToolType.SPLINE && type != ToolType.SPLINE
+        && splineDraft.draftSize() > 0) {
+      splineDraft.cancel();
+    }
     toolSelector.setActiveTool(type);
   }
 
@@ -100,6 +154,11 @@ public class AuthoringControllerImpl implements AuthoringController {
     double cellSize = canvas.getCellSize();
 
     root.setOnMouseMoved(e -> {
+      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
+        canvas.clearHoverPreview();
+        splineDraft.moveCursor(e.getX() / cellSize, e.getY() / cellSize);
+        return;
+      }
       int col = (int) Math.floor(e.getX() / cellSize);
       int row = (int) Math.floor(e.getY() / cellSize);
       canvas.showHoverPreview(col, row);
@@ -112,23 +171,52 @@ public class AuthoringControllerImpl implements AuthoringController {
     // for object selection. Without this, drags starting on top of an
     // existing block would record each cell as its own undo step.
     root.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-      if (e.getButton() == MouseButton.PRIMARY) {
+      ToolType t = toolSelector.getActiveTool();
+      if (e.getButton() == MouseButton.PRIMARY
+          && t != ToolType.SPLINE && t != ToolType.SELECT) {
         history.beginBatch();
       }
     });
     root.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
-      if (e.getButton() == MouseButton.PRIMARY) {
+      ToolType t = toolSelector.getActiveTool();
+      if (e.getButton() == MouseButton.PRIMARY
+          && t != ToolType.SPLINE && t != ToolType.SELECT) {
         history.endBatch();
       }
     });
 
-    root.setOnMousePressed(e -> startStrokeAt(e.getX(), e.getY()));
-    root.setOnMouseDragged(e -> extendStrokeTo(e.getX(), e.getY()));
+    root.setOnMousePressed(e -> {
+      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
+        handleSplinePress(e);
+        return;
+      }
+      if (isNearSpawnMarker(e.getX(), e.getY())) {
+        spawnDragActive = true;
+        return;
+      }
+      startStrokeAt(e.getX(), e.getY());
+    });
+    root.setOnMouseDragged(e -> {
+      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
+        splineDraft.moveCursor(e.getX() / cellSize, e.getY() / cellSize);
+        return;
+      }
+      if (spawnDragActive) {
+        moveSpawnTo(e.getX(), e.getY());
+        return;
+      }
+      extendStrokeTo(e.getX(), e.getY());
+    });
     root.setOnMouseReleased(e -> {
+      if (spawnDragActive) {
+        spawnDragActive = false;
+        moveSpawnTo(e.getX(), e.getY());
+        return;
+      }
       if (toolSelector.getActiveTool() == ToolType.PAINT) {
-        toolSelector.setActiveTool(ToolType.DRAW);
+        toolSelector.setActiveTool(ToolType.SELECT);
         if (toolChangeListener != null) {
-          toolChangeListener.accept(ToolType.DRAW);
+          toolChangeListener.accept(ToolType.SELECT);
         }
       }
     });
@@ -152,6 +240,10 @@ public class AuthoringControllerImpl implements AuthoringController {
       e.consume();
     });
 
+    // A drop from the palette is an explicit placement gesture — it should place the
+    // dragged block regardless of the active tool. Previously this deferred to
+    // handleCellInteraction, which only placed under DRAW. With the Draw button removed
+    // from the UI, that path is no longer user-reachable, so drops now always place.
     root.setOnDragDropped(e -> {
       boolean placed = false;
       if (e.getDragboard().hasString()) {
@@ -160,16 +252,36 @@ public class AuthoringControllerImpl implements AuthoringController {
         if (canvas.isWithinBounds(col, row)) {
           history.beginBatch();
           try {
-            handleCellInteraction(col, row);
+            placeSelectedObject(col, row);
+          } catch (AuthoringPlacementException ex) {
+            placementErrorHandler.accept(ex.getMessage());
           } finally {
             history.endBatch();
           }
+          canvas.refreshGrid();
           placed = true;
         }
       }
       e.setDropCompleted(placed);
       e.consume();
     });
+  }
+
+  /**
+   * Primary click adds a knot at the sub-cell cursor position; secondary (right) click commits
+   * the current draft. This keeps the single-click flow fast ("place N knots, right-click to
+   * finalize") and avoids introducing keyboard handlers to the canvas.
+   */
+  private void handleSplinePress(MouseEvent e) {
+    double cellSize = canvas.getCellSize();
+    double col = e.getX() / cellSize;
+    double row = e.getY() / cellSize;
+    if (e.getButton() == MouseButton.PRIMARY) {
+      splineDraft.addKnot(col, row);
+    } else if (e.getButton() == MouseButton.SECONDARY) {
+      splineDraft.commit();
+      canvas.refreshGrid();
+    }
   }
 
   private void startStrokeAt(double x, double y) {
@@ -228,12 +340,16 @@ public class AuthoringControllerImpl implements AuthoringController {
    * can invoke it directly.
    */
   void handleCellInteraction(int col, int row) {
+    ToolType tool = toolSelector.getActiveTool();
+    if (tool == ToolType.SELECT) {
+      return;
+    }
     try {
-      if (toolSelector.getActiveTool() == ToolType.DRAW) {
+      if (tool == ToolType.DRAW) {
         placeSelectedObject(col, row);
-      } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
+      } else if (tool == ToolType.ERASE) {
         eraseAt(col, row);
-      } else if (toolSelector.getActiveTool() == ToolType.PAINT) {
+      } else if (tool == ToolType.PAINT) {
         floodFillAt(col, row);
       }
     } catch (AuthoringPlacementException e) {
@@ -290,14 +406,15 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   @Override
   public void saveLevel(String fileName) {
-    saver.saveLevel(fileName, world);
+    saver.saveLevel(fileName, world, levelAttributes);
     LOG.info("Saved level to {}", fileName);
   }
 
   @Override
   public void loadLevel(String fileName) {
     world.clear();
-    loader.loadLevel(fileName, world, null);
+    loader.loadLevel(fileName, world, levelAttributes, null);
+    ensureSpawnPoint();
     history.clear();
     canvas.refreshGrid();
     LOG.info("Loaded level from {}", fileName);
@@ -332,6 +449,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void clearLevel() {
     world.clear();
     history.clear();
+    ensureSpawnPoint();
     canvas.refreshGrid();
   }
 
@@ -354,7 +472,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         action.col(), action.row(),
         action.width(), action.height(),
         action.sprite(), action.tiled(),
-        action.friction(), action.color());
+        action.friction(), action.color(), action.restitution());
     world.addObject(block);
   }
 
@@ -382,14 +500,16 @@ public class AuthoringControllerImpl implements AuthoringController {
     double cellSize = canvas.getCellSize();
     OccupancyGrid grid = buildOccupancyGrid();
     FillExecutor executor = new FillExecutor();
-    List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row);
+    int minRow = canvas.getGridRows() / 2;
+    List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row, minRow);
 
     TerrainPlaceable unitPlaceable = new TerrainPlaceable(
         cellSize, cellSize,
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),
         selectedPlaceable.isTiled(),
-        selectedPlaceable.getFriction());
+        selectedPlaceable.getFriction(),
+        selectedPlaceable.getRestitution());
 
     history.beginBatch();
     try {
@@ -433,7 +553,8 @@ public class AuthoringControllerImpl implements AuthoringController {
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),
         selectedPlaceable.isTiled(),
-        selectedPlaceable.getFriction());
+        selectedPlaceable.getFriction(),
+        selectedPlaceable.getRestitution());
     history.beginBatch();
     try {
       for (int[] cell : best.cells()) {

@@ -6,12 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.StructuralComponent;
+import oogasalad.model.engine.internal.joints.RevoluteJoint;
 import oogasalad.model.engine.internal.joints.RigidJoint;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
@@ -57,9 +58,9 @@ class VehicleFactoryPigPlacementTest {
     PigComponent pig = findPig(world);
     StructuralComponent frame = findFrame(world);
 
-    assertEquals(frame.getX(), pig.getX(), 1e-9,
+    assertEquals(frame.x(), pig.x(), 1e-9,
         "Pig X should match Frame X when placed in same cell");
-    assertEquals(frame.getY(), pig.getY(), 1e-9,
+    assertEquals(frame.y(), pig.y(), 1e-9,
         "Pig Y should match Frame Y when placed in same cell");
   }
 
@@ -77,9 +78,9 @@ class VehicleFactoryPigPlacementTest {
 
     double expectedX = START_X + 3 * CELL_SIZE;
     double expectedY = START_Y + 2 * CELL_SIZE;
-    assertEquals(expectedX, pig.getX(), 1e-9,
+    assertEquals(expectedX, pig.x(), 1e-9,
         "Pig should be at cell (2,3) world X");
-    assertEquals(expectedY, pig.getY(), 1e-9,
+    assertEquals(expectedY, pig.y(), 1e-9,
         "Pig should be at cell (2,3) world Y");
   }
 
@@ -130,8 +131,8 @@ class VehicleFactoryPigPlacementTest {
         .filter(StructuralComponent.class::isInstance)
         .map(StructuralComponent.class::cast)
         .filter(s -> "Frame".equals(s.getDisplayName()))
-        .anyMatch(f -> Math.abs(f.getX() - pig.getX()) < 1e-9
-            && Math.abs(f.getY() - pig.getY()) < 1e-9);
+        .anyMatch(f -> Math.abs(f.x() - pig.x()) < 1e-9
+            && Math.abs(f.y() - pig.y()) < 1e-9);
 
     assertTrue(sharesCellWithFrame,
         "Pig must share world coordinates with some Frame it was placed inside");
@@ -190,7 +191,7 @@ class VehicleFactoryPigPlacementTest {
 
   private GameComponent findComponentAt(World world, double x, double y, String displayName) {
     return world.getComponents().stream()
-        .filter(c -> Math.abs(c.getX() - x) < 1e-9 && Math.abs(c.getY() - y) < 1e-9)
+        .filter(c -> Math.abs(c.x() - x) < 1e-9 && Math.abs(c.y() - y) < 1e-9)
         .filter(c -> !(c instanceof PigComponent))
         .filter(c -> {
           if (c instanceof StructuralComponent sc) {
@@ -231,8 +232,70 @@ class VehicleFactoryPigPlacementTest {
         "Fan and attached frame should have two rigid constraints to resist swing");
   }
 
+  @Test
+  void wheelAttachedBelowFrame_usesWheelCenterAsRevoluteAnchor() {
+    VehicleLayout layout = new VehicleLayout(List.of(
+        new PlacedComponent(0, 0, "Frame"),
+        new PlacedComponent(1, 0, "Wood Wheel")
+    ));
+    World world = new WorldImpl();
+    new VehicleFactory().buildVehicle(layout, world, START_X, START_Y);
+
+    StructuralComponent wheel = world.getComponents().stream()
+        .filter(StructuralComponent.class::isInstance)
+        .map(StructuralComponent.class::cast)
+        .filter(s -> "Wood Wheel".equals(s.getDisplayName()))
+        .findFirst()
+        .orElseThrow();
+    RevoluteJoint joint = world.getJoints().stream()
+        .filter(RevoluteJoint.class::isInstance)
+        .map(RevoluteJoint.class::cast)
+        .findFirst()
+        .orElseThrow();
+
+    assertEquals(wheel.x(), joint.getWorldAnchorA().x(), 1e-9);
+    assertEquals(wheel.y(), joint.getWorldAnchorA().y(), 1e-9);
+    assertEquals(wheel.x(), joint.getWorldAnchorB().x(), 1e-9);
+    assertEquals(wheel.y(), joint.getWorldAnchorB().y(), 1e-9);
+  }
+
+  @Test
+  void wheelAttachedLeftOrRightOfFrame_usesWheelAsCanonicalRevoluteBody() {
+    assertWheelFrameJointUsesWheelAsBodyA(-1);
+    assertWheelFrameJointUsesWheelAsBodyA(1);
+  }
+
+  private void assertWheelFrameJointUsesWheelAsBodyA(int wheelCol) {
+    VehicleLayout layout = new VehicleLayout(List.of(
+        new PlacedComponent(0, 0, "Frame"),
+        new PlacedComponent(0, wheelCol, "Wood Wheel")
+    ));
+    World world = new WorldImpl();
+    new VehicleFactory().buildVehicle(layout, world, START_X, START_Y);
+
+    StructuralComponent wheel = world.getComponents().stream()
+        .filter(StructuralComponent.class::isInstance)
+        .map(StructuralComponent.class::cast)
+        .filter(s -> "Wood Wheel".equals(s.getDisplayName()))
+        .findFirst()
+        .orElseThrow();
+    RevoluteJoint joint = world.getJoints().stream()
+        .filter(RevoluteJoint.class::isInstance)
+        .map(RevoluteJoint.class::cast)
+        .findFirst()
+        .orElseThrow();
+
+    assertEquals(wheel, joint.getComponentA(),
+        "Wheel should always be body A so mirrored axles solve symmetrically");
+    assertEquals(new oogasalad.model.engine.api.Vector(0, 0), joint.getLocalAnchorA());
+    assertEquals(wheel.x(), joint.getWorldAnchorA().x(), 1e-9);
+    assertEquals(wheel.y(), joint.getWorldAnchorA().y(), 1e-9);
+    assertEquals(wheel.x(), joint.getWorldAnchorB().x(), 1e-9);
+    assertEquals(wheel.y(), joint.getWorldAnchorB().y(), 1e-9);
+  }
+
   private double[] polygonBounds(GameComponent c) {
-    var pts = c.getPolygon().getPoints();
+    var pts = c.getPolygon().points();
     double minX = pts.stream().mapToDouble(p -> p.x()).min().orElseThrow();
     double maxX = pts.stream().mapToDouble(p -> p.x()).max().orElseThrow();
     double minY = pts.stream().mapToDouble(p -> p.y()).min().orElseThrow();

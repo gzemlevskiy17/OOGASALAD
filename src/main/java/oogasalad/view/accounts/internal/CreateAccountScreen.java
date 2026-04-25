@@ -3,6 +3,7 @@ package oogasalad.view.accounts.internal;
 import java.io.File;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -34,25 +35,29 @@ public class CreateAccountScreen implements AppScreen {
     BorderPane layout = new BorderPane();
     layout.getStylesheets().add(
         getClass().getResource("/oogasalad/view/accounts/accounts.css").toExternalForm());
+    layout.getStyleClass().add("screen-root");
 
     Button backButton = new Button(PROPS.getString("backButton"));
+    backButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     backButton.setOnAction(e -> onNav.accept(Outcome.OPEN_LOGIN));
+    BorderPane.setMargin(backButton, new Insets(18, 0, 0, 18));
     layout.setTop(backButton);
 
-    double fieldWidth = Double.parseDouble(PROPS.getString("fieldWidth"));
+    Label title = new Label(PROPS.getString("title"));
+    title.getStyleClass().add("accounts-title");
+
     usernameField.setPromptText(PROPS.getString("usernamePlaceholder"));
-    usernameField.setMaxWidth(fieldWidth);
     passwordField.setPromptText(PROPS.getString("passwordPlaceholder"));
-    passwordField.setMaxWidth(fieldWidth);
     confirmPasswordField.setPromptText(PROPS.getString("confirmPasswordPlaceholder"));
-    confirmPasswordField.setMaxWidth(fieldWidth);
+
     avatarPathLabel.setText(PROPS.getString("noAvatarSelected"));
     avatarPathLabel.getStyleClass().add("accounts-path-label");
-    errorLabel.getStyleClass().add("accounts-error");
 
     Button browseButton = new Button(PROPS.getString("browseButton"));
+    browseButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     browseButton.setOnAction(e -> {
       FileChooser chooser = new FileChooser();
+      chooser.setTitle(PROPS.getString("chooseAvatarTitle"));
       File file = chooser.showOpenDialog(null);
       if (file != null) {
         selectedAvatarPath = file.getAbsolutePath();
@@ -60,7 +65,13 @@ public class CreateAccountScreen implements AppScreen {
       }
     });
 
+    HBox avatarRow = new HBox(10, avatarPathLabel, browseButton);
+    avatarRow.setAlignment(Pos.CENTER);
+
+    errorLabel.getStyleClass().add("accounts-error");
+
     Button createButton = new Button(PROPS.getString("createButton"));
+    createButton.getStyleClass().addAll("menu-button", "menu-primary-button");
     createButton.setOnAction(e -> {
       if (!passwordField.getText().equals(confirmPasswordField.getText())) {
         errorLabel.setText(PROPS.getString("passwordMismatch"));
@@ -70,8 +81,10 @@ public class CreateAccountScreen implements AppScreen {
           usernameField.getText(), passwordField.getText(), selectedAvatarPath));
     });
 
-    VBox center = new VBox(10, usernameField, passwordField, confirmPasswordField,
-        new HBox(avatarPathLabel, browseButton), createButton, errorLabel);
+    VBox center = new VBox(
+        Double.parseDouble(PROPS.getString("spacing")),
+        title, usernameField, passwordField, confirmPasswordField,
+        avatarRow, createButton, errorLabel);
     center.setAlignment(Pos.CENTER);
     center.getStyleClass().add("accounts-form");
     layout.setCenter(center);
@@ -90,6 +103,8 @@ public class CreateAccountScreen implements AppScreen {
     passwordField.clear();
     confirmPasswordField.clear();
     errorLabel.setText("");
+    avatarPathLabel.setText(PROPS.getString("noAvatarSelected"));
+    selectedAvatarPath = "";
   }
 
   public void displayError(String message) {

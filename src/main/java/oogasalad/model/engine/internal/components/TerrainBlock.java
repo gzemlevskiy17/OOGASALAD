@@ -3,17 +3,16 @@ package oogasalad.model.engine.internal.components;
 import oogasalad.model.engine.ConvexPolygon;
 
 /**
- * Concrete static terrain object (ground, ramp, wall) created by LevelLoaderImpl
- * and placed by the authoring canvas.
- *
- * Static by design: mass = 0, not affected by gravity, never lethal by default.
- * Implements getSprite for authoring/data serialization and relies on
- * GameComponent for Renderable position delegation.
- *
- * Collaborators: LevelLoaderImpl (creates instances from JSON),
- *                LevelSaverImpl (serializes back to JSON),
- *                AuthoringCanvasImpl (renders onto editor grid),
- *                AuthoringControllerImpl (places on grid interaction).
+ * Concrete static terrain object (ground, ramp, wall) created by LevelLoaderImpl and placed by the
+ * authoring canvas.
+ * <p>
+ * Static by design: mass = 0, not affected by gravity, never lethal by default. Implements
+ * getSprite for authoring/data serialization and relies on GameComponent for Renderable position
+ * delegation.
+ * <p>
+ * Collaborators: LevelLoaderImpl (creates instances from JSON), LevelSaverImpl (serializes back to
+ * JSON), AuthoringCanvasImpl (renders onto editor grid), AuthoringControllerImpl (places on grid
+ * interaction).
  */
 public class TerrainBlock extends TerrainComponent {
 
@@ -35,9 +34,9 @@ public class TerrainBlock extends TerrainComponent {
    * @param friction surface friction coefficient (non-negative)
    */
   public TerrainBlock(double x, double y, double width, double height,
-      String sprite, boolean tiled, double friction) {
+      String sprite, boolean tiled, double friction, double restitution) {
 
-    this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR);
+    this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR, restitution);
     setPolygon(ConvexPolygon.axisAlignedBox(x, y, width, height));
   }
 
@@ -45,9 +44,16 @@ public class TerrainBlock extends TerrainComponent {
    * @param color CSS color string used as a fallback when the sprite cannot be loaded
    */
   public TerrainBlock(double x, double y, double width, double height,
-      String sprite, boolean tiled, double friction, String color) {
-    super(x, y, 0, 0, friction);
-    setAffectedByGravity(false);
+      String sprite, boolean tiled, double friction, String color, double restitution) {
+    super(
+        x,
+        y,
+        0,
+        ConvexPolygon.axisAlignedBox(x, y, width, height),
+        sprite,
+        friction,
+        restitution);
+
     this.width = width;
     this.height = height;
     this.sprite = sprite;
@@ -65,13 +71,27 @@ public class TerrainBlock extends TerrainComponent {
     return sprite;
   }
 
+  // AuthoringPlaceable still uses get-prefixed accessors; Renderable was renamed to x()/y().
+  // Delegate so TerrainBlock satisfies both interfaces without duplicating state.
+  @Override
+  public double getX() {
+    return x();
+  }
+
+  @Override
+  public double getY() {
+    return y();
+  }
+
   @Override
   public double getWidth() {
+    // TODO: implement polygon width
     return width;
   }
 
   @Override
   public double getHeight() {
+    // TODO: implement polygon height
     return height;
   }
 

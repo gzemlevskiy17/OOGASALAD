@@ -3,8 +3,9 @@ package oogasalad.model.engine.internal.components;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.DefaultTag;
-import oogasalad.view.core.api.SpriteRenderable;
+import oogasalad.model.engine.api.TypedComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,12 +15,27 @@ class PigComponentTest {
 
   @BeforeEach
   void setUp() {
-    pig = new PigComponent(100.0, 200.0, 0.0, 5.0, 0.5);
+    double w = 40.0;
+    double h = 40.0;
+    double mass = 5.0;
+    pig = new PigComponent(
+        100.0,
+        200.0,
+        0.0,
+        ConvexPolygon.axisAlignedBox(100.0, 200.0, w, h),
+        "",
+        0.5,
+        mass,
+        mass * (w * w + h * h) / 12.0,
+        0.5,
+        true,
+        100.0,
+        "Pig");
   }
 
   @Test
-  void pig_isSpriteRenderable() {
-    assertInstanceOf(SpriteRenderable.class, pig);
+  void pig_isTypedComponent() {
+    assertInstanceOf(TypedComponent.class, pig);
   }
 
   @Test
@@ -35,7 +51,7 @@ class PigComponentTest {
   @Test
   void updatePolygon_centersBoxAtPosition() {
     pig.updatePolygon();
-    var points = pig.getPolygon().getPoints();
+    var points = pig.getPolygon().points();
     double minX = points.stream().mapToDouble(p -> p.x()).min().orElseThrow();
     double maxX = points.stream().mapToDouble(p -> p.x()).max().orElseThrow();
     double minY = points.stream().mapToDouble(p -> p.y()).min().orElseThrow();

@@ -1,7 +1,10 @@
 package oogasalad.model.engine.internal.joints;
 
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
+
 /**
  * Shared base for concrete joint implementations.
  *
@@ -9,11 +12,16 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public abstract class AbstractJoint implements Joint {
 
+  // Keep joint anchors nearly coincident so support/contact impulses create torque
+  // instead of letting connected bodies drift through the axle.
+  protected static final double ANCHOR_POSITION_SLOP = 0.05;
+
   private final GameComponent objectA;
   private final GameComponent objectB;
   private final oogasalad.model.engine.api.Vector localAnchorA;
   private final oogasalad.model.engine.api.Vector localAnchorB;
   private final double restDistance;
+  private boolean collideConnected;
 
   /**
    * Creates a joint whose anchors default to each component's local origin.
@@ -42,15 +50,31 @@ public abstract class AbstractJoint implements Joint {
     this.localAnchorA = localAnchorA;
     this.localAnchorB = localAnchorB;
     this.restDistance = getWorldAnchorB().subtract(getWorldAnchorA()).magnitude();
+    this.collideConnected = false;
   }
 
   @Override
   public GameComponent getComponentA() {
     return objectA;
   }
+
   @Override
   public GameComponent getComponentB() {
     return objectB;
+  }
+
+  private static double inverseInertia(GameComponent component) {
+    if (!(component instanceof DynamicComponent dynamic)) {
+      return 0.0;
+    }
+    return dynamic.getInverseMomentOfInertia();
+  }
+
+  private static oogasalad.model.engine.api.Vector linearVelocity(GameComponent component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getDynamicState().getLinearVelocity();
+    }
+    return new oogasalad.model.engine.api.Vector(0, 0);
   }
 
   /**
@@ -67,18 +91,16 @@ public abstract class AbstractJoint implements Joint {
     return localAnchorB;
   }
 
-  /**
-   * Resolves {@code objectA}'s local anchor into world-space coordinates.
-   */
-  public oogasalad.model.engine.api.Vector getWorldAnchorA() {
-    return objectA.getState().getLinearPosition().add(localAnchorA.rotate(objectA.getRotation()));
+  private static double angularVelocity(GameComponent component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getDynamicState().getAngularVelocity();
+    }
+    return 0.0;
   }
 
-  /**
-   * Resolves {@code objectB}'s local anchor into world-space coordinates.
-   */
-  public oogasalad.model.engine.api.Vector getWorldAnchorB() {
-    return objectB.getState().getLinearPosition().add(localAnchorB.rotate(objectB.getRotation()));
+  @Override
+  public boolean isCollideConnected() {
+    return collideConnected;
   }
 
   /**
@@ -88,15 +110,42 @@ public abstract class AbstractJoint implements Joint {
     return getWorldAnchorB().subtract(getWorldAnchorA());
   }
 
+  @Override
+  public void setCollideConnected(boolean collideConnected) {
+    this.collideConnected = collideConnected;
+  }
+
+  /**
+   * Resolves {@code objectA}'s local anchor into world-space coordinates.
+   */
+  public oogasalad.model.engine.api.Vector getWorldAnchorA() {
+    return objectA.getStaticState().getLinearPosition()
+        .add(localAnchorA.rotate(objectA.rotation()));
+  }
+
+  /**
+   * Resolves {@code objectB}'s local anchor into world-space coordinates.
+   */
+  public oogasalad.model.engine.api.Vector getWorldAnchorB() {
+    return objectB.getStaticState().getLinearPosition()
+        .add(localAnchorB.rotate(objectB.rotation()));
+  }
+
   /**
    * Returns the current distance between the two resolved world anchors.
    */
-  protected double getCurrentDistance() {return getAnchorDelta().magnitude();}
+  protected double getCurrentDistance() {
+    return getAnchorDelta().magnitude();
+  }
+
+  //TODO: double dispatch
 
   /**
    * Returns the anchor-to-anchor distance captured when the joint was created.
    */
-  protected double getRestDistance() {return restDistance;}
+  protected double getRestDistance() {
+    return restDistance;
+  }
 
   /**
    * Resolves a scalar distance error into equal-and-opposite positional corrections along the
@@ -104,12 +153,14 @@ public abstract class AbstractJoint implements Joint {
    */
   protected void applyDistanceCorrection(double distanceError) {
     double currentDistance = getCurrentDistance();
-    if (currentDistance == 0.0 || Math.abs(distanceError) < 1e-9) {
+    if (currentDistance == 0.0 || Math.abs(distanceError) <= ANCHOR_POSITION_SLOP) {
       return;
     }
 
+    double excess =
+        Math.signum(distanceError) * (Math.abs(distanceError) - ANCHOR_POSITION_SLOP);
     oogasalad.model.engine.api.Vector correction =
-        getAnchorDelta().normalize().multiply(distanceError);
+        getAnchorDelta().normalize().multiply(excess);
     applyLinearCorrection(correction, correction.multiply(-1));
   }
 
@@ -130,11 +181,11 @@ public abstract class AbstractJoint implements Joint {
       return;
     }
     if (inverseMassA > 0.0) {
-      objectA.getState().setLinearPosition(objectA.getState().getLinearPosition()
+      objectA.getStaticState().setLinearPosition(objectA.getStaticState().getLinearPosition()
           .add(correctionA.multiply(inverseMassA / totalInverseMass)));
     }
     if (inverseMassB > 0.0) {
-      objectB.getState().setLinearPosition(objectB.getState().getLinearPosition()
+      objectB.getStaticState().setLinearPosition(objectB.getStaticState().getLinearPosition()
           .add(correctionB.multiply(inverseMassB / totalInverseMass)));
     }
   }
@@ -142,8 +193,7 @@ public abstract class AbstractJoint implements Joint {
   /**
    * Applies equal-and-opposite linear forces to movable endpoints only.
    */
-  protected void applyLinearForce(oogasalad.model.engine.api.Vector forceA,
-      oogasalad.model.engine.api.Vector forceB) {
+  protected void applyLinearForce(Vector forceA, Vector forceB) {
     if (inverseMass(objectA) > 0.0) {
       objectA.addForce(forceA);
     }
@@ -153,6 +203,119 @@ public abstract class AbstractJoint implements Joint {
   }
 
   private double inverseMass(GameComponent component) {
-    return component.getMass() > 0.0 ? 1.0 / component.getMass() : 0.0;
+    if (!(component instanceof DynamicComponent dynamic)) {
+      return 0.0;
+    }
+    double m = dynamic.getMass();
+    return m > 0.0 ? 1.0 / m : 0.0;
+  }
+
+  /**
+   * Zeroes the relative linear velocity of the two anchor points in world space via an impulse
+   * pair, including the angular contribution {@code ω × r} at each anchor and updating both linear
+   * and angular velocity on each side. Static sides contribute zero inverse mass/inertia so
+   * impulses only affect the dynamic body, which is what we want.
+   *
+   * <p>Call this whenever the joint should behave rigidly at the velocity level (revolute or
+   * rigid-distance). Soft/spring joints shouldn't call this — they resolve velocity via forces.
+   */
+  protected void applyAnchorVelocityEqualization() {
+    double invMA = inverseMass(objectA);
+    double invMB = inverseMass(objectB);
+    double invIA = inverseInertia(objectA);
+    double invIB = inverseInertia(objectB);
+    if (invMA + invMB == 0.0) {
+      return;
+    }
+
+    oogasalad.model.engine.api.Vector rA =
+        getWorldAnchorA().subtract(objectA.getStaticState().getLinearPosition());
+    oogasalad.model.engine.api.Vector rB =
+        getWorldAnchorB().subtract(objectB.getStaticState().getLinearPosition());
+
+    oogasalad.model.engine.api.Vector vA = linearVelocity(objectA);
+    oogasalad.model.engine.api.Vector vB = linearVelocity(objectB);
+    double wA = angularVelocity(objectA);
+    double wB = angularVelocity(objectB);
+
+    oogasalad.model.engine.api.Vector vAnchorA = vA.add(rA.crossWithScalar(wA));
+    oogasalad.model.engine.api.Vector vAnchorB = vB.add(rB.crossWithScalar(wB));
+    oogasalad.model.engine.api.Vector relVel = vAnchorB.subtract(vAnchorA);
+    if (relVel.magnitude() < 1e-9) {
+      return;
+    }
+
+    double k00 = invMA + invMB + rA.y() * rA.y() * invIA + rB.y() * rB.y() * invIB;
+    double k11 = invMA + invMB + rA.x() * rA.x() * invIA + rB.x() * rB.x() * invIB;
+    double k01 = -rA.x() * rA.y() * invIA - rB.x() * rB.y() * invIB;
+    double det = k00 * k11 - k01 * k01;
+    if (Math.abs(det) < 1e-12) {
+      return;
+    }
+    double invDet = 1.0 / det;
+    double px = -invDet * (k11 * relVel.x() - k01 * relVel.y());
+    double py = -invDet * (-k01 * relVel.x() + k00 * relVel.y());
+    oogasalad.model.engine.api.Vector impulse = new oogasalad.model.engine.api.Vector(px, py);
+
+    if (objectA instanceof DynamicComponent dA) {
+      dA.getDynamicState().setLinearVelocity(vA.subtract(impulse.multiply(invMA)));
+      dA.getDynamicState().setAngularVelocity(wA - rA.crossWithVector(impulse) * invIA);
+    }
+    if (objectB instanceof DynamicComponent dB) {
+      dB.getDynamicState().setLinearVelocity(vB.add(impulse.multiply(invMB)));
+      dB.getDynamicState().setAngularVelocity(wB + rB.crossWithVector(impulse) * invIB);
+    }
+  }
+
+  /**
+   * Corrects the world-anchor separation using the same point-to-point effective mass as the
+   * velocity solve, so off-center anchors may rotate bodies instead of only translating them.
+   */
+  protected void applyAnchorPositionCorrection(double correctionFraction) {
+    double invMA = inverseMass(objectA);
+    double invMB = inverseMass(objectB);
+    double invIA = inverseInertia(objectA);
+    double invIB = inverseInertia(objectB);
+    if (invMA + invMB == 0.0) {
+      return;
+    }
+
+    oogasalad.model.engine.api.Vector delta = getAnchorDelta();
+    double magnitude = delta.magnitude();
+    if (magnitude <= ANCHOR_POSITION_SLOP) {
+      return;
+    }
+    oogasalad.model.engine.api.Vector constraintError = delta.multiply(
+        correctionFraction * (magnitude - ANCHOR_POSITION_SLOP) / magnitude);
+
+    oogasalad.model.engine.api.Vector rA =
+        getWorldAnchorA().subtract(objectA.getStaticState().getLinearPosition());
+    oogasalad.model.engine.api.Vector rB =
+        getWorldAnchorB().subtract(objectB.getStaticState().getLinearPosition());
+
+    double k00 = invMA + invMB + rA.y() * rA.y() * invIA + rB.y() * rB.y() * invIB;
+    double k11 = invMA + invMB + rA.x() * rA.x() * invIA + rB.x() * rB.x() * invIB;
+    double k01 = -rA.x() * rA.y() * invIA - rB.x() * rB.y() * invIB;
+    double det = k00 * k11 - k01 * k01;
+    if (Math.abs(det) < 1e-12) {
+      return;
+    }
+    double invDet = 1.0 / det;
+    double px = -invDet * (k11 * constraintError.x() - k01 * constraintError.y());
+    double py = -invDet * (-k01 * constraintError.x() + k00 * constraintError.y());
+    oogasalad.model.engine.api.Vector impulse = new oogasalad.model.engine.api.Vector(px, py);
+
+    if (objectA instanceof DynamicComponent dA) {
+      dA.getStaticState().setLinearPosition(dA.getStaticState().getLinearPosition()
+          .subtract(impulse.multiply(invMA)));
+      dA.getStaticState().setAngularPosition(dA.rotation()
+          - rA.crossWithVector(impulse) * invIA);
+    }
+    if (objectB instanceof DynamicComponent dB) {
+      dB.getStaticState().setLinearPosition(dB.getStaticState().getLinearPosition()
+          .add(impulse.multiply(invMB)));
+      dB.getStaticState().setAngularPosition(dB.rotation()
+          + rB.crossWithVector(impulse) * invIB);
+    }
   }
 }

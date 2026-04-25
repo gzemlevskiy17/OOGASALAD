@@ -29,4 +29,23 @@ public interface Joint {
   default void apply() {
     apply(1.0);
   }
+
+  /**
+   * Enforces the joint's velocity-level constraint, if any. Default is a no-op so soft joints
+   * (springs) don't need to override. Rigid/revolute joints override to zero the relative velocity
+   * at the shared anchor, which lets a force or collision impulse on one body propagate to
+   * rigidly-connected bodies in the same step.
+   */
+  default void applyVelocity() {
+  }
+
+  /**
+   * Whether the two connected bodies should still be considered by collision detection.
+   */
+  default boolean isCollideConnected() {
+    return false;
+  }
+
+  default void setCollideConnected(boolean collideConnected) {
+  }
 }

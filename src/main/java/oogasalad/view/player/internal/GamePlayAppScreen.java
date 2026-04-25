@@ -1,9 +1,13 @@
 package oogasalad.view.player.internal;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -25,6 +29,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
   private Pane gameLayer;
+  private HBox bottomControls;
   private GameHudDisplay hud;
   private Runnable onPause = () -> { };
   private Runnable onResume = () -> { };
@@ -100,7 +105,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     gameLayer.prefHeightProperty().bind(root.heightProperty());
 
     HBox topControls = createTopControlsRegion();
-    HBox bottomControls = createBottomControlsRegion();
+    bottomControls = createBottomControlsRegion(null);
     hud = new GameHudDisplay();
 
     Node backButton = createBackButtonRegion();
@@ -113,6 +118,18 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     root.getChildren().addAll(gameLayer, hud, topControls, bottomControls, backButton);
 
     return root;
+  }
+
+  /**
+   * Adds an overlay node (e.g. a HUD) on top of the game layer at the given alignment within the
+   * root StackPane. Idempotent: a previously attached node at the same identity is removed first to
+   * support fresh sessions on level restart.
+   */
+  public void attachOverlay(Node overlay, Pos alignment) {
+    StackPane root = (StackPane) getRoot();
+    root.getChildren().remove(overlay);
+    StackPane.setAlignment(overlay, alignment);
+    root.getChildren().add(overlay);
   }
 
   private Node createBackButtonRegion() {
@@ -164,7 +181,8 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     return container;
   }
 
-  private HBox createBottomControlsRegion() {
+  // availableToolIds == null means "show every tool in the properties file" (startup default).
+  private HBox createBottomControlsRegion(Set<String> availableToolIds) {
     HBox container = new HBox(d("bottom.controls.spacing"));
     container.getStyleClass().add("controlbuttons-bottom");
 
@@ -172,6 +190,9 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     container.setPickOnBounds(false);
 
     for (String tool : getList("tools")) {
+      if (availableToolIds != null && !availableToolIds.contains(tool)) {
+        continue;
+      }
       ToggleButton toolBtn = new ToggleButton(s("tool." + tool));
       toolBtn.getStyleClass().add("tool-button");
 
@@ -187,6 +208,17 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
 
     return container;
+  }
+
+  public void setAvailableTools(Collection<String> toolIds) {
+    if (bottomControls == null) {
+      return;
+    }
+    Set<String> filter = toolIds == null
+        ? null
+        : toolIds.stream().map(String::toLowerCase).collect(Collectors.toCollection(HashSet::new));
+    HBox rebuilt = createBottomControlsRegion(filter);
+    bottomControls.getChildren().setAll(rebuilt.getChildren());
   }
 
   private List<String> getList(String key) { return Arrays.asList(s(key).split(",")); }

@@ -51,6 +51,8 @@ public interface AuthoringPlaceable {
 
   double getFriction();
 
+  double getRestitution();
+
   /**
    * Creates a placed backend object anchored at the given grid cell.
    *

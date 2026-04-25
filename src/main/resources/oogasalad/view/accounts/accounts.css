@@ -54,3 +54,7 @@
 .accounts-form {
   -fx-max-width: 320px;
 }
+
+.accounts-form-wide {
+  -fx-max-width: 560px;
+}

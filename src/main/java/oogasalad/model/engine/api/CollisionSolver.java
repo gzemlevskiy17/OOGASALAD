@@ -18,7 +18,7 @@ import oogasalad.model.engine.Collision;
  * <p><strong>Example:</strong>
  *
  * <pre>{@code
- * CollisionSolver solver = new ImpulseCollisionSolver();
+ * CollisionSolver solver = new DynamicDynamicSolver();
  * solver.solve(collision);
  * }</pre>
  *
@@ -28,7 +28,9 @@ import oogasalad.model.engine.Collision;
  *
  * @author Georgiy Zemlevskiy
  */
+@FunctionalInterface
 public interface CollisionSolver {
+  //TODO: comment
 
   /**
    * Applies a collision response strategy to one collision record.
@@ -41,6 +43,6 @@ public interface CollisionSolver {
    *
    * @param collision collision data for one object pair at the current simulation step
    */
-  void solve(Collision collision);
+  void solve(GameObject objectA, GameObject objectB, Collision collision);
   //TODO: is it best that this mutates, or returns new object state?
 }
