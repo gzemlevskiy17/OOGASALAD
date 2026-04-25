@@ -10,7 +10,6 @@ import java.util.List;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
-import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
@@ -26,8 +25,8 @@ class WorldImplTest {
   @BeforeEach
   void setUp() {
     world = new WorldImpl();
-    componentA = new TerrainBlock(0, 0, 1, 1, "a.png", true, 0.5);
-    componentB = new TerrainBlock(1, 0, 1, 1, "b.png", false, 0.4);
+    componentA = new TerrainBlock(0, 0, 1, 1, "a.png", true, 0.5, 0.0);
+    componentB = new TerrainBlock(1, 0, 1, 1, "b.png", false, 0.4, 0.0);
   }
 
   @Test
@@ -95,7 +94,7 @@ class WorldImplTest {
 
   @Test
   void getObjectsByTag_filtersMixedWorldUsingDefaultAndAuthoringTags() {
-    GameComponent terrain = new TerrainBlock(0, 0, 2, 1, "ground.png", true, 0.5);
+    GameComponent terrain = new TerrainBlock(0, 0, 2, 1, "ground.png", true, 0.5, 0.0);
     GameComponent pig = new FakeComponent(1, 0, DefaultTag.DYNAMIC.value());
     GameComponent checkpointA = new FakeComponent(2, 0, "checkpoint");
     GameComponent checkpointB = new FakeComponent(3, 0, "checkpoint");
@@ -123,14 +122,6 @@ class WorldImplTest {
   private static class FakeComponent extends DynamicComponent {
     FakeComponent(double x, double y, String tag) {
       super(x, y, 0, 1.0, 0.5);
-      setState(new ObjectState(
-          new Vector(x, y),
-          new Vector(0, 0),
-          new Vector(0, 0),
-          0,
-          0.0,
-          0.0
-      ));
       setTag(tag);
     }
   }
