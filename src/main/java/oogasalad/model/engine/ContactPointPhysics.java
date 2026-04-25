@@ -13,7 +13,6 @@ public class ContactPointPhysics {
   Vector positionFromReference;
   Vector relativeVelocity;
   double depth;
-  double impulse;
 
   /**
    * Creates contact data for a clipped collision point.
