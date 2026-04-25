@@ -36,7 +36,10 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   private final BiConsumer<String, String> onSelectionConfirmed;
   private final LevelProgression progression;
   // Insertion-ordered so iteration matches the layout order on screen.
-  private final Map<String, Button> levelButtons = new LinkedHashMap<>();
+  // NOT a field initializer — AbstractAppScreen's constructor calls createRoot() (which fills
+  // this map) BEFORE subclass field initializers run, so an `= new LinkedHashMap<>()` here
+  // would still be null at use time. Assigned inside createLevelButtonRegion instead.
+  private Map<String, Button> levelButtons;
   private Button selectedWorldButton;
   private Button selectedLevelButton;
   private Button startButton;
@@ -142,6 +145,7 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   private HBox createLevelButtonRegion() {
     HBox levelBox = new HBox(d("level.region.spacing"));
     levelBox.setAlignment(Pos.CENTER);
+    levelButtons = new LinkedHashMap<>();
 
     // Render every label declared in the bundle, but start every button disabled — they enable
     // only when the selected world actually contains that level on disk (see
