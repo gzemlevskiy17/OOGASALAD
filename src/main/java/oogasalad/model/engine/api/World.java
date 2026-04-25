@@ -151,4 +151,6 @@ public interface World {
       destroyComponent(component);
     }
   }
+
+  double getDragCoefficient();
 }
