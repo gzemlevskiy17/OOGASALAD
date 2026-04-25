@@ -4,6 +4,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -32,6 +33,7 @@ import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
+import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.components.VehicleComponent;
@@ -204,6 +206,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             spritesByRenderable.put(r, sprite);
             return sprite.render(spriteCache);
           }
+          // Non-visual markers (e.g. SpawnPointComponent) live in the world for
+          // save/load and lookup, but have no sprite. Return an invisible stub so
+          // the render loop doesn't abort the frame, which would leave the
+          // vehicle unrendered.
+          if (r instanceof SpawnPointComponent) {
+            Group stub = new Group();
+            stub.setManaged(false);
+            stub.setVisible(false);
+            return stub;
+          }
           throw new IllegalStateException(
               "No renderer for " + r.getClass().getName()
                   + " — must be TerrainSpline, TerrainBlock, or SpriteRenderable");
@@ -306,10 +318,13 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     }
 
     LevelBounds bounds = computeLevelBounds(world);
-    // Vehicle bodies on this branch use centered polygons, so cell (0,0)'s center lands at
-    // (spawnX, spawnY). Offset by half a cell so the vehicle's top-left corner matches the
-    // historical spawn origin (350, 300) used when bodies were top-left-anchored.
-    vehicleFactory.buildVehicle(layout, world, 380, 330);
+    SpawnPointComponent spawn = world.getAllComponents().stream()
+        .filter(SpawnPointComponent.class::isInstance)
+        .map(SpawnPointComponent.class::cast)
+        .findFirst().orElse(null);
+    double spawnX = spawn != null ? spawn.getX() : 350.0;
+    double spawnY = spawn != null ? spawn.getY() : 300.0;
+    vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
     VehicleTerrainSupport.keepVehicleAssemblyAboveTerrainSurface(world);
     return new BuiltWorld(world, bounds);
   }
