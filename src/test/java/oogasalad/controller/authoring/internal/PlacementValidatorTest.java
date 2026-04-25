@@ -56,6 +56,11 @@ class PlacementValidatorTest {
       public double getFriction() {
         return 0;
       }
+
+      @Override
+      public double getRestitution() {
+        return 0;
+      }
     };
   }
 
