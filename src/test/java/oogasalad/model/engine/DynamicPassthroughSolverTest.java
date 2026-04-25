@@ -92,7 +92,7 @@ class DynamicPassthroughSolverTest {
   private static PickupScenario newPickupScenario() {
     DynamicComponent dynamic = newDynamic(1.0, 2.0);
     RecordingPickupEffect effect = new RecordingPickupEffect();
-    PickupComponent pickup = new PickupComponent(4.0, 5.0, 0, unitSquare(), "", effect);
+    PickupComponent pickup = new PickupComponent(4.0, 5.0, 0, unitSquare(), "", "Test", effect);
     Collision collision = new Collision(dynamic, pickup);
     return new PickupScenario(dynamic, pickup, effect, collision);
   }

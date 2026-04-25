@@ -46,7 +46,7 @@ class PickupComponentTest {
   @Test
   void constructor_throwsOnNullEffect() {
     assertThrows(NullPointerException.class,
-        () -> new PickupComponent(0, 0, 0, unitSquare(), "", null));
+        () -> new PickupComponent(0, 0, 0, unitSquare(), "", "Test", null));
   }
 
   @Test
@@ -142,6 +142,6 @@ class PickupComponentTest {
   }
 
   private PickupComponent newPickup() {
-    return new PickupComponent(0, 0, 0, unitSquare(), "", effect);
+    return new PickupComponent(0, 0, 0, unitSquare(), "", "Test", effect);
   }
 }

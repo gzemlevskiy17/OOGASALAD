@@ -13,7 +13,9 @@ import oogasalad.data.api.LevelLoadException;
  *   <li>Root has a {@code level} object.</li>
  *   <li>If present, {@code level.terrain} is an array (absent is allowed).</li>
  *   <li>If present, {@code level.rocks} is an array (absent is allowed).</li>
- *   <li>Each terrain or rock entry has positive {@code size.width} and {@code size.height}.</li>
+ *   <li>If present, {@code level.pickups} is an array (absent is allowed).</li>
+ *   <li>Each terrain, rock, or pickup entry has positive {@code size.width} and
+ *       {@code size.height}.</li>
  * </ol>
  */
 public class LevelValidator {
@@ -26,6 +28,7 @@ public class LevelValidator {
 
     validateSizedArray(level.path("terrain"), "terrain");
     validateSizedArray(level.path("rocks"), "rocks");
+    validateSizedArray(level.path("pickups"), "pickups");
   }
 
   private void validateSizedArray(JsonNode array, String fieldName) {

@@ -7,10 +7,18 @@ import java.io.IOException;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.model.engine.ConvexPolygon;
+import oogasalad.model.engine.api.PickupEffect;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
+import oogasalad.model.engine.internal.components.PickupComponent;
 import oogasalad.model.engine.internal.components.RockComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.effects.DamageEffect;
+import oogasalad.model.engine.internal.effects.HealEffect;
+import oogasalad.model.engine.internal.effects.ScoreEffect;
+import oogasalad.model.player.api.ScoreService;
+import oogasalad.model.player.internal.ScoreServiceImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,7 +58,13 @@ public class LevelLoaderImpl implements LevelLoader {
   private static final double DEFAULT_RESTITUTION = 0.5;
   private static final double DEFAULT_ROCK_RESTITUTION = 0.3;
   private static final double DEFAULT_ROCK_DAMAGE = 10.0;
-  private static final int DEFAULT_ROCK_COOLDOWN_FRAMES = 30;
+  private static final double DEFAULT_PICKUP_AMOUNT = 10.0;
+
+  private final ScoreService score = new ScoreServiceImpl();
+
+  public ScoreService getScore() {
+    return score;
+  }
 
   @Override
   public void loadLevel(String fileName, World world, GameConfig config) {
@@ -59,6 +73,7 @@ public class LevelLoaderImpl implements LevelLoader {
 
     loadTerrain(root.path("level").path("terrain"), world, fileName);
     loadRocks(root.path("level").path("rocks"), world);
+    loadPickups(root.path("level").path("pickups"), world);
     loadFinishLine(root.path("level").path("finish_line"), world);
     LOG.info("Level loaded from {}", fileName);
   }
@@ -113,9 +128,57 @@ public class LevelLoaderImpl implements LevelLoader {
     double friction = props.path("friction").asDouble(DEFAULT_FRICTION);
     double restitution = props.path("restitution").asDouble(DEFAULT_ROCK_RESTITUTION);
     double damage = props.path("damage").asDouble(DEFAULT_ROCK_DAMAGE);
-    int cooldownFrames = props.path("cooldown_frames").asInt(DEFAULT_ROCK_COOLDOWN_FRAMES);
 
-    return new RockComponent(x, y, width, height, friction, restitution, damage, cooldownFrames);
+    return new RockComponent(x, y, width, height, friction, restitution, damage);
+  }
+
+  private void loadPickups(JsonNode pickupsArray, World world) {
+    if (pickupsArray.isMissingNode()) {
+      return;
+    }
+    for (JsonNode entry : pickupsArray) {
+      PickupComponent pickup = parsePickup(entry);
+      pickup.setOnDestroyHook(() -> world.destroyObject(pickup));
+      world.addObject(pickup);
+    }
+  }
+
+  private PickupComponent parsePickup(JsonNode entry) {
+    String type = entry.path("type").asText("");
+    JsonNode pos = entry.path("position");
+    JsonNode size = entry.path("size");
+    JsonNode props = entry.path("properties");
+
+    double x = pos.path("x").asDouble(0);
+    double y = pos.path("y").asDouble(0);
+    double width = size.path("width").asDouble(DEFAULT_SIZE);
+    double height = size.path("height").asDouble(DEFAULT_SIZE);
+    double amount = props.path("amount").asDouble(DEFAULT_PICKUP_AMOUNT);
+
+    String typeName = pickupTypeName(type);
+    PickupEffect effect = pickupEffectFor(type, amount);
+    ConvexPolygon polygon = ConvexPolygon.axisAlignedBox(x - width / 2, y - height / 2, width,
+        height);
+    return new PickupComponent(x, y, 0, polygon, "", typeName, effect);
+  }
+
+  private String pickupTypeName(String type) {
+    return switch (type) {
+      case "heart" -> "Heart";
+      case "bomb" -> "Bomb";
+      case "coin" -> "Coin";
+      case "xp" -> "XPBoost";
+      default -> throw new LevelLoadException("Unknown pickup type: '" + type + "'");
+    };
+  }
+
+  private PickupEffect pickupEffectFor(String type, double amount) {
+    return switch (type) {
+      case "heart" -> new HealEffect(amount);
+      case "bomb" -> new DamageEffect(amount);
+      case "coin", "xp" -> new ScoreEffect(score, (int) amount);
+      default -> throw new LevelLoadException("Unknown pickup type: '" + type + "'");
+    };
   }
 
   private TerrainBlock parseTerrain(JsonNode entry) {

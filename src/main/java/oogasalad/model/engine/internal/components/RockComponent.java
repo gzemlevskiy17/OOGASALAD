@@ -1,38 +1,36 @@
 package oogasalad.model.engine.internal.components;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.ContactDamager;
 import oogasalad.model.engine.api.Damageable;
 import oogasalad.model.engine.api.TypedComponent;
 
 /**
- * A static map obstacle that damages any {@link Damageable} dynamic body it touches. Cooldown is
- * counted in contact frames (calls to {@link #damageContact}); leaving contact freezes the
- * counter rather than resetting it, so a body that briefly bounces off and re-touches still has
- * to wait for its next hit window.
+ * A static map obstacle that damages each {@link Damageable} dynamic body it touches at most
+ * once. Subsequent contacts from the same body are ignored, regardless of how many times the
+ * collision solver fires per frame. Different rocks track their hits independently, so a body
+ * can still be damaged by every rock it encounters.
  *
  * @author Paulina Vvedenskaya
  */
 public class RockComponent extends StaticComponent implements TypedComponent, ContactDamager {
 
   private final double damagePerHit;
-  private final int cooldownFrames;
-  private int framesUntilNextHit;
+  private final Set<Damageable> alreadyHit =
+      Collections.newSetFromMap(new IdentityHashMap<>());
 
   public RockComponent(double x, double y, double width, double height,
-      double friction, double restitution, double damagePerHit, int cooldownFrames) {
+      double friction, double restitution, double damagePerHit) {
     super(x, y, 0,
         ConvexPolygon.axisAlignedBox(x - width / 2, y - height / 2, width, height),
         "", friction, restitution);
     if (damagePerHit < 0) {
       throw new IllegalArgumentException("damagePerHit must be non-negative");
     }
-    if (cooldownFrames < 0) {
-      throw new IllegalArgumentException("cooldownFrames must be non-negative");
-    }
     this.damagePerHit = damagePerHit;
-    this.cooldownFrames = cooldownFrames;
-    this.framesUntilNextHit = 0;
   }
 
   @Override
@@ -42,11 +40,12 @@ public class RockComponent extends StaticComponent implements TypedComponent, Co
 
   @Override
   public void damageContact(Damageable target) {
-    if (framesUntilNextHit > 0) {
-      framesUntilNextHit--;
+    if (target.isDestroyed() || alreadyHit.contains(target)) {
       return;
     }
+    alreadyHit.add(target);
     target.damage(damagePerHit);
-    framesUntilNextHit = cooldownFrames;
+    System.out.println("[rock] dealt " + damagePerHit + " damage to "
+        + target.getClass().getSimpleName() + " (hp now " + target.getCurrentHp() + ")");
   }
 }
