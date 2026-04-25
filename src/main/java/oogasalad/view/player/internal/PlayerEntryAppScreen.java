@@ -7,6 +7,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -15,6 +17,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.data.api.LevelId;
+import oogasalad.data.api.LevelLockedException;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
@@ -81,8 +85,12 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     startButton.setDisable(true);
 
     startButton.setOnAction(event -> {
-      onSelectionConfirmed.accept(selectedWorldKey, selectedLevelKey);
-      onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER);
+      try {
+        onSelectionConfirmed.accept(selectedWorldKey, selectedLevelKey);
+        onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER);
+      } catch (LevelLockedException e) {
+        showLockedAlert(e.attempted(), e.furthestReached());
+      }
     });
 
     VBox container = new VBox(startButton);
@@ -177,6 +185,23 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     StackPane.setAlignment(backButton, Pos.BOTTOM_LEFT);
     container.getStyleClass().add("nav-region");
     return container;
+  }
+
+  /**
+   * Pops an INFORMATION alert when the user tries to play a locked level. Mirrors the minimal
+   * {@code AuthoringAlertService} pattern so we don't introduce a separate helper class for
+   * just one popup.
+   */
+  private void showLockedAlert(LevelId attempted, LevelId furthestReached) {
+    Alert alert = new Alert(AlertType.INFORMATION);
+    alert.setTitle("Level Locked");
+    alert.setHeaderText("Level " + attempted.worldKey() + "/" + attempted.levelKey()
+        + " is locked");
+    alert.setContentText(furthestReached == null
+        ? "You need to complete level 1 first."
+        : "You've reached " + furthestReached.worldKey() + "/" + furthestReached.levelKey()
+            + ". Complete the next level to continue.");
+    alert.showAndWait();
   }
 
   private List<String> getList(String key) { return Arrays.asList(s(key).split(",")); }

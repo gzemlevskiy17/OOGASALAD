@@ -11,6 +11,7 @@ import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.LevelId;
+import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelProgression;
@@ -20,6 +21,7 @@ import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
 import oogasalad.model.player.api.PlayHistoryRepository;
 import oogasalad.model.player.api.ScoreCalculator;
+import oogasalad.model.player.api.UserProgression;
 import oogasalad.model.player.api.UserProgressionRepository;
 import oogasalad.model.player.internal.ScoreCalculatorImpl;
 import oogasalad.model.player.internal.SqlitePlayHistoryRepo;
@@ -108,16 +110,25 @@ public class ScreenFactory {
     if (!progression.all().contains(id)) {
       throw new IllegalArgumentException("Unknown level: " + id);
     }
+    String username = currentUsernameOrNull();
+    if (username != null && !progression.isUnlocked(id, playHistoryRepo.findAllByUser(username))) {
+      throw new LevelLockedException(id, furthestReachedForUser(username));
+    }
     selectedLevel.set(id);
-    saveLastClickedCursor(id);
+    saveLastClickedCursor(username, id);
   }
 
-  private void saveLastClickedCursor(LevelId clicked) {
-    String username = currentUsernameOrNull();
+  private void saveLastClickedCursor(String username, LevelId clicked) {
     if (username == null) {
       return;
     }
     userProgressionRepo.saveLastClicked(username, clicked);
+  }
+
+  private LevelId furthestReachedForUser(String username) {
+    return userProgressionRepo.findByUser(username)
+        .map(UserProgression::furthestReached)
+        .orElse(null);
   }
 
   /**
