@@ -50,6 +50,14 @@ public class CollisionDetectorImpl implements CollisionDetector {
   public Optional<Collision> detectCollision(GameObject objectA, GameObject objectB) {
     Optional<Collision> collision = findSatCollision(objectA, objectB);
     collision.ifPresent(this::addManifold);
+    collision.ifPresent(c -> {
+      String aName = objectA.getClass().getSimpleName();
+      String bName = objectB.getClass().getSimpleName();
+      if (aName.contains("Drive") || aName.contains("Structural")
+          || bName.contains("Drive") || bName.contains("Structural")) {
+        System.out.println("[detect] " + aName + " vs " + bName);
+      }
+    });
     return collision;
   }
 
