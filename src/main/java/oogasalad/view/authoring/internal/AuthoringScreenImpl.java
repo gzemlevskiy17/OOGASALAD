@@ -34,26 +34,29 @@ import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
-import oogasalad.view.authoring.api.ComponentPallete;
 import oogasalad.view.core.api.AppScreen;
 
 /**
  * Layout shell for the authoring environment.
+ *
+ * <p>The level editor is the only "mode" now — vehicle construction lives in the dedicated
+ * {@link oogasalad.view.player.internal.VehicleBuilderAppScreen} and is reached via the Run
+ * button, mirroring the player's path from the level-select screen.
  */
 public class AuthoringScreenImpl implements AppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringScreen");
 
-  private enum AuthoringMode {
-    LEVEL,
-    VEHICLE
-  }
+  /**
+   * Preview file used when the designer clicks Run. We write the authored world here, point the
+   * gameplay session at this path, and then open the Vehicle Builder screen — identical to the
+   * player flow where the selected level path drives a build → play sequence.
+   */
+  private static final String RUN_PREVIEW_PATH = "data/_authoring_preview.json";
 
   private enum LevelPaletteMode {
     TERRAIN,
-    PIGS,
-    LEVEL_ITEMS,
     CUSTOM,
     SETTINGS
   }
@@ -61,21 +64,15 @@ public class AuthoringScreenImpl implements AppScreen {
   private final Parent root;
   private final AuthoringControllerImpl controller;
   private final Consumer<Outcome> onOutcome;
+  private final Consumer<String> onRunLevel;
   private final StackPane canvasHost;
-  private final ComponentPallete vehiclePalette;
   private final ComponentPaletteImpl terrainPalette;
-  private final ComponentPaletteImpl pigsPalette;
-  private final ComponentPaletteImpl levelItemsPalette;
   private final ComponentPaletteImpl customPalette;
   private final AuthoringAlertService alertService;
   private final FileChooserService fileChooserService;
   private final HBox paletteModeRow;
   private final StackPane bottomContentHost;
-  private final Button levelModeButton;
-  private final Button vehicleModeButton;
   private final Button terrainPaletteButton;
-  private final Button pigsPaletteButton;
-  private final Button levelItemsPaletteButton;
   private final Button customPaletteButton;
   private final Button settingsPaletteButton;
   private final LevelAttributesPanel levelAttributesPanel;
@@ -86,11 +83,24 @@ public class AuthoringScreenImpl implements AppScreen {
   private ScrollPane canvasScrollPane;
 
   private List<Button> toolButtons;
-  private AuthoringMode currentMode;
   private LevelPaletteMode currentLevelPaletteMode;
 
+  /**
+   * Back-compat constructor used by callers (tests, legacy wiring) that don't need to trigger
+   * gameplay from the authoring screen. Run button silently no-ops in that case.
+   */
   public AuthoringScreenImpl(Consumer<Outcome> onOutcome) {
+    this(onOutcome, path -> { });
+  }
+
+  /**
+   * @param onOutcome routes screen transitions (e.g. OPEN_VEHICLE_BUILDER, BACK_TO_AUTHORING_ENTRY).
+   * @param onRunLevel supplied by ScreenFactory; receives the saved preview path so the gameplay
+   *                   session loads the level the designer just authored.
+   */
+  public AuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> onRunLevel) {
     this.onOutcome = onOutcome;
+    this.onRunLevel = onRunLevel == null ? path -> { } : onRunLevel;
     this.world = new WorldImpl();
     this.levelAttributes = new LevelAttributes();
     this.levelAttributesPanel = new LevelAttributesPanel(levelAttributes);
@@ -100,29 +110,21 @@ public class AuthoringScreenImpl implements AppScreen {
     this.fileChooserService = new FileChooserService();
     this.controller = buildController();
     this.canvasHost = buildCanvasHost();
-    this.vehiclePalette = new VehicleComponentScrollPalette();
     this.terrainPalette = new ComponentPaletteImpl();
-    this.pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
-    this.levelItemsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.LevelItemsPalette");
     this.customPalette = new ComponentPaletteImpl("oogasalad.view.authoring.CustomPalette");
     wirePaletteSubscriptions();
     this.terrainPaletteButton = createTabButton(s("terrainButtonText"));
-    this.pigsPaletteButton = createTabButton(s("pigsButtonText"));
-    this.levelItemsPaletteButton = createTabButton(s("levelItemsButtonText"));
     this.customPaletteButton = createTabButton(s("customButtonText"));
     this.settingsPaletteButton = createTabButton(s("settingsButtonText"));
     this.paletteModeRow = buildPaletteModeRow();
     this.bottomContentHost = new StackPane();
-    this.levelModeButton = createTabButton(s("levelButtonText"));
-    this.vehicleModeButton = createTabButton(s("vehicleButtonText"));
-    this.currentMode = AuthoringMode.LEVEL;
     this.currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
     this.root = buildLayout();
     wireButtonHandlers();
     refreshDisplayedMode();
 
     controller.setToolChangeListener(type -> {
-      if (type == ToolType.DRAW) {
+      if (type == ToolType.SELECT) {
         updateToolButtonStyles(toolButtons.get(0));
       }
     });
@@ -261,10 +263,6 @@ public class AuthoringScreenImpl implements AppScreen {
   private void wirePaletteSubscriptions() {
     terrainPalette.subscribe(canvas::setSelectedPlaceable);
     terrainPalette.subscribe(controller::setSelectedPlaceable);
-    pigsPalette.subscribe(canvas::setSelectedPlaceable);
-    pigsPalette.subscribe(controller::setSelectedPlaceable);
-    levelItemsPalette.subscribe(canvas::setSelectedPlaceable);
-    levelItemsPalette.subscribe(controller::setSelectedPlaceable);
     customPalette.subscribe(canvas::setSelectedPlaceable);
     customPalette.subscribe(controller::setSelectedPlaceable);
   }
@@ -280,7 +278,7 @@ public class AuthoringScreenImpl implements AppScreen {
     layout.getStyleClass().add("screen-root");
     layout.setPadding(new Insets(d("rootPadding")));
 
-    VBox topSections = new VBox(d("outerSectionSpacing"), buildTopBar(), buildScreenModeRow());
+    VBox topSections = new VBox(d("outerSectionSpacing"), buildTopBar());
     topSections.getStyleClass().add("authoring-top-sections");
 
     VBox bottomSections = new VBox(d("outerSectionSpacing"), paletteModeRow, buildBottomRegion());
@@ -314,11 +312,11 @@ public class AuthoringScreenImpl implements AppScreen {
     double actionWidth = d("topActionButtonWidth");
     double actionHeight = d("topActionButtonHeight");
 
-    Button drawButton = createSizedButton(s("drawButtonText"), actionWidth, actionHeight);
+    Button selectButton = createSizedButton(s("selectButtonText"), actionWidth, actionHeight);
     Button eraseButton = createSizedButton(s("eraseButtonText"), actionWidth, actionHeight);
     Button paintButton = createSizedButton(s("paintButtonText"), actionWidth, actionHeight);
     Button splineButton = createSizedButton(s("splineButtonText"), actionWidth, actionHeight);
-    drawButton.getStyleClass().add("authoring-action-button");
+    selectButton.getStyleClass().add("authoring-action-button");
     eraseButton.getStyleClass().add("authoring-action-button");
     paintButton.getStyleClass().add("authoring-action-button");
     splineButton.getStyleClass().add("authoring-action-button");
@@ -345,12 +343,12 @@ public class AuthoringScreenImpl implements AppScreen {
       canvas.refreshGrid();
     });
 
-    toolButtons = List.of(drawButton, eraseButton, paintButton, splineButton);
-    drawButton.getStyleClass().add("tool-active");
+    toolButtons = List.of(selectButton, eraseButton, paintButton, splineButton);
+    selectButton.getStyleClass().add("tool-active");
 
-    drawButton.setOnAction(event -> {
-      controller.setActiveTool(ToolType.DRAW);
-      updateToolButtonStyles(drawButton);
+    selectButton.setOnAction(event -> {
+      controller.setActiveTool(ToolType.SELECT);
+      updateToolButtonStyles(selectButton);
     });
     eraseButton.setOnAction(event -> {
       controller.setActiveTool(ToolType.ERASE);
@@ -410,9 +408,10 @@ public class AuthoringScreenImpl implements AppScreen {
     loadButton.getStyleClass().add("authoring-action-button");
     saveButton.setOnAction(event -> handleSave(saveButton.getScene().getWindow()));
     loadButton.setOnAction(event -> handleLoad(loadButton.getScene().getWindow()));
+    runButton.setOnAction(event -> handleRun());
 
     HBox toolButtonBox = new HBox(d("topBarSpacing"),
-        drawButton, eraseButton, paintButton, splineButton,
+        selectButton, eraseButton, paintButton, splineButton,
         splineResolutionLabel, splineResolutionSpinner, splineCommitButton,
         zoomOutButton, zoomInButton, fitButton);
     toolButtonBox.setAlignment(Pos.CENTER_LEFT);
@@ -430,18 +429,9 @@ public class AuthoringScreenImpl implements AppScreen {
     return topBar;
   }
 
-  private HBox buildScreenModeRow() {
-    HBox row = new HBox(levelModeButton, vehicleModeButton);
-    row.setAlignment(Pos.CENTER_LEFT);
-    row.getStyleClass().add("authoring-screen-mode-row");
-    return row;
-  }
-
   private HBox buildPaletteModeRow() {
     HBox row = new HBox(
         terrainPaletteButton,
-        pigsPaletteButton,
-        levelItemsPaletteButton,
         customPaletteButton,
         settingsPaletteButton);
     row.setAlignment(Pos.CENTER_LEFT);
@@ -464,24 +454,8 @@ public class AuthoringScreenImpl implements AppScreen {
   // ---------------------------------------------------------------------------
 
   private void wireButtonHandlers() {
-    levelModeButton.setOnAction(event -> {
-      currentMode = AuthoringMode.LEVEL;
-      refreshDisplayedMode();
-    });
-    vehicleModeButton.setOnAction(event -> {
-      currentMode = AuthoringMode.VEHICLE;
-      refreshDisplayedMode();
-    });
     terrainPaletteButton.setOnAction(event -> {
       currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
-      refreshDisplayedMode();
-    });
-    pigsPaletteButton.setOnAction(event -> {
-      currentLevelPaletteMode = LevelPaletteMode.PIGS;
-      refreshDisplayedMode();
-    });
-    levelItemsPaletteButton.setOnAction(event -> {
-      currentLevelPaletteMode = LevelPaletteMode.LEVEL_ITEMS;
       refreshDisplayedMode();
     });
     customPaletteButton.setOnAction(event -> {
@@ -495,23 +469,12 @@ public class AuthoringScreenImpl implements AppScreen {
   }
 
   private void refreshDisplayedMode() {
-    boolean isLevelMode = currentMode == AuthoringMode.LEVEL;
-    paletteModeRow.setVisible(isLevelMode);
-    paletteModeRow.setManaged(isLevelMode);
-
     bottomContentHost.getChildren().clear();
-    Node paletteNode;
-    if (currentMode == AuthoringMode.VEHICLE) {
-      paletteNode = vehiclePalette.getVisualRoot();
-    } else {
-      paletteNode = switch (currentLevelPaletteMode) {
-        case TERRAIN -> terrainPalette.getVisualRoot();
-        case PIGS -> pigsPalette.getVisualRoot();
-        case LEVEL_ITEMS -> levelItemsPalette.getVisualRoot();
-        case CUSTOM -> customPalette.getVisualRoot();
-        case SETTINGS -> levelAttributesPanel.getVisualRoot();
-      };
-    }
+    Node paletteNode = switch (currentLevelPaletteMode) {
+      case TERRAIN -> terrainPalette.getVisualRoot();
+      case CUSTOM -> customPalette.getVisualRoot();
+      case SETTINGS -> levelAttributesPanel.getVisualRoot();
+    };
     StackPane.setAlignment(paletteNode, Pos.TOP_LEFT);
     bottomContentHost.getChildren().add(paletteNode);
   }
@@ -533,6 +496,22 @@ public class AuthoringScreenImpl implements AppScreen {
   private void handleLoad(Window owner) {
     fileChooserService.chooseLoadFile(owner)
         .ifPresent(file -> loadLevelFromPath(file.getAbsolutePath()));
+  }
+
+  /**
+   * Saves the authored world to a preview file and hands control to the vehicle builder, which
+   * in turn opens gameplay. Mirrors the player's level-select → build → play pipeline so the
+   * authoring "Run" flow exercises the exact same gameplay path the player sees.
+   */
+  private void handleRun() {
+    try {
+      controller.saveLevel(RUN_PREVIEW_PATH);
+    } catch (LevelSaveException e) {
+      alertService.showError(PROPS.getString("saveErrorTitle"), e.getMessage());
+      return;
+    }
+    onRunLevel.accept(RUN_PREVIEW_PATH);
+    onOutcome.accept(Outcome.OPEN_VEHICLE_BUILDER);
   }
 
   // ---------------------------------------------------------------------------
