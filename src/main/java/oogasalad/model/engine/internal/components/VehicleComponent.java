@@ -3,13 +3,16 @@ package oogasalad.model.engine.internal.components;
 import java.util.Set;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.EngineError;
+import oogasalad.model.engine.api.Damageable;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.TypedComponent;
 
 /**
  * @author Xuye
+ * @author Paulina Vvedenskaya
  */
-public abstract class VehicleComponent extends DynamicComponent implements TypedComponent {
+public abstract class VehicleComponent extends DynamicComponent
+    implements TypedComponent, Damageable {
   private static final Set<String> WHEEL_DISPLAY_NAMES = Set.of(
       "Wood Wheel", "Metal Wheel");
 
