@@ -2,6 +2,7 @@ package oogasalad.view.authoring.internal;
 
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import oogasalad.controller.authoring.internal.AiLevelGenerationCoordinator;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -13,6 +14,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.model.authoring.internal.GeneratedLevelModel;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
@@ -104,27 +106,49 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
   }
 
   private HBox buildButtonRow() {
+    Consumer<String> activeLoadHandler = currentLoadHandler();
+    FileChooserService activeFileChooserService = currentFileChooserService();
+    AiLevelGenerationCoordinator aiGenerationCoordinator =
+        new AiLevelGenerationCoordinator(new GeneratedLevelModel(), result -> {
+          activeLoadHandler.accept(result.filePath());
+          onOutcome.accept(Outcome.OPEN_AUTHORING);
+        });
+
     Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createNewLevelButton);
     createNewLevelButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_AUTHORING));
 
     Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
     configureActionButton(loadExistingLevelButton);
-    loadExistingLevelButton.setOnAction(event -> fileChooserService
+    loadExistingLevelButton.setOnAction(event -> activeFileChooserService
         .chooseLoadFile(loadExistingLevelButton.getScene().getWindow())
         .ifPresent(file -> {
-          loadLevelHandler.accept(file.getAbsolutePath());
+          activeLoadHandler.accept(file.getAbsolutePath());
           onOutcome.accept(Outcome.OPEN_AUTHORING);
         }));
+
+    Button generateAiLevelButton = new Button(s("generateAiLevelButtonText"));
+    configureActionButton(generateAiLevelButton);
+    generateAiLevelButton.setOnAction(
+        event -> aiGenerationCoordinator.open(generateAiLevelButton.getScene().getWindow()));
 
     HBox buttonRow = new HBox(
         d("buttonRegionSpacing"),
         createNewLevelButton,
-        loadExistingLevelButton);
+        loadExistingLevelButton,
+        generateAiLevelButton);
     buttonRow.setAlignment(Pos.CENTER);
     buttonRow.setPadding(new Insets(d("buttonRegionPadding")));
     buttonRow.getStyleClass().add("authoring-entry-button-row");
     return buttonRow;
+  }
+
+  private Consumer<String> currentLoadHandler() {
+    return loadLevelHandler == null ? consumeLoadHandler() : loadLevelHandler;
+  }
+
+  private FileChooserService currentFileChooserService() {
+    return fileChooserService == null ? consumeFileChooserService() : fileChooserService;
   }
 
   private Button buildBackButton() {
