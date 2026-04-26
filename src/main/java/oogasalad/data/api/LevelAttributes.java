@@ -15,23 +15,15 @@ import java.util.List;
  */
 public class LevelAttributes {
 
-  private GameMetadata gameMetadata = new GameMetadata();
-  private MainCharacter mainCharacter = new MainCharacter();
+  private final GameMetadata gameMetadata = new GameMetadata();
+  private final MainCharacter mainCharacter = new MainCharacter();
 
   public GameMetadata getGameMetadata() {
     return gameMetadata;
   }
 
-  public void setGameMetadata(GameMetadata gameMetadata) {
-    this.gameMetadata = gameMetadata;
-  }
-
   public MainCharacter getMainCharacter() {
     return mainCharacter;
-  }
-
-  public void setMainCharacter(MainCharacter mainCharacter) {
-    this.mainCharacter = mainCharacter;
   }
 
   /**
