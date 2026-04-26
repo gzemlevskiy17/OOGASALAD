@@ -1,18 +1,18 @@
 package oogasalad.model.engine.internal.effects;
 
 import java.util.Objects;
+import oogasalad.model.engine.api.CollisionEffect;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.PickupEffect;
 import oogasalad.model.player.api.ScoreService;
 
 /**
- * A {@link PickupEffect} that awards points to a {@link ScoreService}. Used by both coin and XP
+ * A {@link CollisionEffect} that awards points to a {@link ScoreService}. Used by both coin and XP
  * rewards — distinguished only by the configured {@code amount}. The target is irrelevant to a
  * score award, so it is ignored.
  *
  * @author Paulina Vvedenskaya
  */
-public final class ScoreEffect implements PickupEffect {
+public final class ScoreEffect implements CollisionEffect {
 
   private final ScoreService score;
   private final int amount;
