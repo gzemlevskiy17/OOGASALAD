@@ -1,0 +1,61 @@
+{
+  "gameId": "piggies",
+  "primaryComponentId": "chassis",
+  "components": [
+    {
+      "id": "chassis",
+      "spriteUrl": "assets/bp_chassis.png",
+      "mass": 5
+    },
+    {
+      "id": "wheel",
+      "spriteUrl": "assets/bp_wheel.png",
+      "mass": 2,
+      "buttons": [
+        {
+          "name": "drive forward",
+          "direction": {
+            "x": 1,
+            "y": 0
+          }
+        }
+      ]
+    }
+  ],
+  "staticComponents": [
+    {
+      "id": "heart",
+      "spriteUrl": "assets/bp_heart.png",
+      "mass": 0,
+      "onCollisionAction": {
+        "type": "heal",
+        "amount": 25
+      }
+    },
+    {
+      "id": "bomb",
+      "spriteUrl": "assets/bp_bomb.png",
+      "mass": 0,
+      "onCollisionAction": {
+        "type": "damage",
+        "amount": 25
+      }
+    },
+    {
+      "id": "finish_line",
+      "spriteUrl": "assets/bp_goalLine.png",
+      "mass": 0,
+      "onCollisionAction": {
+        "type": "finish"
+      }
+    }
+  ],
+  "terrainTypes": [
+    {
+      "id": "grass",
+      "spriteUrl": "assets/terrain/grass.png",
+      "visualColor": "#4A7B2A",
+      "friction": 0.6
+    }
+  ]
+}
