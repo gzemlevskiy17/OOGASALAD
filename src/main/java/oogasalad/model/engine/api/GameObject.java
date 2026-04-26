@@ -4,7 +4,6 @@ import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.StaticState;
 import oogasalad.view.core.api.Renderable;
 
-//TODO: is the interface needed?
 //TODO: more detailed comments
 
 /**
@@ -23,8 +22,11 @@ public interface GameObject extends Renderable {
   void setRestitution(double restitution);
 
   double getFriction();
+
   boolean isActive();
+
   boolean isAffectedByGravity();
+
   boolean isTrigger();
 
   default int getCollisionCategoryBits() {
@@ -40,5 +42,6 @@ public interface GameObject extends Renderable {
 
   void addForce(Vector force);
 
-  default void updatePolygon() {}
+  default void updatePolygon() {
+  }
 }
