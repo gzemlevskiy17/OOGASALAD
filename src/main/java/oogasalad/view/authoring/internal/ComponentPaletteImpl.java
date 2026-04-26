@@ -1,5 +1,7 @@
 package oogasalad.view.authoring.internal;
 
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +15,7 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
@@ -146,12 +149,54 @@ public class ComponentPaletteImpl implements ComponentPallete {
     gc.setFill(Color.web(entry.color()));
     gc.fillRect(sampleFillInset, sampleFillInset,
         sampleSize - sampleFillInsetDouble, sampleSize - sampleFillInsetDouble);
+    Image sprite = loadImage(entry.sprite());
+    if (sprite != null) {
+      drawCenteredSprite(gc, sprite);
+    }
     if (selected) {
       gc.setStroke(selectedStroke);
       gc.setLineWidth(selectedStrokeWidth);
       gc.strokeRect(sampleBorderInset, sampleBorderInset,
           sampleSize - sampleBorderInsetDouble, sampleSize - sampleBorderInsetDouble);
     }
+  }
+
+  private Image loadImage(String path) {
+    if (path == null || path.isBlank()) {
+      return null;
+    }
+    File file = new File(path);
+    try {
+      Image image = file.isFile()
+          ? new Image(file.toURI().toString(), false)
+          : loadClasspathImage(path);
+      return image == null || image.isError() ? null : image;
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  private Image loadClasspathImage(String path) {
+    String normalized = path.startsWith("/") ? path.substring(1) : path;
+    URL resource = getClass().getClassLoader().getResource(normalized);
+    if (resource == null) {
+      resource = getClass().getResource(path);
+    }
+    return resource == null ? null : new Image(resource.toExternalForm(), false);
+  }
+
+  private void drawCenteredSprite(GraphicsContext gc, Image sprite) {
+    if (sprite.getWidth() <= 0 || sprite.getHeight() <= 0) {
+      return;
+    }
+    double maxWidth = sampleSize - sampleFillInsetDouble;
+    double maxHeight = sampleSize - sampleFillInsetDouble;
+    double scale = Math.min(maxWidth / sprite.getWidth(), maxHeight / sprite.getHeight());
+    double width = sprite.getWidth() * scale;
+    double height = sprite.getHeight() * scale;
+    double x = (sampleSize - width) / 2.0;
+    double y = (sampleSize - height) / 2.0;
+    gc.drawImage(sprite, x, y, width, height);
   }
 
   private double d(String key) {

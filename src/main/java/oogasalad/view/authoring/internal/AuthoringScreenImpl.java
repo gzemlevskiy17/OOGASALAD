@@ -66,7 +66,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     TERRAIN,
     PIGS,
     LEVEL_ITEMS,
-    CUSTOM,
     SETTINGS
   }
 
@@ -78,7 +77,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private ComponentPaletteImpl terrainPalette;
   private ComponentPaletteImpl pigsPalette;
   private ComponentPaletteImpl levelItemsPalette;
-  private ComponentPaletteImpl customPalette;
   private AuthoringAlertService alertService;
   private FileChooserService fileChooserService;
   private HBox paletteModeRow;
@@ -88,7 +86,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private Button terrainPaletteButton;
   private Button pigsPaletteButton;
   private Button levelItemsPaletteButton;
-  private Button customPaletteButton;
   private Button settingsPaletteButton;
   private HBox levelPaletteTabs;
   private Label selectedItemsLabel;
@@ -232,16 +229,13 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     terrainPalette = new ComponentPaletteImpl();
     pigsPalette = new ComponentPaletteImpl();
     levelItemsPalette = new ComponentPaletteImpl();
-    customPalette = new ComponentPaletteImpl();
     subscribePalette(terrainPalette);
     subscribePalette(pigsPalette);
     subscribePalette(levelItemsPalette);
-    subscribePalette(customPalette);
 
     terrainPaletteButton = createTabButton(s("terrainButtonText"));
     pigsPaletteButton = createTabButton(s("pigsButtonText"));
     levelItemsPaletteButton = createTabButton(s("levelItemsButtonText"));
-    customPaletteButton = createTabButton(s("customButtonText"));
     settingsPaletteButton = createTabButton(s("settingsButtonText"));
     levelPaletteTabs = buildLevelPaletteTabs();
     paletteModeRow = buildPaletteModeRow();
@@ -348,10 +342,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     });
     levelItemsPaletteButton.setOnAction(event -> {
       currentLevelPaletteMode = LevelPaletteMode.LEVEL_ITEMS;
-      refreshDisplayedMode();
-    });
-    customPaletteButton.setOnAction(event -> {
-      currentLevelPaletteMode = LevelPaletteMode.CUSTOM;
       refreshDisplayedMode();
     });
     settingsPaletteButton.setOnAction(event -> {
@@ -481,7 +471,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     HBox tabs = new HBox(
         terrainPaletteButton,
         levelItemsPaletteButton,
-        customPaletteButton,
         settingsPaletteButton);
     tabs.setAlignment(Pos.CENTER_LEFT);
     return tabs;
@@ -495,7 +484,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
       vehiclePalette.setAvailableComponentIds(List.of());
       terrainPalette.setItems(List.of());
       levelItemsPalette.setItems(List.of());
-      customPalette.setItems(List.of());
       return;
     }
     vehiclePalette.setAvailableComponentIds(gameConfig.components().stream()
@@ -507,7 +495,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     levelItemsPalette.setItems(gameConfig.staticComponents().stream()
         .map(this::staticEntry)
         .toList());
-    customPalette.setItems(List.of());
   }
 
   private ComponentPaletteImpl.PaletteEntry terrainEntry(TerrainInfo info) {
@@ -572,7 +559,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
         case TERRAIN -> terrainPalette.getVisualRoot();
         case PIGS -> pigsPalette.getVisualRoot();
         case LEVEL_ITEMS -> levelItemsPalette.getVisualRoot();
-        case CUSTOM -> customPalette.getVisualRoot();
         case SETTINGS -> levelAttributesPanel.getVisualRoot();
       };
     }

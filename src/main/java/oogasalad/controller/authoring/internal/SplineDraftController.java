@@ -31,10 +31,7 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
  * <p>All knot and baseline positions are stored in grid-cell units to match the rest of the
  * authoring pipeline; the {@link oogasalad.data.internal.LevelSaverImpl} scale factor converts to
  * world pixels on save. The baseline Y is anchored at the world bottom (the last grid row) so the
- * filled polygon represents actual ground extending down from the drawn curve, and the spawn line
- * from {@code AuthoringCanvas.properties} becomes the <em>upper</em> bound for knot placement:
- * designers can only drop knots at or below the spawn line, so every committed spline sits
- * underneath the vehicle instead of floating above it.
+ * filled polygon represents actual ground extending down from the drawn curve.
  *
  * @author Bad Piggies team
  * @author Paulina Vvedenskaya
@@ -57,7 +54,6 @@ public class SplineDraftController {
   private final World world;
   private final AuthoringCanvas canvas;
   private final double baselineYCells;
-  private final double spawnYCells;
 
   private final List<Vector> draftKnots = new ArrayList<>();
   private Vector cursorHint;
@@ -69,8 +65,6 @@ public class SplineDraftController {
   public SplineDraftController(World world, AuthoringCanvas canvas) {
     this.world = world;
     this.canvas = canvas;
-    double spawnYWorld = Double.parseDouble(CANVAS_PROPS.getString("spawnY"));
-    this.spawnYCells = spawnYWorld / canvas.getCellSize();
     // Baseline at the bottom of the grid: the filled spline polygon represents ground extending
     // from the authored curve all the way down to the world floor, and the ParabolaSpline
     // invariant "knot.y < baselineY" is trivially satisfied for any knot on-canvas.
@@ -84,12 +78,6 @@ public class SplineDraftController {
 
   /** Adds a knot at the given grid-cell coordinate. */
   public void addKnot(double col, double row) {
-    if (row < spawnYCells) {
-      // Refuse knots above the spawn guide: terrain is modelled as ground under the vehicle, so
-      // knots that sit higher on-screen than the spawn line would produce floating terrain above
-      // the car. Designers who need elevated platforms can still use block terrain for those.
-      return;
-    }
     if (row >= baselineYCells) {
       // Safety net: knots must also be strictly above the baseline or ParabolaSpline would reject
       // them. In practice this only matters if a click lands at or below the very last grid row.

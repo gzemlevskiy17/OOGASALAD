@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for {@link SplineDraftController}.
  *
- * <p>Focus: knot-placement rules (rejects knots above spawn or below the grid baseline),
- * commit/cancel semantics, resolution clamping, and the overlay contract with the canvas
+ * <p>Focus: knot-placement rules (rejects knots at or below the grid baseline),
+ * commit/cancel semantics and the overlay contract with the canvas
  * (redraws happen after every mutation).
  *
  * <p>{@link SplineDraftController} renders draft overlays using JavaFX nodes. We bootstrap the
@@ -70,18 +70,16 @@ class SplineDraftControllerTest {
 
   @Test
   void addKnot_belowSpawnGuide_isAccepted() {
-    // Spawn is at row 15 in grid cells (spawnY=300, cellSize=20). Any row >= 15 and < 110 is
-    // valid ground.
     controller.addKnot(10.0, 20.0);
 
     assertEquals(1, controller.draftSize());
   }
 
   @Test
-  void addKnot_aboveSpawnGuide_isRejected() {
+  void addKnot_aboveSpawnGuide_isAccepted() {
     controller.addKnot(10.0, 5.0);
 
-    assertEquals(0, controller.draftSize());
+    assertEquals(1, controller.draftSize());
   }
 
   @Test

@@ -13,6 +13,7 @@ import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 
@@ -78,7 +79,16 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   @Override
   public void saveLevel(String fileName) {
+    commitSplineDraftBeforeSave();
     persistence.save(fileName);
+  }
+
+  private void commitSplineDraftBeforeSave() {
+    TerrainSpline committed = splineDraft.commit();
+    if (committed != null) {
+      history.record(CanvasAction.place(committed));
+      canvas.refreshGrid();
+    }
   }
 
   @Override
