@@ -3,9 +3,33 @@ package oogasalad.model.engine;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.RigidBody;
 
+/**
+ * Utility methods for impulse-based collision response.
+ *
+ * <p><strong>Purpose:</strong> Centralizes normal/friction impulse calculation, warm starting,
+ * and positional correction so collision solvers can apply consistent rigid-body response.
+ *
+ * <p><strong>Assumptions:</strong> Input collisions provide a non-empty manifold and a valid
+ * penetration direction. Rigid body states are mutable and belong to the same simulation step.
+ *
+ * <p><strong>Dependencies:</strong> Uses {@link Collision}, {@link DynamicState},
+ * {@link StaticState}, and {@link RigidBody} state accessors and mutators.
+ *
+ * <p><strong>Example:</strong>
+ *
+ * <pre>{@code
+ * ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
+ *     collision, referenceBody, incidentBody, incidentBody.getDynamicState(), referenceState);
+ * ImpulseSolverUtilities.applyPositionalCorrection(collision, referenceBody, incidentBody);
+ * }</pre>
+ *
+ * @author Georgiy Zemlevskiy
+ */
 public class ImpulseSolverUtilities {
 
-  //TODO: comment
+  /**
+   * Lower bound used to treat tiny denominators or tangential speeds as zero.
+   */
   private static final double SOLVER_EPSILON = 1e-9;
   /**
    * Below this approach-speed threshold, contacts are treated as perfectly inelastic (e=0).
@@ -15,16 +39,6 @@ public class ImpulseSolverUtilities {
    * or collision velocity.
    */
   private static final double RESTITUTION_APPROACH_THRESHOLD = 40.0;
-
-  /**
-   * Computes the scalar impulse magnitude for a single contact. Uses the formula (-1+e) * v_rel * n
-   * / (1/m_reference + 1/m_incident + (r_reference x n)^2/I_reference + (r_incident x
-   * n)^2/I_incident). e is the average coefficient of restitution of the two objects.
-   *
-   * @param contactPointPhysics contact data with relative velocity and offsets
-   * @param referenceUnitNormal collision normal used for the impulse calculation
-   * @return impulse magnitude along the collision normal
-   */
 
   /**
    * Computes the contact-relative positions from each object's center of mass.
@@ -43,6 +57,15 @@ public class ImpulseSolverUtilities {
     contactPointPhysics.positionFromReference = referencePoint;
   }
 
+  /**
+   * Computes effective-mass denominator for an impulse applied along the provided direction.
+   *
+   * @param referenceObject     reference rigid body
+   * @param incidentObject      incident rigid body
+   * @param contactPointPhysics per-contact geometric data
+   * @param unitDirection       impulse direction (normal or tangent)
+   * @return scalar denominator used to scale impulse magnitude
+   */
   private static double computeImpulseDenominator(RigidBody referenceObject,
       RigidBody incidentObject, ContactPointPhysics contactPointPhysics, Vector unitDirection) {
     double incidentPointMomentum = contactPointPhysics.positionFromIncident.crossWithVector(
@@ -54,28 +77,41 @@ public class ImpulseSolverUtilities {
         + Math.pow(referencePointMomentum, 2) * referenceObject.getInverseMomentOfInertia();
   }
 
+  /**
+   * Computes scalar normal impulse for a single contact using restitution and effective mass.
+   */
   private static double computeImpulse(RigidBody referenceObject, RigidBody incidentObject,
       ContactPointPhysics contactPointPhysics,
       Vector referenceUnitNormal) {
     double restitution = (incidentObject.getRestitution() + referenceObject.getRestitution()) / 2;
-    double approach = -contactPointPhysics.relativeVelocity.dot(referenceUnitNormal);
-    if (approach < RESTITUTION_APPROACH_THRESHOLD) {
+    double approachSpeed = -contactPointPhysics.relativeVelocity.dot(referenceUnitNormal);
+    if (approachSpeed < RESTITUTION_APPROACH_THRESHOLD) {
       restitution = 0;
     }
-    double velocity = (1 + restitution) * approach;
-    if (velocity <= 0) {
+    double normalVelocityChange = (1 + restitution) * approachSpeed;
+    if (normalVelocityChange <= 0) {
       return 0;
     }
 
-    double inverseMass = computeImpulseDenominator(referenceObject, incidentObject,
+    double effectiveMassDenominator = computeImpulseDenominator(referenceObject, incidentObject,
         contactPointPhysics, referenceUnitNormal);
-    if (inverseMass <= SOLVER_EPSILON) {
+    if (effectiveMassDenominator <= SOLVER_EPSILON) {
       return 0;
     }
 
-    return velocity / inverseMass;
+    return normalVelocityChange / effectiveMassDenominator;
   }
 
+  /**
+   * Computes Coulomb friction impulse magnitude clamped by normal impulse.
+   *
+   * @param referenceObject     reference rigid body
+   * @param incidentObject      incident rigid body
+   * @param contactPointPhysics contact data with current relative velocity
+   * @param referenceUnitNormal collision normal direction
+   * @param normalImpulse       normal impulse magnitude already applied
+   * @return signed friction impulse magnitude for the tangent direction
+   */
   private static double computeFrictionImpulse(RigidBody referenceObject, RigidBody incidentObject,
       ContactPointPhysics contactPointPhysics, Vector referenceUnitNormal, double normalImpulse) {
     Vector tangent = contactPointPhysics.relativeVelocity.subtract(referenceUnitNormal.multiply(
@@ -86,13 +122,14 @@ public class ImpulseSolverUtilities {
     }
 
     Vector unitTangent = tangent.multiply(1.0 / tangentMagnitude);
-    double inverseMass = computeImpulseDenominator(referenceObject, incidentObject,
+    double effectiveMassDenominator = computeImpulseDenominator(referenceObject, incidentObject,
         contactPointPhysics, unitTangent);
-    if (inverseMass <= SOLVER_EPSILON) {
+    if (effectiveMassDenominator <= SOLVER_EPSILON) {
       return 0.0;
     }
 
-    double tangentImpulse = -contactPointPhysics.relativeVelocity.dot(unitTangent) / inverseMass;
+    double tangentImpulse =
+        -contactPointPhysics.relativeVelocity.dot(unitTangent) / effectiveMassDenominator;
     double friction = Math.sqrt(referenceObject.getFriction() * incidentObject.getFriction());
     double maximumFriction = normalImpulse * friction;
     return Math.max(-maximumFriction, Math.min(tangentImpulse, maximumFriction));
@@ -123,6 +160,16 @@ public class ImpulseSolverUtilities {
     return incidentPointVelocity.subtract(referencePointVelocity);
   }
 
+  /**
+   * Applies an impulse at the contact point to both bodies' linear and angular velocities.
+   *
+   * @param referenceObject       reference rigid body
+   * @param incidentObject        incident rigid body
+   * @param referenceDynamicState mutable dynamic state for reference body
+   * @param incidentDynamicState  mutable dynamic state for incident body
+   * @param contactPointPhysics   geometric leverage data for angular updates
+   * @param impulse               world-space impulse vector to apply
+   */
   private static void applyImpulse(RigidBody referenceObject, RigidBody incidentObject,
       DynamicState referenceDynamicState, DynamicState incidentDynamicState,
       ContactPointPhysics contactPointPhysics, Vector impulse) {
@@ -139,6 +186,13 @@ public class ImpulseSolverUtilities {
         * incidentObject.getInverseMomentOfInertia());
   }
 
+  /**
+   * Checks whether cached normal impulse data can be reused for warm starting.
+   *
+   * @param collision           collision that may contain cached impulses from a prior step
+   * @param referenceUnitNormal current reference normal used this step
+   * @return true when cache exists, has compatible direction, and has non-zero normal impulse
+   */
   private static boolean canWarmStart(Collision collision, Vector referenceUnitNormal) {
     Vector cachedNormal = collision.getCachedNormal();
     return cachedNormal != null
@@ -146,11 +200,23 @@ public class ImpulseSolverUtilities {
         && collision.getCachedNormalImpulse() != 0.0;
   }
 
+  /**
+   * Applies the cached normal impulse at each contact before solving fresh impulses.
+   *
+   * @param collision             collision containing cached impulse and manifold
+   * @param referenceObject       rigid body used as reference side
+   * @param incidentObject        rigid body used as incident side
+   * @param referenceDynamicState mutable dynamic state for the reference side
+   * @param incidentDynamicState  mutable dynamic state for the incident side
+   * @param incidentStaticState   static transform state for the incident side
+   * @param referenceStaticState  static transform state for the reference side
+   * @param referenceUnitNormal   normal direction used for this solve pass
+   */
   private static void applyCachedImpulse(Collision collision, RigidBody referenceObject,
       RigidBody incidentObject, DynamicState referenceDynamicState,
-      DynamicState incidentDynamicState,
-      StaticState incidentStaticState, StaticState referenceStaticState,
-      Vector referenceUnitNormal) {
+      DynamicState incidentDynamicState, StaticState incidentStaticState,
+      StaticState referenceStaticState, Vector referenceUnitNormal) {
+
     if (!canWarmStart(collision, referenceUnitNormal)) {
       return;
     }
@@ -168,6 +234,91 @@ public class ImpulseSolverUtilities {
       applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
           contactPointPhysics, cachedImpulse);
     }
+  }
+
+  /**
+   * Validates that manifold and normal data are usable by impulse resolution.
+   *
+   * @param collision           collision to validate
+   * @param referenceUnitNormal normal direction for response
+   * @return true when required data is missing or degenerate
+   */
+  private static boolean hasInvalidCollisionData(Collision collision, Vector referenceUnitNormal) {
+    return referenceUnitNormal.magnitude() <= SOLVER_EPSILON
+        || collision.getCollisionManifold() == null
+        || collision.getCollisionManifold().isEmpty();
+  }
+
+  /**
+   * Creates per-contact physics data and populates relative positions for both bodies.
+   *
+   * @param contactPoint         manifold point being processed
+   * @param collision            collision that owns the manifold
+   * @param incidentStaticState  static state of the incident object
+   * @param referenceStaticState static state of the reference object
+   * @return initialized contact physics container for this point
+   */
+  private static ContactPointPhysics createContactPointPhysics(Vector contactPoint,
+      Collision collision, StaticState incidentStaticState, StaticState referenceStaticState) {
+    ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
+        collision.getCollisionManifold().get(contactPoint));
+    setRelativePositions(contactPointPhysics, incidentStaticState, referenceStaticState);
+    return contactPointPhysics;
+  }
+
+  /**
+   * Computes and applies the normal impulse for a single contact point.
+   *
+   * @param contactPointPhysics   mutable per-contact physics values
+   * @param referenceObject       reference rigid body
+   * @param incidentObject        incident rigid body
+   * @param referenceDynamicState mutable reference-side dynamic state
+   * @param incidentDynamicState  mutable incident-side dynamic state
+   * @param referenceUnitNormal   reference normal direction
+   * @return scalar normal impulse applied at this contact
+   */
+  private static double applyNormalImpulseAtContact(ContactPointPhysics contactPointPhysics,
+      RigidBody referenceObject, RigidBody incidentObject, DynamicState referenceDynamicState,
+      DynamicState incidentDynamicState, Vector referenceUnitNormal) {
+    contactPointPhysics.relativeVelocity = computeRelativeVelocity(contactPointPhysics,
+        incidentDynamicState, referenceDynamicState);
+    contactPointPhysics.impulse = computeImpulse(referenceObject, incidentObject,
+        contactPointPhysics, referenceUnitNormal);
+
+    Vector normalImpulse = referenceUnitNormal.multiply(contactPointPhysics.impulse);
+    applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
+        contactPointPhysics, normalImpulse);
+    return contactPointPhysics.impulse;
+  }
+
+  /**
+   * Computes and applies a clamped Coulomb friction impulse for one contact.
+   *
+   * @param contactPointPhysics       mutable per-contact physics values
+   * @param referenceObject           reference rigid body
+   * @param incidentObject            incident rigid body
+   * @param referenceDynamicState     mutable reference-side dynamic state
+   * @param incidentDynamicState      mutable incident-side dynamic state
+   * @param referenceUnitNormal       reference normal direction
+   * @param currentTotalNormalImpulse normal impulse magnitude used as friction limit
+   * @return scalar tangential impulse applied at this contact
+   */
+  private static double applyFrictionImpulseAtContact(ContactPointPhysics contactPointPhysics,
+      RigidBody referenceObject, RigidBody incidentObject, DynamicState referenceDynamicState,
+      DynamicState incidentDynamicState, Vector referenceUnitNormal,
+      double currentTotalNormalImpulse) {
+
+    contactPointPhysics.relativeVelocity = computeRelativeVelocity(contactPointPhysics,
+        incidentDynamicState, referenceDynamicState);
+    Vector tangent = contactPointPhysics.relativeVelocity.subtract(referenceUnitNormal.multiply(
+        contactPointPhysics.relativeVelocity.dot(referenceUnitNormal))).normalize();
+
+    double frictionImpulseMagnitude = computeFrictionImpulse(referenceObject, incidentObject,
+        contactPointPhysics, referenceUnitNormal, currentTotalNormalImpulse);
+
+    applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
+        contactPointPhysics, tangent.multiply(frictionImpulseMagnitude));
+    return frictionImpulseMagnitude;
   }
 
   /**
@@ -223,51 +374,54 @@ public class ImpulseSolverUtilities {
     }
   }
 
+  /**
+   * Resolves normal and friction impulses for all contacts in the manifold.
+   *
+   * <p><strong>Assumptions:</strong> The collision manifold and penetration normal were produced
+   * by the detector for this frame. Passed dynamic states are mutable snapshots for the current
+   * integration step.
+   *
+   * @param collision             collision data containing penetration and manifold points
+   * @param referenceObject       reference rigid body for impulse sign convention
+   * @param incidentObject        incident rigid body
+   * @param incidentDynamicState  incident-side dynamic state to mutate
+   * @param referenceDynamicState reference-side dynamic state to mutate
+   */
   public static void resolveImpulseAtContactsHelper(Collision collision, RigidBody referenceObject,
-      RigidBody incidentObject, StaticState incidentStaticState,
-      StaticState referenceStaticState, DynamicState incidentDynamicState,
+      RigidBody incidentObject, DynamicState incidentDynamicState,
       DynamicState referenceDynamicState) {
     Vector referenceUnitNormal = collision.getPenetration().normalize();
-    if (referenceUnitNormal.magnitude() <= SOLVER_EPSILON
-        || collision.getCollisionManifold() == null
-        || collision.getCollisionManifold().isEmpty()) {
+    StaticState referenceStaticState = referenceObject.getStaticState();
+    StaticState incidentStaticState = incidentObject.getStaticState();
+    if (hasInvalidCollisionData(collision, referenceUnitNormal)) {
       return;
     }
 
     applyCachedImpulse(collision, referenceObject, incidentObject, referenceDynamicState,
         incidentDynamicState, incidentStaticState, referenceStaticState, referenceUnitNormal);
 
+    double cachedPerContact;
+    if (canWarmStart(collision, referenceUnitNormal)) {
+      cachedPerContact = collision.getCachedNormalImpulse()
+          / collision.getCollisionManifold().size();
+    } else {
+      cachedPerContact = 0.0;
+    }
+
     double normalImpulseSum = collision.getCachedNormalImpulse();
     double frictionImpulseSum = 0.0;
     for (Vector contactPoint : collision.getCollisionManifold().keySet()) {
-      //TODO: should these method behaviors be consistent
-      ContactPointPhysics contactPointPhysics = new ContactPointPhysics(contactPoint,
-          collision.getCollisionManifold().get(contactPoint));
-      ImpulseSolverUtilities.setRelativePositions(contactPointPhysics, incidentStaticState,
-          referenceStaticState);
+      ContactPointPhysics contactPointPhysics = createContactPointPhysics(contactPoint, collision,
+          incidentStaticState, referenceStaticState);
 
-      contactPointPhysics.relativeVelocity = ImpulseSolverUtilities.computeRelativeVelocity(
-          contactPointPhysics,
-          incidentDynamicState, referenceDynamicState);
-      contactPointPhysics.impulse = computeImpulse(referenceObject, incidentObject,
-          contactPointPhysics,
-          referenceUnitNormal);
+      double normalImpulse = applyNormalImpulseAtContact(contactPointPhysics, referenceObject,
+          incidentObject, referenceDynamicState, incidentDynamicState, referenceUnitNormal);
+      normalImpulseSum += normalImpulse;
 
-      Vector normalImpulse = referenceUnitNormal.multiply(contactPointPhysics.impulse);
-      applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
-          contactPointPhysics, normalImpulse);
-      normalImpulseSum += contactPointPhysics.impulse;
-
-      contactPointPhysics.relativeVelocity = ImpulseSolverUtilities.computeRelativeVelocity(
-          contactPointPhysics,
-          incidentDynamicState, referenceDynamicState);
-      Vector tangent = contactPointPhysics.relativeVelocity.subtract(referenceUnitNormal.multiply(
-          contactPointPhysics.relativeVelocity.dot(referenceUnitNormal))).normalize();
-      double frictionImpulseMagnitude = computeFrictionImpulse(referenceObject, incidentObject,
-          contactPointPhysics, referenceUnitNormal, contactPointPhysics.impulse);
-      applyImpulse(referenceObject, incidentObject, referenceDynamicState, incidentDynamicState,
-          contactPointPhysics, tangent.multiply(frictionImpulseMagnitude));
-      frictionImpulseSum += frictionImpulseMagnitude;
+      double currentTotalNormalImpulse = Math.max(0.0, cachedPerContact + normalImpulse);
+      frictionImpulseSum += applyFrictionImpulseAtContact(contactPointPhysics, referenceObject,
+          incidentObject, referenceDynamicState, incidentDynamicState, referenceUnitNormal,
+          currentTotalNormalImpulse);
     }
     collision.setAppliedNormalImpulse(Math.max(0.0, normalImpulseSum));
     collision.setAppliedFrictionImpulse(frictionImpulseSum);
