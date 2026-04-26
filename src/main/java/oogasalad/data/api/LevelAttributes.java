@@ -4,109 +4,139 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Mutable model for level-wide settings editable in the authoring environment.
+ * Mutable in-memory representation of a level's metadata + main-character settings, mirroring
+ * the {@code gameMetadata} and {@code mainCharacter} sections of the level.json schema. Map
+ * placements (knots, spawn point, objects) live in the {@code World} at runtime, not here.
  *
- * Distinct from GameConfig (read-only, game-player-facing) — this is the
- * editor's in-memory representation of level metadata that gets serialized
- * into the level JSON alongside terrain and objects.
+ * <p>Distinct from {@link Settings} (key/value bag for player input bindings) and from
+ * {@link GameConfig} (the immutable per-game catalog).
  *
- * @author Emilio Garcia
+ * @author Paulina Vvedenskaya
  */
 public class LevelAttributes {
 
-  private String levelName = "Untitled Level";
-  private double gravity = -9.8;
-  private String backgroundImage = "";
-  private int maxSelectableVehicleItems = 5;
-  private List<String> allowedVehicleComponents = new ArrayList<>();
+  private GameMetadata gameMetadata = new GameMetadata();
+  private MainCharacter mainCharacter = new MainCharacter();
 
-  /**
-   * Returns the current level name.
-   *
-   * @return editable level name
-   * @author Emilio Garcia
-   */
-  public String getLevelName() { return levelName; }
+  public GameMetadata getGameMetadata() {
+    return gameMetadata;
+  }
 
-  /**
-   * Updates the current level name.
-   *
-   * @param levelName new level name
-   * @author Emilio Garcia
-   */
-  public void setLevelName(String levelName) { this.levelName = levelName; }
+  public void setGameMetadata(GameMetadata gameMetadata) {
+    this.gameMetadata = gameMetadata;
+  }
 
-  /**
-   * Returns the configured gravity value.
-   *
-   * @return level gravity
-   * @author Emilio Garcia
-   */
-  public double getGravity() { return gravity; }
+  public MainCharacter getMainCharacter() {
+    return mainCharacter;
+  }
 
-  /**
-   * Updates the configured gravity value.
-   *
-   * @param gravity new gravity
-   * @author Emilio Garcia
-   */
-  public void setGravity(double gravity) { this.gravity = gravity; }
-
-  /**
-   * Returns the background image path.
-   *
-   * @return background image path
-   * @author Emilio Garcia
-   */
-  public String getBackgroundImage() { return backgroundImage; }
-
-  /**
-   * Updates the background image path.
-   *
-   * @param backgroundImage new background image path
-   * @author Emilio Garcia
-   */
-  public void setBackgroundImage(String backgroundImage) { this.backgroundImage = backgroundImage; }
-
-  /**
-   * Returns the maximum number of vehicle items that may be selected for this level.
-   *
-   * @return selection cap for vehicle items
-   * @author Emilio Garcia
-   */
-  public int getMaxSelectableVehicleItems() {
-    return maxSelectableVehicleItems;
+  public void setMainCharacter(MainCharacter mainCharacter) {
+    this.mainCharacter = mainCharacter;
   }
 
   /**
-   * Updates the maximum number of vehicle items that may be selected for this level.
-   *
-   * @param maxSelectableVehicleItems new vehicle-item selection cap
-   * @author Emilio Garcia
+   * {@code gameMetadata} section: per-level metadata + physics constants.
    */
-  public void setMaxSelectableVehicleItems(int maxSelectableVehicleItems) {
-    this.maxSelectableVehicleItems = maxSelectableVehicleItems;
+  public static class GameMetadata {
+
+    private String levelName = "Untitled Level";
+    private String gameType = "";
+    private double screenWidth = 1920;
+    private double screenHeight = 1080;
+    private double gravity = -9.8;
+    private double drag = 0.02;
+
+    public String getLevelName() {
+      return levelName;
+    }
+
+    public void setLevelName(String levelName) {
+      this.levelName = levelName;
+    }
+
+    public String getGameType() {
+      return gameType;
+    }
+
+    public void setGameType(String gameType) {
+      this.gameType = gameType;
+    }
+
+    public double getScreenWidth() {
+      return screenWidth;
+    }
+
+    public void setScreenWidth(double screenWidth) {
+      this.screenWidth = screenWidth;
+    }
+
+    public double getScreenHeight() {
+      return screenHeight;
+    }
+
+    public void setScreenHeight(double screenHeight) {
+      this.screenHeight = screenHeight;
+    }
+
+    public double getGravity() {
+      return gravity;
+    }
+
+    public void setGravity(double gravity) {
+      this.gravity = gravity;
+    }
+
+    public double getDrag() {
+      return drag;
+    }
+
+    public void setDrag(double drag) {
+      this.drag = drag;
+    }
   }
 
   /**
-   * Returns the stable IDs of vehicle components available in this level.
-   *
-   * @return copy of allowed vehicle component IDs
-   * @author Emilio Garcia
+   * {@code mainCharacter} section: vehicle-builder allowlist and chassis HP.
    */
-  public List<String> getAllowedVehicleComponents() {
-    return List.copyOf(allowedVehicleComponents);
-  }
+  public static class MainCharacter {
 
-  /**
-   * Replaces the allowed vehicle component IDs for this level.
-   *
-   * @param allowedVehicleComponents new stable component IDs to persist
-   * @author Emilio Garcia
-   */
-  public void setAllowedVehicleComponents(List<String> allowedVehicleComponents) {
-    this.allowedVehicleComponents = allowedVehicleComponents == null
-        ? new ArrayList<>()
-        : new ArrayList<>(allowedVehicleComponents);
+    private double gridSize = 60;
+    private List<String> elementsAllowed = new ArrayList<>();
+    private int maxSelectable = 5;
+    private double maxHP = 100;
+
+    public double getGridSize() {
+      return gridSize;
+    }
+
+    public void setGridSize(double gridSize) {
+      this.gridSize = gridSize;
+    }
+
+    public List<String> getElementsAllowed() {
+      return List.copyOf(elementsAllowed);
+    }
+
+    public void setElementsAllowed(List<String> elementsAllowed) {
+      this.elementsAllowed = elementsAllowed == null
+          ? new ArrayList<>()
+          : new ArrayList<>(elementsAllowed);
+    }
+
+    public int getMaxSelectable() {
+      return maxSelectable;
+    }
+
+    public void setMaxSelectable(int maxSelectable) {
+      this.maxSelectable = maxSelectable;
+    }
+
+    public double getMaxHP() {
+      return maxHP;
+    }
+
+    public void setMaxHP(double maxHP) {
+      this.maxHP = maxHP;
+    }
   }
 }
