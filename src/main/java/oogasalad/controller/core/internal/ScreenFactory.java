@@ -11,8 +11,8 @@ import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.LevelId;
-import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelProgression;
 import oogasalad.data.internal.LevelScanner;
@@ -32,6 +32,7 @@ import oogasalad.view.accounts.internal.ProfileScreen;
 import oogasalad.view.accounts.internal.UpdateProfileScreen;
 import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
+import oogasalad.view.authoring.internal.GameAuthoringScreenImpl;
 import oogasalad.view.core.internal.GameMenuScreen;
 import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
@@ -47,6 +48,7 @@ public class ScreenFactory {
 
   public static final String MENU_SCREEN_KEY = "MENU";
   public static final String AUTHORING_ENTRY_SCREEN_KEY = "AUTHORING_ENTRY";
+  public static final String GAME_AUTHORING_SCREEN_KEY = "GAME_AUTHORING_SCREEN";
   public static final String PLAYER_ENTRY_APP_SCREEN_KEY = "PLAYER_ENTRY";
   public static final String AUTHORING_SCREEN_KEY = "AUTHORING_SCREEN";
   public static final String VEHICLE_BUILDER_APP_SCREEN_KEY = "VEHICLE_BUILDER_SCREEN";
@@ -195,7 +197,9 @@ public class ScreenFactory {
         new GameMenuScreen(this::guardedOutcome, authController::handle,
             authService.session()::isLoggedIn));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
-        new AuthoringEntryScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
+        new AuthoringEntryScreenImpl(this::guardedOutcome));
+    screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY,
+        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression,
