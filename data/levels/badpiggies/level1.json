@@ -1,0 +1,40 @@
+{
+  "gameMetadata": {
+    "levelName": "Rolling Hills",
+    "gameType": "badpiggies",
+    "screenWidth": 3200,
+    "screenHeight": 1600,
+    "gravity": -9.8,
+    "drag": 0.01
+  },
+  "map": {
+    "knotLocations": [
+      { "x": 0,    "y": 1100 },
+      { "x": 400,  "y": 1080 },
+      { "x": 800,  "y": 1040 },
+      { "x": 1200, "y": 1060 },
+      { "x": 1600, "y": 1020 },
+      { "x": 2000, "y": 1050 },
+      { "x": 2400, "y": 1070 },
+      { "x": 2800, "y": 1040 },
+      { "x": 3200, "y": 1060 }
+    ],
+    "spawnPoint": { "x": 350, "y": 300 },
+    "objects": [
+      { "type": "coin",        "position": { "x": 600,  "y": 1000 } },
+      { "type": "heart",       "position": { "x": 1000, "y": 980  } },
+      { "type": "coin",        "position": { "x": 1400, "y": 1000 } },
+      { "type": "bomb",        "position": { "x": 1800, "y": 990  } },
+      { "type": "xp",          "position": { "x": 2200, "y": 1010 } },
+      { "type": "coin",        "position": { "x": 2600, "y": 990  } },
+      { "type": "finish_line", "position": { "x": 3100, "y": 900  } }
+    ],
+    "terrainOptions": ["grass", "dirt"]
+  },
+  "mainCharacter": {
+    "gridSize": 60,
+    "elementsAllowed": ["body", "wheel", "motor", "fan", "balloon"],
+    "maxSelectable": 5,
+    "maxHP": 100
+  }
+}

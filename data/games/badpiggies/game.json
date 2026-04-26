@@ -1,0 +1,105 @@
+{
+  "gameId": "badpiggies",
+  "primaryComponentId": "body",
+  "components": [
+    {
+      "id": "body",
+      "spriteUrl": "assets/components/bp_body.png",
+      "mass": 5.0,
+      "buttons": []
+    },
+    {
+      "id": "wheel",
+      "spriteUrl": "assets/components/bp_wheel.png",
+      "mass": 1.0,
+      "buttons": []
+    },
+    {
+      "id": "motor",
+      "spriteUrl": "assets/components/bp_motor.png",
+      "mass": 2.0,
+      "buttons": [
+        { "name": "go right", "direction": { "x": 1, "y": 0 } },
+        { "name": "go left",  "direction": { "x": -1, "y": 0 } }
+      ]
+    },
+    {
+      "id": "fan",
+      "spriteUrl": "assets/components/bp_fan.png",
+      "mass": 1.5,
+      "buttons": [
+        { "name": "boost up", "direction": { "x": 0, "y": -1 } }
+      ]
+    },
+    {
+      "id": "balloon",
+      "spriteUrl": "assets/components/bp_balloon.png",
+      "mass": 0.5,
+      "buttons": []
+    }
+  ],
+  "staticComponents": [
+    {
+      "id": "coin",
+      "spriteUrl": "assets/pickups/bp_coin.png",
+      "mass": 0,
+      "onCollisionAction": { "type": "score", "amount": 10 }
+    },
+    {
+      "id": "heart",
+      "spriteUrl": "assets/pickups/bp_heart.png",
+      "mass": 0,
+      "onCollisionAction": { "type": "heal", "amount": 25 }
+    },
+    {
+      "id": "bomb",
+      "spriteUrl": "assets/pickups/bp_bomb.png",
+      "mass": 0,
+      "onCollisionAction": { "type": "damage", "amount": 30 }
+    },
+    {
+      "id": "xp",
+      "spriteUrl": "assets/pickups/bp_xp.png",
+      "mass": 0,
+      "onCollisionAction": { "type": "score", "amount": 25 }
+    },
+    {
+      "id": "finish_line",
+      "spriteUrl": "assets/objects/finish_flag.png",
+      "mass": 0,
+      "onCollisionAction": { "type": "finish", "amount": 0 }
+    }
+  ],
+  "terrainTypes": [
+    {
+      "id": "grass",
+      "spriteUrl": "assets/terrain/grass.png",
+      "visualColor": null,
+      "friction": 0.6
+    },
+    {
+      "id": "dirt",
+      "spriteUrl": "assets/terrain/dirt.png",
+      "visualColor": "#8B4513",
+      "friction": 0.5
+    },
+    {
+      "id": "ice",
+      "spriteUrl": "assets/terrain/ice.png",
+      "visualColor": "#ADE8F4",
+      "friction": 0.1
+    },
+    {
+      "id": "sand",
+      "spriteUrl": "assets/terrain/sand.png",
+      "visualColor": "#C2B280",
+      "friction": 0.4
+    },
+    {
+      "id": "rock",
+      "spriteUrl": "assets/terrain/rock.png",
+      "visualColor": "#808080",
+      "friction": 0.7
+    }
+  ]
+}
