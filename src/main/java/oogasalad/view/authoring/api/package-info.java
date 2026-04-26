@@ -14,14 +14,14 @@
  * - refreshGrid(): Forces a visual update of the blocks currently on the canvas.
  *
  * 2. ComponentPalette: The selection interface for editor parts.
- * - initialize(GameConfig): Populates the palette based on available game configurations.
+ * - initialize(Settings): Populates the palette based on available game configurations.
  * - getVisualRoot(): Returns the JavaFX Node representing the list of available parts.
  *
  * DETAILS
  *
  * The AuthoringCanvas acts as the visual destination for interactions handled by
  * the AuthoringController. The ComponentPalette serves as the source of parts
- * that the user can select to place onto the canvas. By using the 'GameConfig'
+ * that the user can select to place onto the canvas. By using the 'Settings'
  * as a collaborator, the palette dynamically adapts to whatever game types are
  * currently being authored.
  *
