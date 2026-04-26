@@ -2,7 +2,6 @@ package oogasalad.data.internal;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -14,151 +13,139 @@ import org.junit.jupiter.api.Test;
 class LevelValidatorTest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
-
   private LevelValidator validator;
 
+  private static final String VALID_LEVEL = """
+      {
+        "gameMetadata": {
+          "levelName": "Test", "gameType": "badpiggies",
+          "screenWidth": 3200, "screenHeight": 1600,
+          "gravity": -9.8, "drag": 0.01
+        },
+        "map": {
+          "knotLocations": [],
+          "spawnPoint": { "x": 350, "y": 300 },
+          "objects": []
+        },
+        "mainCharacter": {
+          "gridSize": 60, "elementsAllowed": [],
+          "maxSelectable": 5, "maxHP": 100
+        }
+      }
+      """;
+
   @BeforeEach
-  void setUp() {
-    validator = new LevelValidator();
-  }
+  void setUp() { validator = new LevelValidator(); }
 
   private JsonNode parse(String json) throws JsonProcessingException {
     return MAPPER.readTree(json);
   }
 
-  // --- Positive cases ---
+  // ── Positive cases ───────────────────────────────────────────────────────
 
   @Test
-  void validate_minimalValidLevel_passes() throws JsonProcessingException {
+  void validate_completeValidLevel_passes() throws JsonProcessingException {
+    assertDoesNotThrow(() -> validator.validate(parse(VALID_LEVEL)));
+  }
+
+  // ── Missing gameMetadata fields ──────────────────────────────────────────
+
+  @Test
+  void validate_missingGameMetadata_throws() throws JsonProcessingException {
     JsonNode root = parse("""
-        {
-          "level": {
-            "terrain": [
-              { "position": {"x": 0, "y": 0}, "size": {"width": 10, "height": 2} }
-            ]
-          }
-        }
+        { "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-
-    assertDoesNotThrow(() -> validator.validate(root));
-  }
-
-  @Test
-  void validate_multipleValidTerrainEntries_passes() throws JsonProcessingException {
-    JsonNode root = parse("""
-        {
-          "level": {
-            "terrain": [
-              { "position": {"x": 0, "y": 0},  "size": {"width": 5, "height": 1} },
-              { "position": {"x": 5, "y": 0},  "size": {"width": 5, "height": 1} },
-              { "position": {"x": 0, "y": 10}, "size": {"width": 3, "height": 3} }
-            ]
-          }
-        }
-        """);
-
-    assertDoesNotThrow(() -> validator.validate(root));
-  }
-
-  @Test
-  void validate_levelWithNoTerrainKey_passes() throws JsonProcessingException {
-    JsonNode root = parse("{\"level\": {}}");
-
-    assertDoesNotThrow(() -> validator.validate(root));
-  }
-
-  @Test
-  void validate_emptyTerrainArray_passes() throws JsonProcessingException {
-    JsonNode root = parse("{\"level\": {\"terrain\": []}}");
-
-    assertDoesNotThrow(() -> validator.validate(root));
-  }
-
-  // --- Negative cases ---
-
-  @Test
-  void validate_missingLevelKey_throws() throws JsonProcessingException {
-    JsonNode root = parse("{}");
-
     assertThrows(LevelLoadException.class, () -> validator.validate(root));
   }
 
   @Test
-  void validate_levelIsString_throws() throws JsonProcessingException {
-    JsonNode root = parse("{\"level\": \"oops\"}");
-
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
-  }
-
-  @Test
-  void validate_terrainIsObject_throws() throws JsonProcessingException {
-    JsonNode root = parse("{\"level\": {\"terrain\": {}}}");
-
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
-  }
-
-  @Test
-  void validate_terrainEntryZeroWidth_throws() throws JsonProcessingException {
+  void validate_missingGameType_throws() throws JsonProcessingException {
     JsonNode root = parse("""
-        {
-          "level": {
-            "terrain": [
-              { "position": {"x": 0, "y": 0}, "size": {"width": 0, "height": 2} }
-            ]
-          }
-        }
+        { "gameMetadata": { "levelName": "T", "screenWidth": 100, "screenHeight": 100,
+            "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-
     assertThrows(LevelLoadException.class, () -> validator.validate(root));
   }
 
   @Test
-  void validate_terrainEntryNegativeHeight_throws() throws JsonProcessingException {
+  void validate_missingGravity_throws() throws JsonProcessingException {
     JsonNode root = parse("""
-        {
-          "level": {
-            "terrain": [
-              { "position": {"x": 0, "y": 0}, "size": {"width": 5, "height": -1} }
-            ]
-          }
-        }
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
+    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+  }
 
+  // ── Missing map fields ───────────────────────────────────────────────────
+
+  @Test
+  void validate_missingMap_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
+        """);
     assertThrows(LevelLoadException.class, () -> validator.validate(root));
   }
 
   @Test
-  void validate_terrainEntryMissingSize_throws() throws JsonProcessingException {
+  void validate_missingKnotLocations_throws() throws JsonProcessingException {
     JsonNode root = parse("""
-        {
-          "level": {
-            "terrain": [
-              { "position": {"x": 0, "y": 0} }
-            ]
-          }
-        }
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "spawnPoint": {"x":0,"y":0}, "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-
     assertThrows(LevelLoadException.class, () -> validator.validate(root));
   }
 
   @Test
-  void validate_zeroWidthMessageIncludesIndex() throws JsonProcessingException {
+  void validate_missingSpawnPoint_throws() throws JsonProcessingException {
     JsonNode root = parse("""
-        {
-          "level": {
-            "terrain": [
-              { "position": {"x": 0,  "y": 0}, "size": {"width": 5, "height": 1} },
-              { "position": {"x": 5,  "y": 0}, "size": {"width": 5, "height": 1} },
-              { "position": {"x": 10, "y": 0}, "size": {"width": 0, "height": 2} }
-            ]
-          }
-        }
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
+    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+  }
 
-    LevelLoadException thrown = assertThrows(
-        LevelLoadException.class, () -> validator.validate(root));
-    assertTrue(thrown.getMessage().contains("terrain[2]"),
-        "Expected message to identify the offending index, got: " + thrown.getMessage());
+  // ── Missing mainCharacter fields ─────────────────────────────────────────
+
+  @Test
+  void validate_missingMainCharacter_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] } }
+        """);
+    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+  }
+
+  @Test
+  void validate_missingMaxHP_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5 } }
+        """);
+    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+  }
+
+  @Test
+  void validate_missingGridSize_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
+          "mainCharacter": { "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
+        """);
+    assertThrows(LevelLoadException.class, () -> validator.validate(root));
   }
 }
