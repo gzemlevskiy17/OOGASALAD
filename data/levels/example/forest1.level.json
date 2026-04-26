@@ -36,21 +36,21 @@
     },
     "objects": [
       {
-        "type": "heart",
+        "type": "Heart",
         "position": {
           "x": 800,
           "y": 720
         }
       },
       {
-        "type": "bomb",
+        "type": "Bomb",
         "position": {
           "x": 1500,
           "y": 760
         }
       },
       {
-        "type": "finish_line",
+        "type": "GoalLine",
         "position": {
           "x": 2350,
           "y": 720
@@ -64,8 +64,8 @@
   "mainCharacter": {
     "gridSize": 60,
     "elementsAllowed": [
-      "chassis",
-      "wheel"
+      "Frame",
+      "Wood Wheel"
     ],
     "maxSelectable": 5,
     "maxHP": 100

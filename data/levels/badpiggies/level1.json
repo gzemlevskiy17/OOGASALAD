@@ -52,49 +52,49 @@
     },
     "objects": [
       {
-        "type": "coin",
+        "type": "Coin",
         "position": {
           "x": 600,
           "y": 1000
         }
       },
       {
-        "type": "heart",
+        "type": "Heart",
         "position": {
           "x": 1000,
           "y": 980
         }
       },
       {
-        "type": "coin",
+        "type": "Coin",
         "position": {
           "x": 1400,
           "y": 1000
         }
       },
       {
-        "type": "bomb",
+        "type": "Bomb",
         "position": {
           "x": 1800,
           "y": 990
         }
       },
       {
-        "type": "xp",
+        "type": "XP Boost",
         "position": {
           "x": 2200,
           "y": 1010
         }
       },
       {
-        "type": "coin",
+        "type": "Coin",
         "position": {
           "x": 2600,
           "y": 990
         }
       },
       {
-        "type": "finish_line",
+        "type": "GoalLine",
         "position": {
           "x": 3100,
           "y": 900
@@ -109,11 +109,11 @@
   "mainCharacter": {
     "gridSize": 60,
     "elementsAllowed": [
-      "body",
-      "wheel",
-      "motor",
-      "fan",
-      "balloon"
+      "Frame",
+      "Wood Wheel",
+      "Engine",
+      "Fan",
+      "Balloon"
     ],
     "maxSelectable": 5,
     "maxHP": 100

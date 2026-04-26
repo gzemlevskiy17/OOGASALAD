@@ -1,14 +1,14 @@
 {
   "gameId": "piggies",
-  "primaryComponentId": "chassis",
+  "primaryComponentId": "Frame",
   "components": [
     {
-      "id": "chassis",
+      "id": "Frame",
       "spriteUrl": "assets/bp_chassis.png",
       "mass": 5
     },
     {
-      "id": "wheel",
+      "id": "Wood Wheel",
       "spriteUrl": "assets/bp_wheel.png",
       "mass": 2,
       "buttons": [
@@ -24,7 +24,7 @@
   ],
   "staticComponents": [
     {
-      "id": "heart",
+      "id": "Heart",
       "spriteUrl": "assets/bp_heart.png",
       "mass": 0,
       "onCollisionAction": {
@@ -33,7 +33,7 @@
       }
     },
     {
-      "id": "bomb",
+      "id": "Bomb",
       "spriteUrl": "assets/bp_bomb.png",
       "mass": 0,
       "onCollisionAction": {
@@ -42,7 +42,7 @@
       }
     },
     {
-      "id": "finish_line",
+      "id": "GoalLine",
       "spriteUrl": "assets/bp_goalLine.png",
       "mass": 0,
       "onCollisionAction": {

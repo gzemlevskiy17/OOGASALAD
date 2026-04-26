@@ -1,21 +1,21 @@
 {
   "gameId": "badpiggies",
-  "primaryComponentId": "body",
+  "primaryComponentId": "Frame",
   "components": [
     {
-      "id": "body",
+      "id": "Frame",
       "spriteUrl": "assets/components/bp_body.png",
       "mass": 5.0,
       "buttons": []
     },
     {
-      "id": "wheel",
+      "id": "Wood Wheel",
       "spriteUrl": "assets/components/bp_wheel.png",
       "mass": 1.0,
       "buttons": []
     },
     {
-      "id": "motor",
+      "id": "Engine",
       "spriteUrl": "assets/components/bp_motor.png",
       "mass": 2.0,
       "buttons": [
@@ -36,7 +36,7 @@
       ]
     },
     {
-      "id": "fan",
+      "id": "Fan",
       "spriteUrl": "assets/components/bp_fan.png",
       "mass": 1.5,
       "buttons": [
@@ -50,7 +50,7 @@
       ]
     },
     {
-      "id": "balloon",
+      "id": "Balloon",
       "spriteUrl": "assets/components/bp_balloon.png",
       "mass": 0.5,
       "buttons": []
@@ -58,7 +58,7 @@
   ],
   "staticComponents": [
     {
-      "id": "coin",
+      "id": "Coin",
       "spriteUrl": "assets/pickups/bp_coin.png",
       "mass": 0,
       "onCollisionAction": {
@@ -67,7 +67,7 @@
       }
     },
     {
-      "id": "heart",
+      "id": "Heart",
       "spriteUrl": "assets/pickups/bp_heart.png",
       "mass": 0,
       "onCollisionAction": {
@@ -76,7 +76,7 @@
       }
     },
     {
-      "id": "bomb",
+      "id": "Bomb",
       "spriteUrl": "assets/pickups/bp_bomb.png",
       "mass": 0,
       "onCollisionAction": {
@@ -85,7 +85,7 @@
       }
     },
     {
-      "id": "xp",
+      "id": "XP Boost",
       "spriteUrl": "assets/pickups/bp_xp.png",
       "mass": 0,
       "onCollisionAction": {
@@ -94,7 +94,7 @@
       }
     },
     {
-      "id": "finish_line",
+      "id": "GoalLine",
       "spriteUrl": "assets/objects/finish_flag.png",
       "mass": 0,
       "onCollisionAction": {
