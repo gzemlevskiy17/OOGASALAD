@@ -29,7 +29,7 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.Settings;
-import oogasalad.data.internal.GameLoaderImpl;
+import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
 import oogasalad.model.engine.WorldImpl;
@@ -140,13 +140,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private final VehicleFactory vehicleFactory = new VehicleFactory();
   private final LevelLoader levelLoader;
+  private final GameLoader gameLoader;
   private final Supplier<String> levelPathSupplier;
 
   public GameplaySessionFactoryImpl(
       LevelLoader levelLoader,
+      GameLoader gameLoader,
       Supplier<String> levelPathSupplier
   ) {
     this.levelLoader = levelLoader;
+    this.gameLoader = gameLoader;
     this.levelPathSupplier = levelPathSupplier;
   }
 
@@ -296,10 +299,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     String levelPath = levelPathSupplier.get();
     if (levelPath != null && !levelPath.isBlank()) {
-      GameLoader gameLoader = new GameLoaderImpl();
-      Path parent = Path.of(levelPath).getParent();
-      String gamePath = parent == null ? "game.json" : parent.resolve("game.json").toString();
-      GameConfig game = gameLoader.loadGame(gamePath);
+      GameConfig game = gameLoader.loadGame(LevelPaths.siblingGameFile(levelPath));
       levelLoader.loadLevel(levelPath, game, world);
     }
 

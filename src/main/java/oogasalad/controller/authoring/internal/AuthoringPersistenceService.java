@@ -1,11 +1,11 @@
 package oogasalad.controller.authoring.internal;
 
-import java.nio.file.Path;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
+import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.api.World;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 public class AuthoringPersistenceService {
 
   private static final Logger LOG = LogManager.getLogger(AuthoringPersistenceService.class);
-  private static final String GAME_FILE_NAME = "game.json";
 
   private final LevelLoader levelLoader;
   private final LevelSaver levelSaver;
@@ -46,13 +45,6 @@ public class AuthoringPersistenceService {
     this.canvas = canvas;
   }
 
-  private static String siblingGamePath(String levelPath) {
-    Path parent = Path.of(levelPath).getParent();
-    return parent == null
-        ? GAME_FILE_NAME
-        : parent.resolve(GAME_FILE_NAME).toString();
-  }
-
   public void save(String fileName) {
     levelSaver.saveLevel(fileName, world, levelAttributes);
     LOG.info("Saved level to {}", fileName);
@@ -60,7 +52,7 @@ public class AuthoringPersistenceService {
 
   public void load(String fileName) {
     world.clear();
-    GameConfig game = gameLoader.loadGame(siblingGamePath(fileName));
+    GameConfig game = gameLoader.loadGame(LevelPaths.siblingGameFile(fileName));
     levelLoader.loadLevel(fileName, game, world, levelAttributes);
     spawnPointService.getSpawnPoint();
     history.clear();

@@ -138,14 +138,6 @@ public class AuthoringControllerImpl implements AuthoringController {
     canvas.refreshGrid();
   }
 
-  private void cancelSplineDraftIfLeavingSplineMode(ToolType nextTool) {
-    boolean leavingSpline = toolSelector.getActiveTool() == ToolType.SPLINE
-        && nextTool != ToolType.SPLINE;
-    if (leavingSpline && splineDraft.draftSize() > 0) {
-      splineDraft.cancel();
-    }
-  }
-
   private void applyAction(CanvasAction action) {
     switch (action.type()) {
       case PLACE -> placeFromAction(action);

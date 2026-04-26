@@ -105,6 +105,8 @@ public class LevelLoaderImpl implements LevelLoader {
     }
   }
 
+  private static final String DEFAULT_TERRAIN_COLOR = "#4A2C0F";
+
   private void loadTerrainSpline(JsonNode map, GameConfig game, World world) {
     JsonNode knotsNode = map.path("knotLocations");
     if (!knotsNode.isArray() || knotsNode.size() < 2) {
@@ -114,12 +116,22 @@ public class LevelLoaderImpl implements LevelLoader {
     double baselineY = baselineFor(knots);
     ParabolaSpline spline = new ParabolaSpline(knots, baselineY);
     TerrainInfo terrain = pickTerrain(map.path("terrainOptions"), game);
-    TerrainSpline component = terrain == null
-        ? new TerrainSpline(spline, 0)
-        : new TerrainSpline(spline, terrain.spriteUrl() == null ? "" : terrain.spriteUrl(),
-            false, terrain.friction(),
-            terrain.visualColor() == null ? "#4A2C0F" : terrain.visualColor());
-    world.addObject(component);
+    world.addObject(buildTerrainSpline(spline, terrain));
+  }
+
+  private TerrainSpline buildTerrainSpline(ParabolaSpline spline, TerrainInfo terrain) {
+    if (terrain == null) {
+      return new TerrainSpline(spline, 0);
+    }
+    String sprite = terrain.spriteUrl();
+    if (sprite == null) {
+      sprite = "";
+    }
+    String color = terrain.visualColor();
+    if (color == null) {
+      color = DEFAULT_TERRAIN_COLOR;
+    }
+    return new TerrainSpline(spline, sprite, false, terrain.friction(), color);
   }
 
   private TerrainInfo pickTerrain(JsonNode terrainOptions, GameConfig game) {
@@ -194,7 +206,10 @@ public class LevelLoaderImpl implements LevelLoader {
 
   private void addStaticObject(StaticComponentInfo info, double x, double y, World world) {
     OnCollisionAction action = info.onCollisionAction();
-    String actionType = action == null ? null : action.type();
+    String actionType = null;
+    if (action != null) {
+      actionType = action.type();
+    }
 
     if ("finish".equals(actionType)) {
       world.addObject(new GoalLineComponent(x, y, DEFAULT_OBJECT_SIZE, DEFAULT_OBJECT_SIZE));
@@ -215,11 +230,22 @@ public class LevelLoaderImpl implements LevelLoader {
       return target -> {
       };
     }
-    return switch (action.type()) {
-      case "heal" -> new HPChangerEffect(action.amount() == null ? 0 : action.amount());
-      case "damage" -> new HPChangerEffect(action.amount() == null ? 0 : -action.amount());
-      default ->
-          throw new LevelLoadException("Unknown collision action type: '" + action.type() + "'");
-    };
+    String type = action.type();
+    if ("heal".equals(type)) {
+      return new HPChangerEffect(requireAmount(action));
+    }
+    if ("damage".equals(type)) {
+      return new HPChangerEffect(-requireAmount(action));
+    }
+    throw new LevelLoadException("Unknown collision action type: '" + type + "'");
+  }
+
+  private double requireAmount(OnCollisionAction action) {
+    Double amount = action.amount();
+    if (amount == null) {
+      throw new LevelLoadException(
+          "Action '" + action.type() + "' requires an 'amount' field");
+    }
+    return amount;
   }
 }
