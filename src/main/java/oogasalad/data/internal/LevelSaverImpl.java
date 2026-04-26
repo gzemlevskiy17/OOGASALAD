@@ -143,9 +143,9 @@ public class LevelSaverImpl implements LevelSaver {
     }
 
     ObjectNode vehiclePalette = level.putObject("vehicle_palette");
-    vehiclePalette.put("max_selectable", levelAttributes.getMaxSelectableVehicleItems());
+    vehiclePalette.put("max_selectable", levelAttributes.getMainCharacter().getMaxSelectable());
     ArrayNode allowedComponents = vehiclePalette.putArray("allowed_components");
-    for (String componentId : levelAttributes.getAllowedVehicleComponents()) {
+    for (String componentId : levelAttributes.getMainCharacter().getElementsAllowed()) {
       allowedComponents.add(componentId);
     }
   }
