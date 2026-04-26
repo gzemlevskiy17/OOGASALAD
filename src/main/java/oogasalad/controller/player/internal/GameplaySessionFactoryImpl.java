@@ -316,39 +316,55 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
-    final double[] baseWidth = {Math.max(DEFAULT_VIEW_WIDTH, screen.getGameLayer().getWidth())};
-    final double[] baseHeight = {Math.max(DEFAULT_VIEW_HEIGHT, screen.getGameLayer().getHeight())};
-    final double[] zoom = {1.0};
-
-    Runnable applyViewport = () -> {
-      double viewWidth = Math.max(MIN_VIEWPORT_SIZE, baseWidth[0] / zoom[0]);
-      double viewHeight = Math.max(MIN_VIEWPORT_SIZE, baseHeight[0] / zoom[0]);
-      camera.setViewBoundaries(viewWidth, viewHeight);
-    };
+    CameraViewportState state = new CameraViewportState(
+        Math.max(DEFAULT_VIEW_WIDTH, screen.getGameLayer().getWidth()),
+        Math.max(DEFAULT_VIEW_HEIGHT, screen.getGameLayer().getHeight()));
 
     screen.getGameLayer().widthProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal.doubleValue() > 0) {
-        baseWidth[0] = newVal.doubleValue();
-        applyViewport.run();
+        state.baseWidth = newVal.doubleValue();
+        state.applyTo(camera);
       }
     });
     screen.getGameLayer().heightProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal.doubleValue() > 0) {
-        baseHeight[0] = newVal.doubleValue();
-        applyViewport.run();
+        state.baseHeight = newVal.doubleValue();
+        state.applyTo(camera);
       }
     });
     screen.getGameLayer().setOnScroll(event -> {
       if (!event.isControlDown()) {
         return;
       }
-      zoom[0] = event.getDeltaY() > 0 ? zoom[0] * ZOOM_STEP : zoom[0] / ZOOM_STEP;
-      zoom[0] = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom[0]));
-      applyViewport.run();
+      if (event.getDeltaY() > 0) {
+        state.zoom = state.zoom * ZOOM_STEP;
+      } else {
+        state.zoom = state.zoom / ZOOM_STEP;
+      }
+      state.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.zoom));
+      state.applyTo(camera);
       event.consume();
     });
 
-    applyViewport.run();
+    state.applyTo(camera);
+  }
+
+  private static class CameraViewportState {
+
+    double baseWidth;
+    double baseHeight;
+    double zoom = 1.0;
+
+    CameraViewportState(double baseWidth, double baseHeight) {
+      this.baseWidth = baseWidth;
+      this.baseHeight = baseHeight;
+    }
+
+    void applyTo(Camera camera) {
+      double viewWidth = Math.max(MIN_VIEWPORT_SIZE, baseWidth / zoom);
+      double viewHeight = Math.max(MIN_VIEWPORT_SIZE, baseHeight / zoom);
+      camera.setViewBoundaries(viewWidth, viewHeight);
+    }
   }
 
   Set<String> collectDriveToolIds(World world) {

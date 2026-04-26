@@ -37,6 +37,7 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
  * underneath the vehicle instead of floating above it.
  *
  * @author Bad Piggies team
+ * @author Paulina Vvedenskaya
  */
 public class SplineDraftController {
 
