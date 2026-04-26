@@ -12,7 +12,7 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.Action;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.InputRouter;
-import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.Settings;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.player.api.GameplayScore;
@@ -27,13 +27,13 @@ import oogasalad.view.core.api.Renderer;
  * Drives the gameplay simulation at 60 FPS using a JavaFX Timeline.
  * <p>
  * Each frame: updates the camera position via camera.updateCameraBehavior(), advances physics via GameEngine,
- * redraws via Renderer, then checks win/loss conditions. Reads key bindings from GameConfig and
+ * redraws via Renderer, then checks win/loss conditions. Reads key bindings from Settings and
  * registers them with InputRouter on the first call to startSimulation().
  * <p>
  * When a terminal outcome is reached, fires the callback registered via setOnOutcome().
  * Does not know or reference ScreenManager — navigation is the caller's concern.
  * <p>
- * Assumes GameConfig returns comma-separated key names for dot-path lookups, e.g.
+ * Assumes Settings returns comma-separated key names for dot-path lookups, e.g.
  * getSetting("input_mapping.activate_engine") returns "W,UP".
  */
 public class GameControllerImpl implements GameController {
@@ -48,7 +48,7 @@ public class GameControllerImpl implements GameController {
   private final WinConditionChecker winChecker;
   private final LossConditionChecker lossChecker;
   private final InputRouter inputRouter;
-  private final GameConfig config;
+  private final Settings config;
   private final GameplayStatsTracker tracker;
 
   /** Maps config action names (e.g. "activate_engine") to their Action instances. */
@@ -81,7 +81,7 @@ public class GameControllerImpl implements GameController {
    */
   public GameControllerImpl(GameEngine engine, World world, Renderer renderer, Camera camera,
       CameraBehavior cameraBehavior, WinConditionChecker winChecker,
-      LossConditionChecker lossChecker, InputRouter inputRouter, GameConfig config,
+      LossConditionChecker lossChecker, InputRouter inputRouter, Settings config,
       GameplayStatsTracker tracker) {
     this.engine = engine;
     this.world = world;
@@ -121,7 +121,7 @@ public class GameControllerImpl implements GameController {
   }
 
   /**
-   * Binds keys from GameConfig on first call, then starts or resumes the loop. Safe to call on
+   * Binds keys from Settings on first call, then starts or resumes the loop. Safe to call on
    * both initial start and resume-after-pause.
    */
   @Override
@@ -194,7 +194,7 @@ public class GameControllerImpl implements GameController {
   }
 
   /**
-   * Reads the input_mapping block from GameConfig and binds each registered Action to its
+   * Reads the input_mapping block from Settings and binds each registered Action to its
    * configured KeyCodes via InputRouter. Skips any action name not found in config or any
    * unrecognised key string.
    */

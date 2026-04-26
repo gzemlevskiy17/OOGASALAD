@@ -22,7 +22,7 @@ public interface GameController {
   void resetSimulation();
 
   /**
-   * Registers a named Action so it can be bound to keys from GameConfig at startup.
+   * Registers a named Action so it can be bound to keys from Settings at startup.
    * The actionName must match a key in the input_mapping block of game_config.json.
    */
   void registerAction(String actionName, Action action);
