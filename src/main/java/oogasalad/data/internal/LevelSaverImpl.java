@@ -11,6 +11,7 @@ import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.AuthoringStaticComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.PickupComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
@@ -85,11 +86,15 @@ public class LevelSaverImpl implements LevelSaver {
       } else if (obj instanceof SpawnPointComponent sp) {
         spawnPoint.put("x", sp.x() * scale);
         spawnPoint.put("y", sp.y() * scale);
+      } else if (obj instanceof AuthoringStaticComponent asc) {
+        objects.add(buildMapObject(asc.getComponentType(),
+            (asc.getX() + asc.getWidth() / 2.0) * scale,
+            (asc.getY() + asc.getHeight() / 2.0) * scale));
       } else if (obj instanceof PickupComponent pc) {
         objects.add(
-            buildMapObject(pc.getComponentType().toLowerCase(), pc.x() * scale, pc.y() * scale));
+            buildMapObject(pc.getComponentType(), pc.x() * scale, pc.y() * scale));
       } else if (obj instanceof GoalLineComponent gl) {
-        objects.add(buildMapObject("finish_line", gl.x() * scale, gl.y() * scale));
+        objects.add(buildMapObject("GoalLine", gl.x() * scale, gl.y() * scale));
       }
     }
 
