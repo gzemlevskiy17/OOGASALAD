@@ -208,7 +208,10 @@ public class ScreenFactory {
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression,
             scanResult.others()));
 
-    vehicleBuilderScreen = new VehicleBuilderAppScreen(this::guardedOutcome);
+    vehicleBuilderScreen = new VehicleBuilderAppScreen(this::guardedOutcome,
+        new oogasalad.view.core.internal.SpriteCache(),
+        new oogasalad.view.core.internal.PaletteSpriteRegistry(),
+        new oogasalad.model.player.internal.DefaultBuildRulesRegistry());
     screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);
 
     LevelLoader levelLoader = new LevelLoaderImpl();
