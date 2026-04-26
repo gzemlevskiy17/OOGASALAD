@@ -230,6 +230,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     pigsPalette = new ComponentPaletteImpl();
     levelItemsPalette = new ComponentPaletteImpl();
     subscribePalette(terrainPalette);
+    terrainPalette.subscribe(controller::setSplineTerrainStyle);
     subscribePalette(pigsPalette);
     subscribePalette(levelItemsPalette);
 

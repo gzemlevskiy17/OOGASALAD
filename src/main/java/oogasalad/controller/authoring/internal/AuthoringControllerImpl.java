@@ -68,6 +68,13 @@ public class AuthoringControllerImpl implements AuthoringController {
     }
   }
 
+  public void setSplineTerrainStyle(AuthoringPlaceable placeable) {
+    if (placeable != null) {
+      splineDraft.setTerrainStyle(placeable.getSprite(), placeable.isTiled(),
+          placeable.getFriction(), placeable.getColor());
+    }
+  }
+
   @Override
   public void initializeCanvasHandlers() {
     Node root = canvas.getVisualRoot();
