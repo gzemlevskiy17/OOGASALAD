@@ -12,8 +12,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
@@ -375,20 +373,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     paintButton.getStyleClass().add("authoring-action-button");
     splineButton.getStyleClass().add("authoring-action-button");
 
-    // Resolution spinner only influences future tessellations; shown inline with the tools and
-    // kept visible regardless of active tool so the designer can tune the value in advance.
-    Spinner<Integer> splineResolutionSpinner = new Spinner<>();
-    splineResolutionSpinner.setValueFactory(
-        new SpinnerValueFactory.IntegerSpinnerValueFactory(
-            1, 64, controller.getSplineDraft().getResolution(), 1));
-    splineResolutionSpinner.setEditable(true);
-    splineResolutionSpinner.setPrefWidth(72);
-    splineResolutionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
-      if (newVal != null) {
-        controller.getSplineDraft().setResolution(newVal);
-      }
-    });
-    Label splineResolutionLabel = new Label(s("splineResolutionLabel"));
     Button splineCommitButton = createSizedButton(
         s("splineCommitButtonText"), actionWidth * 0.7, actionHeight);
     splineCommitButton.getStyleClass().add("authoring-action-button");
@@ -467,7 +451,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
     HBox toolButtonBox = new HBox(d("topBarSpacing"),
         selectButton, eraseButton, paintButton, splineButton,
-        splineResolutionLabel, splineResolutionSpinner, splineCommitButton,
+        splineCommitButton,
         zoomOutButton, zoomInButton, fitButton);
     toolButtonBox.setAlignment(Pos.CENTER_LEFT);
 

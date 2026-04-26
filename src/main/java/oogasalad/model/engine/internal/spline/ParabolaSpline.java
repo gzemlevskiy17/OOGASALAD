@@ -17,44 +17,31 @@ import oogasalad.model.engine.api.Vector;
  * invariant "every knot has {@code y &lt; baselineY}" is enforced at construction time; otherwise
  * the tessellated slabs could degenerate or self-intersect.
  *
- * <p>The {@link #segmentsPerKnotPair()} value is the tessellation resolution: each Bézier segment
- * is sampled into this many sub-intervals before being handed to the physics engine, so higher
- * values produce smoother ground at a proportional collision cost.
+ * <p>Tessellation emits one slab per knot-to-knot segment. Curve fidelity for collision purposes
+ * is therefore controlled by the density of authored knots, not by a separate sampling resolution.
  *
- * <p>This class is a value type. Lists passed in are defensively copied and exposed as unmodifiable
+ * <p>This class is a value type. Lists passed in are defensively copied and exposed as
+ * unmodifiable
  * views; equality and hashing follow structural semantics.
  *
  * @author Bad Piggies team
  */
-public final class ParabolaSpline {
+public record ParabolaSpline(List<Vector> knots, List<Vector> controls, double baselineY) {
 
   private static final int MIN_KNOTS = 2;
-  private static final int MIN_SEGMENTS_PER_KNOT_PAIR = 1;
-
-  private final List<Vector> knots;
-  private final List<Vector> controls;
-  private final double baselineY;
-  private final int segmentsPerKnotPair;
 
   /**
-   * @param knots               at least two distinct points defining the chain
-   * @param controls            one control point per adjacent knot pair; {@code null} means
-   *                            derive defaults as arithmetic midpoints (producing straight
-   *                            segments)
-   * @param baselineY           ground reference Y (world pixels); must be strictly greater than
-   *                            every knot's Y
-   * @param segmentsPerKnotPair tessellation resolution (&ge; 1) applied uniformly to all segments
+   * @param knots     at least two distinct points defining the chain
+   * @param controls  one control point per adjacent knot pair; {@code null} means derive defaults
+   *                  as arithmetic midpoints (producing straight segments)
+   * @param baselineY ground reference Y (world pixels); must be strictly greater than every knot's
+   *                  Y
    * @throws IllegalArgumentException when any structural invariant is violated
    */
-  public ParabolaSpline(List<Vector> knots, List<Vector> controls, double baselineY,
-      int segmentsPerKnotPair) {
+  public ParabolaSpline(List<Vector> knots, List<Vector> controls, double baselineY) {
     Objects.requireNonNull(knots, "knots");
     if (knots.size() < MIN_KNOTS) {
       throw new IllegalArgumentException("spline needs at least " + MIN_KNOTS + " knots");
-    }
-    if (segmentsPerKnotPair < MIN_SEGMENTS_PER_KNOT_PAIR) {
-      throw new IllegalArgumentException(
-          "segmentsPerKnotPair must be >= " + MIN_SEGMENTS_PER_KNOT_PAIR);
     }
     for (Vector k : knots) {
       if (k.y() >= baselineY) {
@@ -65,7 +52,6 @@ public final class ParabolaSpline {
 
     this.knots = List.copyOf(knots);
     this.baselineY = baselineY;
-    this.segmentsPerKnotPair = segmentsPerKnotPair;
 
     int expectedControls = this.knots.size() - 1;
     List<Vector> resolved = (controls == null)
@@ -82,29 +68,14 @@ public final class ParabolaSpline {
    * Convenience overload that derives control points as the midpoints between adjacent knots,
    * producing straight-line segments at tessellation time.
    */
-  public ParabolaSpline(List<Vector> knots, double baselineY, int segmentsPerKnotPair) {
-    this(knots, null, baselineY, segmentsPerKnotPair);
-  }
-
-  public List<Vector> knots() {
-    return knots;
-  }
-
-  public List<Vector> controls() {
-    return controls;
-  }
-
-  public double baselineY() {
-    return baselineY;
-  }
-
-  public int segmentsPerKnotPair() {
-    return segmentsPerKnotPair;
+  public ParabolaSpline(List<Vector> knots, double baselineY) {
+    this(knots, null, baselineY);
   }
 
   /**
    * Evaluates the Bézier point at parameter {@code t} on the segment between knot {@code i} and
-   * knot {@code i + 1}.
+   * knot {@code i + 1}. Used by the renderer for visual sampling; physics tessellation uses the
+   * knot endpoints directly.
    *
    * @param segmentIndex zero-based index of the segment
    * @param t            parameter in {@code [0, 1]}
@@ -124,17 +95,11 @@ public final class ParabolaSpline {
     return new Vector(x, y);
   }
 
-  /** Number of Bézier segments in this spline ({@code knots - 1}). */
+  /**
+   * Number of Bézier segments in this spline ({@code knots - 1}).
+   */
   public int segmentCount() {
     return knots.size() - 1;
-  }
-
-  /**
-   * Returns a new spline with the given resolution. Convenience for authoring-time edits that only
-   * change tessellation density.
-   */
-  public ParabolaSpline withResolution(int newSegmentsPerKnotPair) {
-    return new ParabolaSpline(knots, controls, baselineY, newSegmentsPerKnotPair);
   }
 
   private static List<Vector> deriveMidpointControls(List<Vector> knots) {
@@ -149,22 +114,20 @@ public final class ParabolaSpline {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ParabolaSpline other)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ParabolaSpline other)) {
+      return false;
+    }
     return Double.compare(other.baselineY, baselineY) == 0
-        && segmentsPerKnotPair == other.segmentsPerKnotPair
         && knots.equals(other.knots)
         && controls.equals(other.controls);
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hash(knots, controls, baselineY, segmentsPerKnotPair);
-  }
-
-  @Override
   public String toString() {
     return "ParabolaSpline{knots=" + knots + ", controls=" + controls
-        + ", baselineY=" + baselineY + ", resolution=" + segmentsPerKnotPair + "}";
+        + ", baselineY=" + baselineY + "}";
   }
 }

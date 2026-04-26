@@ -69,7 +69,6 @@ public class LevelLoaderImpl implements LevelLoader {
   private static final double DEFAULT_FRICTION = 0.5;
   private static final double DEFAULT_SIZE = 1.0;
   private static final double DEFAULT_SCALE = 1.0;
-  private static final int DEFAULT_SPLINE_RESOLUTION = 8;
   private static final double DEFAULT_SPAWN_X = 350.0;
   private static final double DEFAULT_SPAWN_Y = 300.0;
   private static final int DEFAULT_MAX_SELECTABLE = 5;
@@ -138,7 +137,6 @@ public class LevelLoaderImpl implements LevelLoader {
     }
     List<Vector> controls = readPointList(entry.path("controls"));
     double baselineY = entry.path("baselineY").asDouble() / scale;
-    int resolution = entry.path("resolution").asInt(DEFAULT_SPLINE_RESOLUTION);
 
     JsonNode props = entry.path("properties");
     String texture = props.path("texture").asText("");
@@ -147,7 +145,7 @@ public class LevelLoaderImpl implements LevelLoader {
     String color = props.path("color").asText("#4A2C0F");
 
     List<Vector> resolvedControls = controls.size() == knots.size() - 1 ? controls : null;
-    ParabolaSpline spline = new ParabolaSpline(knots, resolvedControls, baselineY, resolution);
+    ParabolaSpline spline = new ParabolaSpline(knots, resolvedControls, baselineY);
     return new TerrainSpline(spline, texture, tiled, friction, color);
   }
 

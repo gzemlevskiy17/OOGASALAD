@@ -11,13 +11,14 @@ import oogasalad.model.engine.internal.spline.SplineTessellator;
  * Static terrain whose collision surface follows a chain of parabola (quadratic Bézier) segments.
  *
  * <p>Each spline is authored as a small list of knots with a baseline, then tessellated into a
- * strip of convex slabs at load time. {@link #getCollisionPolygons()} exposes those slabs to the
- * physics engine directly, so a spline is modelled as one {@link GameComponent} rather than as
- * many derived objects — keeping save/load, world iteration, and object ownership simple.
+ * strip of convex slabs at construction time. {@link #getCollisionPolygons()} exposes those slabs
+ * to the physics engine directly, so a spline is modelled as one {@link GameComponent} with many
+ * sub-polygons rather than as many derived objects — keeping save/load, world iteration, and
+ * object ownership simple while letting the engine collide against every slab.
  *
- * <p>{@link #getPolygon()} still returns the first slab so legacy callers that read a single
- * polygon continue to work, but collision detection should go through
- * {@link #getCollisionPolygons()} via {@link oogasalad.model.engine.CollisionDetectorImpl}.
+ * <p>{@link #getPolygon()} returns the first slab so single-polygon callers (e.g. tests, debug
+ * tooling) still work; the broad-phase AABB and narrow-phase SAT both go through
+ * {@link #getCollisionPolygons()}.
  *
  * <p>The component's position ({@link #getX()}, {@link #getY()}) is the axis-aligned bounding-box
  * top-left corner of the spline curve. {@link #getWidth()} and {@link #getHeight()} describe the
@@ -26,15 +27,8 @@ import oogasalad.model.engine.internal.spline.SplineTessellator;
  *
  * <p>Note: the physics slabs returned by {@link #getCollisionPolygons()} only extend a fixed
  * {@link SplineTessellator#DEFAULT_SLAB_THICKNESS} below the curve, even though the visual fill
- * drawn by the renderer reaches all the way down to the baseline. Shallow physics slabs keep SAT
- * stable (see {@link SplineTessellator} for details); the baseline is a purely cosmetic floor.
- *
- * <p>Because every slab shares the same parent {@link GameComponent}, rigid-body state transforms
- * (rotation, translation) would have to be propagated to every sub-polygon. Splines in the MVP are
- * static and un-rotated, so the tessellated polygons are stored in world space as-is; if we later
- * add rotation or positional animation, either the slabs get recomputed from the spline after
- * every transform or the tessellator emits local-space polygons and the collision detector
- * applies the object transform.
+ * drawn by the renderer reaches all the way down to the baseline. Shallow slabs keep SAT stable
+ * (see {@link SplineTessellator} for details); the baseline is a purely cosmetic floor.
  *
  * @author Bad Piggies team
  */
@@ -62,10 +56,7 @@ public class TerrainSpline extends TerrainComponent {
   public TerrainSpline(ParabolaSpline spline, String sprite, boolean tiled, double friction,
       String color) {
     super(boundingMinX(Objects.requireNonNull(spline, "spline")), boundingMinY(spline), 0.0,
-        ConvexPolygon.axisAlignedBox(boundingMinX(spline), boundingMinY(spline),
-            boundingMaxX(spline) - boundingMinX(spline),
-            spline.baselineY() - boundingMinY(spline)),
-        "", friction, DEFAULT_RESTITUTION);
+        firstSlabOrPlaceholder(spline), "", friction, DEFAULT_RESTITUTION);
     this.spline = spline;
     this.slabs = SplineTessellator.tessellate(spline);
     this.width = boundingMaxX(spline) - boundingMinX(spline);
@@ -74,6 +65,9 @@ public class TerrainSpline extends TerrainComponent {
     this.tiled = tiled;
     this.color = color == null ? DEFAULT_COLOR : color;
 
+    // Once the slab list exists, expose the first slab as the single-polygon view so getPolygon()
+    // remains consistent with the physics surface (the constructor's super() call only had access
+    // to a freshly tessellated list captured by firstSlabOrPlaceholder).
     if (!slabs.isEmpty()) {
       setPolygon(slabs.get(0));
     }
@@ -87,8 +81,14 @@ public class TerrainSpline extends TerrainComponent {
     return spline;
   }
 
-  public List<ConvexPolygon> getCollisionPolygons() {
-    return slabs;
+  private static ConvexPolygon firstSlabOrPlaceholder(ParabolaSpline spline) {
+    List<ConvexPolygon> tessellated = SplineTessellator.tessellate(spline);
+    if (!tessellated.isEmpty()) {
+      return tessellated.get(0);
+    }
+    return ConvexPolygon.axisAlignedBox(boundingMinX(spline), boundingMinY(spline),
+        Math.max(1.0, boundingMaxX(spline) - boundingMinX(spline)),
+        Math.max(1.0, spline.baselineY() - boundingMinY(spline)));
   }
 
   // AuthoringPlaceable still uses get-prefixed accessors; Renderable was renamed to x()/y().
@@ -121,6 +121,11 @@ public class TerrainSpline extends TerrainComponent {
   @Override
   public boolean isTiled() {
     return tiled;
+  }
+
+  @Override
+  public List<ConvexPolygon> getCollisionPolygons() {
+    return slabs;
   }
 
   @Override

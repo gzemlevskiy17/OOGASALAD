@@ -108,7 +108,6 @@ public class LevelSaverImpl implements LevelSaver {
     }
 
     entry.put("baselineY", spline.baselineY() * scale);
-    entry.put("resolution", spline.segmentsPerKnotPair());
 
     ObjectNode props = entry.putObject("properties");
     props.put("texture", ts.getSprite());

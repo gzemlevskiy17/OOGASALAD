@@ -20,4 +20,14 @@ public abstract class TerrainComponent extends StaticComponent implements Author
   public abstract double getHeight();
 
   public abstract boolean isTiled();
+
+  @Override
+  public double getX() {
+    return x();
+  }
+
+  @Override
+  public double getY() {
+    return y();
+  }
 }
