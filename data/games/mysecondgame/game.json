@@ -1,0 +1,50 @@
+{
+  "gameId" : "Paulina's World",
+  "primaryComponentId" : "",
+  "components" : [ {
+    "id" : "pig",
+    "spriteUrl" : "data/assets/bp_bigPig.png",
+    "mass" : 1000.0,
+    "buttons" : [ {
+      "name" : "up",
+      "direction" : {
+        "x" : 0.0,
+        "y" : 1.0
+      }
+    }, {
+      "name" : "right",
+      "direction" : {
+        "x" : 1.0,
+        "y" : 0.0
+      }
+    } ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "something",
+    "spriteUrl" : "data/assets/shield.png",
+    "mass" : 100.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 10000.0
+    }
+  }, {
+    "id" : "somethingGOOD",
+    "spriteUrl" : "data/assets/hearts.png",
+    "mass" : 100.0,
+    "onCollisionAction" : {
+      "type" : "heal",
+      "amount" : 1.0E10
+    }
+  } ],
+  "terrainTypes" : [ {
+    "id" : "floor",
+    "spriteUrl" : "data/assets/background2.png",
+    "visualColor" : null,
+    "friction" : 0.5
+  }, {
+    "id" : "floor2",
+    "spriteUrl" : "data/assets/background3.png",
+    "visualColor" : null,
+    "friction" : 0.1
+  } ]
+}

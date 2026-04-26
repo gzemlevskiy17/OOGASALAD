@@ -52,6 +52,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.GameAuthoring");
   private static final Path ASSETS_DIR = Path.of("data", "assets");
+  private static final Path GAMES_DIR = Path.of("data", "games");
+  private static final Path LEVELS_DIR = Path.of("data", "levels");
+  private static final String GAME_FILE_NAME = "game.json";
 
   private final Consumer<String> loadLevelHandler;
   private final Consumer<GameConfig> onGameConfigReady;
@@ -313,7 +316,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private HBox buildFooter() {
     Button saveButton = new Button(s("saveGameButtonText"));
     saveButton.getStyleClass().add("authoring-entry-action");
-    saveButton.setOnAction(e -> handleSaveCatalog(saveButton));
+    saveButton.setOnAction(e -> handleSaveCatalog());
 
     Button createLevelButton = new Button(s("createNewLevelButtonText"));
     configureActionButton(createLevelButton);
@@ -334,24 +337,48 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     return footer;
   }
 
-  private void handleSaveCatalog(Button source) {
-    fileChooserService.chooseSaveFile(source.getScene().getWindow())
-        .ifPresentOrElse(file -> {
-          saveFilePath = file.getAbsolutePath();
-          doSave();
-        }, this::doSave);
+  private void handleSaveCatalog() {
+    doSave();
   }
 
   private void doSave() {
     try {
-      new java.io.File(saveFilePath).getParentFile().mkdirs();
-      catalogSaver.save(saveFilePath,
-          gameIdField.getText().strip(),
-          primaryComponentIdField.getText().strip(),
-          components, staticComponents, terrainTypes);
+      String gameId = gameIdField.getText().strip();
+      Path catalogPath = saveCatalogForGameId(gameId);
+      saveFilePath = catalogPath.toString();
       new AuthoringAlertService().showInfo("Saved", "Game catalog saved to " + saveFilePath);
-    } catch (Exception e) {
+    } catch (IOException | RuntimeException e) {
       new AuthoringAlertService().showError("Save Error", e.getMessage());
+    }
+  }
+
+  private Path saveCatalogForGameId(String gameId) throws IOException {
+    if (gameId.isBlank()) {
+      throw new IllegalArgumentException("Game ID is required before saving a game catalog.");
+    }
+    Path catalogPath = catalogPathFor(gameId);
+    Files.createDirectories(catalogPath.getParent());
+    Files.createDirectories(LEVELS_DIR.resolve(gameId));
+    catalogSaver.save(catalogPath.toString(),
+        gameId,
+        primaryComponentIdField.getText().strip(),
+        components, staticComponents, terrainTypes);
+    return catalogPath;
+  }
+
+  private Path catalogPathFor(String gameId) {
+    return GAMES_DIR.resolve(gameId).resolve(GAME_FILE_NAME);
+  }
+
+  private GameConfig saveAndLoadCurrentConfig() {
+    try {
+      String gameId = gameIdField.getText().strip();
+      Path catalogPath = saveCatalogForGameId(gameId);
+      saveFilePath = catalogPath.toString();
+      return new GameConfigImpl(saveFilePath);
+    } catch (IOException | RuntimeException e) {
+      new AuthoringAlertService().showError("Save Error", e.getMessage());
+      return GameConfigImpl.empty();
     }
   }
 
@@ -374,17 +401,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private GameConfig buildCurrentConfig() {
-    try {
-      String tmpPath = "data/games/_current_game.json";
-      new java.io.File(tmpPath).getParentFile().mkdirs();
-      catalogSaver.save(tmpPath,
-          gameIdField.getText().strip(),
-          primaryComponentIdField.getText().strip(),
-          components, staticComponents, terrainTypes);
-      return new GameConfigImpl(tmpPath);
-    } catch (Exception e) {
-      return GameConfigImpl.empty();
-    }
+    return saveAndLoadCurrentConfig();
   }
 
   private Node buildTabContent(ListView<String> list, Node... formNodes) {
