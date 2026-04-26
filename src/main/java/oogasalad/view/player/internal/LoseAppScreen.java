@@ -20,6 +20,8 @@ public class LoseAppScreen extends AbstractAppScreen {
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.player.LoseAppScreen");
 
+  private ResultStatsPanel statsPanel;
+
   public LoseAppScreen(Consumer<Outcome> onOutcome) {
     super(onOutcome);
   }
@@ -38,6 +40,8 @@ public class LoseAppScreen extends AbstractAppScreen {
     Label title = new Label(s("title.text"));
     title.getStyleClass().add("result-title");
 
+    statsPanel = new ResultStatsPanel(PROPS);
+
     HBox buttons = new HBox(16);
     buttons.setAlignment(Pos.CENTER);
 
@@ -54,9 +58,19 @@ public class LoseAppScreen extends AbstractAppScreen {
     homeButton.setOnAction(event -> onOutcome.accept(Outcome.BACK_TO_MENU));
 
     buttons.getChildren().addAll(tryAgainButton, playSomethingButton, homeButton);
-    content.getChildren().addAll(title, buttons);
+    content.getChildren().addAll(title, statsPanel.getNode(), buttons);
     root.setCenter(content);
     return root;
+  }
+
+  /**
+   * Updates the three stat rows. Each {@code isNewRecord*} flag toggles a green badge next to
+   * its row; pass true for all three when this is the user's first run on the level.
+   */
+  public void setStats(double elapsedSeconds, double score, double progressPercent,
+      boolean isNewTime, boolean isNewScore, boolean isNewProgress) {
+    statsPanel.setStats(elapsedSeconds, score, progressPercent,
+        isNewTime, isNewScore, isNewProgress);
   }
 
   private String s(String key) {

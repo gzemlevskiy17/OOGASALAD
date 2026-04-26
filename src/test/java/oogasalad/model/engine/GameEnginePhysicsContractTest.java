@@ -260,7 +260,9 @@ class GameEnginePhysicsContractTest {
           mass,
           1.0,
           restitution,
-          gravity);
+          gravity,
+          100.0,
+          "test-box");
       this.width = width;
       this.height = height;
     }
