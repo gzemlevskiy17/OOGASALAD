@@ -3,7 +3,7 @@ package oogasalad.model.engine.internal.joints;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
-import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 
 /**
  * Hinge-style joint that keeps two local anchors coincident while allowing free relative rotation.
@@ -24,14 +24,14 @@ public class RevoluteJoint extends AbstractJoint {
   /**
    * Creates a revolute joint using each body's local origin as the hinge anchor.
    */
-  public RevoluteJoint(GameComponent objectA, GameComponent objectB) {
+  public RevoluteJoint(RigidBody objectA, RigidBody objectB) {
     this(objectA, objectB, new Vector(0, 0), new Vector(0, 0));
   }
 
   /**
    * Creates a revolute joint whose two local anchors must resolve to the same world-space point.
    */
-  public RevoluteJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
+  public RevoluteJoint(RigidBody objectA, RigidBody objectB, Vector localAnchorA,
       Vector localAnchorB) {
     super(objectA, objectB, localAnchorA, localAnchorB);
     if (getAnchorDelta().magnitude() > 1e-9) {
@@ -47,14 +47,7 @@ public class RevoluteJoint extends AbstractJoint {
     this.maxMotorTorque = 0.0;
   }
 
-  private static double inverseInertia(GameComponent component) {
-    if (component instanceof DynamicComponent dynamic) {
-      return dynamic.getInverseMomentOfInertia();
-    }
-    return 0.0;
-  }
-
-  private static double angularVelocity(GameComponent component) {
+  private static double angularVelocity(RigidBody component) {
     if (component instanceof DynamicComponent dynamic) {
       return dynamic.getDynamicState().getAngularVelocity();
     }
@@ -121,8 +114,8 @@ public class RevoluteJoint extends AbstractJoint {
       return;
     }
 
-    double inverseInertiaA = inverseInertia(getComponentA());
-    double inverseInertiaB = inverseInertia(getComponentB());
+    double inverseInertiaA = getComponentA().getInverseMomentOfInertia();
+    double inverseInertiaB = getComponentB().getInverseMomentOfInertia();
     double totalInverseInertia = inverseInertiaA + inverseInertiaB;
     if (totalInverseInertia == 0.0) {
       return;
@@ -141,8 +134,8 @@ public class RevoluteJoint extends AbstractJoint {
     if (!motorEnabled) {
       return;
     }
-    double inverseInertiaA = inverseInertia(getComponentA());
-    double inverseInertiaB = inverseInertia(getComponentB());
+    double inverseInertiaA = getComponentA().getInverseMomentOfInertia();
+    double inverseInertiaB = getComponentB().getInverseMomentOfInertia();
     double totalInverseInertia = inverseInertiaA + inverseInertiaB;
     if (totalInverseInertia == 0.0) {
       return;

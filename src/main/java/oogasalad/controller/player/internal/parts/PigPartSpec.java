@@ -3,6 +3,7 @@ package oogasalad.controller.player.internal.parts;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 
 /**
  * @author Paulina Vvedenskaya
@@ -19,7 +20,7 @@ public final class PigPartSpec extends AbstractVehiclePartSpec {
   }
 
   @Override
-  public GameComponent create(double x, double y) {
+  public RigidBody create(double x, double y) {
     return new PigComponent(
         x, y, 0,
         ConvexPolygon.axisAlignedBox(x - bodyWidth() / 2, y - bodyHeight() / 2, bodyWidth(),

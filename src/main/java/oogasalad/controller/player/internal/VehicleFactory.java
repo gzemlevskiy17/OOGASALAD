@@ -13,14 +13,14 @@ import oogasalad.controller.player.internal.parts.VehiclePartSpec;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 import oogasalad.model.engine.internal.joints.RevoluteJoint;
 import oogasalad.model.engine.internal.joints.RigidJoint;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
 
 /**
- * Translates a VehicleLayout into GameComponent instances and joints in the World. Cardinal
+ * Translates a VehicleLayout into RigidBody instances and joints in the World. Cardinal
  * neighbors (right / below) get {@link RevoluteJoint} (wheels) or {@link RigidJoint} (non-wheels),
  * dispatched by each part's {@link JointStyle}.
  *
@@ -46,7 +46,7 @@ public class VehicleFactory {
    * re-deriving the mapping. Returned map is a {@link LinkedHashMap} so iteration order is
    * deterministic.
    */
-  public Map<PlacedComponent, GameComponent> buildVehicle(VehicleLayout layout, World world,
+  public Map<PlacedComponent, RigidBody> buildVehicle(VehicleLayout layout, World world,
       double startX, double startY) {
     List<PlacedComponent> structuralPlacements = new ArrayList<>();
     List<PlacedComponent> pigPlacements = new ArrayList<>();
@@ -57,15 +57,15 @@ public class VehicleFactory {
         structuralPlacements.add(p);
       }
     }
-    Map<String, GameComponent> placed = new HashMap<>();
+    Map<String, RigidBody> placed = new HashMap<>();
     Map<String, VehiclePartSpec> specByKey = new HashMap<>();
-    Map<PlacedComponent, GameComponent> placementToComponent = new LinkedHashMap<>();
+    Map<PlacedComponent, RigidBody> placementToComponent = new LinkedHashMap<>();
 
     for (PlacedComponent p : structuralPlacements) {
       double worldX = startX + p.col() * CELL_SIZE;
       double worldY = startY + p.row() * CELL_SIZE;
       VehiclePartSpec spec = registry.get(p.componentType());
-      GameComponent component = spec.create(worldX, worldY);
+      RigidBody component = spec.create(worldX, worldY);
       world.addComponent(component);
       String key = toKey(p.row(), p.col());
       placed.put(key, component);
@@ -76,7 +76,7 @@ public class VehicleFactory {
     Set<String> edgeKeys = new HashSet<>();
     for (PlacedComponent p : structuralPlacements) {
       String currentKey = toKey(p.row(), p.col());
-      GameComponent current = placed.get(currentKey);
+      RigidBody current = placed.get(currentKey);
       VehiclePartSpec currentSpec = specByKey.get(currentKey);
       addCardinalNeighbor(world, placed, specByKey, edgeKeys,
           current, currentSpec, currentKey, toKey(p.row(), p.col() + 1), true);
@@ -89,11 +89,11 @@ public class VehicleFactory {
     return placementToComponent;
   }
 
-  private void addCardinalNeighbor(World world, Map<String, GameComponent> placed,
+  private void addCardinalNeighbor(World world, Map<String, RigidBody> placed,
       Map<String, VehiclePartSpec> specByKey, Set<String> edgeKeys,
-      GameComponent current, VehiclePartSpec currentSpec, String currentKey,
+      RigidBody current, VehiclePartSpec currentSpec, String currentKey,
       String neighborKey, boolean horizontalNeighbor) {
-    GameComponent neighbor = placed.get(neighborKey);
+    RigidBody neighbor = placed.get(neighborKey);
     if (neighbor == null) {
       return;
     }
@@ -105,22 +105,22 @@ public class VehicleFactory {
   }
 
   private void attachPigsToHostCells(List<PlacedComponent> pigPlacements,
-      Map<String, GameComponent> placed, World world, double startX, double startY,
-      Map<PlacedComponent, GameComponent> placementToComponent) {
+      Map<String, RigidBody> placed, World world, double startX, double startY,
+      Map<PlacedComponent, RigidBody> placementToComponent) {
     for (PlacedComponent p : pigPlacements) {
       double worldX = startX + p.col() * CELL_SIZE;
       double worldY = startY + p.row() * CELL_SIZE;
-      GameComponent pig = registry.get(p.componentType()).create(worldX, worldY);
+      RigidBody pig = registry.get(p.componentType()).create(worldX, worldY);
       world.addComponent(pig);
       placementToComponent.put(p, pig);
-      GameComponent host = placed.get(toKey(p.row(), p.col()));
+      RigidBody host = placed.get(toKey(p.row(), p.col()));
       if (host != null) {
         world.addJoint(new RigidJoint(pig, host));
       }
     }
   }
 
-  private Joint buildJoint(GameComponent a, GameComponent b,
+  private Joint buildJoint(RigidBody a, RigidBody b,
       VehiclePartSpec specA, VehiclePartSpec specB) {
     Vector posA = a.getStaticState().getLinearPosition();
     Vector posB = b.getStaticState().getLinearPosition();
@@ -130,8 +130,8 @@ public class VehicleFactory {
         || specB.jointStyle() == JointStyle.WHEEL;
 
     if (wheelInvolved) {
-      GameComponent wheel = specA.jointStyle() == JointStyle.WHEEL ? a : b;
-      GameComponent chassis = wheel == a ? b : a;
+      RigidBody wheel = specA.jointStyle() == JointStyle.WHEEL ? a : b;
+      RigidBody chassis = wheel == a ? b : a;
       Vector wheelPosition = wheel.getStaticState().getLinearPosition();
       Vector chassisPosition = chassis.getStaticState().getLinearPosition();
       return new RevoluteJoint(wheel, chassis, new Vector(0, 0),
@@ -156,7 +156,7 @@ public class VehicleFactory {
   }
 
   private void addRightAngleRigidChords(List<PlacedComponent> placements, World world,
-      Map<String, GameComponent> placed, Map<String, VehiclePartSpec> specByKey,
+      Map<String, RigidBody> placed, Map<String, VehiclePartSpec> specByKey,
       Set<String> edgeKeys) {
     for (PlacedComponent p : placements) {
       int r = p.row();
@@ -169,7 +169,7 @@ public class VehicleFactory {
   }
 
   private void tryAddRigidTriangleChord(int cornerR, int cornerC, int n1r, int n1c, int n2r,
-      int n2c, Map<String, GameComponent> placed, Map<String, VehiclePartSpec> specByKey,
+      int n2c, Map<String, RigidBody> placed, Map<String, VehiclePartSpec> specByKey,
       World world, Set<String> edgeKeys) {
     String kCorner = toKey(cornerR, cornerC);
     String k1 = toKey(n1r, n1c);
@@ -191,7 +191,7 @@ public class VehicleFactory {
         && b.jointStyle() == JointStyle.STRUCTURAL;
   }
 
-  private void addWeldStabilizerIfRigidPair(World world, GameComponent a, GameComponent b,
+  private void addWeldStabilizerIfRigidPair(World world, RigidBody a, RigidBody b,
       VehiclePartSpec specA, VehiclePartSpec specB, boolean horizontalNeighbor) {
     if (!isStructuralPair(specA, specB)) {
       return;
@@ -205,7 +205,7 @@ public class VehicleFactory {
   }
 
   private void addAntiRotationJoints(List<PlacedComponent> placements, World world,
-      Map<String, GameComponent> placed, Map<String, VehiclePartSpec> specByKey,
+      Map<String, RigidBody> placed, Map<String, VehiclePartSpec> specByKey,
       Set<String> edgeKeys) {
     int[][] offsets = {{0, 2}, {2, 0}, {1, 1}, {1, -1}};
 

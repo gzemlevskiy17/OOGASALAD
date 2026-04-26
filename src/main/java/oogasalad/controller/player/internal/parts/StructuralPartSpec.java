@@ -2,6 +2,7 @@ package oogasalad.controller.player.internal.parts;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 import oogasalad.model.engine.internal.components.StructuralComponent;
 
 /**
@@ -19,7 +20,7 @@ public final class StructuralPartSpec extends AbstractVehiclePartSpec {
   }
 
   @Override
-  public GameComponent create(double x, double y) {
+  public RigidBody create(double x, double y) {
     ConvexPolygon collider = jointStyle() == JointStyle.WHEEL
         ? ConvexPolygon.regularPolygon(x, y, Math.min(bodyWidth(), bodyHeight()) / 2.0, 16, 0)
         : ConvexPolygon.rotatedBox(x, y, bodyWidth(), bodyHeight(), 0);
