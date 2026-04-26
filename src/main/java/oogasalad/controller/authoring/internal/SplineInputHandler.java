@@ -11,7 +11,10 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
 /**
  * Routes mouse input to the spline draft controller while the SPLINE tool is active:
  * primary click adds a knot, secondary click commits the draft, mouse-move updates the
- * draft cursor.
+ * draft cursor. Listeners no-op when a different tool is selected so this handler can
+ * coexist with others on the same node.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class SplineInputHandler implements CanvasInputHandler {
 
@@ -19,6 +22,11 @@ public class SplineInputHandler implements CanvasInputHandler {
   private final ToolSelector toolSelector;
   private final SplineDraftController splineDraft;
 
+  /**
+   * @param canvas       canvas providing cell size and overlay refresh
+   * @param toolSelector source of truth for the currently-active tool
+   * @param splineDraft  knot draft this handler feeds clicks into
+   */
   public SplineInputHandler(AuthoringCanvas canvas, ToolSelector toolSelector,
       SplineDraftController splineDraft) {
     this.canvas = Objects.requireNonNull(canvas);

@@ -12,6 +12,8 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
  * Lets the user drag the spawn-point marker around the canvas. Activates only when a press
  * starts near the marker and the spline tool is not active. Other handlers can check
  * {@link #isActive()} to suppress their own gestures during a spawn drag.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class SpawnDragInputHandler implements CanvasInputHandler {
 
@@ -22,6 +24,11 @@ public class SpawnDragInputHandler implements CanvasInputHandler {
   private final ToolSelector toolSelector;
   private boolean active;
 
+  /**
+   * @param canvas            canvas providing cell size and refresh hooks
+   * @param spawnPointService source/target for the spawn-point lookup and move
+   * @param toolSelector      source of truth for the currently-active tool
+   */
   public SpawnDragInputHandler(AuthoringCanvas canvas, SpawnPointService spawnPointService,
       ToolSelector toolSelector) {
     this.canvas = Objects.requireNonNull(canvas);
@@ -29,6 +36,11 @@ public class SpawnDragInputHandler implements CanvasInputHandler {
     this.toolSelector = Objects.requireNonNull(toolSelector);
   }
 
+  /**
+   * @return {@code true} between the press that landed on the spawn marker and the matching
+   * release; {@code false} otherwise. Other handlers consult this to decide whether to suppress
+   * their own gestures.
+   */
   public boolean isActive() {
     return active;
   }
