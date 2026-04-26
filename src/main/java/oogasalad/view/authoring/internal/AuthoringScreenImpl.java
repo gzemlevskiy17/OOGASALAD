@@ -25,6 +25,7 @@ import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
@@ -65,6 +66,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Consumer<String> onRunLevel = path -> {};
+  private GameConfig gameConfig;
   private AuthoringControllerImpl controller;
   private StackPane canvasHost;
   private VehicleComponentScrollPalette vehiclePalette;
@@ -176,6 +178,17 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
       preserveLoadedLevelOnNextEnter = true;
     } catch (LevelLoadException e) {
       alertService.showError(PROPS.getString("loadErrorTitle"), e.getMessage());
+    }
+  }
+
+  /**
+   * Sets the active game catalog so the level editor knows which game it is authoring for.
+   * Call this before navigating to OPEN_AUTHORING.
+   */
+  public void setGameConfig(GameConfig config) {
+    this.gameConfig = config;
+    if (config != null && levelAttributes != null) {
+      levelAttributes.setGameType(config.gameId());
     }
   }
 

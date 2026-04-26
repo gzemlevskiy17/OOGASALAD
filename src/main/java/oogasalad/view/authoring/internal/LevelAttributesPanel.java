@@ -12,21 +12,24 @@ import javafx.scene.layout.VBox;
 import oogasalad.data.api.LevelAttributes;
 
 /**
- * Side panel for editing global level attributes: name, gravity, background image.
- *
- * Binds directly to a {@link LevelAttributes} model — any edit immediately
- * updates the model so save picks up the latest values without a confirm step.
+ * Side panel for editing global level attributes (name, gravity, drag, maxHP).
+ * Binds directly to a {@link LevelAttributes} model so edits are picked up by save immediately.
  */
 public class LevelAttributesPanel {
 
   private static final double PANEL_PADDING = 16;
   private static final double FIELD_SPACING = 12;
   private static final double LABEL_WIDTH = 120;
-  private static final double FIELD_WIDTH = 200;
+  private static final double FIELD_WIDTH = 180;
   private static final double GRAVITY_MIN = -50.0;
   private static final double GRAVITY_MAX = 0.0;
   private static final double GRAVITY_STEP = 0.1;
-  private static final int SPINNER_COLS = 6;
+  private static final double DRAG_MIN = 0.0;
+  private static final double DRAG_MAX = 1.0;
+  private static final double DRAG_STEP = 0.001;
+  private static final double HP_MIN = 1.0;
+  private static final double HP_MAX = 9999.0;
+  private static final double HP_STEP = 10.0;
 
   private final VBox root;
   private final LevelAttributes model;
@@ -40,13 +43,12 @@ public class LevelAttributesPanel {
         buildTitle(),
         buildNameRow(),
         buildGravityRow(),
-        buildBackgroundRow()
+        buildDragRow(),
+        buildMaxHPRow()
     );
   }
 
-  public Node getVisualRoot() {
-    return root;
-  }
+  public Node getVisualRoot() { return root; }
 
   private Label buildTitle() {
     Label title = new Label("Level Settings");
@@ -57,29 +59,38 @@ public class LevelAttributesPanel {
   private HBox buildNameRow() {
     TextField field = new TextField(model.getLevelName());
     field.setPrefWidth(FIELD_WIDTH);
-    field.textProperty().addListener((obs, oldVal, newVal) -> model.setLevelName(newVal));
+    field.textProperty().addListener((obs, o, n) -> model.setLevelName(n));
     return labeledRow("Level Name", field);
   }
 
   private HBox buildGravityRow() {
-    SpinnerValueFactory.DoubleSpinnerValueFactory factory =
+    Spinner<Double> spinner = new Spinner<>(
         new SpinnerValueFactory.DoubleSpinnerValueFactory(GRAVITY_MIN, GRAVITY_MAX,
-            model.getGravity(), GRAVITY_STEP);
-    Spinner<Double> spinner = new Spinner<>(factory);
+            model.getGravity(), GRAVITY_STEP));
     spinner.setEditable(true);
     spinner.setPrefWidth(FIELD_WIDTH);
-    spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
-      if (newVal != null) model.setGravity(newVal);
-    });
+    spinner.valueProperty().addListener((obs, o, n) -> { if (n != null) model.setGravity(n); });
     return labeledRow("Gravity", spinner);
   }
 
-  private HBox buildBackgroundRow() {
-    TextField field = new TextField(model.getBackgroundImage());
-    field.setPrefWidth(FIELD_WIDTH);
-    field.setPromptText("assets/backgrounds/sky.png");
-    field.textProperty().addListener((obs, oldVal, newVal) -> model.setBackgroundImage(newVal));
-    return labeledRow("Background", field);
+  private HBox buildDragRow() {
+    Spinner<Double> spinner = new Spinner<>(
+        new SpinnerValueFactory.DoubleSpinnerValueFactory(DRAG_MIN, DRAG_MAX,
+            model.getDrag(), DRAG_STEP));
+    spinner.setEditable(true);
+    spinner.setPrefWidth(FIELD_WIDTH);
+    spinner.valueProperty().addListener((obs, o, n) -> { if (n != null) model.setDrag(n); });
+    return labeledRow("Drag", spinner);
+  }
+
+  private HBox buildMaxHPRow() {
+    Spinner<Double> spinner = new Spinner<>(
+        new SpinnerValueFactory.DoubleSpinnerValueFactory(HP_MIN, HP_MAX,
+            model.getMaxHP(), HP_STEP));
+    spinner.setEditable(true);
+    spinner.setPrefWidth(FIELD_WIDTH);
+    spinner.valueProperty().addListener((obs, o, n) -> { if (n != null) model.setMaxHP(n); });
+    return labeledRow("Max HP", spinner);
   }
 
   private HBox labeledRow(String labelText, Node field) {

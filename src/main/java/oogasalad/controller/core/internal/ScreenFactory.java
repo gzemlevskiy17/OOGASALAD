@@ -200,7 +200,8 @@ public class ScreenFactory {
         new AuthoringEntryScreenImpl(this::guardedOutcome, scanResult,
             authoringScreen::loadLevelFromPath));
     screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY,
-        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
+        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath,
+            authoringScreen::setGameConfig));
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression,
