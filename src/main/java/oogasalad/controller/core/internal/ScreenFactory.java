@@ -197,7 +197,8 @@ public class ScreenFactory {
         new GameMenuScreen(this::guardedOutcome, authController::handle,
             authService.session()::isLoggedIn));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
-        new AuthoringEntryScreenImpl(this::guardedOutcome));
+        new AuthoringEntryScreenImpl(this::guardedOutcome, scanResult,
+            authoringScreen::loadLevelFromPath));
     screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY,
         new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
