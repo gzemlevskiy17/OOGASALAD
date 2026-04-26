@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -39,7 +40,9 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringEntry");
   private static final String LEVELS_DIR = "data/levels";
 
-  private final LevelScanner.ScanResult scanResult;
+  private final Supplier<LevelScanner.ScanResult> scanResultSupplier;
+  private LevelScanner.ScanResult scanResult;
+  private final Consumer<String> onWorldSelected;
   private final Consumer<String> onLevelSelected;
 
   private VBox worldsList;
@@ -53,13 +56,23 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
    * @param onOutcome       navigation callback fired by the hub's buttons
    * @param scanResult      filesystem scan listing worlds and their levels; populated into the left
    *                        pane on {@link #onEnter()}
+   * @param onWorldSelected callback receiving the world key before opening the level editor
    * @param onLevelSelected callback receiving the absolute path of a level when the user picks one
    *                        from the right pane
    */
   public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome,
-      LevelScanner.ScanResult scanResult, Consumer<String> onLevelSelected) {
+      LevelScanner.ScanResult scanResult, Consumer<String> onWorldSelected,
+      Consumer<String> onLevelSelected) {
+    this(onOutcome, () -> scanResult, onWorldSelected, onLevelSelected);
+  }
+
+  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome,
+      Supplier<LevelScanner.ScanResult> scanResultSupplier, Consumer<String> onWorldSelected,
+      Consumer<String> onLevelSelected) {
     super(onOutcome);
-    this.scanResult = Objects.requireNonNull(scanResult);
+    this.scanResultSupplier = Objects.requireNonNull(scanResultSupplier);
+    this.scanResult = this.scanResultSupplier.get();
+    this.onWorldSelected = Objects.requireNonNull(onWorldSelected);
     this.onLevelSelected = Objects.requireNonNull(onLevelSelected);
   }
 
@@ -83,6 +96,7 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
   @Override
   public void onEnter() {
+    scanResult = scanResultSupplier.get();
     populateWorldButtons();
     showRightPlaceholder();
     updateEditWorldButtonState();
@@ -209,12 +223,16 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
     Button button = new Button(s("addNewLevelButtonText"));
     button.setPrefSize(d("levelButtonWidth"), d("levelButtonHeight"));
     button.getStyleClass().add("level-button");
-    button.setOnAction(event -> onOutcome.accept(Outcome.OPEN_AUTHORING));
+    button.setOnAction(event -> {
+      onWorldSelected.accept(selectedWorldKey);
+      onOutcome.accept(Outcome.OPEN_AUTHORING);
+    });
     return button;
   }
 
   private void openLevel(String levelKey) {
     String path = Path.of(LEVELS_DIR, selectedWorldKey, levelKey + ".json").toString();
+    onWorldSelected.accept(selectedWorldKey);
     onLevelSelected.accept(path);
     onOutcome.accept(Outcome.OPEN_AUTHORING);
   }

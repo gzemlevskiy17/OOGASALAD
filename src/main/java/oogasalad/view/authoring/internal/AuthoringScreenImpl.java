@@ -29,6 +29,8 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
+import oogasalad.data.api.StaticComponentInfo;
+import oogasalad.data.api.TerrainInfo;
 import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
@@ -45,6 +47,8 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringScreen");
+  private static final String DEFAULT_TERRAIN_COLOR = "#8B4513";
+  private static final String DEFAULT_STATIC_COLOR = "#F5C542";
 
   /**
    * Preview file used when the designer clicks Run. We write the authored world here, point the
@@ -191,6 +195,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     if (config != null && levelAttributes != null) {
       levelAttributes.setGameType(config.gameId());
     }
+    refreshCatalogPalettes();
   }
 
   private void initializeAuthoringState() {
@@ -245,6 +250,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     vehicleModeButton = createTabButton(s("vehicleButtonText"));
     currentMode = AuthoringMode.LEVEL;
     currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
+    refreshCatalogPalettes();
   }
 
   private void subscribePalette(ComponentPaletteImpl palette) {
@@ -474,10 +480,48 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private HBox buildLevelPaletteTabs() {
     HBox tabs = new HBox(
         terrainPaletteButton,
+        levelItemsPaletteButton,
         customPaletteButton,
         settingsPaletteButton);
     tabs.setAlignment(Pos.CENTER_LEFT);
     return tabs;
+  }
+
+  private void refreshCatalogPalettes() {
+    if (terrainPalette == null || levelItemsPalette == null || vehiclePalette == null) {
+      return;
+    }
+    if (gameConfig == null) {
+      vehiclePalette.setAvailableComponentIds(List.of());
+      terrainPalette.setItems(List.of());
+      levelItemsPalette.setItems(List.of());
+      customPalette.setItems(List.of());
+      return;
+    }
+    vehiclePalette.setAvailableComponentIds(gameConfig.components().stream()
+        .map(component -> component.id())
+        .toList());
+    terrainPalette.setItems(gameConfig.terrainTypes().stream()
+        .map(this::terrainEntry)
+        .toList());
+    levelItemsPalette.setItems(gameConfig.staticComponents().stream()
+        .map(this::staticEntry)
+        .toList());
+    customPalette.setItems(List.of());
+  }
+
+  private ComponentPaletteImpl.PaletteEntry terrainEntry(TerrainInfo info) {
+    String color = info.visualColor() == null || info.visualColor().isBlank()
+        ? DEFAULT_TERRAIN_COLOR : info.visualColor();
+    String sprite = info.spriteUrl() == null ? "" : info.spriteUrl();
+    return new ComponentPaletteImpl.PaletteEntry(info.id(), color, 1, 1, sprite, false,
+        info.friction(), 0.2, false);
+  }
+
+  private ComponentPaletteImpl.PaletteEntry staticEntry(StaticComponentInfo info) {
+    String sprite = info.spriteUrl() == null ? "" : info.spriteUrl();
+    return new ComponentPaletteImpl.PaletteEntry(info.id(), DEFAULT_STATIC_COLOR, 1, 1, sprite,
+        false, 0, 0, true);
   }
 
   private Label buildSelectedItemsLabel() {

@@ -20,6 +20,7 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
+import oogasalad.model.engine.internal.components.AuthoringStaticComponent;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 import oogasalad.view.authoring.api.ComponentPallete;
 
@@ -47,8 +48,6 @@ public class ComponentPaletteImpl implements ComponentPallete {
   private final List<Consumer<AuthoringPlaceable>> subscribers = new ArrayList<>();
   private final HBox paletteContent = new HBox();
   private final ScrollPane root = new ScrollPane();
-
-  private String selectedName;
 
   public ComponentPaletteImpl() {
     this.sampleSize = d("sampleSize");
@@ -81,7 +80,6 @@ public class ComponentPaletteImpl implements ComponentPallete {
   public void setItems(List<PaletteEntry> items) {
     entries.clear();
     paletteContent.getChildren().clear();
-    selectedName = null;
     for (PaletteEntry entry : items) {
       entries.put(entry.name(), entry);
     }
@@ -105,9 +103,9 @@ public class ComponentPaletteImpl implements ComponentPallete {
       Canvas sample = new Canvas(sampleSize, sampleSize);
       sample.getStyleClass().add("authoring-palette-sample");
       drawSample(sample, entry, false);
-      sample.setOnMouseClicked(e -> select(entry.name(), sample));
+      sample.setOnMouseClicked(e -> select(entry.name()));
       sample.setOnDragDetected(e -> {
-        select(entry.name(), sample);
+        select(entry.name());
         Dragboard db = sample.startDragAndDrop(TransferMode.COPY);
         ClipboardContent cc = new ClipboardContent();
         cc.putString(entry.name());
@@ -127,12 +125,9 @@ public class ComponentPaletteImpl implements ComponentPallete {
     }
   }
 
-  private void select(String name, Canvas clicked) {
-    selectedName = name;
+  private void select(String name) {
     PaletteEntry entry = entries.get(name);
-    AuthoringPlaceable placeable = new TerrainPlaceable(
-        entry.blockCols() * cellSize, entry.blockRows() * cellSize,
-        entry.color(), entry.sprite(), entry.tiled(), entry.friction(), entry.restitution());
+    AuthoringPlaceable placeable = createPlaceable(entry);
 
     int i = 0;
     for (PaletteEntry e : entries.values()) {
@@ -163,10 +158,22 @@ public class ComponentPaletteImpl implements ComponentPallete {
     return Double.parseDouble(PROPS.getString(key));
   }
 
+  private AuthoringPlaceable createPlaceable(PaletteEntry entry) {
+    double width = entry.blockCols() * cellSize;
+    double height = entry.blockRows() * cellSize;
+    if (entry.staticObject()) {
+      return new AuthoringStaticComponent(0, 0, width, height, entry.name(), entry.color(),
+          entry.sprite());
+    }
+    return new TerrainPlaceable(width, height, entry.color(), entry.sprite(), entry.tiled(),
+        entry.friction(), entry.restitution());
+  }
+
   /**
    * Data for a single palette item.
    */
   public record PaletteEntry(String name, String color, int blockCols, int blockRows,
-                             String sprite, boolean tiled, double friction, double restitution) {
+                             String sprite, boolean tiled, double friction, double restitution,
+                             boolean staticObject) {
   }
 }
