@@ -52,7 +52,9 @@ public class AuthoringPersistenceService {
 
   public void load(String fileName) {
     world.clear();
-    GameConfig game = gameLoader.loadGame(LevelPaths.siblingGameFile(fileName));
+    LevelAttributes attributes = levelLoader.loadAttributes(fileName);
+    GameConfig game = gameLoader.loadGame(
+        LevelPaths.gameFileForLevel(fileName, attributes.getGameType()));
     levelLoader.loadLevel(fileName, game, world, levelAttributes);
     spawnPointService.getSpawnPoint();
     history.clear();

@@ -31,4 +31,12 @@ public interface LevelLoader {
   default void loadLevel(String fileName, GameConfig game, World world) {
     loadLevel(fileName, game, world, new LevelAttributes());
   }
+
+  /**
+   * Loads only level metadata/main-character settings without constructing runtime world objects.
+   *
+   * @param fileName path to the level.json file
+   * @return populated level attributes
+   */
+  LevelAttributes loadAttributes(String fileName);
 }

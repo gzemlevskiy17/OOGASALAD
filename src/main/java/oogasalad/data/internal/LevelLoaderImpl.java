@@ -22,6 +22,7 @@ import oogasalad.model.engine.internal.components.PickupComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.effects.HPChangerEffect;
+import oogasalad.model.engine.internal.effects.ScoreEffect;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.model.player.api.ScoreService;
 import oogasalad.model.player.internal.ScoreServiceImpl;
@@ -65,6 +66,15 @@ public class LevelLoaderImpl implements LevelLoader {
     loadObjects(map.path("objects"), game, world);
 
     LOG.info("Level loaded from {}", fileName);
+  }
+
+  @Override
+  public LevelAttributes loadAttributes(String fileName) {
+    JsonNode root = parseFile(fileName);
+    LevelAttributes attrs = new LevelAttributes();
+    populateGameMetadata(root.path("gameMetadata"), attrs);
+    populateMainCharacter(root.path("mainCharacter"), attrs);
+    return attrs;
   }
 
   private JsonNode parseFile(String fileName) {
@@ -235,6 +245,9 @@ public class LevelLoaderImpl implements LevelLoader {
     }
     if ("damage".equals(type)) {
       return new HPChangerEffect(-action.amount());
+    }
+    if ("score".equals(type)) {
+      return new ScoreEffect(score, (int) action.amount());
     }
     throw new LevelLoadException("Unknown collision action type: '" + type + "'");
   }
