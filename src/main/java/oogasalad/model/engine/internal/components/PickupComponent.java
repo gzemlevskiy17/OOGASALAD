@@ -23,6 +23,7 @@ public final class PickupComponent extends PassThroughComponent
     implements TypedComponent, HasCollisionEffect {
 
   private final CollisionEffect effect;
+  private final CollisionEffect wrappedEffect;
   private final String typeName;
   private boolean consumed;
   private Runnable onDestroyHook = () -> {
@@ -34,6 +35,7 @@ public final class PickupComponent extends PassThroughComponent
     this.typeName = Objects.requireNonNull(typeName);
     this.effect = Objects.requireNonNull(effect);
     this.consumed = false;
+    this.wrappedEffect = target -> consumeAndApply(target);
   }
 
   private static String describe(GameObject target) {
@@ -61,7 +63,7 @@ public final class PickupComponent extends PassThroughComponent
 
   @Override
   public CollisionEffect getCollisionEffect() {
-    return target -> consumeAndApply(target);
+    return wrappedEffect;
   }
 
   private void consumeAndApply(GameObject target) {

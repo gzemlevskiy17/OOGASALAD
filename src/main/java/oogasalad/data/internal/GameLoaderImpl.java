@@ -116,11 +116,15 @@ public class GameLoaderImpl implements GameLoader {
       return null;
     }
     String type = requireText(node, "type");
-    JsonNode amountNode = node.path("amount");
-    Double amount = amountNode.isMissingNode() || amountNode.isNull()
-        ? null
-        : amountNode.asDouble();
+    Double amount = parseAmount(node.path("amount"));
     return new OnCollisionAction(type, amount);
+  }
+
+  private Double parseAmount(JsonNode amountNode) {
+    if (amountNode.isMissingNode() || amountNode.isNull()) {
+      return null;
+    }
+    return amountNode.asDouble();
   }
 
   private List<TerrainInfo> parseTerrainTypes(JsonNode array) {
@@ -149,4 +153,5 @@ public class GameLoaderImpl implements GameLoader {
     }
     return value.asText();
   }
+
 }
