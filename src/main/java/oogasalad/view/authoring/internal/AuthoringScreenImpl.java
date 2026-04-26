@@ -25,6 +25,7 @@ import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
@@ -66,6 +67,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Consumer<String> onRunLevel = path -> {};
+  private GameConfig gameConfig;
   private AuthoringControllerImpl controller;
   private StackPane canvasHost;
   private VehicleComponentScrollPalette vehiclePalette;
@@ -180,6 +182,17 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     }
   }
 
+  /**
+   * Sets the active game catalog so the level editor knows which game it is authoring for. Call
+   * this before navigating to OPEN_AUTHORING.
+   */
+  public void setGameConfig(GameConfig config) {
+    this.gameConfig = config;
+    if (config != null && levelAttributes != null) {
+      levelAttributes.setGameType(config.gameId());
+    }
+  }
+
   private void initializeAuthoringState() {
     world = new WorldImpl();
     levelAttributes = new LevelAttributes();
@@ -207,10 +220,9 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
     vehiclePalette = new VehicleComponentScrollPalette();
     vehiclePalette.setSelectedComponentsHandler(
-        ids -> levelAttributes.getMainCharacter().setElementsAllowed(ids));
+        ids -> levelAttributes.setElementsAllowed(ids));
     vehiclePalette.setSelectionSummaryHandler(this::updateSelectedItemsSummary);
-    levelAttributes.getMainCharacter()
-        .setMaxSelectable(vehiclePalette.getMaxSelectableItems());
+    levelAttributes.setMaxSelectable(vehiclePalette.getMaxSelectableItems());
 
     terrainPalette = new ComponentPaletteImpl();
     pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");

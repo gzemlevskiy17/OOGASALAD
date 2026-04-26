@@ -12,9 +12,8 @@ import javafx.scene.layout.VBox;
 import oogasalad.data.api.LevelAttributes;
 
 /**
- * Side panel for editing the {@code gameMetadata} fields of a level: name and gravity. Binds
- * directly to a {@link LevelAttributes} model — any edit immediately updates the model so save
- * picks up the latest values without a confirm step.
+ * Side panel for editing global level attributes (name, gravity, drag, maxHP).
+ * Binds directly to a {@link LevelAttributes} model so edits are picked up by save immediately.
  *
  * @author Paulina Vvedenskaya
  */
@@ -23,17 +22,20 @@ public class LevelAttributesPanel {
   private static final double PANEL_PADDING = 16;
   private static final double FIELD_SPACING = 12;
   private static final double LABEL_WIDTH = 120;
-  private static final double FIELD_WIDTH = 200;
+  private static final double FIELD_WIDTH = 180;
   private static final double GRAVITY_MIN = -50.0;
   private static final double GRAVITY_MAX = 0.0;
   private static final double GRAVITY_STEP = 0.1;
+  private static final double DRAG_MIN = 0.0;
+  private static final double DRAG_MAX = 1.0;
+  private static final double DRAG_STEP = 0.001;
+  private static final double HP_MIN = 1.0;
+  private static final double HP_MAX = 9999.0;
+  private static final double HP_STEP = 10.0;
 
   private final VBox root;
   private final LevelAttributes model;
 
-  /**
-   * @param model the level-attributes object the panel reads from and writes to
-   */
   public LevelAttributesPanel(LevelAttributes model) {
     this.model = model;
     this.root = new VBox(FIELD_SPACING);
@@ -42,13 +44,12 @@ public class LevelAttributesPanel {
     root.getChildren().addAll(
         buildTitle(),
         buildNameRow(),
-        buildGravityRow()
+        buildGravityRow(),
+        buildDragRow(),
+        buildMaxHPRow()
     );
   }
 
-  /**
-   * @return the JavaFX node for embedding the panel into a parent layout
-   */
   public Node getVisualRoot() {
     return root;
   }
@@ -60,27 +61,53 @@ public class LevelAttributesPanel {
   }
 
   private HBox buildNameRow() {
-    LevelAttributes.GameMetadata metadata = model.getGameMetadata();
-    TextField field = new TextField(metadata.getLevelName());
+    TextField field = new TextField(model.getLevelName());
     field.setPrefWidth(FIELD_WIDTH);
-    field.textProperty().addListener((obs, oldVal, newVal) -> metadata.setLevelName(newVal));
+    field.textProperty().addListener((obs, oldVal, newVal) -> model.setLevelName(newVal));
     return labeledRow("Level Name", field);
   }
 
   private HBox buildGravityRow() {
-    LevelAttributes.GameMetadata metadata = model.getGameMetadata();
     SpinnerValueFactory.DoubleSpinnerValueFactory factory =
         new SpinnerValueFactory.DoubleSpinnerValueFactory(GRAVITY_MIN, GRAVITY_MAX,
-            metadata.getGravity(), GRAVITY_STEP);
+            model.getGravity(), GRAVITY_STEP);
     Spinner<Double> spinner = new Spinner<>(factory);
     spinner.setEditable(true);
     spinner.setPrefWidth(FIELD_WIDTH);
     spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal != null) {
-        metadata.setGravity(newVal);
+        model.setGravity(newVal);
       }
     });
     return labeledRow("Gravity", spinner);
+  }
+
+  private HBox buildDragRow() {
+    Spinner<Double> spinner = new Spinner<>(
+        new SpinnerValueFactory.DoubleSpinnerValueFactory(DRAG_MIN, DRAG_MAX,
+            model.getDrag(), DRAG_STEP));
+    spinner.setEditable(true);
+    spinner.setPrefWidth(FIELD_WIDTH);
+    spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+      if (newVal != null) {
+        model.setDrag(newVal);
+      }
+    });
+    return labeledRow("Drag", spinner);
+  }
+
+  private HBox buildMaxHPRow() {
+    Spinner<Double> spinner = new Spinner<>(
+        new SpinnerValueFactory.DoubleSpinnerValueFactory(HP_MIN, HP_MAX,
+            model.getMaxHP(), HP_STEP));
+    spinner.setEditable(true);
+    spinner.setPrefWidth(FIELD_WIDTH);
+    spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+      if (newVal != null) {
+        model.setMaxHP(newVal);
+      }
+    });
+    return labeledRow("Max HP", spinner);
   }
 
   private HBox labeledRow(String labelText, Node field) {

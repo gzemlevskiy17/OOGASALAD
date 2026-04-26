@@ -162,7 +162,12 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
   }
 
   private Button createWorldButton(String worldKey) {
-    Button button = new Button(worldKey);
+    String displayName = worldKey;
+    String propKey = "world.button." + worldKey;
+    if (PROPS.containsKey(propKey)) {
+      displayName = PROPS.getString(propKey);
+    }
+    Button button = new Button(displayName);
     button.setPrefSize(d("worldButtonWidth"), d("worldButtonHeight"));
     button.getStyleClass().add("world-button");
     button.getStyleClass().add("world-" + worldKey);

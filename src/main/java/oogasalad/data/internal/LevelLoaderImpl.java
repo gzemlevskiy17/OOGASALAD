@@ -6,11 +6,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import oogasalad.data.api.CollisionAction;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
-import oogasalad.data.api.OnCollisionAction;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.data.api.TerrainInfo;
 import oogasalad.model.engine.ConvexPolygon;
@@ -55,8 +55,8 @@ public class LevelLoaderImpl implements LevelLoader {
     JsonNode root = parseFile(fileName);
 
     if (levelAttributes != null) {
-      populateGameMetadata(root.path("gameMetadata"), levelAttributes.getGameMetadata());
-      populateMainCharacter(root.path("mainCharacter"), levelAttributes.getMainCharacter());
+      populateGameMetadata(root.path("gameMetadata"), levelAttributes);
+      populateMainCharacter(root.path("mainCharacter"), levelAttributes);
     }
 
     JsonNode map = root.path("map");
@@ -75,33 +75,32 @@ public class LevelLoaderImpl implements LevelLoader {
     }
   }
 
-  private void populateGameMetadata(JsonNode node, LevelAttributes.GameMetadata metadata) {
+  private void populateGameMetadata(JsonNode node, LevelAttributes attrs) {
     if (node.isMissingNode()) {
       return;
     }
-    metadata.setLevelName(node.path("levelName").asText(metadata.getLevelName()));
-    metadata.setGameType(node.path("gameType").asText(metadata.getGameType()));
-    metadata.setScreenWidth(node.path("screenWidth").asDouble(metadata.getScreenWidth()));
-    metadata.setScreenHeight(node.path("screenHeight").asDouble(metadata.getScreenHeight()));
-    metadata.setGravity(node.path("gravity").asDouble(metadata.getGravity()));
-    metadata.setDrag(node.path("drag").asDouble(metadata.getDrag()));
+    attrs.setLevelName(node.path("levelName").asText(attrs.getLevelName()));
+    attrs.setGameType(node.path("gameType").asText(attrs.getGameType()));
+    attrs.setScreenWidth(node.path("screenWidth").asDouble(attrs.getScreenWidth()));
+    attrs.setScreenHeight(node.path("screenHeight").asDouble(attrs.getScreenHeight()));
+    attrs.setGravity(node.path("gravity").asDouble(attrs.getGravity()));
+    attrs.setDrag(node.path("drag").asDouble(attrs.getDrag()));
   }
 
-  private void populateMainCharacter(JsonNode node, LevelAttributes.MainCharacter mainCharacter) {
+  private void populateMainCharacter(JsonNode node, LevelAttributes attrs) {
     if (node.isMissingNode()) {
       return;
     }
-    mainCharacter.setGridSize(node.path("gridSize").asDouble(mainCharacter.getGridSize()));
-    mainCharacter.setMaxSelectable(
-        node.path("maxSelectable").asInt(mainCharacter.getMaxSelectable()));
-    mainCharacter.setMaxHP(node.path("maxHP").asDouble(mainCharacter.getMaxHP()));
+    attrs.setGridSize(node.path("gridSize").asDouble(attrs.getGridSize()));
+    attrs.setMaxSelectable(node.path("maxSelectable").asInt(attrs.getMaxSelectable()));
+    attrs.setMaxHP(node.path("maxHP").asDouble(attrs.getMaxHP()));
     JsonNode allowed = node.path("elementsAllowed");
     if (allowed.isArray()) {
       List<String> ids = new ArrayList<>();
       for (JsonNode entry : allowed) {
         ids.add(entry.asText());
       }
-      mainCharacter.setElementsAllowed(ids);
+      attrs.setElementsAllowed(ids);
     }
   }
 
@@ -205,7 +204,7 @@ public class LevelLoaderImpl implements LevelLoader {
   }
 
   private void addStaticObject(StaticComponentInfo info, double x, double y, World world) {
-    OnCollisionAction action = info.onCollisionAction();
+    CollisionAction action = info.onCollisionAction();
     String actionType = null;
     if (action != null) {
       actionType = action.type();
@@ -225,27 +224,18 @@ public class LevelLoaderImpl implements LevelLoader {
     world.addObject(pickup);
   }
 
-  private CollisionEffect effectFor(OnCollisionAction action) {
+  private CollisionEffect effectFor(CollisionAction action) {
     if (action == null) {
       return target -> {
       };
     }
     String type = action.type();
     if ("heal".equals(type)) {
-      return new HPChangerEffect(requireAmount(action));
+      return new HPChangerEffect(action.amount());
     }
     if ("damage".equals(type)) {
-      return new HPChangerEffect(-requireAmount(action));
+      return new HPChangerEffect(-action.amount());
     }
     throw new LevelLoadException("Unknown collision action type: '" + type + "'");
-  }
-
-  private double requireAmount(OnCollisionAction action) {
-    Double amount = action.amount();
-    if (amount == null) {
-      throw new LevelLoadException(
-          "Action '" + action.type() + "' requires an 'amount' field");
-    }
-    return amount;
   }
 }

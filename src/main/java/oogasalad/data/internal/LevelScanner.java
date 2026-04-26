@@ -36,6 +36,25 @@ public class LevelScanner {
   /** Reserved directory name whose contents become {@link ScanResult#others()}. */
   public static final String OTHERS_DIRECTORY_NAME = "others";
 
+  private final boolean filterByProgression;
+
+  /**
+   * Creates a scanner that filters level files by {@link LevelProgression#LEVEL_ORDER}.
+   */
+  public LevelScanner() {
+    this(true);
+  }
+
+  /**
+   * @param filterByProgression if {@code true}, only level files whose basename (minus
+   *                            {@code .json}) appears in {@link LevelProgression#LEVEL_ORDER} are
+   *                            included. If {@code false}, all JSON files in a world directory are
+   *                            listed.
+   */
+  public LevelScanner(boolean filterByProgression) {
+    this.filterByProgression = filterByProgression;
+  }
+
   /**
    * Output of a scan.
    *
@@ -96,7 +115,7 @@ public class LevelScanner {
         }
         String filename = entry.getFileName().toString();
         String levelKey = filename.substring(0, filename.length() - JSON_SUFFIX.length());
-        if (LevelProgression.LEVEL_ORDER.contains(levelKey)) {
+        if (!filterByProgression || LevelProgression.LEVEL_ORDER.contains(levelKey)) {
           levelKeys.add(levelKey);
         }
       });

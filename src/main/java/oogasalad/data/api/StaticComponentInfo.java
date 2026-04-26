@@ -13,7 +13,6 @@ public record StaticComponentInfo(
     String id,
     String spriteUrl,
     double mass,
-    OnCollisionAction onCollisionAction
-) {
+    CollisionAction onCollisionAction) {
 
 }

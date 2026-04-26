@@ -3,20 +3,17 @@ package oogasalad.data.api;
 import java.util.List;
 
 /**
- * Catalog entry for a movable vehicle component. Buttons may be empty, in which case the component
- * is not player-controllable (it just moves passively as part of the vehicle).
+ * Movable part the player can place in the vehicle builder.
  *
- * @param id        catalog id referenced from level files
- * @param spriteUrl path to the component's sprite
- * @param mass      physics mass
- * @param buttons   on-screen buttons this component contributes; empty for non-controllable parts
+ * @param id        unique key within its game catalog
+ * @param spriteUrl path to the component's sprite asset
+ * @param mass      physics mass (>= 0)
+ * @param buttons   on-screen controls this component contributes; empty = not player-controllable
  * @author Paulina Vvedenskaya
  */
-public record ComponentInfo(
-    String id,
-    String spriteUrl,
-    double mass,
-    List<Button> buttons
-) {
+public record ComponentInfo(String id, String spriteUrl, double mass, List<ButtonInfo> buttons) {
 
+  public ComponentInfo {
+    buttons = List.copyOf(buttons);
+  }
 }

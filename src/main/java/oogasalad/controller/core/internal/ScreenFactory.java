@@ -198,11 +198,14 @@ public class ScreenFactory {
     screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authController::handle,
             authService.session()::isLoggedIn));
+    LevelScanner.ScanResult authoringScanResult =
+        new LevelScanner(false).scan(Path.of("data", "levels"));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
-        new AuthoringEntryScreenImpl(this::guardedOutcome, scanResult,
+        new AuthoringEntryScreenImpl(this::guardedOutcome, authoringScanResult,
             authoringScreen::loadLevelFromPath));
     screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY,
-        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
+        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath,
+            authoringScreen::setGameConfig));
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression,
