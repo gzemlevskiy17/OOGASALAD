@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Focus:
  * <ul>
- *   <li>Slab count matches {@code segments × resolution} for non-degenerate splines.</li>
+ *   <li>Slab count matches segment count (one thin slab per knot-to-knot segment).</li>
  *   <li>Slab bottom edge sits {@code slabThickness} below the top edge (not at baseline).</li>
  *   <li>The overload with non-positive thickness is rejected.</li>
  *   <li>Degenerate sub-intervals (zero horizontal span) are skipped.</li>
@@ -29,9 +29,9 @@ class SplineTessellatorTest {
   private static final double BASELINE = 1000.0;
 
   @Test
-  void tessellate_straightLineWithResolutionOne_producesOneSlab() {
+  void tessellate_straightLine_producesOneSlabPerSegment() {
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 1);
+        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE);
 
     List<ConvexPolygon> slabs = SplineTessellator.tessellate(spline);
 
@@ -44,7 +44,7 @@ class SplineTessellatorTest {
     // tall polygons that caused SAT ghost collisions. They should now be ~DEFAULT_SLAB_THICKNESS
     // pixels tall regardless of how far the baseline is.
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 1);
+        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE);
 
     ConvexPolygon slab = SplineTessellator.tessellate(spline).get(0);
     double maxY = slab.points().stream().mapToDouble(Vector::y).max().orElseThrow();
@@ -57,7 +57,7 @@ class SplineTessellatorTest {
   @Test
   void tessellate_customThickness_respectsCallerValue() {
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 1);
+        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE);
 
     ConvexPolygon slab = SplineTessellator.tessellate(spline, 25.0).get(0);
     double maxY = slab.points().stream().mapToDouble(Vector::y).max().orElseThrow();
@@ -69,7 +69,7 @@ class SplineTessellatorTest {
   @Test
   void tessellate_topEdgeEndpointsMatchSplineSamples() {
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(100, 50)), BASELINE, 1);
+        List.of(new Vector(0, 10), new Vector(100, 50)), BASELINE);
 
     ConvexPolygon slab = SplineTessellator.tessellate(spline).get(0);
 
@@ -84,29 +84,29 @@ class SplineTessellatorTest {
   }
 
   @Test
-  void tessellate_resolutionGreaterThanOne_emitsOneSlabPerSubInterval() {
+  void tessellate_singleSegment_alwaysOneSlab() {
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 8);
+        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE);
 
     List<ConvexPolygon> slabs = SplineTessellator.tessellate(spline);
 
-    assertEquals(8, slabs.size());
+    assertEquals(1, slabs.size());
   }
 
   @Test
-  void tessellate_multipleSegments_emitsResolutionSlabsPerSegment() {
+  void tessellate_multipleKnots_emitsOneSlabPerSegment() {
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(50, 10), new Vector(100, 10)), BASELINE, 4);
+        List.of(new Vector(0, 10), new Vector(50, 10), new Vector(100, 10)), BASELINE);
 
     List<ConvexPolygon> slabs = SplineTessellator.tessellate(spline);
 
-    assertEquals(8, slabs.size()); // 2 segments × 4 resolution
+    assertEquals(2, slabs.size());
   }
 
   @Test
   void tessellate_zeroThickness_throws() {
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 1);
+        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE);
 
     assertThrows(IllegalArgumentException.class,
         () -> SplineTessellator.tessellate(spline, 0.0));
@@ -115,7 +115,7 @@ class SplineTessellatorTest {
   @Test
   void tessellate_negativeThickness_throws() {
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 1);
+        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE);
 
     assertThrows(IllegalArgumentException.class,
         () -> SplineTessellator.tessellate(spline, -5.0));
@@ -127,7 +127,7 @@ class SplineTessellatorTest {
     // sampled sub-interval horizontally degenerate. The tessellator must skip them rather than
     // emit zero-width polygons.
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(50, 10), new Vector(50, 30)), BASELINE, 4);
+        List.of(new Vector(50, 10), new Vector(50, 30)), BASELINE);
 
     List<ConvexPolygon> slabs = SplineTessellator.tessellate(spline);
 
@@ -137,7 +137,7 @@ class SplineTessellatorTest {
   @Test
   void tessellate_slabHasFivePointsForClosedClockwiseWinding() {
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE, 1);
+        List.of(new Vector(0, 10), new Vector(100, 10)), BASELINE);
 
     ConvexPolygon slab = SplineTessellator.tessellate(spline).get(0);
 

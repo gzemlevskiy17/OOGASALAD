@@ -129,10 +129,14 @@ public class AuthoringControllerImpl implements AuthoringController {
       splineDraft.cancel();
     }
     toolSelector.setActiveTool(type);
-    if (type == ToolType.SELECT) {canvas.clearHoverPreview();}
+    if (type == ToolType.SELECT) {
+      canvas.clearHoverPreview();
+    }
   }
 
-  public void setSelectedPlaceable(AuthoringPlaceable placeable) {this.selectedPlaceable = placeable;}
+  public void setSelectedPlaceable(AuthoringPlaceable placeable) {
+    this.selectedPlaceable = placeable;
+  }
 
   public void setToolChangeListener(Consumer<ToolType> listener) {
     this.toolChangeListener = listener;

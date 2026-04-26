@@ -34,7 +34,7 @@ class TerrainSplineTest {
   void setUp() {
     spline = new ParabolaSpline(
         List.of(new Vector(10, 100), new Vector(200, 120), new Vector(400, 90)),
-        BASELINE, 6);
+        BASELINE);
   }
 
   @Test
