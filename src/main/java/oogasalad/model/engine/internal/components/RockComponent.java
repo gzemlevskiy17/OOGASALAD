@@ -21,6 +21,7 @@ import oogasalad.model.engine.api.TypedComponent;
 public class RockComponent extends StaticComponent implements TypedComponent, HasCollisionEffect {
 
   private final CollisionEffect effect;
+  private final CollisionEffect onceWrappedEffect;
   private final Set<GameObject> alreadyHit =
       Collections.newSetFromMap(new IdentityHashMap<>());
 
@@ -30,6 +31,7 @@ public class RockComponent extends StaticComponent implements TypedComponent, Ha
         ConvexPolygon.axisAlignedBox(x - width / 2, y - height / 2, width, height),
         "", friction, restitution);
     this.effect = Objects.requireNonNull(effect);
+    this.onceWrappedEffect = target -> applyIfFirstHit(target);
   }
 
   @Override
@@ -39,10 +41,12 @@ public class RockComponent extends StaticComponent implements TypedComponent, Ha
 
   @Override
   public CollisionEffect getCollisionEffect() {
-    return target -> {
-      if (alreadyHit.add(target)) {
-        effect.apply(target);
-      }
-    };
+    return onceWrappedEffect;
+  }
+
+  private void applyIfFirstHit(GameObject target) {
+    if (alreadyHit.add(target)) {
+      effect.apply(target);
+    }
   }
 }

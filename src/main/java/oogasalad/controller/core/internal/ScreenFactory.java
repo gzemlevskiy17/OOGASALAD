@@ -10,9 +10,11 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
+import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
+import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelProgression;
 import oogasalad.data.internal.LevelScanner;
@@ -210,8 +212,10 @@ public class ScreenFactory {
     screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);
 
     LevelLoader levelLoader = new LevelLoaderImpl();
+    GameLoader gameLoader = new GameLoaderImpl();
     GameplaySessionFactoryImpl sessionFactory = new GameplaySessionFactoryImpl(
         levelLoader,
+        gameLoader,
         this::pathForSelectedLevel
     );
 
