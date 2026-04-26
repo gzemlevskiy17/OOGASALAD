@@ -20,6 +20,8 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
  * Coordinates the authoring environment: composes input handlers and services, exposes the
  * level-editing API. Mouse routing, persistence, and spawn invariants live in collaborator
  * classes; this class is the thin glue.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class AuthoringControllerImpl implements AuthoringController {
 

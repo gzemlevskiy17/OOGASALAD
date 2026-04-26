@@ -30,6 +30,8 @@ import oogasalad.view.core.internal.AbstractAppScreen;
  * "Edit Existing World" and "Add a New World" actions at the bottom; the right pane shows
  * the levels of the selected world (or a placeholder until one is picked) with an
  * "Add a New Level" action at the bottom.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
@@ -47,6 +49,13 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
   private String selectedWorldKey;
   private Button selectedWorldButton;
 
+  /**
+   * @param onOutcome       navigation callback fired by the hub's buttons
+   * @param scanResult      filesystem scan listing worlds and their levels; populated into the left
+   *                        pane on {@link #onEnter()}
+   * @param onLevelSelected callback receiving the absolute path of a level when the user picks one
+   *                        from the right pane
+   */
   public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome,
       LevelScanner.ScanResult scanResult, Consumer<String> onLevelSelected) {
     super(onOutcome);

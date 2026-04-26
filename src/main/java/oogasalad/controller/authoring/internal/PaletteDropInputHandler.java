@@ -9,19 +9,33 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
 /**
  * Handles drag-and-drop placement from the palette onto the canvas. Shows a hover preview
  * while a drag is over the canvas, and notifies a placer when a valid drop occurs.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class PaletteDropInputHandler implements CanvasInputHandler {
 
-  public interface DropPlacer {
-    void placeAt(int col, int row);
+  /**
+   * @param canvas canvas providing the grid coordinates and preview hooks
+   * @param placer callback to fire on valid drops
+   */
+  public PaletteDropInputHandler(AuthoringCanvas canvas, DropPlacer placer) {
+    this.canvas = Objects.requireNonNull(canvas);
+    this.placer = Objects.requireNonNull(placer);
   }
 
   private final AuthoringCanvas canvas;
   private final DropPlacer placer;
 
-  public PaletteDropInputHandler(AuthoringCanvas canvas, DropPlacer placer) {
-    this.canvas = Objects.requireNonNull(canvas);
-    this.placer = Objects.requireNonNull(placer);
+  /**
+   * Callback invoked when a drag is dropped on a valid grid cell.
+   */
+  public interface DropPlacer {
+
+    /**
+     * @param col grid column where the drop occurred
+     * @param row grid row where the drop occurred
+     */
+    void placeAt(int col, int row);
   }
 
   @Override

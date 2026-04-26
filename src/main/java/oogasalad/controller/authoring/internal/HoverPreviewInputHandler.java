@@ -10,12 +10,18 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
 /**
  * Shows a hover preview at the grid cell under the cursor while the user moves the mouse
  * over the canvas. Stays out of the way during spline drafting (which has its own cursor).
+ *
+ * @author Paulina Vvedenskaya
  */
 public class HoverPreviewInputHandler implements CanvasInputHandler {
 
   private final AuthoringCanvas canvas;
   private final ToolSelector toolSelector;
 
+  /**
+   * @param canvas       canvas to drive the preview overlay on
+   * @param toolSelector source of truth for the currently-active tool
+   */
   public HoverPreviewInputHandler(AuthoringCanvas canvas, ToolSelector toolSelector) {
     this.canvas = Objects.requireNonNull(canvas);
     this.toolSelector = Objects.requireNonNull(toolSelector);

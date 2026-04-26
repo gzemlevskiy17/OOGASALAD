@@ -20,6 +20,8 @@ import oogasalad.view.core.internal.AbstractAppScreen;
  * Skeleton screen for editing a game catalog (game.json). The catalog editor itself is not
  * implemented yet; this screen currently routes the user to the level-authoring screen for
  * creating or loading levels of the current game.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
@@ -29,6 +31,11 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private final Consumer<String> loadLevelHandler;
   private final FileChooserService fileChooserService;
 
+  /**
+   * @param onOutcome        navigation callback fired by the screen's buttons
+   * @param loadLevelHandler invoked with the absolute path of a level file when the user picks one
+   *                         from the file chooser
+   */
   public GameAuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler) {
     super(onOutcome);
     this.loadLevelHandler = Objects.requireNonNull(loadLevelHandler);

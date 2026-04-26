@@ -15,6 +15,8 @@ import oogasalad.data.api.LevelAttributes;
  * Side panel for editing the {@code gameMetadata} fields of a level: name and gravity. Binds
  * directly to a {@link LevelAttributes} model — any edit immediately updates the model so save
  * picks up the latest values without a confirm step.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class LevelAttributesPanel {
 
@@ -29,6 +31,9 @@ public class LevelAttributesPanel {
   private final VBox root;
   private final LevelAttributes model;
 
+  /**
+   * @param model the level-attributes object the panel reads from and writes to
+   */
   public LevelAttributesPanel(LevelAttributes model) {
     this.model = model;
     this.root = new VBox(FIELD_SPACING);
@@ -41,6 +46,9 @@ public class LevelAttributesPanel {
     );
   }
 
+  /**
+   * @return the JavaFX node for embedding the panel into a parent layout
+   */
   public Node getVisualRoot() {
     return root;
   }
