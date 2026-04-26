@@ -225,9 +225,9 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     levelAttributes.setMaxSelectable(vehiclePalette.getMaxSelectableItems());
 
     terrainPalette = new ComponentPaletteImpl();
-    pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
-    levelItemsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.LevelItemsPalette");
-    customPalette = new ComponentPaletteImpl("oogasalad.view.authoring.CustomPalette");
+    pigsPalette = new ComponentPaletteImpl();
+    levelItemsPalette = new ComponentPaletteImpl();
+    customPalette = new ComponentPaletteImpl();
     subscribePalette(terrainPalette);
     subscribePalette(pigsPalette);
     subscribePalette(levelItemsPalette);

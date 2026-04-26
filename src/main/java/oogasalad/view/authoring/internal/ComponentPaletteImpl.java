@@ -24,19 +24,24 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
 import oogasalad.view.authoring.api.ComponentPallete;
 
 /**
- * Palette implementation that reads object definitions from properties and notifies subscribers
- * when the user selects a different object type.
+ * Palette that displays placeable items and notifies subscribers when the user selects one.
+ * Items are set dynamically via {@link #setItems(List)} — typically from a {@code GameConfig}.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class ComponentPaletteImpl implements ComponentPallete {
 
-  private static final ResourceBundle TERRAIN_PROPS =
-      ResourceBundle.getBundle("oogasalad.view.authoring.TerrainBlock");
+  private static final ResourceBundle PROPS =
+      ResourceBundle.getBundle("oogasalad.view.authoring.ComponentPalette");
 
-  private final ResourceBundle props;
   private final double sampleSize;
   private final double cellSize;
   private final Color selectedStroke;
   private final double selectedStrokeWidth;
+  private final double sampleFillInset;
+  private final double sampleFillInsetDouble;
+  private final double sampleBorderInset;
+  private final double sampleBorderInsetDouble;
 
   private final Map<String, PaletteEntry> entries = new LinkedHashMap<>();
   private final List<Consumer<AuthoringPlaceable>> subscribers = new ArrayList<>();
@@ -46,22 +51,19 @@ public class ComponentPaletteImpl implements ComponentPallete {
   private String selectedName;
 
   public ComponentPaletteImpl() {
-    this("oogasalad.view.authoring.ComponentPalette");
-  }
-
-  public ComponentPaletteImpl(String bundleName) {
-    this.props = ResourceBundle.getBundle(bundleName);
     this.sampleSize = d("sampleSize");
     this.cellSize = Double.parseDouble(
         ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas")
             .getString("cellSize"));
-    this.selectedStroke = Color.web(s("selectedStroke"));
+    this.selectedStroke = Color.web(PROPS.getString("selectedStroke"));
     this.selectedStrokeWidth = d("selectedStrokeWidth");
+    this.sampleFillInset = d("sampleFillInset");
+    this.sampleFillInsetDouble = d("sampleFillInsetDouble");
+    this.sampleBorderInset = d("sampleBorderInset");
+    this.sampleBorderInsetDouble = d("sampleBorderInsetDouble");
     paletteContent.setPadding(new Insets(d("rootPadding")));
     paletteContent.setAlignment(Pos.TOP_LEFT);
     paletteContent.getStyleClass().add("authoring-level-palette");
-    loadEntries();
-    buildSamples();
     root.setContent(paletteContent);
     root.setFitToHeight(true);
     root.setFitToWidth(false);
@@ -71,6 +73,19 @@ public class ComponentPaletteImpl implements ComponentPallete {
     root.setPrefViewportHeight(d("viewportHeight"));
     root.setMinHeight(d("viewportHeight"));
     root.getStyleClass().add("authoring-level-palette-scroll");
+  }
+
+  /**
+   * Replaces the current palette contents with the given entries and rebuilds the visual samples.
+   */
+  public void setItems(List<PaletteEntry> items) {
+    entries.clear();
+    paletteContent.getChildren().clear();
+    selectedName = null;
+    for (PaletteEntry entry : items) {
+      entries.put(entry.name(), entry);
+    }
+    buildSamples();
   }
 
   /**
@@ -85,44 +100,17 @@ public class ComponentPaletteImpl implements ComponentPallete {
     return root;
   }
 
-  private void loadEntries() {
-    String[] names = props.getString("objects").split(",");
-    for (String name : names) {
-      if (name.isBlank()) {
-        continue;
-      }
-      String color = props.getString(name + ".color");
-      int cols = Integer.parseInt(props.getString(name + ".cols"));
-      int rows = Integer.parseInt(props.getString(name + ".rows"));
-      String sprite = TERRAIN_PROPS.getString(name + ".sprite");
-      boolean tiled = Boolean.parseBoolean(TERRAIN_PROPS.getString(name + ".tiled"));
-      double friction = Double.parseDouble(TERRAIN_PROPS.getString(name + ".friction"));
-      double restitution = Double.parseDouble(TERRAIN_PROPS.getString(name + ".restitution"));
-      int blockCols = Integer.parseInt(TERRAIN_PROPS.getString(name + ".blockCols"));
-      int blockRows = Integer.parseInt(TERRAIN_PROPS.getString(name + ".blockRows"));
-      entries.put(name, new PaletteEntry(name, color, cols, rows,
-          sprite, tiled, friction, restitution, blockCols, blockRows));
-    }
-  }
-
   private void buildSamples() {
     for (PaletteEntry entry : entries.values()) {
       Canvas sample = new Canvas(sampleSize, sampleSize);
       sample.getStyleClass().add("authoring-palette-sample");
       drawSample(sample, entry, false);
       sample.setOnMouseClicked(e -> select(entry.name(), sample));
-      // Drag-from-palette: select on drag start so subscribers (canvas + controller)
-      // pick up the new placeable before the drop fires, then start a real
-      // Dragboard gesture so the cursor shows a preview and the canvas's
-      // setOnDragDropped handler can place a single block on release.
       sample.setOnDragDetected(e -> {
         select(entry.name(), sample);
         Dragboard db = sample.startDragAndDrop(TransferMode.COPY);
         ClipboardContent cc = new ClipboardContent();
         cc.putString(entry.name());
-        // Scale the sample snapshot down to the actual block pixel size on the
-        // canvas (blockCols * cellSize x blockRows * cellSize) so the cursor
-        // preview matches the placed block instead of the larger palette sample.
         double targetWidth = entry.blockCols() * cellSize;
         double targetHeight = entry.blockRows() * cellSize;
         SnapshotParameters params = new SnapshotParameters();
@@ -146,7 +134,6 @@ public class ComponentPaletteImpl implements ComponentPallete {
         entry.blockCols() * cellSize, entry.blockRows() * cellSize,
         entry.color(), entry.sprite(), entry.tiled(), entry.friction(), entry.restitution());
 
-    // Redraw all samplees to update selection highlight
     int i = 0;
     for (PaletteEntry e : entries.values()) {
       Canvas sample = (Canvas) paletteContent.getChildren().get(i++);
@@ -162,32 +149,24 @@ public class ComponentPaletteImpl implements ComponentPallete {
     GraphicsContext gc = sample.getGraphicsContext2D();
     gc.clearRect(0, 0, sampleSize, sampleSize);
     gc.setFill(Color.web(entry.color()));
-    gc.fillRect(
-        d("sampleFillInset"),
-        d("sampleFillInset"),
-        sampleSize - d("sampleFillInsetDouble"),
-        sampleSize - d("sampleFillInsetDouble"));
+    gc.fillRect(sampleFillInset, sampleFillInset,
+        sampleSize - sampleFillInsetDouble, sampleSize - sampleFillInsetDouble);
     if (selected) {
       gc.setStroke(selectedStroke);
       gc.setLineWidth(selectedStrokeWidth);
-      gc.strokeRect(
-          d("sampleBorderInset"),
-          d("sampleBorderInset"),
-          sampleSize - d("sampleBorderInsetDouble"),
-          sampleSize - d("sampleBorderInsetDouble"));
+      gc.strokeRect(sampleBorderInset, sampleBorderInset,
+          sampleSize - sampleBorderInsetDouble, sampleSize - sampleBorderInsetDouble);
     }
   }
 
-  private record PaletteEntry(String name, String color, int cols, int rows,
-                              String sprite, boolean tiled, double friction, double restitution,
-                              int blockCols, int blockRows) {
-  }
-
-  private String s(String key) {
-    return props.getString(key);
-  }
-
   private double d(String key) {
-    return Double.parseDouble(props.getString(key));
+    return Double.parseDouble(PROPS.getString(key));
+  }
+
+  /**
+   * Data for a single palette item.
+   */
+  public record PaletteEntry(String name, String color, int blockCols, int blockRows,
+                             String sprite, boolean tiled, double friction, double restitution) {
   }
 }
