@@ -2,35 +2,34 @@ package oogasalad.model.engine.internal.components;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.Objects;
 import java.util.Set;
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.api.ContactDamager;
-import oogasalad.model.engine.api.Damageable;
+import oogasalad.model.engine.api.CollisionEffect;
+import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.HasCollisionEffect;
 import oogasalad.model.engine.api.TypedComponent;
 
 /**
- * A static map obstacle that damages each {@link Damageable} dynamic body it touches at most once.
- * Subsequent contacts from the same body are ignored, regardless of how many times the collision
- * solver fires per frame. Different rocks track their hits independently, so a body can still be
- * damaged by every rock it encounters.
+ * A static map obstacle that fires its {@link CollisionEffect} on the first contact with each
+ * dynamic body. Subsequent contacts from the same body are ignored, so the effect can't double-
+ * apply when the solver fires multiple times per frame. Different rocks track their hits
+ * independently.
  *
  * @author Paulina Vvedenskaya
  */
-public class RockComponent extends StaticComponent implements TypedComponent, ContactDamager {
+public class RockComponent extends StaticComponent implements TypedComponent, HasCollisionEffect {
 
-  private final double damagePerHit;
-  private final Set<Damageable> alreadyHit =
+  private final CollisionEffect effect;
+  private final Set<GameObject> alreadyHit =
       Collections.newSetFromMap(new IdentityHashMap<>());
 
   public RockComponent(double x, double y, double width, double height,
-      double friction, double restitution, double damagePerHit) {
+      double friction, double restitution, CollisionEffect effect) {
     super(x, y, 0,
         ConvexPolygon.axisAlignedBox(x - width / 2, y - height / 2, width, height),
         "", friction, restitution);
-    if (damagePerHit < 0) {
-      throw new IllegalArgumentException("damagePerHit must be non-negative");
-    }
-    this.damagePerHit = damagePerHit;
+    this.effect = Objects.requireNonNull(effect);
   }
 
   @Override
@@ -39,13 +38,11 @@ public class RockComponent extends StaticComponent implements TypedComponent, Co
   }
 
   @Override
-  public void damageContact(Damageable target) {
-    if (target.isDestroyed() || alreadyHit.contains(target)) {
-      return;
-    }
-    alreadyHit.add(target);
-    target.damage(damagePerHit);
-    System.out.println("[rock] dealt " + damagePerHit + " damage to "
-        + target.getClass().getSimpleName() + " (hp now " + target.getCurrentHp() + ")");
+  public CollisionEffect getCollisionEffect() {
+    return target -> {
+      if (alreadyHit.add(target)) {
+        effect.apply(target);
+      }
+    };
   }
 }
