@@ -17,6 +17,7 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
+import oogasalad.view.authoring.internal.TerrainPlaceable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +40,13 @@ class AuthoringControllerImplTest {
 
     controller = new AuthoringControllerImpl(
         world, loader, saver, new LevelAttributes(), toolSelector, canvas);
+    selectDefaultTerrainBrush(controller, canvas);
+  }
+
+  private static void selectDefaultTerrainBrush(AuthoringControllerImpl c, AuthoringCanvas cv) {
+    double cs = cv.getCellSize();
+    c.setSelectedPlaceable(new TerrainPlaceable(
+        cs, cs, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.5));
   }
 
   @Test
@@ -269,6 +277,7 @@ class AuthoringControllerImplTest {
     ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
         world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+    selectDefaultTerrainBrush(ctrl, expanding);
 
     toolSelector.setActiveTool(ToolType.DRAW);
     ctrl.handleGridInteraction(400.0, 20.0); // col=10, beyond initial maxCol of 5
@@ -282,6 +291,7 @@ class AuthoringControllerImplTest {
     ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
         world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+    selectDefaultTerrainBrush(ctrl, expanding);
 
     toolSelector.setActiveTool(ToolType.DRAW);
     ctrl.handleGridInteraction(400.0, 400.0);
@@ -295,6 +305,7 @@ class AuthoringControllerImplTest {
     ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
         world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+    selectDefaultTerrainBrush(ctrl, expanding);
 
     toolSelector.setActiveTool(ToolType.DRAW);
     ctrl.handleGridInteraction(20.0, 20.0); // col=0, row=0 — within initial 5×5

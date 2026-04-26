@@ -91,8 +91,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     this.defaultFill = Color.web(PROPS.getString("defaultFill"));
     this.gridStroke = Color.web(PROPS.getString("gridStroke"));
     this.gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
-    this.selectedPlaceable = new TerrainPlaceable(
-        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.4);
+    this.selectedPlaceable = null;
     this.root = new Pane();
     root.getStyleClass().add("authoring-canvas");
     root.getTransforms().add(zoomTransform);
@@ -175,14 +174,16 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   @Override
   public void setSelectedPlaceable(AuthoringPlaceable placeable) {
-    if (placeable != null) {
-      this.selectedPlaceable = placeable;
-      if (hoverOverlay != null) {
-        int col = hoverCol;
-        int row = hoverRow;
-        clearHoverPreview();
-        showHoverPreview(col, row);
-      }
+    this.selectedPlaceable = placeable;
+    if (placeable == null) {
+      clearHoverPreview();
+      return;
+    }
+    if (hoverOverlay != null) {
+      int col = hoverCol;
+      int row = hoverRow;
+      clearHoverPreview();
+      showHoverPreview(col, row);
     }
   }
 
@@ -204,6 +205,10 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   @Override
   public void showHoverPreview(int col, int row) {
+    if (selectedPlaceable == null) {
+      clearHoverPreview();
+      return;
+    }
     if (col == hoverCol && row == hoverRow) {
       return;
     }
