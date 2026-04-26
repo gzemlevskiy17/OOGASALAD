@@ -196,7 +196,7 @@ public class ImpulseSolverUtilities {
   private static boolean canWarmStart(Collision collision, Vector referenceUnitNormal) {
     Vector cachedNormal = collision.getCachedNormal();
     return cachedNormal != null
-        && cachedNormal.dot(referenceUnitNormal) > 0.5
+        && cachedNormal.dot(referenceUnitNormal) > 0.9
         && collision.getCachedNormalImpulse() != 0.0;
   }
 
