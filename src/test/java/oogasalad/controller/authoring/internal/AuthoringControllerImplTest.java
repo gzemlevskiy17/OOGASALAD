@@ -332,6 +332,11 @@ class AuthoringControllerImplTest {
     @Override public void addJoint(Joint j) {}
     @Override public void removeJoint(Joint j) {}
     int objectCount() { return components.size(); }
+
+    @Override
+    public double getDragCoefficient() {
+      return 0.0;
+    }
   }
 
   private static class FakeToolSelector implements oogasalad.controller.authoring.api.ToolSelector {
