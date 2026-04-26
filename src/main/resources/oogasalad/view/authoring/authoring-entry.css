@@ -50,3 +50,38 @@
 .authoring-entry-nav {
   -fx-padding: 20;
 }
+
+/* Override player-entry.css min-heights so the hub fits more buttons vertically. */
+.authoring-entry-scroll .world-button {
+  -fx-min-height: 70;
+  -fx-min-width: 240;
+  -fx-pref-height: 70;
+  -fx-border-radius: 12;
+  -fx-background-radius: 12;
+  -fx-font-size: 14px;
+}
+
+.authoring-entry-scroll .level-button {
+  -fx-min-height: 70;
+  -fx-min-width: 240;
+  -fx-pref-height: 70;
+  -fx-border-radius: 12;
+  -fx-background-radius: 12;
+  -fx-font-size: 14px;
+}
+
+.authoring-entry-scroll .scroll-pane,
+.authoring-entry-scroll > .viewport,
+.authoring-entry-scroll {
+  -fx-background-color: white;
+}
+
+.authoring-entry-placeholder {
+  -fx-text-fill: #707070;
+  -fx-font-style: italic;
+}
+
+.authoring-entry-header {
+  -fx-font-family: "Serif";
+  -fx-text-fill: #333333;
+}
