@@ -26,7 +26,10 @@ import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.data.api.Settings;
+import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
 import oogasalad.model.engine.WorldImpl;
@@ -46,8 +49,8 @@ import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.components.VehicleComponent;
-import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
+import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
@@ -173,8 +176,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       VehicleLayout layout) {
     screen.getGameLayer().getChildren().clear();
 
-    GameConfig config = buildConfig();
-    BuiltWorld built = buildWorld(config, layout);
+    Settings config = buildConfig();
+    BuiltWorld built = buildWorld(layout);
     World world = built.world();
     LevelBounds bounds = built.bounds();
     GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl());
@@ -288,12 +291,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     screen.attachOverlay(hud, Pos.BOTTOM_LEFT);
   }
 
-  private BuiltWorld buildWorld(GameConfig config, VehicleLayout layout) {
+  private BuiltWorld buildWorld(VehicleLayout layout) {
     World world = new WorldImpl();
 
     String levelPath = levelPathSupplier.get();
     if (levelPath != null && !levelPath.isBlank()) {
-      levelLoader.loadLevel(levelPath, world, config);
+      GameLoader gameLoader = new GameLoaderImpl();
+      Path parent = Path.of(levelPath).getParent();
+      String gamePath = parent == null ? "game.json" : parent.resolve("game.json").toString();
+      GameConfig game = gameLoader.loadGame(gamePath);
+      levelLoader.loadLevel(levelPath, game, world);
     }
 
     LevelBounds bounds = computeLevelBounds(world);
@@ -415,8 +422,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new LevelBounds(width, height);
   }
 
-  private GameConfig buildConfig() {
-    return new GameConfig() {
+  private Settings buildConfig() {
+    return new Settings() {
       @Override
       public String getSetting(String key) { return ""; }
 
