@@ -27,7 +27,6 @@ import oogasalad.model.player.api.Containment;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.ValidationResult;
 import oogasalad.model.player.api.VehicleLayout;
-import oogasalad.model.player.internal.DefaultBuildRulesRegistry;
 import oogasalad.model.player.internal.PlacementValidator;
 import oogasalad.view.core.internal.AbstractAppScreen;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
@@ -46,17 +45,22 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private static final ResourceBundle PALETTE_CONFIG = ResourceBundle.getBundle(
       "oogasalad.view.authoring.VehicleComponentPalette");
   private static final double CELL_SIZE = 60.0;
-  private static final SpriteCache SPRITE_CACHE = new SpriteCache();
-  private static final PaletteSpriteRegistry SPRITE_REGISTRY = new PaletteSpriteRegistry();
-  private static final BuildRulesRegistry BUILD_RULES = new DefaultBuildRulesRegistry();
   private static final String REMOVE_PAYLOAD = "__REMOVE__";
 
+  private final SpriteCache spriteCache;
+  private final PaletteSpriteRegistry spriteRegistry;
+  private final BuildRulesRegistry buildRules;
   private final Map<String, List<String>> gridState = new HashMap<>();
   private PlacementValidator validator;
   private Label errorLabel;
 
-  public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome) {
+  public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome,
+      SpriteCache spriteCache, PaletteSpriteRegistry spriteRegistry,
+      BuildRulesRegistry buildRules) {
     super(onOutcome);
+    this.spriteCache = spriteCache;
+    this.spriteRegistry = spriteRegistry;
+    this.buildRules = buildRules;
   }
 
   private static String key(int row, int col) {
@@ -169,7 +173,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   }
 
   private Node buildSpritePreview(String componentName) {
-    return SPRITE_REGISTRY.resolveByType(componentName).renderPreview(SPRITE_CACHE);
+    return spriteRegistry.resolveByType(componentName).renderPreview(spriteCache);
   }
 
   private Node createGridRegion() {
@@ -179,7 +183,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
     int cols = (int) d("grid.columns");
     int rows = (int) d("grid.rows");
-    this.validator = new PlacementValidator(BUILD_RULES, rows, cols);
+    this.validator = new PlacementValidator(buildRules, rows, cols);
 
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
@@ -264,7 +268,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     clearError();
 
     List<String> stack = gridState.computeIfAbsent(key(row, col), k -> new ArrayList<>());
-    if (BUILD_RULES.lookup(componentName).containment() == Containment.NONE) {
+    if (buildRules.lookup(componentName).containment() == Containment.NONE) {
       stack.clear();
     }
     stack.add(componentName);
