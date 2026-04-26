@@ -307,6 +307,10 @@ public class ScreenFactory {
     if (outcome == Outcome.OPEN_VEHICLE_BUILDER) {
       configureVehicleBuilderForSelectedLevel();
     }
+    if (outcome == Outcome.SKIP_LOGIN) {
+      screenManager.onOutcome(Outcome.BACK_TO_MENU);
+      return;
+    }
     if (outcome == Outcome.BACK_TO_MENU && !authService.session().isLoggedIn()) {
       screenManager.onOutcome(Outcome.OPEN_LOGIN);
     } else {
