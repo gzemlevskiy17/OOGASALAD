@@ -28,6 +28,7 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
+import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
@@ -188,7 +189,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     canvas.setOnObjectSelected(terrainPropertiesPanel::show);
     double cellSize = canvas.getCellSize();
     controller = new AuthoringControllerImpl(
-        world, new LevelLoaderImpl(cellSize), new LevelSaverImpl(cellSize),
+        world, new LevelLoaderImpl(), new LevelSaverImpl(cellSize), new GameLoaderImpl(),
         levelAttributes, new ToolSelectorImpl(), canvas);
     alertService = new AuthoringAlertService();
     fileChooserService = new FileChooserService();
@@ -205,9 +206,11 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     canvasHost = new StackPane(canvasScrollPane);
 
     vehiclePalette = new VehicleComponentScrollPalette();
-    vehiclePalette.setSelectedComponentsHandler(levelAttributes::setAllowedVehicleComponents);
+    vehiclePalette.setSelectedComponentsHandler(
+        ids -> levelAttributes.getMainCharacter().setElementsAllowed(ids));
     vehiclePalette.setSelectionSummaryHandler(this::updateSelectedItemsSummary);
-    levelAttributes.setMaxSelectableVehicleItems(vehiclePalette.getMaxSelectableItems());
+    levelAttributes.getMainCharacter()
+        .setMaxSelectable(vehiclePalette.getMaxSelectableItems());
 
     terrainPalette = new ComponentPaletteImpl();
     pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
