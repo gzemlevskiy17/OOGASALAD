@@ -12,10 +12,9 @@ import javafx.scene.layout.VBox;
 import oogasalad.data.api.LevelAttributes;
 
 /**
- * Side panel for editing global level attributes: name, gravity, background image.
- *
- * Binds directly to a {@link LevelAttributes} model — any edit immediately
- * updates the model so save picks up the latest values without a confirm step.
+ * Side panel for editing the {@code gameMetadata} fields of a level: name and gravity. Binds
+ * directly to a {@link LevelAttributes} model — any edit immediately updates the model so save
+ * picks up the latest values without a confirm step.
  */
 public class LevelAttributesPanel {
 
@@ -26,7 +25,6 @@ public class LevelAttributesPanel {
   private static final double GRAVITY_MIN = -50.0;
   private static final double GRAVITY_MAX = 0.0;
   private static final double GRAVITY_STEP = 0.1;
-  private static final int SPINNER_COLS = 6;
 
   private final VBox root;
   private final LevelAttributes model;
@@ -39,8 +37,7 @@ public class LevelAttributesPanel {
     root.getChildren().addAll(
         buildTitle(),
         buildNameRow(),
-        buildGravityRow(),
-        buildBackgroundRow()
+        buildGravityRow()
     );
   }
 
@@ -55,31 +52,27 @@ public class LevelAttributesPanel {
   }
 
   private HBox buildNameRow() {
-    TextField field = new TextField(model.getLevelName());
+    LevelAttributes.GameMetadata metadata = model.getGameMetadata();
+    TextField field = new TextField(metadata.getLevelName());
     field.setPrefWidth(FIELD_WIDTH);
-    field.textProperty().addListener((obs, oldVal, newVal) -> model.setLevelName(newVal));
+    field.textProperty().addListener((obs, oldVal, newVal) -> metadata.setLevelName(newVal));
     return labeledRow("Level Name", field);
   }
 
   private HBox buildGravityRow() {
+    LevelAttributes.GameMetadata metadata = model.getGameMetadata();
     SpinnerValueFactory.DoubleSpinnerValueFactory factory =
         new SpinnerValueFactory.DoubleSpinnerValueFactory(GRAVITY_MIN, GRAVITY_MAX,
-            model.getGravity(), GRAVITY_STEP);
+            metadata.getGravity(), GRAVITY_STEP);
     Spinner<Double> spinner = new Spinner<>(factory);
     spinner.setEditable(true);
     spinner.setPrefWidth(FIELD_WIDTH);
     spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
-      if (newVal != null) model.setGravity(newVal);
+      if (newVal != null) {
+        metadata.setGravity(newVal);
+      }
     });
     return labeledRow("Gravity", spinner);
-  }
-
-  private HBox buildBackgroundRow() {
-    TextField field = new TextField(model.getBackgroundImage());
-    field.setPrefWidth(FIELD_WIDTH);
-    field.setPromptText("assets/backgrounds/sky.png");
-    field.textProperty().addListener((obs, oldVal, newVal) -> model.setBackgroundImage(newVal));
-    return labeledRow("Background", field);
   }
 
   private HBox labeledRow(String labelText, Node field) {

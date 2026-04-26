@@ -2,49 +2,43 @@ package oogasalad.model.engine.internal.components;
 
 import java.util.Objects;
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.api.PickupEffect;
+import oogasalad.model.engine.api.CollisionEffect;
+import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.HasCollisionEffect;
 import oogasalad.model.engine.api.TypedComponent;
 
 /**
  * A pass-through world object that, on contact with a dynamic body, fires a single
- * {@link PickupEffect} and removes itself. The kind of pickup (heal, damage, score, buff) is
+ * {@link CollisionEffect} and removes itself. The kind of pickup (heal, damage, score, buff) is
  * determined entirely by the effect it composes — there is no per-kind subclass. The
  * {@code typeName} drives sprite resolution via the palette (e.g. "Heart" → bp_heart.png).
  *
- * <p>Consumption is idempotent: a second {@code applyTo} call after consumption is a no-op. This
- * guards against the same collision being dispatched more than once before {@link #destroy()} takes
- * effect within a frame.
+ * <p>Consumption is idempotent: a second collision call after consumption is a no-op. This
+ * guards against the same collision being dispatched more than once before {@link #destroy()}
+ * takes effect within a frame.
  *
  * @author Paulina Vvedenskaya
  */
-public final class PickupComponent extends PassThroughComponent implements TypedComponent {
+public final class PickupComponent extends PassThroughComponent
+    implements TypedComponent, HasCollisionEffect {
 
-  private final PickupEffect effect;
+  private final CollisionEffect effect;
   private final String typeName;
   private boolean consumed;
   private Runnable onDestroyHook = () -> {
   };
 
   public PickupComponent(double x, double y, double rotation, ConvexPolygon polygon, String tag,
-      String typeName, PickupEffect effect) {
+      String typeName, CollisionEffect effect) {
     super(x, y, rotation, polygon, tag);
     this.typeName = Objects.requireNonNull(typeName);
     this.effect = Objects.requireNonNull(effect);
     this.consumed = false;
   }
 
-  private static String describe(DynamicComponent target) {
+  private static String describe(GameObject target) {
     String tag = target.getTag();
     return target.getClass().getSimpleName() + (tag.isEmpty() ? "" : " (" + tag + ")");
-  }
-
-  /**
-   * Sets a hook the pickup runs after consumption. Used by the level loader to bind
-   * {@code world.destroyObject(this)} so the pickup is fully removed (not merely deactivated) when
-   * used.
-   */
-  public void setOnDestroyHook(Runnable hook) {
-    this.onDestroyHook = Objects.requireNonNull(hook);
   }
 
   public boolean isConsumed() {
@@ -56,8 +50,21 @@ public final class PickupComponent extends PassThroughComponent implements Typed
     return typeName;
   }
 
-  public void applyTo(DynamicComponent target) {
-    Objects.requireNonNull(target);
+  /**
+   * Sets a hook the pickup runs after consumption. Used by the level loader to bind
+   * {@code world.destroyObject(this)} so the pickup is fully removed (not merely deactivated)
+   * when used.
+   */
+  public void setOnDestroyHook(Runnable hook) {
+    this.onDestroyHook = Objects.requireNonNull(hook);
+  }
+
+  @Override
+  public CollisionEffect getCollisionEffect() {
+    return target -> consumeAndApply(target);
+  }
+
+  private void consumeAndApply(GameObject target) {
     if (consumed) {
       return;
     }
