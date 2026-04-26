@@ -10,19 +10,18 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.data.api.OnCollisionAction;
+import oogasalad.data.api.StaticComponentInfo;
+import oogasalad.data.api.TerrainInfo;
 import oogasalad.model.engine.ConvexPolygon;
-import oogasalad.model.engine.api.PickupEffect;
+import oogasalad.model.engine.api.CollisionEffect;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.PickupComponent;
-import oogasalad.model.engine.internal.components.RockComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
-import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
-import oogasalad.model.engine.internal.effects.DamageEffect;
-import oogasalad.model.engine.internal.effects.HealEffect;
-import oogasalad.model.engine.internal.effects.ScoreEffect;
+import oogasalad.model.engine.internal.effects.HPChangerEffect;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.model.player.api.ScoreService;
 import oogasalad.model.player.internal.ScoreServiceImpl;
@@ -30,71 +29,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Parses a level JSON file and populates the given World with GameObjects.
+ * Parses a level.json file (new schema) and populates a {@link World} plus {@link LevelAttributes}.
+ * The matching {@link GameConfig} is required so {@code mapObject.type} strings resolve against
+ * the catalog of {@link StaticComponentInfo} entries.
  *
- * Expected JSON structure (see doc/plan/data/files/level1_flat_ground.json):
- * <pre>
- * {
- *   "level": {
- *     "terrain": [
- *       {
- *         "position": { "x": 0, "y": 0 },
- *         "size":     { "width": 60, "height": 2 },
- *         "properties": {
- *           "texture":      "assets/terrain/grass.png",
- *           "tile_texture": true,
- *           "friction":     0.6
- *         }
- *       }
- *     ]
- *   }
- * }
- * </pre>
- *
- * <p>A positive {@code scale} factor divides every position and size on read,
- * letting the authoring environment consume JSON written in world-pixel units
- * while still storing placements in grid-cell units internally. The no-arg
- * constructor uses {@code scale = 1}, which is the pass-through behavior the
- * gameplay runtime and existing tests rely on.
- *
- * Throws LevelLoadException (unchecked) on missing file or invalid JSON.
- * Collaborators: WorldImpl (receives objects), TerrainBlock (created per terrain entry).
+ * @author Paulina Vvedenskaya
  */
 public class LevelLoaderImpl implements LevelLoader {
 
   private static final Logger LOG = LogManager.getLogger(LevelLoaderImpl.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final LevelValidator VALIDATOR = new LevelValidator();
 
-  private static final double DEFAULT_FRICTION = 0.5;
-  private static final double DEFAULT_SIZE = 1.0;
-  private static final double DEFAULT_SCALE = 1.0;
-  private static final double DEFAULT_SPAWN_X = 350.0;
-  private static final double DEFAULT_SPAWN_Y = 300.0;
-  private static final int DEFAULT_MAX_SELECTABLE = 5;
-
-  private final double scale;
-
-  public LevelLoaderImpl() {
-    this(DEFAULT_SCALE);
-  }
-
-  /**
-   * @param scale divisor applied to every terrain position and size on read;
-   *              must be positive. Used by the authoring environment to
-   *              convert incoming world-pixel values back into grid-cell units.
-   */
-  public LevelLoaderImpl(double scale) {
-    if (scale <= 0) {
-      throw new IllegalArgumentException("scale must be positive, got " + scale);
-    }
-    this.scale = scale;
-  }
-
-  private static final double DEFAULT_RESTITUTION = 0.5;
-  private static final double DEFAULT_ROCK_RESTITUTION = 0.3;
-  private static final double DEFAULT_ROCK_DAMAGE = 10.0;
-  private static final double DEFAULT_PICKUP_AMOUNT = 10.0;
+  private static final double DEFAULT_OBJECT_SIZE = 60;
+  private static final double SPLINE_BASELINE_MARGIN = 200;
 
   private final ScoreService score = new ScoreServiceImpl();
 
@@ -103,208 +50,176 @@ public class LevelLoaderImpl implements LevelLoader {
   }
 
   @Override
-  public void loadLevel(String fileName, World world, LevelAttributes levelAttributes,
-      GameConfig config) {
+  public void loadLevel(String fileName, GameConfig game, World world,
+      LevelAttributes levelAttributes) {
     JsonNode root = parseFile(fileName);
-    VALIDATOR.validate(root);
 
-    JsonNode levelNode = root.path("level");
-    loadTerrain(levelNode.path("terrain"), world, fileName);
-    loadSplines(levelNode.path("splines"), world);
-    loadRocks(levelNode.path("rocks"), world);
-    loadPickups(levelNode.path("pickups"), world);
-    loadFinishLine(levelNode.path("finish_line"), world);
-    loadSpawnPoint(levelNode.path("spawn"), world);
     if (levelAttributes != null) {
-      loadVehiclePalette(levelNode.path("vehicle_palette"), levelAttributes);
+      populateGameMetadata(root.path("gameMetadata"), levelAttributes.getGameMetadata());
+      populateMainCharacter(root.path("mainCharacter"), levelAttributes.getMainCharacter());
     }
+
+    JsonNode map = root.path("map");
+    loadTerrainSpline(map, game, world);
+    loadSpawnPoint(map.path("spawnPoint"), world);
+    loadObjects(map.path("objects"), game, world);
+
     LOG.info("Level loaded from {}", fileName);
-  }
-
-  private void loadSplines(JsonNode splineArray, World world) {
-    if (splineArray.isMissingNode()) {
-      return;
-    }
-    for (JsonNode entry : splineArray) {
-      world.addObject(parseSpline(entry));
-    }
-  }
-
-  private TerrainSpline parseSpline(JsonNode entry) {
-    List<Vector> knots = readPointList(entry.path("knots"));
-    if (knots.size() < 2) {
-      throw new LevelLoadException("spline entry must contain at least 2 knots");
-    }
-    List<Vector> controls = readPointList(entry.path("controls"));
-    double baselineY = entry.path("baselineY").asDouble() / scale;
-
-    JsonNode props = entry.path("properties");
-    String texture = props.path("texture").asText("");
-    boolean tiled = props.path("tile_texture").asBoolean(false);
-    double friction = props.path("friction").asDouble(DEFAULT_FRICTION);
-    String color = props.path("color").asText("#4A2C0F");
-
-    List<Vector> resolvedControls = controls.size() == knots.size() - 1 ? controls : null;
-    ParabolaSpline spline = new ParabolaSpline(knots, resolvedControls, baselineY);
-    return new TerrainSpline(spline, texture, tiled, friction, color);
-  }
-
-  private List<Vector> readPointList(JsonNode arrayNode) {
-    List<Vector> points = new ArrayList<>();
-    if (arrayNode.isMissingNode() || !arrayNode.isArray()) {
-      return points;
-    }
-    for (JsonNode p : arrayNode) {
-      double x = p.path("x").asDouble() / scale;
-      double y = p.path("y").asDouble() / scale;
-      points.add(new Vector(x, y));
-    }
-    return points;
   }
 
   private JsonNode parseFile(String fileName) {
     try {
       return MAPPER.readTree(new File(fileName));
     } catch (IOException e) {
-      throw new LevelLoadException("Cannot read level file: " + fileName, e);
+      throw new LevelLoadException("Could not read level file: " + fileName, e);
     }
   }
 
-  private void loadTerrain(JsonNode terrainArray, World world, String sourceFile) {
-    if (terrainArray.isMissingNode()) {
-      LOG.warn("No 'terrain' array found in level file: {}", sourceFile);
-      return;
-    }
-    for (JsonNode entry : terrainArray) {
-      world.addObject(parseTerrain(entry));
-    }
-  }
-
-  private void loadSpawnPoint(JsonNode node, World world) {
-    double x = node.isMissingNode() ? DEFAULT_SPAWN_X : node.path("x").asDouble(DEFAULT_SPAWN_X) / scale;
-    double y = node.isMissingNode() ? DEFAULT_SPAWN_Y : node.path("y").asDouble(DEFAULT_SPAWN_Y) / scale;
-    world.addObject(new SpawnPointComponent(x, y));
-  }
-
-  private void loadFinishLine(JsonNode node, World world) {
+  private void populateGameMetadata(JsonNode node, LevelAttributes.GameMetadata metadata) {
     if (node.isMissingNode()) {
       return;
     }
-    double x = node.path("x").asDouble(0) / scale;
-    double y = node.path("y").asDouble(0) / scale;
-    double width = node.path("width").asDouble(20) / scale;
-    double height = node.path("height").asDouble(400) / scale;
-    world.addObject(new GoalLineComponent(x, y, width, height));
+    metadata.setLevelName(node.path("levelName").asText(metadata.getLevelName()));
+    metadata.setGameType(node.path("gameType").asText(metadata.getGameType()));
+    metadata.setScreenWidth(node.path("screenWidth").asDouble(metadata.getScreenWidth()));
+    metadata.setScreenHeight(node.path("screenHeight").asDouble(metadata.getScreenHeight()));
+    metadata.setGravity(node.path("gravity").asDouble(metadata.getGravity()));
+    metadata.setDrag(node.path("drag").asDouble(metadata.getDrag()));
   }
 
-  private void loadRocks(JsonNode rocksArray, World world) {
-    if (rocksArray.isMissingNode()) {
+  private void populateMainCharacter(JsonNode node, LevelAttributes.MainCharacter mainCharacter) {
+    if (node.isMissingNode()) {
       return;
     }
-    for (JsonNode entry : rocksArray) {
-      world.addObject(parseRock(entry));
+    mainCharacter.setGridSize(node.path("gridSize").asDouble(mainCharacter.getGridSize()));
+    mainCharacter.setMaxSelectable(
+        node.path("maxSelectable").asInt(mainCharacter.getMaxSelectable()));
+    mainCharacter.setMaxHP(node.path("maxHP").asDouble(mainCharacter.getMaxHP()));
+    JsonNode allowed = node.path("elementsAllowed");
+    if (allowed.isArray()) {
+      List<String> ids = new ArrayList<>();
+      for (JsonNode entry : allowed) {
+        ids.add(entry.asText());
+      }
+      mainCharacter.setElementsAllowed(ids);
     }
   }
 
-  private RockComponent parseRock(JsonNode entry) {
-    JsonNode pos = entry.path("position");
-    JsonNode size = entry.path("size");
-    JsonNode props = entry.path("properties");
-
-    double x = pos.path("x").asDouble(0);
-    double y = pos.path("y").asDouble(0);
-    double width = size.path("width").asDouble(DEFAULT_SIZE);
-    double height = size.path("height").asDouble(DEFAULT_SIZE);
-    double friction = props.path("friction").asDouble(DEFAULT_FRICTION);
-    double restitution = props.path("restitution").asDouble(DEFAULT_ROCK_RESTITUTION);
-    double damage = props.path("damage").asDouble(DEFAULT_ROCK_DAMAGE);
-
-    return new RockComponent(x, y, width, height, friction, restitution, damage);
-  }
-
-  private void loadPickups(JsonNode pickupsArray, World world) {
-    if (pickupsArray.isMissingNode()) {
+  private void loadTerrainSpline(JsonNode map, GameConfig game, World world) {
+    JsonNode knotsNode = map.path("knotLocations");
+    if (!knotsNode.isArray() || knotsNode.size() < 2) {
       return;
     }
-    for (JsonNode entry : pickupsArray) {
-      PickupComponent pickup = parsePickup(entry);
-      pickup.setOnDestroyHook(() -> world.destroyObject(pickup));
-      world.addObject(pickup);
+    List<Vector> knots = readPointList(knotsNode);
+    double baselineY = baselineFor(knots);
+    ParabolaSpline spline = new ParabolaSpline(knots, baselineY);
+    TerrainInfo terrain = pickTerrain(map.path("terrainOptions"), game);
+    TerrainSpline component = terrain == null
+        ? new TerrainSpline(spline, 0)
+        : new TerrainSpline(spline, terrain.spriteUrl() == null ? "" : terrain.spriteUrl(),
+            false, terrain.friction(),
+            terrain.visualColor() == null ? "#4A2C0F" : terrain.visualColor());
+    world.addObject(component);
+  }
+
+  private TerrainInfo pickTerrain(JsonNode terrainOptions, GameConfig game) {
+    if (game == null || !terrainOptions.isArray() || terrainOptions.size() == 0) {
+      return null;
     }
-  }
-
-  private PickupComponent parsePickup(JsonNode entry) {
-    String type = entry.path("type").asText("");
-    JsonNode pos = entry.path("position");
-    JsonNode size = entry.path("size");
-    JsonNode props = entry.path("properties");
-
-    double x = pos.path("x").asDouble(0);
-    double y = pos.path("y").asDouble(0);
-    double width = size.path("width").asDouble(DEFAULT_SIZE);
-    double height = size.path("height").asDouble(DEFAULT_SIZE);
-    double amount = props.path("amount").asDouble(DEFAULT_PICKUP_AMOUNT);
-
-    String typeName = pickupTypeName(type);
-    PickupEffect effect = pickupEffectFor(type, amount);
-    ConvexPolygon polygon = ConvexPolygon.axisAlignedBox(x - width / 2, y - height / 2, width,
-        height);
-    return new PickupComponent(x, y, 0, polygon, "", typeName, effect);
-  }
-
-  private String pickupTypeName(String type) {
-    return switch (type) {
-      case "heart" -> "Heart";
-      case "bomb" -> "Bomb";
-      case "coin" -> "Coin";
-      case "xp" -> "XPBoost";
-      default -> throw new LevelLoadException("Unknown pickup type: '" + type + "'");
-    };
-  }
-
-  private PickupEffect pickupEffectFor(String type, double amount) {
-    return switch (type) {
-      case "heart" -> new HealEffect(amount);
-      case "bomb" -> new DamageEffect(amount);
-      case "coin", "xp" -> new ScoreEffect(score, (int) amount);
-      default -> throw new LevelLoadException("Unknown pickup type: '" + type + "'");
-    };
-  }
-
-  private TerrainBlock parseTerrain(JsonNode entry) {
-    JsonNode pos = entry.path("position");
-    JsonNode size = entry.path("size");
-    JsonNode props = entry.path("properties");
-
-    double x = pos.path("x").asDouble(0) / scale;
-    double y = pos.path("y").asDouble(0) / scale;
-    double width = size.path("width").asDouble(DEFAULT_SIZE) / scale;
-    double height = size.path("height").asDouble(DEFAULT_SIZE) / scale;
-    String texture = props.path("texture").asText("assets/terrain/default.png");
-    boolean tiled = props.path("tile_texture").asBoolean(false);
-    double friction = props.path("friction").asDouble(DEFAULT_FRICTION);
-    double restitution = props.path("restitution").asDouble(DEFAULT_RESTITUTION);
-
-    return new TerrainBlock(x, y, width, height, texture, tiled, friction, restitution);
-  }
-
-  private void loadVehiclePalette(JsonNode vehiclePaletteNode, LevelAttributes levelAttributes) {
-    if (vehiclePaletteNode.isMissingNode()) {
-      levelAttributes.setMaxSelectableVehicleItems(DEFAULT_MAX_SELECTABLE);
-      levelAttributes.setAllowedVehicleComponents(java.util.List.of());
-      return;
-    }
-
-    levelAttributes.setMaxSelectableVehicleItems(
-        vehiclePaletteNode.path("max_selectable").asInt(DEFAULT_MAX_SELECTABLE));
-
-    java.util.List<String> allowedComponents = new java.util.ArrayList<>();
-    JsonNode allowedComponentsNode = vehiclePaletteNode.path("allowed_components");
-    if (allowedComponentsNode.isArray()) {
-      for (JsonNode componentNode : allowedComponentsNode) {
-        allowedComponents.add(componentNode.asText());
+    String firstId = terrainOptions.get(0).asText();
+    for (TerrainInfo info : game.terrainTypes()) {
+      if (info.id().equals(firstId)) {
+        return info;
       }
     }
-    levelAttributes.setAllowedVehicleComponents(allowedComponents);
+    return null;
+  }
+
+  private double baselineFor(List<Vector> knots) {
+    double maxY = knots.get(0).y();
+    for (Vector v : knots) {
+      if (v.y() > maxY) {
+        maxY = v.y();
+      }
+    }
+    return maxY + SPLINE_BASELINE_MARGIN;
+  }
+
+  private List<Vector> readPointList(JsonNode arrayNode) {
+    List<Vector> points = new ArrayList<>();
+    for (JsonNode entry : arrayNode) {
+      double x = entry.path("x").asDouble(0);
+      double y = entry.path("y").asDouble(0);
+      points.add(new Vector(x, y));
+    }
+    return points;
+  }
+
+  private void loadSpawnPoint(JsonNode spawnNode, World world) {
+    if (spawnNode.isMissingNode()) {
+      return;
+    }
+    double x = spawnNode.path("x").asDouble(0);
+    double y = spawnNode.path("y").asDouble(0);
+    world.addObject(new SpawnPointComponent(x, y));
+  }
+
+  private void loadObjects(JsonNode objectsArray, GameConfig game, World world) {
+    if (!objectsArray.isArray()) {
+      return;
+    }
+    if (game == null && objectsArray.size() > 0) {
+      throw new LevelLoadException("Cannot load map.objects without a GameConfig");
+    }
+    for (JsonNode entry : objectsArray) {
+      String typeId = entry.path("type").asText("");
+      double x = entry.path("position").path("x").asDouble(0);
+      double y = entry.path("position").path("y").asDouble(0);
+      StaticComponentInfo info = lookupStatic(typeId, game);
+      if (info == null) {
+        throw new LevelLoadException("Unknown mapObject type: '" + typeId + "'");
+      }
+      addStaticObject(info, x, y, world);
+    }
+  }
+
+  private StaticComponentInfo lookupStatic(String typeId, GameConfig game) {
+    for (StaticComponentInfo info : game.staticComponents()) {
+      if (info.id().equals(typeId)) {
+        return info;
+      }
+    }
+    return null;
+  }
+
+  private void addStaticObject(StaticComponentInfo info, double x, double y, World world) {
+    OnCollisionAction action = info.onCollisionAction();
+    String actionType = action == null ? null : action.type();
+
+    if ("finish".equals(actionType)) {
+      world.addObject(new GoalLineComponent(x, y, DEFAULT_OBJECT_SIZE, DEFAULT_OBJECT_SIZE));
+      return;
+    }
+
+    CollisionEffect effect = effectFor(action);
+    ConvexPolygon polygon = ConvexPolygon.axisAlignedBox(
+        x - DEFAULT_OBJECT_SIZE / 2, y - DEFAULT_OBJECT_SIZE / 2,
+        DEFAULT_OBJECT_SIZE, DEFAULT_OBJECT_SIZE);
+    PickupComponent pickup = new PickupComponent(x, y, 0, polygon, "", info.id(), effect);
+    pickup.setOnDestroyHook(() -> world.destroyObject(pickup));
+    world.addObject(pickup);
+  }
+
+  private CollisionEffect effectFor(OnCollisionAction action) {
+    if (action == null) {
+      return target -> {
+      };
+    }
+    return switch (action.type()) {
+      case "heal" -> new HPChangerEffect(action.amount() == null ? 0 : action.amount());
+      case "damage" -> new HPChangerEffect(action.amount() == null ? 0 : -action.amount());
+      default ->
+          throw new LevelLoadException("Unknown collision action type: '" + action.type() + "'");
+    };
   }
 }
