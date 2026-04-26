@@ -77,13 +77,6 @@ public abstract class GameComponent implements GameObject {
     return staticState;
   }
 
-
-  //TODO: should we expose this?
-  public void setStaticState(StaticState staticState) {
-    this.staticState = staticState;
-  }
-
-
   public boolean isActive() {
     return active;
   }
