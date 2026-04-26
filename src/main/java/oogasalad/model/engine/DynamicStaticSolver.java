@@ -6,19 +6,45 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 
 /**
+ * Solves collisions between a dynamic body and a static body.
+ *
+ * <p><strong>Purpose:</strong> Applies impulse response, positional correction, and optional
+ * contact damage effects for dynamic-vs-static collisions.
+ *
+ * <p><strong>Assumptions:</strong> The provided collision manifold and penetration data were
+ * generated for {@code objectA} and {@code objectB} during the current simulation step.
+ *
+ * <p><strong>Dependencies:</strong> Delegates numerical response to
+ * {@link ImpulseSolverUtilities} and gameplay side effects to {@link ContactDamager} /
+ * {@link Damageable} contracts.
+ *
+ * <p><strong>Example:</strong>
+ *
+ * <pre>{@code
+ * DynamicStaticSolver solver = new DynamicStaticSolver();
+ * solver.solve(dynamicBody, staticBody, collision);
+ * }</pre>
+ *
+ * @author Georgiy Zemlevskiy
  * @author Paulina Vvedenskaya
  */
 public class DynamicStaticSolver {
-  //TODO: comment
 
   private StaticComponent referenceObject;
   private DynamicComponent incidentObject;
 
+  /**
+   * Applies contact-triggered damage when both collision sides implement the required contracts.
+   *
+   * @param staticSide  static side that may inflict contact damage
+   * @param dynamicSide dynamic side that may receive damage
+   */
   private static void applyContactDamage(StaticComponent staticSide, DynamicComponent dynamicSide) {
     if (staticSide instanceof ContactDamager damager && dynamicSide instanceof Damageable target) {
       damager.damageContact(target);
     }
   }
+  //TODO: refactor
 
   /**
    * Resolves one collision using the impulse solver pipeline.
@@ -35,10 +61,6 @@ public class DynamicStaticSolver {
    */
   public void solve(DynamicComponent objectA, StaticComponent objectB,
       Collision collision) {
-    System.out.println("[ds-solve] " + objectA.getClass().getSimpleName()
-        + " (y=" + objectA.y() + ", vy="
-        + objectA.getDynamicState().getLinearVelocity().y() + ") vs "
-        + objectB.getClass().getSimpleName());
     //TODO: move this into the dispatcher. document the convention
     if (objectA == collision.getReferenceObject()) {
       collision.setPenetration(collision.getPenetration().multiply(-1));
@@ -57,17 +79,16 @@ public class DynamicStaticSolver {
    *
    * <p>This updates linear and angular velocities in-place on both colliding object states.
    *
+   * <p><strong>Assumptions:</strong> {@code referenceObject} and {@code incidentObject} have been
+   * set by {@link #solve(DynamicComponent, StaticComponent, Collision)} before invocation.
+   *
    * @param collision detected collision pair
    */
   private void resolveImpulseAtContacts(Collision collision) {
-    //TODO: refactor
-    StaticState referenceStaticState = referenceObject.getStaticState();
-    StaticState incidentStaticState = incidentObject.getStaticState();
     DynamicState referenceDynamicState = new DynamicState(); //initialize placeholder state with 0 values
     DynamicState incidentDynamicState = incidentObject.getDynamicState();
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(collision, referenceObject,
-        incidentObject, incidentStaticState, referenceStaticState, incidentDynamicState,
-        referenceDynamicState);
+        incidentObject, incidentDynamicState, referenceDynamicState);
   }
 }
