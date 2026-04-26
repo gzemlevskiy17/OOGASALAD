@@ -57,11 +57,13 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome,
       SpriteCache spriteCache, PaletteSpriteRegistry spriteRegistry,
       BuildRulesRegistry buildRules) {
-    super(onOutcome);
     this.spriteCache = spriteCache;
     this.spriteRegistry = spriteRegistry;
     this.buildRules = buildRules;
+    // super() calls createRoot(), so the fields above must be assigned first.
+    super(onOutcome);
   }
+
 
   private static String key(int row, int col) {
     return row + "," + col;
