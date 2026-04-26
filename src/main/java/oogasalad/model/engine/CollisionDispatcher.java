@@ -40,7 +40,6 @@ public class CollisionDispatcher {
   private final DynamicDynamicSolver impulseSolver = new DynamicDynamicSolver();
   private final DynamicPassthroughSolver dynamicPassthroughSolver = new DynamicPassthroughSolver();
   private final DynamicStaticSolver dynamicStaticSolver = new DynamicStaticSolver();
-  // private final StaticStaticSolver staticStaticSolver = new StaticStaticSolver();
 
   private Map<CollisionPair, CollisionSolver> solverMap;
 
@@ -66,11 +65,6 @@ public class CollisionDispatcher {
           dynamicPassthroughSolver.solve((DynamicComponent) objectA, (PassThroughComponent) objectB,
               collision);
         });
-//    solverMap.put(new CollisionPair(StaticComponent.class, StaticComponent.class),
-//        (objectA, objectB, collision) -> {
-//          staticStaticSolver.solve((StaticComponent) objectA, (StaticComponent) objectB, collision);
-//          staticStaticSolver.solve((StaticComponent) objectA, (StaticComponent) objectB, collision);
-//        });
   }
 
   public Map<CollisionPair, CollisionSolver> getSolverMap() {
