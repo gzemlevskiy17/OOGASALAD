@@ -131,6 +131,13 @@ public class SplineDraftController {
     canvas.refreshGrid();
   }
 
+  /** Discards the draft only if there is one in progress. No-op otherwise. */
+  public void cancelIfDrafting() {
+    if (draftSize() > 0) {
+      cancel();
+    }
+  }
+
   /**
    * Draws the current draft (knots, polygon ghost, cursor hint) onto the canvas overlay. Called
    * after every mutation so the designer always sees an up-to-date preview.

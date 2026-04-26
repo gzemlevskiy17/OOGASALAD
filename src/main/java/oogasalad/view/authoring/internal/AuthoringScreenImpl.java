@@ -140,11 +140,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
     wireModeHandlers();
     refreshDisplayedMode();
-    controller.setToolChangeListener(type -> {
-      if (type == ToolType.SELECT && toolButtons != null && !toolButtons.isEmpty()) {
-        updateToolButtonStyles(toolButtons.get(0));
-      }
-    });
 
     return layout;
   }
@@ -198,8 +193,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     alertService = new AuthoringAlertService();
     fileChooserService = new FileChooserService();
     selectedItemsLabel = buildSelectedItemsLabel();
-    controller.setPlacementErrorHandler(
-        message -> alertService.showWarning(s("placementWarningTitle"), message));
     controller.initializeCanvasHandlers();
 
     canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
@@ -365,12 +358,8 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     double actionHeight = d("topActionButtonHeight");
 
     Button selectButton = createSizedButton(s("selectButtonText"), actionWidth, actionHeight);
-    Button eraseButton = createSizedButton(s("eraseButtonText"), actionWidth, actionHeight);
-    Button paintButton = createSizedButton(s("paintButtonText"), actionWidth, actionHeight);
     Button splineButton = createSizedButton(s("splineButtonText"), actionWidth, actionHeight);
     selectButton.getStyleClass().add("authoring-action-button");
-    eraseButton.getStyleClass().add("authoring-action-button");
-    paintButton.getStyleClass().add("authoring-action-button");
     splineButton.getStyleClass().add("authoring-action-button");
 
     Button splineCommitButton = createSizedButton(
@@ -381,20 +370,12 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
       canvas.refreshGrid();
     });
 
-    toolButtons = List.of(selectButton, eraseButton, paintButton, splineButton);
+    toolButtons = List.of(selectButton, splineButton);
     selectButton.getStyleClass().add("tool-active");
 
     selectButton.setOnAction(event -> {
       controller.setActiveTool(ToolType.SELECT);
       updateToolButtonStyles(selectButton);
-    });
-    eraseButton.setOnAction(event -> {
-      controller.setActiveTool(ToolType.ERASE);
-      updateToolButtonStyles(eraseButton);
-    });
-    paintButton.setOnAction(event -> {
-      controller.setActiveTool(ToolType.PAINT);
-      updateToolButtonStyles(paintButton);
     });
     splineButton.setOnAction(event -> {
       controller.setActiveTool(ToolType.SPLINE);
@@ -450,7 +431,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     runButton.setOnAction(event -> handleRun());
 
     HBox toolButtonBox = new HBox(d("topBarSpacing"),
-        selectButton, eraseButton, paintButton, splineButton,
+        selectButton, splineButton,
         splineCommitButton,
         zoomOutButton, zoomInButton, fitButton);
     toolButtonBox.setAlignment(Pos.CENTER_LEFT);
