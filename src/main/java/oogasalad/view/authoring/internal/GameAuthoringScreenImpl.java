@@ -176,6 +176,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private void refreshTerrainList(ListView<String> list) {
+    if (terrainTypes == null) return;
     list.getItems().setAll(terrainTypes.stream()
         .map(t -> t.id() + "  [friction=" + t.friction() + "]").toList());
   }
@@ -220,6 +221,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private void refreshStaticList(ListView<String> list) {
+    if (staticComponents == null) return;
     list.getItems().setAll(staticComponents.stream()
         .map(s -> s.id() + (s.onCollisionAction() != null
             ? "  [" + s.onCollisionAction().type() + "]" : "  [inert]")).toList());
@@ -285,6 +287,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private void refreshComponentList(ListView<String> list) {
+    if (components == null) return;
     list.getItems().setAll(components.stream()
         .map(c -> c.id() + "  [" + c.buttons().size() + " buttons]").toList());
   }
