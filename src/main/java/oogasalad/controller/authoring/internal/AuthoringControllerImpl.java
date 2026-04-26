@@ -6,6 +6,7 @@ import javafx.scene.Node;
 import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
+import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
@@ -14,7 +15,6 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
-import oogasalad.view.authoring.internal.TerrainPlaceable;
 
 /**
  * Coordinates the authoring environment: composes input handlers and services, exposes the
@@ -34,7 +34,8 @@ public class AuthoringControllerImpl implements AuthoringController {
   private AuthoringPlaceable selectedPlaceable;
 
   public AuthoringControllerImpl(World world, LevelLoader loader, LevelSaver saver,
-      LevelAttributes levelAttributes, ToolSelector toolSelector, AuthoringCanvas canvas) {
+      GameLoader gameLoader, LevelAttributes levelAttributes, ToolSelector toolSelector,
+      AuthoringCanvas canvas) {
     this.world = world;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
@@ -42,7 +43,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.splineDraft = new SplineDraftController(world, canvas);
     this.spawnPointService = new SpawnPointService(world);
     this.persistence = new AuthoringPersistenceService(
-        loader, saver, world, levelAttributes, spawnPointService, history, canvas);
+        loader, saver, gameLoader, world, levelAttributes, spawnPointService, history, canvas);
     spawnPointService.getSpawnPoint();
   }
 
