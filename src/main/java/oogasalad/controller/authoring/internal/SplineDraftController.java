@@ -44,7 +44,6 @@ public class SplineDraftController {
   private static final double KNOT_RADIUS = 5.0;
   private static final Color KNOT_COLOR = Color.CORNFLOWERBLUE;
   private static final Color GHOST_STROKE_COLOR = Color.CORNFLOWERBLUE;
-  private static final Color GHOST_FILL_COLOR = Color.rgb(70, 130, 180, 0.35);
   private static final Color CURSOR_HINT_COLOR = Color.rgb(100, 100, 100, 0.55);
   private static final int MIN_KNOTS_TO_COMMIT = 2;
   private static final String DEFAULT_COLOR = "#4A2C0F";
@@ -57,6 +56,10 @@ public class SplineDraftController {
 
   private final List<Vector> draftKnots = new ArrayList<>();
   private Vector cursorHint;
+  private String terrainSprite = DEFAULT_SPRITE;
+  private boolean terrainTiled = false;
+  private double terrainFriction = DEFAULT_FRICTION;
+  private String terrainColor = DEFAULT_COLOR;
 
   /**
    * @param world  the world that committed splines are added to
@@ -74,6 +77,17 @@ public class SplineDraftController {
   /** @return the number of draft knots currently placed. */
   public int draftSize() {
     return draftKnots.size();
+  }
+
+  /**
+   * Sets the terrain style used by newly committed spline terrain.
+   */
+  public void setTerrainStyle(String sprite, boolean tiled, double friction, String color) {
+    terrainSprite = sprite == null ? DEFAULT_SPRITE : sprite;
+    terrainTiled = tiled;
+    terrainFriction = friction;
+    terrainColor = color == null || color.isBlank() ? DEFAULT_COLOR : color;
+    renderDraftOverlay();
   }
 
   /** Adds a knot at the given grid-cell coordinate. */
@@ -105,7 +119,7 @@ public class SplineDraftController {
       ParabolaSpline spline = new ParabolaSpline(
           new ArrayList<>(draftKnots), baselineYCells);
       committed = new TerrainSpline(
-          spline, DEFAULT_SPRITE, false, DEFAULT_FRICTION, DEFAULT_COLOR);
+          spline, terrainSprite, terrainTiled, terrainFriction, terrainColor);
       world.addObject(committed);
     }
     cancel();
@@ -171,11 +185,19 @@ public class SplineDraftController {
     path.getElements().add(new LineTo(first.x() * cellSize, baselinePx));
     path.getElements().add(new ClosePath());
 
-    path.setFill(GHOST_FILL_COLOR);
+    path.setFill(parseGhostFillColor());
     path.setStroke(GHOST_STROKE_COLOR);
     path.setStrokeWidth(1.5);
     path.setMouseTransparent(true);
     return path;
+  }
+
+  private Color parseGhostFillColor() {
+    try {
+      return Color.web(terrainColor, 0.35);
+    } catch (IllegalArgumentException e) {
+      return Color.web(DEFAULT_COLOR, 0.35);
+    }
   }
 
   private Circle buildKnotMarker(Vector knot, double cellSize) {

@@ -142,6 +142,21 @@ class SplineDraftControllerTest {
   }
 
   @Test
+  void commit_afterSettingTerrainStyle_usesSelectedTerrainStyle() {
+    controller.setTerrainStyle("data/assets/grass.png", true, 0.8, "#00AA00");
+    controller.addKnot(0.0, 20.0);
+    controller.addKnot(10.0, 22.0);
+
+    TerrainSpline committed = controller.commit();
+
+    assertNotNull(committed);
+    assertEquals("data/assets/grass.png", committed.getSprite());
+    assertTrue(committed.isTiled());
+    assertEquals(0.8, committed.getFriction(), 0.001);
+    assertEquals("#00AA00", committed.getColor());
+  }
+
+  @Test
   void cancel_clearsDraftAndOverlays() {
     controller.addKnot(10.0, 20.0);
     controller.addKnot(20.0, 25.0);
