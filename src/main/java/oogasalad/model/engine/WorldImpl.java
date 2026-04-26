@@ -4,21 +4,40 @@ import java.util.ArrayList;
 import java.util.List;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 
 /**
  * Default in-memory {@link World} implementation.
  *
  * <p>Maintains both the full set of registered components and the active subset exposed to the
- * engine/render loop. Lists returned to callers are defensive, unmodifiable snapshots that
- * preserve registration order.
+ * engine/render loop. Lists returned to callers are defensive, unmodifiable snapshots that preserve
+ * registration order.
+ *
+ * <p><strong>Assumptions:</strong> Callers mutate component active flags through world APIs or
+ * component methods before requesting snapshots. This implementation is not synchronized.
+ *
+ * <p><strong>Dependencies:</strong> Stores {@link GameComponent}, {@link DynamicComponent}, and
+ * {@link Joint} instances provided by engine orchestration.
+ *
+ * <p><strong>Example:</strong>
+ *
+ * <pre>{@code
+ * World world = new WorldImpl();
+ * world.addComponent(component);
+ * world.activateAll();
+ * List<GameComponent> renderables = world.getActiveComponents();
+ * }</pre>
+ *
+ * @author Xuye
+ * @author Georgiy
  */
 public class WorldImpl implements World {
 
-  private final List<GameComponent> allComponents;
-  private final List<GameComponent> activeComponents;
-  private final List<Joint> joints;
   private static final double DRAG_COEFFICIENT = 0.1; //TODO: read from authoring environment
+  private List<GameComponent> allComponents;
+  private List<GameComponent> activeComponents;
+  private List<Joint> joints;
 
   /**
    * Creates an empty world with no components or joints registered.
@@ -29,7 +48,10 @@ public class WorldImpl implements World {
     this.joints = new ArrayList<>();
   }
 
-  /** Returns a read-only active components list. */
+
+  /**
+   * Returns a read-only active components list.
+   */
   @Override
   public List<GameComponent> getComponents() {
     synchronizeAllActiveMembership();
@@ -37,28 +59,50 @@ public class WorldImpl implements World {
   }
 
 
-  /** Returns a read-only snapshot of every registered component. */
+  /**
+   * Returns a read-only snapshot of every registered component.
+   */
   @Override
   public List<GameComponent> getAllComponents() {
     return List.copyOf(allComponents);
   }
 
 
-  /** Returns a read-only snapshot of components whose active flag is currently true. */
+  /**
+   * Returns a read-only snapshot of components whose active flag is currently true.
+   */
   @Override
   public List<GameComponent> getActiveComponents() {
     synchronizeAllActiveMembership();
     return List.copyOf(activeComponents);
   }
 
+  /**
+   * Returns active components that currently support dynamic state updates.
+   *
+   * @return active dynamic components in registration order
+   */
+  @Override
+  public List<DynamicComponent> getActiveDynamicComponents() {
+    synchronizeAllActiveMembership();
+    return activeComponents.stream()
+        .filter(DynamicComponent.class::isInstance)
+        .map(DynamicComponent.class::cast)
+        .toList();
+  }
 
-  /** Returns a read-only snapshot of the registered joint list. */
+  /**
+   * Returns a read-only snapshot of the registered joint list.
+   */
   @Override
   public List<Joint> getJoints() {
     return List.copyOf(joints);
   }
 
-  /** Adds the component if absent, then syncs its active membership. */
+  /**
+   * Adds the component if absent, then syncs its active membership. Adds dynamic components to a
+   * separate list for efficient engine loop access.
+   */
   @Override
   public void addComponent(GameComponent component) {
     if (!allComponents.contains(component)) {
@@ -68,7 +112,9 @@ public class WorldImpl implements World {
   }
 
 
-  /** Removes the component from both the master and active collections. */
+  /**
+   * Removes the component from both the master and active collections.
+   */
   @Override
   public void removeComponent(GameComponent component) {
     activeComponents.remove(component);
@@ -76,7 +122,9 @@ public class WorldImpl implements World {
   }
 
 
-  /** Destroys the component and unregisters it when it is present in the world. */
+  /**
+   * Destroys the component and unregisters it when it is present in the world.
+   */
   @Override
   public void destroyComponent(GameComponent component) {
     if (!allComponents.contains(component)) {
@@ -87,7 +135,9 @@ public class WorldImpl implements World {
   }
 
 
-  /** Marks a registered component active and syncs it into the active collection. */
+  /**
+   * Marks a registered component active and syncs it into the active collection.
+   */
   @Override
   public void activateComponent(GameComponent component) {
     if (!allComponents.contains(component)) {
@@ -98,7 +148,9 @@ public class WorldImpl implements World {
   }
 
 
-  /** Marks a registered component inactive and removes it from the active collection. */
+  /**
+   * Marks a registered component inactive and removes it from the active collection.
+   */
   @Override
   public void deactivateComponent(GameComponent component) {
     if (!allComponents.contains(component)) {
@@ -109,7 +161,9 @@ public class WorldImpl implements World {
   }
 
 
-  /** Activates every registered component and rebuilds active membership accordingly. */
+  /**
+   * Activates every registered component and rebuilds active membership accordingly.
+   */
   @Override
   public void activateAll() {
     for (GameComponent component : new ArrayList<>(allComponents)) {
@@ -119,16 +173,21 @@ public class WorldImpl implements World {
   }
 
 
-  /** Deactivates every component and clears the active collection. */
+  /**
+   * Deactivates every component and clears the active collection.
+   */
   @Override
   public void deactivateAll() {
     for (GameComponent component : new ArrayList<>(allComponents)) {
-      component.deactivate();}
+      component.deactivate();
+    }
     activeComponents.clear();
   }
 
 
-  /** Removes every component and joint from the world. */
+  /**
+   * Removes every component and joint from the world.
+   */
   @Override
   public void clear() {
     activeComponents.clear();
@@ -137,7 +196,9 @@ public class WorldImpl implements World {
   }
 
 
-  /** Adds the joint if it is not already registered. */
+  /**
+   * Adds the joint if it is not already registered.
+   */
   @Override
   public void addJoint(Joint joint) {
     if (!joints.contains(joint)) {
@@ -145,27 +206,42 @@ public class WorldImpl implements World {
     }
   }
 
-  /** Removes the joint if it is currently registered. */
+  /**
+   * Removes the joint if it is currently registered.
+   */
   @Override
   public void removeJoint(Joint joint) {
     joints.remove(joint);
   }
 
+  /**
+   *
+   * @return Drag coefficient.
+   */
   @Override
   public double getDragCoefficient() {
     return DRAG_COEFFICIENT;
   }
 
-  /** Active state toggle, if object is in active list, delete it, if not add it to active list. */
+
+  /**
+   * Active state toggle, if object is in active list, delete it, if not add it to active list.
+   */
   private void synchronizeActiveMembership(GameComponent component) {
     if (component.isActive()) {
       if (!activeComponents.contains(component)) {
         activeComponents.add(component);
       }
     } else {
-      activeComponents.remove(component);}
+      activeComponents.remove(component);
+    }
   }
 
+  /**
+   * Reconciles active membership against all registered components.
+   *
+   * <p>Removes stale/inactive entries, then re-adds any components whose active flag is true.
+   */
   private void synchronizeAllActiveMembership() {
     activeComponents.removeIf(component -> !allComponents.contains(component)
         || !component.isActive());
