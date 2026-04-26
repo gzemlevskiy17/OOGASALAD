@@ -33,6 +33,11 @@ public class AuthoringStaticComponent extends PassThroughComponent
   }
 
   @Override
+  public String getDisplayName() {
+    return typeId;
+  }
+
+  @Override
   public double getX() {
     return x();
   }

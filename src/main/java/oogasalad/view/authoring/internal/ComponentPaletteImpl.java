@@ -210,7 +210,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
       return new AuthoringStaticComponent(0, 0, width, height, entry.name(), entry.color(),
           entry.sprite());
     }
-    return new TerrainPlaceable(width, height, entry.color(), entry.sprite(), entry.tiled(),
+    return new TerrainPlaceable(entry.name(), width, height, entry.color(), entry.sprite(), entry.tiled(),
         entry.friction(), entry.restitution());
   }
 

@@ -27,6 +27,10 @@ public interface AuthoringPlaceable {
     return (int) Math.ceil(getHeight() / cellSize);
   }
 
+  default String getDisplayName() {
+    return getClass().getSimpleName();
+  }
+
   default double left() {
     return getX();
   }

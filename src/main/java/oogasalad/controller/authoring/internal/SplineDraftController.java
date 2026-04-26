@@ -56,6 +56,7 @@ public class SplineDraftController {
 
   private final List<Vector> draftKnots = new ArrayList<>();
   private Vector cursorHint;
+  private String terrainName = "Spline Terrain";
   private String terrainSprite = DEFAULT_SPRITE;
   private boolean terrainTiled = false;
   private double terrainFriction = DEFAULT_FRICTION;
@@ -82,7 +83,9 @@ public class SplineDraftController {
   /**
    * Sets the terrain style used by newly committed spline terrain.
    */
-  public void setTerrainStyle(String sprite, boolean tiled, double friction, String color) {
+  public void setTerrainStyle(String name, String sprite, boolean tiled, double friction,
+      String color) {
+    terrainName = name == null || name.isBlank() ? "Spline Terrain" : name;
     terrainSprite = sprite == null ? DEFAULT_SPRITE : sprite;
     terrainTiled = tiled;
     terrainFriction = friction;
@@ -119,7 +122,7 @@ public class SplineDraftController {
       ParabolaSpline spline = new ParabolaSpline(
           new ArrayList<>(draftKnots), baselineYCells);
       committed = new TerrainSpline(
-          spline, terrainSprite, terrainTiled, terrainFriction, terrainColor);
+          terrainName, spline, terrainSprite, terrainTiled, terrainFriction, terrainColor);
       world.addObject(committed);
     }
     cancel();

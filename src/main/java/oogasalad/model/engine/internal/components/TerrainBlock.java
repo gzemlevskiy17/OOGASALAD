@@ -17,7 +17,9 @@ import oogasalad.model.engine.ConvexPolygon;
 public class TerrainBlock extends TerrainComponent {
 
   private static final String DEFAULT_COLOR = "#8B4513";
+  private static final String DEFAULT_NAME = "Terrain";
 
+  private final String displayName;
   private final double width;
   private final double height;
   private final String sprite;
@@ -36,7 +38,7 @@ public class TerrainBlock extends TerrainComponent {
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction, double restitution) {
 
-    this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR, restitution);
+    this(DEFAULT_NAME, x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR, restitution);
     setPolygon(ConvexPolygon.axisAlignedBox(x, y, width, height));
   }
 
@@ -44,6 +46,14 @@ public class TerrainBlock extends TerrainComponent {
    * @param color CSS color string used as a fallback when the sprite cannot be loaded
    */
   public TerrainBlock(double x, double y, double width, double height,
+      String sprite, boolean tiled, double friction, String color, double restitution) {
+    this(DEFAULT_NAME, x, y, width, height, sprite, tiled, friction, color, restitution);
+  }
+
+  /**
+   * @param displayName user-facing terrain catalog id displayed in the authoring side panel
+   */
+  public TerrainBlock(String displayName, double x, double y, double width, double height,
       String sprite, boolean tiled, double friction, String color, double restitution) {
     super(
         x,
@@ -54,6 +64,7 @@ public class TerrainBlock extends TerrainComponent {
         friction,
         restitution);
 
+    this.displayName = displayName == null || displayName.isBlank() ? DEFAULT_NAME : displayName;
     this.width = width;
     this.height = height;
     this.sprite = sprite;
@@ -61,7 +72,13 @@ public class TerrainBlock extends TerrainComponent {
     this.color = color;
   }
 
+  @Override
+  public String getDisplayName() {
+    return displayName;
+  }
+
   /** @return the CSS color string used as a fallback when the sprite cannot be loaded */
+  @Override
   public String getColor() {
     return color;
   }

@@ -7,7 +7,14 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
  */
 public record CanvasAction(ActionType type, int col, int row,
     double width, double height, String color, String sprite,
-                           boolean tiled, double friction, double restitution) {
+                           boolean tiled, double friction, double restitution,
+                           String displayName) {
+
+  public CanvasAction(ActionType type, int col, int row,
+      double width, double height, String color, String sprite,
+      boolean tiled, double friction, double restitution) {
+    this(type, col, row, width, height, color, sprite, tiled, friction, restitution, "Terrain");
+  }
 
   /** Whether the action added or removed a block. */
   public enum ActionType { PLACE, REMOVE }
@@ -18,7 +25,7 @@ public record CanvasAction(ActionType type, int col, int row,
         (int) p.getX(), (int) p.getY(),
         p.getWidth(), p.getHeight(),
         p.getColor(), p.getSprite(),
-        p.isTiled(), p.getFriction(), p.getRestitution());
+        p.isTiled(), p.getFriction(), p.getRestitution(), p.getDisplayName());
   }
 
   /** Creates a REMOVE action from the given placeable's current state. */
@@ -27,6 +34,6 @@ public record CanvasAction(ActionType type, int col, int row,
         (int) p.getX(), (int) p.getY(),
         p.getWidth(), p.getHeight(),
         p.getColor(), p.getSprite(),
-        p.isTiled(), p.getFriction(), p.getRestitution());
+        p.isTiled(), p.getFriction(), p.getRestitution(), p.getDisplayName());
   }
 }

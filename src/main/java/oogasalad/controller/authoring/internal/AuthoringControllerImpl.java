@@ -70,8 +70,8 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   public void setSplineTerrainStyle(AuthoringPlaceable placeable) {
     if (placeable != null) {
-      splineDraft.setTerrainStyle(placeable.getSprite(), placeable.isTiled(),
-          placeable.getFriction(), placeable.getColor());
+      splineDraft.setTerrainStyle(placeable.getDisplayName(), placeable.getSprite(),
+          placeable.isTiled(), placeable.getFriction(), placeable.getColor());
     }
   }
 
@@ -173,7 +173,7 @@ public class AuthoringControllerImpl implements AuthoringController {
 
   private void placeFromAction(CanvasAction action) {
     TerrainBlock block = new TerrainBlock(
-        action.col(), action.row(),
+        action.displayName(), action.col(), action.row(),
         action.width(), action.height(),
         action.sprite(), action.tiled(),
         action.friction(), action.color(), action.restitution());

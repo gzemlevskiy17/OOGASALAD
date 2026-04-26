@@ -22,6 +22,7 @@ public class TerrainPropertiesPanel {
 
   private final VBox root;
   private final Label titleLabel;
+  private final Label nameValue;
   private final Label textureValue;
   private final Label frictionValue;
   private final Label sizeValue;
@@ -30,12 +31,14 @@ public class TerrainPropertiesPanel {
     titleLabel = new Label("Selected Object");
     titleLabel.getStyleClass().add("authoring-panel-title");
 
+    nameValue = fieldValue();
     textureValue = fieldValue();
     frictionValue = fieldValue();
     sizeValue = fieldValue();
 
     root = new VBox(FIELD_SPACING,
         titleLabel,
+        fieldRow("Name", nameValue),
         fieldRow("Texture", textureValue),
         fieldRow("Friction", frictionValue),
         fieldRow("Size", sizeValue)
@@ -54,6 +57,7 @@ public class TerrainPropertiesPanel {
 
   /** Populates the panel with the selected object's properties. */
   public void show(AuthoringPlaceable placeable) {
+    nameValue.setText(placeable.getDisplayName());
     textureValue.setText(placeable.getSprite());
     frictionValue.setText(String.format("%.2f", placeable.getFriction()));
     sizeValue.setText(String.format("%.0f x %.0f", placeable.getWidth(), placeable.getHeight()));
@@ -65,6 +69,7 @@ public class TerrainPropertiesPanel {
   }
 
   private void showPlaceholder() {
+    nameValue.setText("—");
     textureValue.setText("—");
     frictionValue.setText("—");
     sizeValue.setText("—");
