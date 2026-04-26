@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
-import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoadException;
+import oogasalad.data.api.Settings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,14 +19,14 @@ import org.apache.logging.log4j.Logger;
  *                AuthoringControllerImpl (reads build_mode grid dimensions),
  *                GameControllerImpl (reads input_mapping, win/loss config).
  */
-public class GameConfigImpl implements GameConfig {
+public class SettingsImpl implements Settings {
 
-  private static final Logger LOG = LogManager.getLogger(GameConfigImpl.class);
+  private static final Logger LOG = LogManager.getLogger(SettingsImpl.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final JsonNode root;
 
-  public GameConfigImpl(String filePath) {
+  public SettingsImpl(String filePath) {
     try {
       root = MAPPER.readTree(new File(filePath));
       LOG.info("Loaded game config from {}", filePath);
