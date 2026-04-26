@@ -51,6 +51,25 @@ public interface AuthoringCanvas {
   void setOnObjectSelected(java.util.function.Consumer<AuthoringPlaceable> handler);
 
   /**
+   * Fired when the pointer enters a placed terrain object (for showing catalog-style metadata while
+   * hovering).
+   *
+   * <p>Default is a no-op for test doubles.
+   */
+  default void setOnTerrainHoverEnter(
+      java.util.function.Consumer<AuthoringPlaceable> handler) {
+  }
+
+  /**
+   * Fired when the pointer leaves a placed terrain object (restore selection summary or
+   * placeholder).
+   *
+   * <p>Default is a no-op for test doubles.
+   */
+  default void setOnTerrainHoverExit(Runnable handler) {
+  }
+
+  /**
    * Sets the visual zoom level (1.0 = 100%). Grid coordinates are unaffected.
    * Clamped to [0.25, 4.0].
    */

@@ -69,6 +69,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private final World world;
   private AuthoringPlaceable selectedPlaceable;
   private Consumer<AuthoringPlaceable> onObjectSelected = obj -> {};
+  private Consumer<AuthoringPlaceable> onTerrainHoverEnter = p -> {};
+  private Runnable onTerrainHoverExit = () -> {};
 
   private Rectangle hoverOverlay;
   private int hoverCol = -1;
@@ -239,6 +241,16 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   @Override
+  public void setOnTerrainHoverEnter(Consumer<AuthoringPlaceable> handler) {
+    this.onTerrainHoverEnter = handler != null ? handler : p -> {};
+  }
+
+  @Override
+  public void setOnTerrainHoverExit(Runnable handler) {
+    this.onTerrainHoverExit = handler != null ? handler : () -> {};
+  }
+
+  @Override
   public void clearHoverPreview() {
     if (hoverOverlay != null) {
       root.getChildren().remove(hoverOverlay);
@@ -303,6 +315,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     path.setStroke(TERRAIN_STROKE_COLOR);
     path.setStrokeWidth(1.0);
     path.setOnMousePressed(e -> onObjectSelected.accept(terrainSpline));
+    path.setOnMouseEntered(e -> onTerrainHoverEnter.accept(terrainSpline));
+    path.setOnMouseExited(e -> onTerrainHoverExit.run());
     return path;
   }
 
@@ -323,6 +337,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     }
 
     rect.setOnMousePressed(e -> onObjectSelected.accept(placeable));
+    rect.setOnMouseEntered(e -> onTerrainHoverEnter.accept(placeable));
+    rect.setOnMouseExited(e -> onTerrainHoverExit.run());
 
     return rect;
   }

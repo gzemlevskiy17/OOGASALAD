@@ -23,6 +23,7 @@ public class TerrainBlock extends TerrainComponent {
   private final String sprite;
   private final boolean tiled;
   private final String color;
+  private final String catalogName;
 
   /**
    * @param x        grid x-coordinate (left edge)
@@ -36,7 +37,7 @@ public class TerrainBlock extends TerrainComponent {
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction, double restitution) {
 
-    this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR, restitution);
+    this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR, restitution, null);
     setPolygon(ConvexPolygon.axisAlignedBox(x, y, width, height));
   }
 
@@ -45,6 +46,16 @@ public class TerrainBlock extends TerrainComponent {
    */
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction, String color, double restitution) {
+    this(x, y, width, height, sprite, tiled, friction, color, restitution, null);
+  }
+
+  /**
+   * @param catalogName key from the authoring terrain catalog, e.g. {@code "Earth"}; may be
+   *                    {@code null} for levels loaded from JSON
+   */
+  public TerrainBlock(double x, double y, double width, double height,
+      String sprite, boolean tiled, double friction, String color, double restitution,
+      String catalogName) {
     super(
         x,
         y,
@@ -59,6 +70,12 @@ public class TerrainBlock extends TerrainComponent {
     this.sprite = sprite;
     this.tiled = tiled;
     this.color = color;
+    this.catalogName = catalogName;
+  }
+
+  @Override
+  public String getCatalogName() {
+    return catalogName;
   }
 
   /** @return the CSS color string used as a fallback when the sprite cannot be loaded */

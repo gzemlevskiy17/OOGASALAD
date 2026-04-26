@@ -44,6 +44,8 @@ public class ComponentPaletteImpl implements ComponentPallete {
   private final ScrollPane root = new ScrollPane();
 
   private String selectedName;
+  private java.util.function.Consumer<CatalogTerrainInfo> catalogHoverEnter = c -> {};
+  private Runnable catalogHoverExit = () -> {};
 
   public ComponentPaletteImpl() {
     this("oogasalad.view.authoring.ComponentPalette");
@@ -80,6 +82,15 @@ public class ComponentPaletteImpl implements ComponentPallete {
     subscribers.add(listener);
   }
 
+  /**
+   * Fires while the pointer moves over palette samples (catalog metadata for the terrain sidebar).
+   */
+  public void setCatalogHoverHandler(
+      java.util.function.Consumer<CatalogTerrainInfo> onEnter, Runnable onExit) {
+    this.catalogHoverEnter = onEnter != null ? onEnter : c -> {};
+    this.catalogHoverExit = onExit != null ? onExit : () -> {};
+  }
+
   @Override
   public Node getVisualRoot() {
     return root;
@@ -111,6 +122,11 @@ public class ComponentPaletteImpl implements ComponentPallete {
       sample.getStyleClass().add("authoring-palette-sample");
       drawSample(sample, entry, false);
       sample.setOnMouseClicked(e -> select(entry.name(), sample));
+      sample.setOnMouseEntered(
+          e -> catalogHoverEnter.accept(
+              new CatalogTerrainInfo(
+                  entry.name(), entry.friction(), entry.restitution(), entry.sprite())));
+      sample.setOnMouseExited(e -> catalogHoverExit.run());
       // Drag-from-palette: select on drag start so subscribers (canvas + controller)
       // pick up the new placeable before the drop fires, then start a real
       // Dragboard gesture so the cursor shows a preview and the canvas's
@@ -143,6 +159,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
     selectedName = name;
     PaletteEntry entry = entries.get(name);
     AuthoringPlaceable placeable = new TerrainPlaceable(
+        entry.name(),
         entry.blockCols() * cellSize, entry.blockRows() * cellSize,
         entry.color(), entry.sprite(), entry.tiled(), entry.friction(), entry.restitution());
 

@@ -129,14 +129,10 @@ public class AuthoringControllerImpl implements AuthoringController {
       splineDraft.cancel();
     }
     toolSelector.setActiveTool(type);
-    if (type == ToolType.SELECT) {
-      canvas.clearHoverPreview();
-    }
+    if (type == ToolType.SELECT) {canvas.clearHoverPreview();}
   }
 
-  public void setSelectedPlaceable(AuthoringPlaceable placeable) {
-    this.selectedPlaceable = placeable;
-  }
+  public void setSelectedPlaceable(AuthoringPlaceable placeable) {this.selectedPlaceable = placeable;}
 
   public void setToolChangeListener(Consumer<ToolType> listener) {
     this.toolChangeListener = listener;
@@ -493,7 +489,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         action.col(), action.row(),
         action.width(), action.height(),
         action.sprite(), action.tiled(),
-        action.friction(), action.color(), action.restitution());
+        action.friction(), action.color(), action.restitution(), action.catalogName());
     world.addObject(block);
   }
 
@@ -527,6 +523,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row, minRow);
 
     TerrainPlaceable unitPlaceable = new TerrainPlaceable(
+        selectedPlaceable.getCatalogName(),
         cellSize, cellSize,
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),
@@ -572,6 +569,7 @@ public class AuthoringControllerImpl implements AuthoringController {
 
     double cellSize = canvas.getCellSize();
     TerrainPlaceable unitPlaceable = new TerrainPlaceable(
+        selectedPlaceable.getCatalogName(),
         cellSize, cellSize,
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),

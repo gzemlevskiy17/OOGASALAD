@@ -54,6 +54,13 @@ public interface AuthoringPlaceable {
   double getRestitution();
 
   /**
+   * Display name from the terrain catalog (palette key), e.g. {@code Earth}, when known.
+   *
+   * @return the catalog id, or {@code null} for legacy/loaded content without that metadata
+   */
+  default String getCatalogName() {return null;}
+
+  /**
    * Creates a placed backend object anchored at the given grid cell.
    *
    * @param col selected grid column
