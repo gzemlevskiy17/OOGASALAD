@@ -51,6 +51,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private final PaletteSpriteRegistry spriteRegistry;
   private final BuildRulesRegistry buildRules;
   private final Map<String, List<String>> gridState = new HashMap<>();
+  private List<String> availableComponentNames;
+  private FlowPane componentFlow;
   private PlacementValidator validator;
   private Label errorLabel;
 
@@ -98,14 +100,12 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     Text title = new Text(s("component.title.text"));
     title.getStyleClass().add("component-title");
 
-    FlowPane componentFlow = new FlowPane();
+    componentFlow = new FlowPane();
     componentFlow.setHgap(8);
     componentFlow.setVgap(8);
     componentFlow.setAlignment(Pos.CENTER);
     componentFlow.getStyleClass().add("component-grid");
-    for (String name : PALETTE_CONFIG.getString("componentNames").split(",")) {
-      componentFlow.getChildren().add(createDraggableComponentCell(name.trim()));
-    }
+    rebuildComponentPalette();
 
     ScrollPane scroll = new ScrollPane(componentFlow);
     scroll.setFitToWidth(true);
@@ -116,6 +116,53 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
     container.getChildren().addAll(title, scroll);
     return container;
+  }
+
+  /**
+   * Restricts the vehicle builder palette to the ids allowed by the selected level.
+   */
+  public void setAllowedComponentIds(List<String> componentIds) {
+    ensureAvailableComponentNames();
+    availableComponentNames.clear();
+    if (componentIds == null || componentIds.isEmpty()) {
+      availableComponentNames.addAll(defaultComponentNames());
+    } else {
+      for (String componentName : componentIds) {
+        String name = componentName == null ? "" : componentName.trim();
+        if (!name.isBlank() && !availableComponentNames.contains(name)) {
+          availableComponentNames.add(name);
+        }
+      }
+    }
+    gridState.clear();
+    if (componentFlow != null) {
+      rebuildComponentPalette();
+    }
+    clearError();
+  }
+
+  private static List<String> defaultComponentNames() {
+    List<String> result = new ArrayList<>();
+    for (String name : PALETTE_CONFIG.getString("componentNames").split(",")) {
+      if (!name.isBlank()) {
+        result.add(name.trim());
+      }
+    }
+    return result;
+  }
+
+  private void rebuildComponentPalette() {
+    ensureAvailableComponentNames();
+    componentFlow.getChildren().clear();
+    for (String name : availableComponentNames) {
+      componentFlow.getChildren().add(createDraggableComponentCell(name));
+    }
+  }
+
+  private void ensureAvailableComponentNames() {
+    if (availableComponentNames == null) {
+      availableComponentNames = new ArrayList<>(defaultComponentNames());
+    }
   }
 
   /**

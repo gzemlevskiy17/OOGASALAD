@@ -5,13 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.data.internal.LevelProgression;
 import org.junit.jupiter.api.Test;
 import util.DukeApplicationTest;
 
@@ -30,14 +30,20 @@ class PlayerEntryAppScreenTest extends DukeApplicationTest {
         capturedOutcomes::add,
         (worldKey, levelKey) ->
             capturedSelections.add(new CapturedSelection(worldKey, levelKey)),
-        new LevelProgression(Map.of(
-            "forest", List.of("first", "second", "third", "fourth", "fifth"),
-            "desert", List.of("first", "second", "third", "fourth", "fifth")
-        )),
+        displayedLevelsByWorld(),
         List.of()
     );
     stage.setScene(new Scene(screen.getRoot(), 1280, 720));
     stage.show();
+    screen.onEnter();
+  }
+
+  private static Map<String, List<String>> displayedLevelsByWorld() {
+    Map<String, List<String>> levelsByWorld = new LinkedHashMap<>();
+    levelsByWorld.put("forest", List.of("first", "second", "third", "fourth", "fifth"));
+    levelsByWorld.put("desert", List.of("first", "second", "third", "fourth", "fifth"));
+    levelsByWorld.put("custom-world", List.of("custom-level"));
+    return levelsByWorld;
   }
 
   @Test
@@ -75,10 +81,13 @@ class PlayerEntryAppScreenTest extends DukeApplicationTest {
   }
 
   @Test
-  void lockedLevelButtons_areDisabled() {
-    Button fourth = lookup("4").queryButton();
-    Button fifth = lookup("5").queryButton();
-    assertTrue(fourth.isDisabled());
-    assertTrue(fifth.isDisabled());
+  void authoredWorldAndLevel_areRenderedFromScanResult() {
+    clickOn("custom-world");
+    clickOn("custom-level");
+    clickOn("LAUNCH GAME");
+
+    assertEquals(1, capturedSelections.size());
+    assertEquals("custom-world", capturedSelections.get(0).worldKey());
+    assertEquals("custom-level", capturedSelections.get(0).levelKey());
   }
 }

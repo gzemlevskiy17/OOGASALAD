@@ -27,6 +27,7 @@ import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.Settings;
 import oogasalad.data.internal.LevelPaths;
@@ -299,7 +300,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     String levelPath = levelPathSupplier.get();
     if (levelPath != null && !levelPath.isBlank()) {
-      GameConfig game = gameLoader.loadGame(LevelPaths.siblingGameFile(levelPath));
+      LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+      GameConfig game = gameLoader.loadGame(
+          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
       levelLoader.loadLevel(levelPath, game, world);
     }
 

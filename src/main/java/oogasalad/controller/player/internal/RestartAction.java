@@ -4,6 +4,7 @@ import oogasalad.controller.player.api.Action;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.api.World;
@@ -49,7 +50,9 @@ public class RestartAction implements Action {
   @Override
   public void execute() {
     gameController.resetSimulation();
-    GameConfig game = gameLoader.loadGame(LevelPaths.siblingGameFile(levelPath));
+    LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+    GameConfig game = gameLoader.loadGame(
+        LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
     levelLoader.loadLevel(levelPath, game, world);
     gameController.startSimulation();
   }
