@@ -2,6 +2,7 @@ package oogasalad.model.engine;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,7 +75,7 @@ public class GameEngineImpl implements GameEngine {
   private final CollisionDetector collisionDetector;
   private final Vector gravityVector;
   private final CollisionDispatcher collisionDispatcher;
-  private final CollisionSolver overrideCollisionSolver;
+  //  private final CollisionSolver overrideCollisionSolver;
   private final Map<List<GameObject>, CachedCollisionImpulse> collisionImpulseCache;
   private final double fixedTimeStep;
   private final int subStepCount;
@@ -138,7 +139,7 @@ public class GameEngineImpl implements GameEngine {
     this.world = world;
     this.collisionDetector = collisionDetector;
     this.collisionDispatcher = new CollisionDispatcher();
-    this.overrideCollisionSolver = collisionSolver;
+//    this.overrideCollisionSolver = collisionSolver;
     this.collisionImpulseCache = new HashMap<>();
     this.gravityVector = gravityVector;
     this.fixedTimeStep = fixedTimeStep;
@@ -186,8 +187,6 @@ public class GameEngineImpl implements GameEngine {
     ImpulseSolverUtilities.applyPositionalCorrection(collision, objectA, objectB);
   }
 
-  //TODO: implement collision detection for all world objects
-
   private static void applyDynamicStaticPositionCorrection(DynamicComponent dynamicObject,
       StaticComponent staticObject, Collision collision) {
     if (dynamicObject == collision.getReferenceObject()) {
@@ -217,7 +216,9 @@ public class GameEngineImpl implements GameEngine {
 
   private void applyAllJointConstraints(double elapsedTime, int iterations) {
     for (int i = 0; i < iterations; i++) {
-      for (Joint joint : world.getJoints()) {
+      List<Joint> joints = new ArrayList<>(world.getJoints());
+      Collections.shuffle(joints);
+      for (Joint joint : joints) {
         joint.apply(elapsedTime);
       }
     }
@@ -225,7 +226,9 @@ public class GameEngineImpl implements GameEngine {
 
   private void applyPositionJointConstraints(double elapsedTime, int iterations) {
     for (int i = 0; i < iterations; i++) {
-      for (Joint joint : world.getJoints()) {
+      List<Joint> joints = new ArrayList<>(world.getJoints());
+      Collections.shuffle(joints);
+      for (Joint joint : joints) {
         if (isPositionConstraintJoint(joint)) {
           joint.apply(elapsedTime);
         }
@@ -248,13 +251,10 @@ public class GameEngineImpl implements GameEngine {
     return joint instanceof DistanceJoint distanceJoint && distanceJoint.isRigid();
   }
 
-  private boolean shouldCollideByFilter(GameObject objectA, GameObject objectB) {
-    return (objectA.getCollisionMaskBits() & objectB.getCollisionCategoryBits()) != 0
-        && (objectB.getCollisionMaskBits() & objectA.getCollisionCategoryBits()) != 0;
-  }
-
   private void applyVelocityJointConstraints() {
-    for (Joint joint : world.getJoints()) {
+    List<Joint> joints = new ArrayList<>(world.getJoints());
+    Collections.shuffle(joints);
+    for (Joint joint : joints) {
       joint.applyVelocity();
     }
   }
@@ -266,7 +266,8 @@ public class GameEngineImpl implements GameEngine {
           dynamicComponent.addForce(gravityVector.multiply(dynamicComponent.getMass()));
           dynamicComponent.addForce(dynamicComponent.getDynamicState().getLinearVelocity()
               .multiply(-world.getDragCoefficient()));
-          dynamicComponent.addTorque(dynamicComponent.getDynamicState().getAngularVelocity() * -world.getDragCoefficient());
+          dynamicComponent.addTorque(dynamicComponent.getDynamicState().getAngularVelocity()
+              * -world.getDragCoefficient());
         }
 
         if (object instanceof Driveable driveable) { //TODO: refactor
@@ -380,47 +381,26 @@ public class GameEngineImpl implements GameEngine {
     List<Collision> collisions = new ArrayList<>();
     Set<List<GameObject>> seenUnorderedPairs = new HashSet<>();
     Set<List<GameObject>> jointedPairs = buildJointedPairs();
-    for (GameObject objectA : world.getObjects()) {
+    for (DynamicComponent objectA : world.getActiveDynamicComponents()) {
       for (GameObject objectB : world.getObjects()) {
         if (objectA == objectB) {
           continue;
         }
 
-        // TODO: fix hardcoded if statements
-        if (objectA instanceof StaticComponent && objectB instanceof StaticComponent) {
-          continue;
-        }
-
-        if (objectA instanceof PassThroughComponent && objectB instanceof PassThroughComponent) {
-          continue;
-        }
-
-        if ((objectA instanceof GoalLineComponent && objectB instanceof StaticComponent)
-            || (objectA instanceof StaticComponent && objectB instanceof GoalLineComponent)) {
-          continue;
-        }
-
-        if (!shouldCollideByFilter(objectA, objectB)) {
-          continue;
-        }
-
+        //TODO: refactor to use CollisionPairs?
         List<GameObject> pairKey = canonicalUnorderedPair(objectA, objectB);
         if (!seenUnorderedPairs.add(pairKey)) {
           continue;
         }
 
-        // Bodies linked by a joint must not generate collision impulses: the joint
-        // re-enforces their relative position each frame, so any collision response
-        // only adds velocity that the joint never cancels -> exponential blow-up.
-        if (jointedPairs.contains(pairKey)) {
+        if (jointedPairs.contains(pairKey)) { //Joints will handle the collision of jointed pairs
           continue;
         }
 
-        if (!aabbsOverlap(objectA, objectB)) {
-          continue;
+        //This broad-phase check is less expensive than the collisionDetector's narrow phase check
+        if (aabbsOverlap(objectA, objectB)) {
+          collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
         }
-
-        collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
       }
     }
     return collisions;
@@ -439,6 +419,7 @@ public class GameEngineImpl implements GameEngine {
       }
 
       if (collisionPair == null) {
+        System.out.println(objectA.getClass() + " " + objectB.getClass());
         continue;
       }
 
@@ -450,17 +431,10 @@ public class GameEngineImpl implements GameEngine {
 
       if (applyImpulse) {
         applyCachedImpulse(pairKey, collision);
-        CollisionSolver solver;
-        if (overrideCollisionSolver == null) {
-          solver = collisionDispatcher.getSolverMap().get(collisionPair);
-        } else {
-          solver = overrideCollisionSolver;
-        }
-        if (solver != null) {
-          solver.solve(objectA, objectB, collision);
-          storeCachedImpulse(pairKey, collision);
-          activeImpulseKeys.add(pairKey);
-        }
+        CollisionSolver solver = collisionDispatcher.getSolverMap().get(collisionPair);
+        solver.solve(objectA, objectB, collision);
+        storeCachedImpulse(pairKey, collision);
+        activeImpulseKeys.add(pairKey);
       } else {
         solveCollisionPositionOnly(collisionPair, objectA, objectB, collision);
       }
