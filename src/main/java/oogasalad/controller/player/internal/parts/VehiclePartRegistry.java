@@ -1,6 +1,7 @@
 package oogasalad.controller.player.internal.parts;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import oogasalad.data.api.ButtonInfo;
 import oogasalad.data.api.ComponentInfo;
@@ -13,6 +14,7 @@ import oogasalad.model.engine.api.Vector;
  * vehicle builder and physics engine without touching code.
  *
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public final class VehiclePartRegistry {
 
@@ -36,8 +38,8 @@ public final class VehiclePartRegistry {
 
   /**
    * Overlays registrations from a game catalog. Config entries override hardcoded defaults when
-   * the component id matches. Components with buttons become drive parts; the primary component
-   * becomes a pig part; everything else becomes structural.
+   * the component id matches. Primary or pig-named components become pig parts; components with
+   * buttons become drive parts; everything else becomes structural.
    */
   public void registerFromConfig(GameConfig config) {
     if (config == null) {
@@ -56,6 +58,9 @@ public final class VehiclePartRegistry {
     double w = DEFAULT_SIZE;
     double h = DEFAULT_SIZE;
 
+    if (isPigPart(id, primaryId)) {
+      return new PigPartSpec(id, mass, w, h);
+    }
     if (!ci.buttons().isEmpty()) {
       ButtonInfo first = ci.buttons().get(0);
       Vector direction = new Vector(first.directionX(), first.directionY()).normalize();
@@ -65,10 +70,11 @@ public final class VehiclePartRegistry {
           DEFAULT_THRUST);
       return new DrivePartSpec(id, direction, force, mass, w, h);
     }
-    if (id.equals(primaryId)) {
-      return new PigPartSpec(id, mass, w, h);
-    }
     return new StructuralPartSpec(id, JointStyle.STRUCTURAL, mass, w, h);
+  }
+
+  private boolean isPigPart(String id, String primaryId) {
+    return id.equals(primaryId) || id.toLowerCase(Locale.ROOT).contains("pig");
   }
 
   public VehiclePartSpec get(String paletteName) {
