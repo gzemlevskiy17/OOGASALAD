@@ -3,27 +3,31 @@ package oogasalad.model.authoring.internal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.List;
 import java.util.ResourceBundle;
 import oogasalad.model.authoring.api.GeneratedLevelJsonBuildException;
 import oogasalad.model.authoring.api.GeneratedLevelSpec;
-import oogasalad.model.authoring.api.GeneratedLevelSpec.FinishLineSpec;
-import oogasalad.model.authoring.api.GeneratedLevelSpec.PickupSpec;
+import oogasalad.model.authoring.api.GeneratedLevelSpec.GameMetadataSpec;
+import oogasalad.model.authoring.api.GeneratedLevelSpec.MainCharacterSpec;
+import oogasalad.model.authoring.api.GeneratedLevelSpec.MapObjectSpec;
+import oogasalad.model.authoring.api.GeneratedLevelSpec.MapSpec;
 import oogasalad.model.authoring.api.GeneratedLevelSpec.PointSpec;
-import oogasalad.model.authoring.api.GeneratedLevelSpec.RockSpec;
-import oogasalad.model.authoring.api.GeneratedLevelSpec.SpawnSpec;
-import oogasalad.model.authoring.api.GeneratedLevelSpec.TerrainBlockSpec;
-import oogasalad.model.authoring.api.GeneratedLevelSpec.TerrainSplineSpec;
-import oogasalad.model.authoring.api.GeneratedLevelSpec.VehiclePaletteSpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Converts a normalized generated-level specification into the runtime JSON structure consumed by
- * the existing level loader.
+ * Converts a normalized generated-level specification into the schema-aligned level JSON
+ * structure used by the new Good Piggies authoring contract.
  *
- * <p>The generated JSON mirrors the current repository schema while also writing optional metadata
- * fields for gravity and background image so authoring can preserve those values as the schema
- * evolves.
+ * <p>The emitted tree mirrors the new repository level shape:
+ * <ul>
+ *   <li>{@code gameMetadata}</li>
+ *   <li>{@code map}</li>
+ *   <li>{@code mainCharacter}</li>
+ * </ul>
+ *
+ * <p>{@code cameraFollows} is written only when non-blank so the builder stays compatible with the
+ * branch's sample level files while the checked-in schema definition catches up.
  *
  * @author Emilio Garcia
  */
@@ -35,10 +39,11 @@ public class GeneratedLevelJsonBuilder {
       ResourceBundle.getBundle("oogasalad.model.authoring.GeneratedLevelJsonBuilder");
 
   /**
-   * Builds a runtime level JSON tree from the provided normalized generated-level specification.
+   * Builds a schema-aligned level JSON tree from the provided normalized generated-level
+   * specification.
    *
    * @param spec normalized generated-level specification
-   * @return runtime-compatible level JSON tree
+   * @return schema-aligned level JSON tree
    * @author Emilio Garcia
    */
   public ObjectNode build(GeneratedLevelSpec spec) {
@@ -50,17 +55,9 @@ public class GeneratedLevelJsonBuilder {
 
     try {
       ObjectNode root = MAPPER.createObjectNode();
-      ObjectNode level = root.putObject(s("levelKey"));
-
-      serializeMetadata(level, spec);
-      serializeTerrain(level.putArray(s("terrainKey")), spec);
-      serializeSplines(level.putArray(s("splinesKey")), spec);
-      serializeRocks(level.putArray(s("rocksKey")), spec);
-      serializePickups(level.putArray(s("pickupsKey")), spec);
-      serializeSpawn(level.putObject(s("spawnKey")), spec.spawn());
-      serializeFinishLine(level.putObject(s("finishLineKey")), spec.finishLine());
-      serializeVehiclePalette(level.putObject(s("vehiclePaletteKey")), spec.vehiclePalette());
-
+      serializeGameMetadata(root.putObject(s("gameMetadataKey")), spec.gameMetadata());
+      serializeMap(root.putObject(s("mapKey")), spec.map());
+      serializeMainCharacter(root.putObject(s("mainCharacterKey")), spec.mainCharacter());
       return root;
     } catch (RuntimeException exception) {
       String message = PROPS.getString("buildFailureError");
@@ -69,110 +66,55 @@ public class GeneratedLevelJsonBuilder {
     }
   }
 
-  private void serializeMetadata(ObjectNode level, GeneratedLevelSpec spec) {
-    ObjectNode metadata = level.putObject(s("metadataKey"));
-    metadata.put(s("levelNameKey"), spec.levelName());
-    metadata.put(s("styleKey"), spec.style());
-    metadata.put(s("gravityKey"), spec.gravity());
-    if (spec.backgroundImage() != null && !spec.backgroundImage().isBlank()) {
-      metadata.put(s("backgroundImageKey"), spec.backgroundImage());
-    }
-    if (spec.worldWidth() != null) {
-      metadata.put(s("worldWidthKey"), spec.worldWidth());
-    }
+  private void serializeGameMetadata(ObjectNode metadataNode, GameMetadataSpec metadata) {
+    metadataNode.put(s("levelNameKey"), metadata.levelName());
+    metadataNode.put(s("gameTypeKey"), metadata.gameType());
+    metadataNode.put(s("screenWidthKey"), metadata.screenWidth());
+    metadataNode.put(s("screenHeightKey"), metadata.screenHeight());
+    metadataNode.put(s("gravityKey"), metadata.gravity());
+    metadataNode.put(s("dragKey"), metadata.drag());
   }
 
-  private void serializeTerrain(ArrayNode terrainArray, GeneratedLevelSpec spec) {
-    for (TerrainBlockSpec block : spec.terrainBlocks()) {
-      ObjectNode entry = terrainArray.addObject();
-      writePosition(entry.putObject(s("positionKey")), block.x(), block.y());
-      writeSize(entry.putObject(s("sizeKey")), block.width(), block.height());
-
-      ObjectNode properties = entry.putObject(s("propertiesKey"));
-      properties.put(s("textureKey"), block.texture());
-      properties.put(s("tileTextureKey"), block.tileTexture());
-      properties.put(s("frictionKey"), block.friction());
-      properties.put(s("restitutionKey"), block.restitution());
-    }
+  private void serializeMap(ObjectNode mapNode, MapSpec map) {
+    writePoints(mapNode.putArray(s("knotLocationsKey")), map.knotLocations());
+    writeMapObjects(mapNode.putArray(s("objectsKey")), map.objects());
+    writeStrings(mapNode.putArray(s("terrainOptionsKey")), map.terrainOptions());
+    writePoint(mapNode.putObject(s("spawnPointKey")), map.spawnPoint());
   }
 
-  private void serializeSplines(ArrayNode splineArray, GeneratedLevelSpec spec) {
-    for (TerrainSplineSpec spline : spec.terrainSplines()) {
-      ObjectNode entry = splineArray.addObject();
-      writePoints(entry.putArray(s("knotsKey")), spline.knots());
-      writePoints(entry.putArray(s("controlsKey")), spline.controls());
-      entry.put(s("baselineYKey"), spline.baselineY());
-      entry.put(s("resolutionKey"), spline.resolution());
-
-      ObjectNode properties = entry.putObject(s("propertiesKey"));
-      properties.put(s("textureKey"), spline.texture());
-      properties.put(s("tileTextureKey"), spline.tileTexture());
-      properties.put(s("frictionKey"), spline.friction());
-      properties.put(s("colorKey"), spline.color());
+  private void serializeMainCharacter(ObjectNode mainCharacterNode, MainCharacterSpec mainCharacter) {
+    mainCharacterNode.put(s("gridSizeKey"), mainCharacter.gridSize());
+    writeStrings(mainCharacterNode.putArray(s("elementsAllowedKey")), mainCharacter.elementsAllowed());
+    mainCharacterNode.put(s("maxSelectableKey"), mainCharacter.maxSelectable());
+    mainCharacterNode.put(s("maxHpKey"), mainCharacter.maxHP());
+    if (mainCharacter.cameraFollows() != null && !mainCharacter.cameraFollows().isBlank()) {
+      mainCharacterNode.put(s("cameraFollowsKey"), mainCharacter.cameraFollows());
     }
   }
 
-  private void serializeRocks(ArrayNode rocksArray, GeneratedLevelSpec spec) {
-    for (RockSpec rock : spec.rocks()) {
-      ObjectNode entry = rocksArray.addObject();
-      writePosition(entry.putObject(s("positionKey")), rock.x(), rock.y());
-      writeSize(entry.putObject(s("sizeKey")), rock.width(), rock.height());
-
-      ObjectNode properties = entry.putObject(s("propertiesKey"));
-      properties.put(s("frictionKey"), rock.friction());
-      properties.put(s("restitutionKey"), rock.restitution());
-      properties.put(s("damageKey"), rock.damage());
+  private void writeMapObjects(ArrayNode objectsNode, List<MapObjectSpec> objects) {
+    for (MapObjectSpec object : objects) {
+      ObjectNode objectNode = objectsNode.addObject();
+      objectNode.put(s("typeKey"), object.type());
+      writePoint(objectNode.putObject(s("positionKey")), object.position());
     }
   }
 
-  private void serializePickups(ArrayNode pickupsArray, GeneratedLevelSpec spec) {
-    for (PickupSpec pickup : spec.pickups()) {
-      ObjectNode entry = pickupsArray.addObject();
-      entry.put(s("typeKey"), pickup.type());
-      writePosition(entry.putObject(s("positionKey")), pickup.x(), pickup.y());
-      writeSize(entry.putObject(s("sizeKey")), pickup.width(), pickup.height());
-
-      ObjectNode properties = entry.putObject(s("propertiesKey"));
-      properties.put(s("amountKey"), pickup.amount());
-    }
-  }
-
-  private void serializeSpawn(ObjectNode spawnNode, SpawnSpec spawn) {
-    spawnNode.put(s("xKey"), spawn.x());
-    spawnNode.put(s("yKey"), spawn.y());
-  }
-
-  private void serializeFinishLine(ObjectNode finishLineNode, FinishLineSpec finishLine) {
-    finishLineNode.put(s("xKey"), finishLine.x());
-    finishLineNode.put(s("yKey"), finishLine.y());
-    finishLineNode.put(s("widthKey"), finishLine.width());
-    finishLineNode.put(s("heightKey"), finishLine.height());
-  }
-
-  private void serializeVehiclePalette(ObjectNode paletteNode, VehiclePaletteSpec vehiclePalette) {
-    paletteNode.put(s("maxSelectableKey"), vehiclePalette.maxSelectable());
-    ArrayNode allowedComponents = paletteNode.putArray(s("allowedComponentsKey"));
-    for (String componentId : vehiclePalette.allowedComponents()) {
-      allowedComponents.add(componentId);
-    }
-  }
-
-  private void writePosition(ObjectNode node, double x, double y) {
-    node.put(s("xKey"), x);
-    node.put(s("yKey"), y);
-  }
-
-  private void writeSize(ObjectNode node, double width, double height) {
-    node.put(s("widthKey"), width);
-    node.put(s("heightKey"), height);
-  }
-
-  private void writePoints(ArrayNode pointsArray, java.util.List<PointSpec> points) {
+  private void writePoints(ArrayNode pointsNode, List<PointSpec> points) {
     for (PointSpec point : points) {
-      ObjectNode entry = pointsArray.addObject();
-      entry.put(s("xKey"), point.x());
-      entry.put(s("yKey"), point.y());
+      writePoint(pointsNode.addObject(), point);
     }
+  }
+
+  private void writeStrings(ArrayNode valuesNode, List<String> values) {
+    for (String value : values) {
+      valuesNode.add(value);
+    }
+  }
+
+  private void writePoint(ObjectNode pointNode, PointSpec point) {
+    pointNode.put(s("xKey"), point.x());
+    pointNode.put(s("yKey"), point.y());
   }
 
   private String s(String key) {
