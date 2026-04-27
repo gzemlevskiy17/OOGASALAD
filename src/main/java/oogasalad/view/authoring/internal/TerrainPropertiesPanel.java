@@ -5,40 +5,46 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 
 /**
- * Side panel displaying properties of the currently selected terrain object.
- *
- * Read-only for now — editing requires World.removeObject() which is pending
- * Xuye's World interface update. Call {@link #show(AuthoringPlaceable)} when
- * the user clicks a placed block; call {@link #hide()} to clear it.
+ * Right sidebar: catalog-backed terrain name, texture, friction, and restitution for the brush
+ * (palette hover), canvas hover, and click selection.
  */
 public class TerrainPropertiesPanel {
 
   private static final double PANEL_PADDING = 16;
   private static final double FIELD_SPACING = 10;
-  private static final double PANEL_WIDTH = 200;
+  private static final double PANEL_WIDTH = 220;
 
   private final VBox root;
-  private final Label titleLabel;
+  private final Label nameLabel;
   private final Label textureValue;
   private final Label frictionValue;
+  private final Label restitutionValue;
   private final Label sizeValue;
 
+  private AuthoringPlaceable canvasSelection;
+  private AuthoringPlaceable canvasHoverTarget;
+  private CatalogTerrainInfo paletteCatalogHover;
+
   public TerrainPropertiesPanel() {
-    titleLabel = new Label("Selected Object");
-    titleLabel.getStyleClass().add("authoring-panel-title");
+    nameLabel = new Label("—");
+    nameLabel.getStyleClass().add("authoring-terrain-name");
 
     textureValue = fieldValue();
     frictionValue = fieldValue();
+    restitutionValue = fieldValue();
     sizeValue = fieldValue();
 
     root = new VBox(FIELD_SPACING,
-        titleLabel,
+        sectionTitle("Terrain"),
+        nameLabel,
         fieldRow("Texture", textureValue),
         fieldRow("Friction", frictionValue),
-        fieldRow("Size", sizeValue)
+        fieldRow("Restitution", restitutionValue),
+        fieldRow("Size (cells)", sizeValue)
     );
     root.setPadding(new Insets(PANEL_PADDING));
     root.setPrefWidth(PANEL_WIDTH);
@@ -52,22 +58,106 @@ public class TerrainPropertiesPanel {
     return root;
   }
 
-  /** Populates the panel with the selected object's properties. */
   public void show(AuthoringPlaceable placeable) {
-    textureValue.setText(placeable.getSprite());
-    frictionValue.setText(String.format("%.2f", placeable.getFriction()));
-    sizeValue.setText(String.format("%.0f x %.0f", placeable.getWidth(), placeable.getHeight()));
+    canvasSelection = placeable;
+    refreshDisplay();
   }
 
-  /** Resets the panel to its empty placeholder state. */
   public void hide() {
+    canvasSelection = null;
+    canvasHoverTarget = null;
+    paletteCatalogHover = null;
+    showPlaceholder();
+  }
+
+  public void showCatalogHover(CatalogTerrainInfo info) {
+    paletteCatalogHover = info;
+    refreshDisplay();
+  }
+
+  public void endCatalogHover() {
+    paletteCatalogHover = null;
+    refreshDisplay();
+  }
+
+  public void onCanvasTerrainHover(AuthoringPlaceable placeable) {
+    canvasHoverTarget = placeable;
+    refreshDisplay();
+  }
+
+  public void onCanvasTerrainHoverEnd() {
+    canvasHoverTarget = null;
+    refreshDisplay();
+  }
+
+  private void refreshDisplay() {
+    if (paletteCatalogHover != null) {
+      applyCatalog(paletteCatalogHover);
+      return;
+    }
+    if (canvasHoverTarget != null) {
+      applyPlaceable(canvasHoverTarget);
+      return;
+    }
+    if (canvasSelection != null) {
+      applyPlaceable(canvasSelection);
+      return;
+    }
     showPlaceholder();
   }
 
   private void showPlaceholder() {
+    nameLabel.setText("—");
     textureValue.setText("—");
     frictionValue.setText("—");
+    restitutionValue.setText("—");
     sizeValue.setText("—");
+  }
+
+  private void applyCatalog(CatalogTerrainInfo c) {
+    nameLabel.setText(c.catalogName());
+    textureValue.setText(shortenSprite(c.sprite()));
+    frictionValue.setText(String.format("%.2f", c.friction()));
+    restitutionValue.setText(String.format("%.2f", c.restitution()));
+    sizeValue.setText("—");
+  }
+
+  private void applyPlaceable(AuthoringPlaceable p) {
+    nameLabel.setText(displayName(p));
+    textureValue.setText(shortenSprite(p.getSprite()));
+    frictionValue.setText(String.format("%.2f", p.getFriction()));
+    restitutionValue.setText(String.format("%.2f", p.getRestitution()));
+    if (p instanceof TerrainSpline) {
+      sizeValue.setText("—");
+    } else {
+      sizeValue.setText(
+          String.format("%.0f x %.0f", p.getWidth(), p.getHeight()));
+    }
+  }
+
+  private static String displayName(AuthoringPlaceable p) {
+    String n = p.getCatalogName();
+    if (n != null && !n.isBlank()) {
+      return n;
+    }
+    if (p instanceof TerrainSpline) {
+      return "Spline";
+    }
+    return "Terrain";
+  }
+
+  private static String shortenSprite(String path) {
+    if (path == null || path.isBlank()) {
+      return "—";
+    }
+    int slash = path.lastIndexOf('/');
+    return slash >= 0 && slash < path.length() - 1 ? path.substring(slash + 1) : path;
+  }
+
+  private Label sectionTitle(String text) {
+    Label l = new Label(text);
+    l.getStyleClass().add("authoring-panel-title");
+    return l;
   }
 
   private VBox fieldRow(String label, Label value) {

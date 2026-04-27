@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
@@ -17,6 +18,12 @@ class GameplayStatsTrackerImplTest {
 
   private static final double DT = 1.0 / 60.0;
 
+  private static PigComponent newPig() {
+    return new PigComponent(0, 0, 0,
+        ConvexPolygon.axisAlignedBox(-20, -20, 40, 40),
+        "", 0, 1.0, 1.0, 0.1, true, 100, "pig");
+  }
+
   private World world;
   private PigComponent pig;
   private GameplayStatsTracker tracker;
@@ -24,7 +31,7 @@ class GameplayStatsTrackerImplTest {
   @BeforeEach
   void setUp() {
     world = new WorldImpl();
-    pig = new PigComponent(0, 0, 0, 1.0, 0.1);
+    pig = newPig();
     world.addComponent(pig);
     world.addComponent(new GoalLineComponent(1000, 0, 20, 400));
     tracker = new GameplayStatsTrackerImpl("data/levels/test.json");
@@ -110,7 +117,7 @@ class GameplayStatsTrackerImplTest {
   @Test
   void sampleIsNoOp_whenFinishLineIsMissing() {
     World onlyPig = new WorldImpl();
-    onlyPig.addComponent(new PigComponent(0, 0, 0, 1.0, 0.1));
+    onlyPig.addComponent(newPig());
     GameplayStatsTracker lonely = new GameplayStatsTrackerImpl("x");
 
     lonely.sample(onlyPig, DT);

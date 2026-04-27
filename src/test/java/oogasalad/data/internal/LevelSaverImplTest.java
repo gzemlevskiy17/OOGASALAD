@@ -39,7 +39,8 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_singleTerrainBlock_writesCorrectJson() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(0, 0, 10, 2, "assets/terrain/grass.png", true, 0.6));
+    world.addObject(
+        new TerrainBlock(0, 0, 10, 2, "assets/terrain/grass.png", true, 0.6, 0.0));
     LevelAttributes levelAttributes = new LevelAttributes();
 
     File output = tempDir.resolve("saved_level.json").toFile();
@@ -59,8 +60,8 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_multipleBlocks_writesAllEntries() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(0, 0, 5, 1, "a.png", true, 0.5));
-    world.addObject(new TerrainBlock(5, 0, 5, 1, "b.png", false, 0.4));
+    world.addObject(new TerrainBlock(0, 0, 5, 1, "a.png", true, 0.5, 0.0));
+    world.addObject(new TerrainBlock(5, 0, 5, 1, "b.png", false, 0.4, 0.0));
     LevelAttributes levelAttributes = new LevelAttributes();
 
     File output = tempDir.resolve("saved_level.json").toFile();
@@ -85,7 +86,8 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_roundTrip_loaderRestoresSameBlockCount() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(3, 1, 4, 2, "assets/terrain/dirt.png", false, 0.3));
+    world.addObject(
+        new TerrainBlock(3, 1, 4, 2, "assets/terrain/dirt.png", false, 0.3, 0.0));
     LevelAttributes savedAttributes = new LevelAttributes();
     savedAttributes.setMaxSelectableVehicleItems(5);
     savedAttributes.setAllowedVehicleComponents(List.of("pig", "wheel"));
@@ -132,7 +134,7 @@ class LevelSaverImplTest {
   void saveLevel_terrainSpline_writesSplineEntry() throws IOException {
     FakeWorld world = new FakeWorld();
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(20, 15), new Vector(40, 10)), 100.0, 6);
+        List.of(new Vector(0, 10), new Vector(20, 15), new Vector(40, 10)), 100.0);
     world.addObject(new TerrainSpline(spline, "assets/dirt.png", true, 0.7, "#ffaa00"));
 
     File output = tempDir.resolve("splined.json").toFile();
@@ -146,7 +148,6 @@ class LevelSaverImplTest {
     assertEquals(3, entry.path("knots").size());
     assertEquals(2, entry.path("controls").size());
     assertEquals(100.0, entry.path("baselineY").asDouble(), 0.001);
-    assertEquals(6, entry.path("resolution").asInt());
     assertEquals("assets/dirt.png", entry.path("properties").path("texture").asText());
     assertTrue(entry.path("properties").path("tile_texture").asBoolean());
     assertEquals("#ffaa00", entry.path("properties").path("color").asText());
@@ -157,7 +158,7 @@ class LevelSaverImplTest {
     LevelSaverImpl scalingSaver = new LevelSaverImpl(20.0); // simulate authoring cellSize=20
     FakeWorld world = new FakeWorld();
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(1, 2), new Vector(5, 3)), 10.0, 4);
+        List.of(new Vector(1, 2), new Vector(5, 3)), 10.0);
     world.addObject(new TerrainSpline(spline, "", false, 0.5, "#fff"));
 
     File output = tempDir.resolve("scaled.json").toFile();
@@ -184,9 +185,9 @@ class LevelSaverImplTest {
   @Test
   void saveLevel_mixedBlockAndSpline_writesBothInCorrectSections() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(0, 0, 10, 2, "a.png", true, 0.5));
+    world.addObject(new TerrainBlock(0, 0, 10, 2, "a.png", true, 0.5, 0.0));
     ParabolaSpline spline = new ParabolaSpline(
-        List.of(new Vector(0, 10), new Vector(20, 10)), 100.0, 4);
+        List.of(new Vector(0, 10), new Vector(20, 10)), 100.0);
     world.addObject(new TerrainSpline(spline, "", false, 0.5, "#fff"));
 
     File output = tempDir.resolve("mixed.json").toFile();
@@ -231,6 +232,10 @@ class LevelSaverImplTest {
     @Override public void clear() { components.clear(); }
     @Override public void addJoint(Joint j) {}
     @Override public void removeJoint(Joint j) {}
+    @Override
+    public double getDragCoefficient() {
+      return 0.0;
+    }
     int objectCount() { return components.size(); }
   }
 }

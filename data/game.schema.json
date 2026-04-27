@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oogasalad.team03/game.schema.json",
+  "title": "Game File",
+  "description": "Catalog of reusable types (components, static objects, terrain) shared by every level of one game.",
+  "type": "object",
+  "required": [
+    "gameId",
+    "components",
+    "staticComponents",
+    "terrainTypes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "gameId": {
+      "type": "string",
+      "description": "Unique identifier for this game. Levels reference it via gameMetadata.gameType."
+    },
+    "components": {
+      "type": "array",
+      "description": "Movable parts the player can use in the vehicle builder.",
+      "items": {
+        "$ref": "#/$defs/componentInfo"
+      }
+    },
+    "staticComponents": {
+      "type": "array",
+      "description": "Placed-on-the-map objects (pickups, hazards, end flag, etc).",
+      "items": {
+        "$ref": "#/$defs/staticComponentInfo"
+      }
+    },
+    "terrainTypes": {
+      "type": "array",
+      "description": "Terrain materials available for tracks in any level of this game.",
+      "items": {
+        "$ref": "#/$defs/terrainInfo"
+      }
+    }
+  },
+  "$defs": {
+    "vector2": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
+    "button": {
+      "type": "object",
+      "description": "On-screen control contributed by a movable component.",
+      "required": [
+        "name",
+        "direction"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "On-screen label, e.g. 'bob jump'. Author is responsible for uniqueness."
+        },
+        "direction": {
+          "$ref": "#/$defs/vector2",
+          "description": "Movement vector applied while the button is held."
+        }
+      }
+    },
+    "componentInfo": {
+      "title": "Movable Component",
+      "type": "object",
+      "required": [
+        "id",
+        "spriteUrl",
+        "mass"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "spriteUrl": {
+          "type": "string"
+        },
+        "mass": {
+          "type": "number",
+          "minimum": 0
+        },
+        "buttons": {
+          "type": "array",
+          "description": "On-screen buttons this component contributes. Absent or empty = component is not player-controllable.",
+          "items": {
+            "$ref": "#/$defs/button"
+          }
+        }
+      }
+    },
+    "staticComponentInfo": {
+      "title": "Static Component",
+      "type": "object",
+      "required": [
+        "id",
+        "spriteUrl",
+        "mass"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "spriteUrl": {
+          "type": "string"
+        },
+        "mass": {
+          "type": "number",
+          "minimum": 0
+        },
+        "onCollisionAction": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Engine behavior triggered on collision. Null = inert.",
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Registry key, e.g. 'heal', 'damage', 'finish'."
+            },
+            "amount": {
+              "type": "number",
+              "description": "Magnitude for actions that take one (heal, damage)."
+            }
+          }
+        }
+      }
+    },
+    "terrainInfo": {
+      "title": "Terrain Type",
+      "type": "object",
+      "required": [
+        "id",
+        "friction"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "spriteUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Tile texture. Null falls back to visualColor."
+        },
+        "visualColor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Solid-color fallback when no sprite is provided."
+        },
+        "friction": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

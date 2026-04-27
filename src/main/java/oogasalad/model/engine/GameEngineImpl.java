@@ -34,8 +34,8 @@ import oogasalad.model.engine.internal.joints.RevoluteJoint;
  * contracts. Invalid or partial state data may cause no-op updates or runtime exceptions.
  *
  * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link CollisionDetector},
- * {@link CollisionSolver}, {@link GameObject}, {@link StaticState}, {@link DynamicState}, {@link Collision}, and
- * {@link Vector}.
+ * {@link CollisionSolver}, {@link GameObject}, {@link StaticState}, {@link DynamicState},
+ * {@link Collision}, and {@link Vector}.
  *
  * <p><strong>Example:</strong>
  *
@@ -91,8 +91,7 @@ public class GameEngineImpl implements GameEngine {
    * lifetime. The provided world and detector follow their interface contracts.
    *
    * <p><strong>Dependencies:</strong> Requires {@link World} and {@link CollisionDetector}
-   * implementations. Uses {@link CollisionDispatcher} and {@link DynamicDynamicSolver}
-   * internally.
+   * implementations. Uses {@link CollisionDispatcher} and {@link DynamicDynamicSolver} internally.
    *
    * @param world             world that stores active simulation objects
    * @param collisionDetector pairwise detector used to build collision records
@@ -265,9 +264,12 @@ public class GameEngineImpl implements GameEngine {
       if (object instanceof DynamicComponent dynamicComponent) {
         if (dynamicComponent.isAffectedByGravity()) {
           dynamicComponent.addForce(gravityVector.multiply(dynamicComponent.getMass()));
+          dynamicComponent.addForce(dynamicComponent.getDynamicState().getLinearVelocity()
+              .multiply(-world.getDragCoefficient()));
+          dynamicComponent.addTorque(dynamicComponent.getDynamicState().getAngularVelocity() * -world.getDragCoefficient());
         }
 
-        if (object instanceof Driveable driveable) {
+        if (object instanceof Driveable driveable) { //TODO: refactor
           dynamicComponent.addForce(driveable.getDriveForce());
         }
       }
@@ -277,7 +279,7 @@ public class GameEngineImpl implements GameEngine {
   private void resetForces(Collection<GameObject> objects) {
     for (GameObject object : objects) {
       if (object instanceof DynamicComponent dynamicComponent) {
-        dynamicComponent.resetForce();
+        dynamicComponent.resetForces();
       }
     }
   }
@@ -418,9 +420,7 @@ public class GameEngineImpl implements GameEngine {
           continue;
         }
 
-        collisionDetector.detectCollision(objectA, objectB).ifPresent(c -> {
-          collisions.add(c);
-        });
+        collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
       }
     }
     return collisions;
@@ -450,9 +450,12 @@ public class GameEngineImpl implements GameEngine {
 
       if (applyImpulse) {
         applyCachedImpulse(pairKey, collision);
-        CollisionSolver solver = overrideCollisionSolver == null
-            ? collisionDispatcher.getSolverMap().get(collisionPair)
-            : overrideCollisionSolver;
+        CollisionSolver solver;
+        if (overrideCollisionSolver == null) {
+          solver = collisionDispatcher.getSolverMap().get(collisionPair);
+        } else {
+          solver = overrideCollisionSolver;
+        }
         if (solver != null) {
           solver.solve(objectA, objectB, collision);
           storeCachedImpulse(pairKey, collision);
@@ -633,11 +636,13 @@ public class GameEngineImpl implements GameEngine {
       double minY = Double.POSITIVE_INFINITY;
       double maxX = Double.NEGATIVE_INFINITY;
       double maxY = Double.NEGATIVE_INFINITY;
-      for (Vector point : object.getPolygon().points()) {
-        minX = Math.min(minX, point.x());
-        minY = Math.min(minY, point.y());
-        maxX = Math.max(maxX, point.x());
-        maxY = Math.max(maxY, point.y());
+      for (ConvexPolygon polygon : object.getCollisionPolygons()) {
+        for (Vector point : polygon.points()) {
+          minX = Math.min(minX, point.x());
+          minY = Math.min(minY, point.y());
+          maxX = Math.max(maxX, point.x());
+          maxY = Math.max(maxY, point.y());
+        }
       }
       return new BoundingBox(minX, minY, maxX, maxY);
     }
@@ -668,5 +673,6 @@ public class GameEngineImpl implements GameEngine {
 
   private record CachedCollisionImpulse(double normalImpulse, double frictionImpulse,
                                         Vector normal) {
+
   }
 }

@@ -197,7 +197,7 @@ class LevelLoaderImplTest {
         .filter(c -> c instanceof TerrainSpline).findFirst().orElseThrow();
     assertEquals(2, spline.getSpline().knots().size());
     assertEquals(200.0, spline.getSpline().baselineY(), 0.001);
-    assertEquals(8, spline.getSpline().segmentsPerKnotPair());
+    assertEquals(1, spline.getSpline().segmentCount());
     assertEquals("assets/dirt.png", spline.getSprite());
     assertTrue(spline.isTiled());
     assertEquals("#aabbcc", spline.getColor());
@@ -377,6 +377,10 @@ class LevelLoaderImplTest {
     @Override public void clear() { components.clear(); }
     @Override public void addJoint(Joint j) {}
     @Override public void removeJoint(Joint j) {}
+    @Override
+    public double getDragCoefficient() {
+      return 0.0;
+    }
     int objectCount() { return components.size(); }
   }
 

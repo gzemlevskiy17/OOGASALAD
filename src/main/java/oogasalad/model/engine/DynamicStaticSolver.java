@@ -35,6 +35,10 @@ public class DynamicStaticSolver {
    */
   public void solve(DynamicComponent objectA, StaticComponent objectB,
       Collision collision) {
+    System.out.println("[ds-solve] " + objectA.getClass().getSimpleName()
+        + " (y=" + objectA.y() + ", vy="
+        + objectA.getDynamicState().getLinearVelocity().y() + ") vs "
+        + objectB.getClass().getSimpleName());
     //TODO: move this into the dispatcher. document the convention
     if (objectA == collision.getReferenceObject()) {
       collision.setPenetration(collision.getPenetration().multiply(-1));

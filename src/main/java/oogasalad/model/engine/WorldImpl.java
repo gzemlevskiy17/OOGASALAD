@@ -18,6 +18,7 @@ public class WorldImpl implements World {
   private final List<GameComponent> allComponents;
   private final List<GameComponent> activeComponents;
   private final List<Joint> joints;
+  private static final double DRAG_COEFFICIENT = 0.1; //TODO: read from authoring environment
 
   /**
    * Creates an empty world with no components or joints registered.
@@ -148,6 +149,11 @@ public class WorldImpl implements World {
   @Override
   public void removeJoint(Joint joint) {
     joints.remove(joint);
+  }
+
+  @Override
+  public double getDragCoefficient() {
+    return DRAG_COEFFICIENT;
   }
 
   /** Active state toggle, if object is in active list, delete it, if not add it to active list. */

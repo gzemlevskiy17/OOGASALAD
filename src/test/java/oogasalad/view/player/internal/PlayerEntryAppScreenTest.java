@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.data.internal.LevelProgression;
 import org.junit.jupiter.api.Test;
 import util.DukeApplicationTest;
 
@@ -27,7 +29,13 @@ class PlayerEntryAppScreenTest extends DukeApplicationTest {
     screen = new PlayerEntryAppScreen(
         capturedOutcomes::add,
         (worldKey, levelKey) ->
-            capturedSelections.add(new CapturedSelection(worldKey, levelKey)));
+            capturedSelections.add(new CapturedSelection(worldKey, levelKey)),
+        new LevelProgression(Map.of(
+            "forest", List.of("first", "second", "third", "fourth", "fifth"),
+            "desert", List.of("first", "second", "third", "fourth", "fifth")
+        )),
+        List.of()
+    );
     stage.setScene(new Scene(screen.getRoot(), 1280, 720));
     stage.show();
   }

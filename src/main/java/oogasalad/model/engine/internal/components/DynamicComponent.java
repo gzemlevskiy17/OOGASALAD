@@ -16,6 +16,7 @@ public abstract class DynamicComponent extends RigidBody {
   private double mass;
   private double momentOfInertia;
   private Vector force;
+  private double torque;
   private boolean affectedByGravity;
   private boolean sleepingAllowed;
   private boolean sleeping;
@@ -49,6 +50,25 @@ public abstract class DynamicComponent extends RigidBody {
   public DynamicComponent(double x, double y, double rotation, double mass, double restitution) {
     this(x, y, rotation, ConvexPolygon.axisAlignedBox(x, y, 1, 1), "", 0.0, mass, 1.0,
         restitution, false);
+  }
+
+  public void addTorque(double torque) {
+    if (this.sleeping && Math.abs(torque) > 0.0) {
+      setSleeping(false);
+    }
+    this.torque += torque;
+  }
+
+  public void resetTorque() {
+    this.torque = 0.0;
+  }
+
+  public double getTorque() {
+    return torque;
+  }
+
+  public void setTorque(double torque) {
+    this.torque = torque;
   }
 
   /**
@@ -228,23 +248,27 @@ public abstract class DynamicComponent extends RigidBody {
   }
 
   public void applyForceToAcceleration() {
-    if (sleeping) {
-      dynamicState.setLinearAcceleration(new Vector(0, 0));
-      return;
-    }
     double m = getMass();
-    if (m <= 0) {
+    if (sleeping || m <= 0) {
       dynamicState.setLinearAcceleration(new Vector(0, 0));
+      dynamicState.setAngularAcceleration(0.0);
       return;
     }
 
-    Vector net = getForce();
+    Vector netForce = getForce();
+    double netTorque = getTorque();
 
-    if (net == null) {
+    if (netForce == null) {
       dynamicState.setLinearAcceleration(new Vector(0, 0));
       return;
-    }
+    } //TODO: need this check?
 
-    dynamicState.setLinearAcceleration(net.multiply(1.0 / m));
+    dynamicState.setLinearAcceleration(netForce.multiply(1.0 / m));
+    dynamicState.setAngularAcceleration(netTorque * getInverseMomentOfInertia());
+  }
+
+  public void resetForces() {
+    resetTorque();
+    resetForce();
   }
 }

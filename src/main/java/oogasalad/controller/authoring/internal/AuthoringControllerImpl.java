@@ -3,6 +3,7 @@ package oogasalad.controller.authoring.internal;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -73,9 +74,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.placementValidator = new PlacementValidator();
     this.history = new CanvasActionHistory();
     this.splineDraft = new SplineDraftController(world, canvas);
-    double cellSize = canvas.getCellSize();
-    this.selectedPlaceable = new TerrainPlaceable(
-        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.5);
+    this.selectedPlaceable = null;
     ensureSpawnPoint();
   }
 
@@ -130,13 +129,10 @@ public class AuthoringControllerImpl implements AuthoringController {
       splineDraft.cancel();
     }
     toolSelector.setActiveTool(type);
+    if (type == ToolType.SELECT) {canvas.clearHoverPreview();}
   }
 
-  public void setSelectedPlaceable(AuthoringPlaceable placeable) {
-    if (placeable != null) {
-      this.selectedPlaceable = placeable;
-    }
-  }
+  public void setSelectedPlaceable(AuthoringPlaceable placeable) {this.selectedPlaceable = placeable;}
 
   public void setToolChangeListener(Consumer<ToolType> listener) {
     this.toolChangeListener = listener;
@@ -154,9 +150,18 @@ public class AuthoringControllerImpl implements AuthoringController {
     double cellSize = canvas.getCellSize();
 
     root.setOnMouseMoved(e -> {
+      root.setCursor(Cursor.DEFAULT);
       if (toolSelector.getActiveTool() == ToolType.SPLINE) {
         canvas.clearHoverPreview();
         splineDraft.moveCursor(e.getX() / cellSize, e.getY() / cellSize);
+        return;
+      }
+      if (toolSelector.getActiveTool() == ToolType.SELECT) {
+        canvas.clearHoverPreview();
+        return;
+      }
+      if (selectedPlaceable == null) {
+        canvas.clearHoverPreview();
         return;
       }
       int col = (int) Math.floor(e.getX() / cellSize);
@@ -164,7 +169,10 @@ public class AuthoringControllerImpl implements AuthoringController {
       canvas.showHoverPreview(col, row);
     });
 
-    root.setOnMouseExited(e -> canvas.clearHoverPreview());
+    root.setOnMouseExited(e -> {
+      canvas.clearHoverPreview();
+      root.setCursor(Cursor.DEFAULT);
+    });
 
     // Batch lifecycle runs as capture-phase filters so it fires even when a
     // child (e.g. a placed block's Rectangle) consumes the MOUSE_PRESSED event
@@ -306,8 +314,17 @@ public class AuthoringControllerImpl implements AuthoringController {
     if (!canvas.isWithinBounds(col, row)) {
       return;
     }
-    int spanCols = selectedPlaceable.colSpan(cellSize);
-    int spanRows = selectedPlaceable.rowSpan(cellSize);
+    int spanCols;
+    int spanRows;
+    if (selectedPlaceable != null) {
+      spanCols = selectedPlaceable.colSpan(cellSize);
+      spanRows = selectedPlaceable.rowSpan(cellSize);
+    } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
+      spanCols = 1;
+      spanRows = 1;
+    } else {
+      return;
+    }
     int[] lastPlaced = fillLine(lastDragCol, lastDragRow, col, row, spanCols, spanRows);
     lastDragCol = lastPlaced[0];
     lastDragRow = lastPlaced[1];
@@ -472,7 +489,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         action.col(), action.row(),
         action.width(), action.height(),
         action.sprite(), action.tiled(),
-        action.friction(), action.color(), action.restitution());
+        action.friction(), action.color(), action.restitution(), action.catalogName());
     world.addObject(block);
   }
 
@@ -484,6 +501,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   }
 
   GameObject placeSelectedObject(int col, int row) {
+    if (selectedPlaceable == null) {return null;}
     double cellSize = canvas.getCellSize();
     AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
     OccupancyGrid grid = buildOccupancyGrid();
@@ -497,6 +515,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   }
 
   private void floodFillAt(int col, int row) {
+    if (selectedPlaceable == null) {return;}
     double cellSize = canvas.getCellSize();
     OccupancyGrid grid = buildOccupancyGrid();
     FillExecutor executor = new FillExecutor();
@@ -504,6 +523,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row, minRow);
 
     TerrainPlaceable unitPlaceable = new TerrainPlaceable(
+        selectedPlaceable.getCatalogName(),
         cellSize, cellSize,
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),
@@ -549,6 +569,7 @@ public class AuthoringControllerImpl implements AuthoringController {
 
     double cellSize = canvas.getCellSize();
     TerrainPlaceable unitPlaceable = new TerrainPlaceable(
+        selectedPlaceable.getCatalogName(),
         cellSize, cellSize,
         selectedPlaceable.getColor(),
         selectedPlaceable.getSprite(),

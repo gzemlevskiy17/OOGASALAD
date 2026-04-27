@@ -3,6 +3,9 @@ package oogasalad.controller.player.internal;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DriveComponent;
@@ -24,8 +27,10 @@ class BindDriveActionsTest {
   @BeforeEach
   void setUp() {
     factory = new GameplaySessionFactoryImpl(
-        (fileName, w, config) -> { /* no-op LevelLoader */ },
-        () -> null                  /* no level path */
+        (String fileName, World w, LevelAttributes levelAttributes, GameConfig config) -> {
+          /* no-op LevelLoader */
+        },
+        () -> null /* no level path */
     );
     router = new InputRouterImpl();
     world = new WorldImpl();
@@ -76,7 +81,9 @@ class BindDriveActionsTest {
 
   @Test
   void nonDriveable_noBindingCreated() {
-    PigComponent pig = new PigComponent(0, 0, 0, 1.0, 0.1);
+    PigComponent pig = new PigComponent(0, 0, 0,
+        ConvexPolygon.axisAlignedBox(-20, -20, 40, 40),
+        "", 0, 1.0, 1.0, 0.1, true, 100, "pig");
     world.addComponent(pig);
 
     factory.bindDriveActions(router, world);

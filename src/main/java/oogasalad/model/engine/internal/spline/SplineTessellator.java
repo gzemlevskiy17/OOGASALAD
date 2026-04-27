@@ -9,10 +9,11 @@ import oogasalad.model.engine.api.Vector;
  * Converts a {@link ParabolaSpline} into a strip of convex quadrilateral slabs suitable for the
  * existing SAT-based collision engine.
  *
- * <p>Each Bézier segment is sampled at {@code resolution + 1} points; the tessellator then emits
- * one quadrilateral per sub-interval whose top edge follows the curve and whose bottom edge sits
- * {@code slabThickness} world pixels below the curve samples. The polygons are emitted in
- * clockwise order (matching the project convention used by {@link ConvexPolygon#axisAlignedBox}).
+ * <p>Each Bézier segment becomes one quadrilateral whose top edge is the chord between its two
+ * knots and whose bottom edge sits {@code slabThickness} world pixels below those endpoints.
+ * Curve fidelity is therefore controlled by knot density at authoring time, not by an extra
+ * sampling resolution. The polygons are emitted in clockwise order (matching the project
+ * convention used by {@link ConvexPolygon#axisAlignedBox}).
  *
  * <p>Why a fixed slab thickness instead of filling all the way to the spline baseline: the SAT
  * collision detector returns the axis of <em>minimum</em> penetration, and the engine's per-pair
@@ -75,16 +76,10 @@ public final class SplineTessellator {
           "slabThickness must be strictly positive; got " + slabThickness);
     }
     List<ConvexPolygon> slabs = new ArrayList<>();
-    int resolution = spline.segmentsPerKnotPair();
-
     for (int segment = 0; segment < spline.segmentCount(); segment++) {
-      Vector previousSample = spline.evaluate(segment, 0.0);
-      for (int step = 1; step <= resolution; step++) {
-        double t = (double) step / resolution;
-        Vector currentSample = spline.evaluate(segment, t);
-        addSlabIfNonDegenerate(slabs, previousSample, currentSample, slabThickness);
-        previousSample = currentSample;
-      }
+      Vector left = spline.knots().get(segment);
+      Vector right = spline.knots().get(segment + 1);
+      addSlabIfNonDegenerate(slabs, left, right, slabThickness);
     }
     return slabs;
   }

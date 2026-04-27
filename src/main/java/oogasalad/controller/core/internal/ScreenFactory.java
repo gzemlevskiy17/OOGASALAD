@@ -1,6 +1,5 @@
 package oogasalad.controller.core.internal;
 
-import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
@@ -13,6 +12,7 @@ import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.data.internal.DataPaths;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelProgression;
 import oogasalad.data.internal.LevelScanner;
@@ -89,7 +89,7 @@ public class ScreenFactory {
   // level is held as a LevelId; the path is computed only at the moment the gameplay session
   // asks for it.
   private final LevelScanner.ScanResult scanResult =
-      new LevelScanner().scan(Path.of("data", "levels"));
+      new LevelScanner().scan(DataPaths.levelsRoot());
   private final LevelProgression progression =
       new LevelProgression(scanResult.worldsToLevels());
 
@@ -163,7 +163,7 @@ public class ScreenFactory {
       return null;
     }
     if (PlayerEntryAppScreen.OTHERS_WORLD_KEY.equals(id.worldKey())) {
-      return "data/levels/" + id.levelKey() + ".json";
+      return DataPaths.levelsRoot().resolve(id.levelKey() + ".json").toString();
     }
     return progression.pathFor(id);
   }

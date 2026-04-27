@@ -8,6 +8,7 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
  */
 public class TerrainPlaceable implements AuthoringPlaceable {
 
+  private final String catalogName;
   private final double widthPx;
   private final double heightPx;
   private final String color;
@@ -18,6 +19,12 @@ public class TerrainPlaceable implements AuthoringPlaceable {
 
   public TerrainPlaceable(double widthPx, double heightPx, String color,
       String sprite, boolean tiled, double friction, double restitution) {
+    this(null, widthPx, heightPx, color, sprite, tiled, friction, restitution);
+  }
+
+  public TerrainPlaceable(String catalogName, double widthPx, double heightPx, String color,
+      String sprite, boolean tiled, double friction, double restitution) {
+    this.catalogName = catalogName;
     this.widthPx = widthPx;
     this.heightPx = heightPx;
     this.color = color;
@@ -88,6 +95,11 @@ public class TerrainPlaceable implements AuthoringPlaceable {
   }
 
   @Override
+  public String getCatalogName() {
+    return catalogName;
+  }
+
+  @Override
   public AuthoringPlaceable createAt(int col, int row, double cellSize) {
     return new TerrainBlock(
         col,
@@ -98,6 +110,7 @@ public class TerrainPlaceable implements AuthoringPlaceable {
         tiled,
         friction,
         color,
-        restitution);
+        restitution,
+        catalogName);
   }
 }

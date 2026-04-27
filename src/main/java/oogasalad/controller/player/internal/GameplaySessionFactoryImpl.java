@@ -219,10 +219,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             rect.setFill(Paint.valueOf(tb.getColor()));
             return rect;
           }
-          // Non-visual markers (e.g. SpawnPointComponent) live in the world for
-          // save/load and lookup, but have no sprite. Return an invisible stub so
-          // the render loop doesn't abort the frame, which would leave the
-          // vehicle unrendered.
+          // Non-visual markers (e.g. SpawnPointComponent) live in the world for save/load and
+          // lookup but have no sprite. Return an invisible stub so the render loop doesn't abort
+          // the frame, which would leave the vehicle unrendered.
           if (r instanceof SpawnPointComponent) {
             Group stub = new Group();
             stub.setManaged(false);

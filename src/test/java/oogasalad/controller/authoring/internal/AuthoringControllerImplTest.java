@@ -15,8 +15,10 @@ import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
+import oogasalad.view.authoring.internal.TerrainPlaceable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +41,13 @@ class AuthoringControllerImplTest {
 
     controller = new AuthoringControllerImpl(
         world, loader, saver, new LevelAttributes(), toolSelector, canvas);
+    selectDefaultTerrainBrush(controller, canvas);
+  }
+
+  private static void selectDefaultTerrainBrush(AuthoringControllerImpl c, AuthoringCanvas cv) {
+    double cs = cv.getCellSize();
+    c.setSelectedPlaceable(new TerrainPlaceable(
+        cs, cs, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.5));
   }
 
   @Test
@@ -112,6 +121,35 @@ class AuthoringControllerImplTest {
     assertEquals(ToolType.DRAW, toolSelector.getActiveTool());
   }
 
+  // --- Default cursor: no brush ghost until palette pick; SELECT clears tile hover (GP156) ---
+
+  @Test
+  void drawTool_withoutPaletteSelection_doesNotPlace() {
+    controller.setSelectedPlaceable(null);
+    toolSelector.setActiveTool(ToolType.DRAW);
+    controller.handleGridInteraction(20.0, 20.0);
+    assertEquals(0, world.objectCount());
+  }
+
+  @Test
+  void paintTool_withoutPaletteSelection_doesNotFill() {
+    controller.setSelectedPlaceable(null);
+    toolSelector.setActiveTool(ToolType.PAINT);
+    controller.handleGridInteraction(20.0, 20.0);
+    assertEquals(0, world.objectCount());
+  }
+
+  @Test
+  void setActiveTool_select_clearsHoverPreview() {
+    HoverCountingCanvas c = new HoverCountingCanvas();
+    AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
+        world, loader, saver, new LevelAttributes(), toolSelector, c);
+    int clearsBefore = c.clearHoverCount;
+    selectDefaultTerrainBrush(ctrl, c);
+    ctrl.setActiveTool(ToolType.SELECT);
+    assertTrue(c.clearHoverCount > clearsBefore);
+  }
+
   @Test
   void clearLevel_removesAllPlacedObjects() {
     toolSelector.setActiveTool(ToolType.DRAW);
@@ -152,8 +190,9 @@ class AuthoringControllerImplTest {
   @Test
   void paint_onEmptyGrid_fillsAllConnectedCells() {
     toolSelector.setActiveTool(ToolType.PAINT);
-    controller.handleGridInteraction(20.0, 20.0);
-    assertEquals(100, world.objectCount());
+    // PAINT flood fill is limited to row >= getGridRows()/2; (20,20) is the top half and yields 0.
+    controller.handleGridInteraction(20.0, 220.0);
+    assertEquals(50, world.objectCount());
   }
 
   @Test
@@ -269,6 +308,7 @@ class AuthoringControllerImplTest {
     ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
         world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+    selectDefaultTerrainBrush(ctrl, expanding);
 
     toolSelector.setActiveTool(ToolType.DRAW);
     ctrl.handleGridInteraction(400.0, 20.0); // col=10, beyond initial maxCol of 5
@@ -282,6 +322,7 @@ class AuthoringControllerImplTest {
     ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
         world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+    selectDefaultTerrainBrush(ctrl, expanding);
 
     toolSelector.setActiveTool(ToolType.DRAW);
     ctrl.handleGridInteraction(400.0, 400.0);
@@ -295,6 +336,7 @@ class AuthoringControllerImplTest {
     ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
         world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+    selectDefaultTerrainBrush(ctrl, expanding);
 
     toolSelector.setActiveTool(ToolType.DRAW);
     ctrl.handleGridInteraction(20.0, 20.0); // col=0, row=0 — within initial 5×5
@@ -331,7 +373,19 @@ class AuthoringControllerImplTest {
     @Override public void clear() { components.clear(); }
     @Override public void addJoint(Joint j) {}
     @Override public void removeJoint(Joint j) {}
-    int objectCount() { return components.size(); }
+    @Override
+    public double getDragCoefficient() {
+      return 0.0;
+    }
+    /**
+     * Counts placed editor objects only; ignores the spawn marker always present after
+     * {@link AuthoringControllerImpl} construction.
+     */
+    int objectCount() {
+      return (int) components.stream()
+          .filter(c -> !(c instanceof SpawnPointComponent))
+          .count();
+    }
   }
 
   private static class FakeToolSelector implements oogasalad.controller.authoring.api.ToolSelector {
@@ -348,6 +402,15 @@ class AuthoringControllerImplTest {
   private static class SpyLevelSaver implements LevelSaver {
     String lastFileName;
     @Override public void saveLevel(String f, World w, LevelAttributes a) { lastFileName = f; }
+  }
+
+  private static class HoverCountingCanvas extends SpyCanvas {
+    int clearHoverCount = 0;
+
+    @Override
+    public void clearHoverPreview() {
+      clearHoverCount++;
+    }
   }
 
   private static class SpyCanvas implements AuthoringCanvas {
