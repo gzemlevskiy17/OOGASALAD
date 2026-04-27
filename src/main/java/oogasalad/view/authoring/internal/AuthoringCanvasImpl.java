@@ -42,6 +42,8 @@ import org.apache.logging.log4j.Logger;
  * Collaborators: AuthoringControllerImpl (calls refreshGrid after model changes,
  *                registers mouse handlers on getVisualRoot()),
  *                WorldImpl (source of objects to render).
+ *
+ * @author Emilio Garcia
  */
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 
@@ -361,7 +363,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private void applyTiledTexture(Rectangle rect, String spritePath, Color fallback) {
     Image img = tryLoadImage(spritePath);
     if (img != null) {
-      rect.setFill(new ImagePattern(img, 0, 0, cellSize, cellSize, false));
+      rect.setFill(new ImagePattern(img, rect.getX(), rect.getY(), cellSize, cellSize, false));
     } else {
       rect.setFill(fallback);
     }
@@ -376,7 +378,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     if (img != null) {
       double w = rect.getWidth();
       double h = rect.getHeight();
-      rect.setFill(new ImagePattern(img, 0, 0, w, h, false));
+      rect.setFill(new ImagePattern(img, rect.getX(), rect.getY(), w, h, false));
     } else {
       rect.setFill(fallback);
     }

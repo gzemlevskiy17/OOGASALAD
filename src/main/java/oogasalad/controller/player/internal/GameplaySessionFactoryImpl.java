@@ -81,6 +81,7 @@ import oogasalad.view.player.internal.VehicleHpHud;
  *
  * @author Iurii Beliaev
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
@@ -94,6 +95,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double BOUNDS_PADDING = 400.0;
   private static final double FALLBACK_WORLD_WIDTH = 2600.0;
   private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
+  private static final double GRAVITY_SCHEMA_TO_ENGINE_SCALE = 100.0;
   // Regardless of how tiny the authored terrain is, the world must be at least one
   // viewport + padding on each axis. Without this floor, a level with just a few
   // blocks near the top of the canvas yields a world shorter than the viewport,
@@ -188,7 +190,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     World world = built.world();
     LevelBounds bounds = built.bounds();
     GameConfig loadedGameConfig = built.gameConfig();
-    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl());
+    GameEngine engine = new GameEngineImpl(
+        world, new CollisionDetectorImpl(), built.gravityVector());
 
     WinConditionChecker winChecker = buildWinChecker();
     LossConditionChecker lossChecker = buildLossChecker(bounds.height());
@@ -305,10 +308,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private BuiltWorld buildWorld(VehicleLayout layout) {
     World world = new WorldImpl();
     GameConfig loadedConfig = null;
+    LevelAttributes attributes = new LevelAttributes();
 
     String levelPath = levelPathSupplier.get();
     if (levelPath != null && !levelPath.isBlank()) {
-      LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+      attributes = levelLoader.loadAttributes(levelPath);
       try {
         loadedConfig = gameLoader.loadGame(
             LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
@@ -331,7 +335,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     double spawnY = spawn != null ? spawn.y() : 330.0;
     Map<PlacedComponent, RigidBody> placements =
         vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
-    return new BuiltWorld(world, bounds, placements, loadedConfig);
+    return new BuiltWorld(world, bounds, placements, loadedConfig, gravityVector(attributes));
+  }
+
+  private Vector gravityVector(LevelAttributes attributes) {
+    return new Vector(0.0, Math.abs(attributes.getGravity()) * GRAVITY_SCHEMA_TO_ENGINE_SCALE);
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
@@ -429,7 +437,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private record BuiltWorld(World world, LevelBounds bounds,
-                            Map<PlacedComponent, RigidBody> placements, GameConfig gameConfig) {
+                            Map<PlacedComponent, RigidBody> placements, GameConfig gameConfig,
+                            Vector gravityVector) {
 
   }
 

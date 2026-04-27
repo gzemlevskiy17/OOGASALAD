@@ -35,5 +35,8 @@ Rules:
 - Include several non-goal map objects by default, usually a mix of rewards and hazards rather than only one or two items.
 - Keep map.knotLocations plausible for a 2D physics driving level.
 - Keep gravity and drag physically reasonable for a vehicle-building game.
+- Use negative gravity values. Default earth-like gravity is -9.8.
+- If the prompt asks for low gravity, moon gravity, lunar gravity, floating, or gliding, set gravity close to -1.0 to -3.0.
+- If the prompt asks for heavy or high gravity, set gravity closer to -14.0 to -20.0.
 - elementsAllowed should be an empty array unless the prompt clearly asks to restrict buildable components.
 - Prefer concise, playable output with no null values.
