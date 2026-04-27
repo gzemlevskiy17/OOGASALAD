@@ -1,6 +1,6 @@
 {
   "gameId" : "Paulina's World",
-  "primaryComponentId" : "",
+  "mainCharacterId" : "pig",
   "components" : [ {
     "id" : "pig",
     "spriteUrl" : "data/assets/bp_bigPig.png",

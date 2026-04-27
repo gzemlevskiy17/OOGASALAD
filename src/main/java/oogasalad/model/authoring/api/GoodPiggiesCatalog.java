@@ -9,7 +9,7 @@ import oogasalad.data.api.TerrainInfo;
  * Immutable Good Piggies catalog used to constrain AI level generation to one concrete game.
  *
  * @param gameId configured game identifier
- * @param primaryComponentId catalog id of the primary player subject
+ * @param mainCharacterId catalog id of the player-controlled main character
  * @param components buildable vehicle components
  * @param staticComponents placeable map objects such as pickups, hazards, and goal line
  * @param terrainTypes terrain materials available to authored levels
@@ -17,7 +17,7 @@ import oogasalad.data.api.TerrainInfo;
  */
 public record GoodPiggiesCatalog(
     String gameId,
-    String primaryComponentId,
+    String mainCharacterId,
     List<ComponentInfo> components,
     List<StaticComponentInfo> staticComponents,
     List<TerrainInfo> terrainTypes) {

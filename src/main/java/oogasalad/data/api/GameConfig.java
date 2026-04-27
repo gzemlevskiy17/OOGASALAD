@@ -13,7 +13,7 @@ public interface GameConfig extends Settings {
 
   String gameId();
 
-  String primaryComponentId();
+  String mainCharacterId();
 
   List<ComponentInfo> components();
 

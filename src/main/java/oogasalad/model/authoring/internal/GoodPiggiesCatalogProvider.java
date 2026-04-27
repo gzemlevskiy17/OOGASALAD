@@ -117,7 +117,7 @@ public class GoodPiggiesCatalogProvider {
   }
 
   private GoodPiggiesCatalog hydrateCatalog(GameConfig config, String catalogPath) {
-    boolean usesFallback = isBlank(config.primaryComponentId())
+    boolean usesFallback = isBlank(config.mainCharacterId())
         || config.components().isEmpty()
         || config.staticComponents().isEmpty()
         || config.terrainTypes().isEmpty();
@@ -125,9 +125,9 @@ public class GoodPiggiesCatalogProvider {
       LOG.warn(PROPS.getString("catalogFallbackLogMessage"), catalogPath);
     }
 
-    String primaryComponentId = usesFallback && isBlank(config.primaryComponentId())
-        ? PROPS.getString("fallbackPrimaryComponentId")
-        : config.primaryComponentId();
+    String mainCharacterId = usesFallback && isBlank(config.mainCharacterId())
+        ? PROPS.getString("fallbackMainCharacterId")
+        : config.mainCharacterId();
     List<ComponentInfo> components = config.components().isEmpty()
         ? buildFallbackComponents()
         : config.components();
@@ -140,7 +140,7 @@ public class GoodPiggiesCatalogProvider {
 
     return new GoodPiggiesCatalog(
         config.gameId(),
-        primaryComponentId,
+        mainCharacterId,
         components,
         staticComponents,
         terrainTypes);

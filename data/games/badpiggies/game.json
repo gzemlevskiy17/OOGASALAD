@@ -1,6 +1,6 @@
 {
   "gameId" : "badpiggies",
-  "primaryComponentId" : "",
+  "mainCharacterId" : "BigPig",
   "components" : [ ],
   "staticComponents" : [ ],
   "terrainTypes" : [ ]

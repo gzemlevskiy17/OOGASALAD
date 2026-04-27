@@ -1,6 +1,6 @@
 {
   "gameId": "piggies",
-  "primaryComponentId": "Frame",
+  "mainCharacterId": "Frame",
   "components": [
     {
       "id": "Frame",
