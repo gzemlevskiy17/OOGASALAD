@@ -1,0 +1,71 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Lunar Glide",
+    "gameType" : "badpiggies",
+    "screenWidth" : 1920.0,
+    "screenHeight" : 1080.0,
+    "gravity" : -1.0,
+    "drag" : 0.02
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 120.0,
+      "y" : 880.0
+    }, {
+      "x" : 320.0,
+      "y" : 860.0
+    }, {
+      "x" : 560.0,
+      "y" : 900.0
+    }, {
+      "x" : 800.0,
+      "y" : 840.0
+    }, {
+      "x" : 1100.0,
+      "y" : 930.0
+    }, {
+      "x" : 1500.0,
+      "y" : 950.0
+    }, {
+      "x" : 1780.0,
+      "y" : 870.0
+    } ],
+    "objects" : [ {
+      "type" : "Rock",
+      "position" : {
+        "x" : 480.0,
+        "y" : 900.0
+      }
+    }, {
+      "type" : "Bomb",
+      "position" : {
+        "x" : 1050.0,
+        "y" : 920.0
+      }
+    }, {
+      "type" : "Coin",
+      "position" : {
+        "x" : 1300.0,
+        "y" : 900.0
+      }
+    }, {
+      "type" : "GoalLine",
+      "position" : {
+        "x" : 1760.0,
+        "y" : 850.0
+      }
+    } ],
+    "terrainOptions" : [ "GrassHills", "DirtPath" ],
+    "spawnPoint" : {
+      "x" : 140.0,
+      "y" : 850.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 20.0,
+    "elementsAllowed" : [ ],
+    "maxSelectable" : 9,
+    "maxHP" : 3.0,
+    "cameraFollows" : "vehicle"
+  }
+}
