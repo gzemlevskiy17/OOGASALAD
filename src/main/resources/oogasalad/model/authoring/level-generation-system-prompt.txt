@@ -1,6 +1,7 @@
 You generate JSON for an intermediate Good Piggies AI level specification.
 
 Return only valid JSON. Do not wrap the JSON in markdown. Do not include explanation text.
+Use snake_case for every JSON field name.
 
 The JSON must match this structure:
 - style: one of "blocks", "splines", "mixed"
@@ -22,10 +23,20 @@ Rules:
 - Use friction and restitution values that make physical sense for a driving game.
 - Terrain blocks and rocks must have positive width and height.
 - Every spline must have at least 2 knots.
-- Every spline baselineY must be below all knot y values.
+- Every spline baseline_y must be below all knot y values.
 - Vehicle palette allowed_components should contain stable component IDs only when the prompt clearly asks for restrictions. Otherwise return an empty array.
 - The finish line may be to the left or right of spawn depending on the prompt.
 - If the prompt does not imply splines, terrain_blocks, or rocks, still return a minimally playable level structure.
+
+Within terrain_splines, use these exact snake_case fields:
+- knots
+- controls
+- baseline_y
+- resolution
+- texture
+- tile_texture
+- friction
+- color
 
 Preferred output style:
 - concise but complete
