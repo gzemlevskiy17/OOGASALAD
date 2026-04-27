@@ -70,6 +70,7 @@ public class AuthoringPersistenceService {
         LevelPaths.gameFileForLevel(fileName, attributes.getGameType()));
     levelLoader.loadLevel(fileName, game, world, levelAttributes);
     convertLoadedWorldToAuthoringSpace(game);
+    expandCanvasToLoadedLevel(levelAttributes);
     spawnPointService.getSpawnPoint();
     history.clear();
     canvas.refreshGrid();
@@ -133,5 +134,11 @@ public class AuthoringPersistenceService {
         .findFirst()
         .map(info -> info.spriteUrl() == null ? "" : info.spriteUrl())
         .orElse("");
+  }
+
+  private void expandCanvasToLoadedLevel(LevelAttributes attributes) {
+    int maxCol = Math.max(0, (int) Math.ceil(attributes.getScreenWidth() / canvas.getCellSize()) - 1);
+    int maxRow = Math.max(0, (int) Math.ceil(attributes.getScreenHeight() / canvas.getCellSize()) - 1);
+    canvas.isWithinBounds(maxCol, maxRow);
   }
 }

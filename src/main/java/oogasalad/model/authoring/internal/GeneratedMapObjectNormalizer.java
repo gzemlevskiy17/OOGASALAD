@@ -78,6 +78,7 @@ final class GeneratedMapObjectNormalizer {
       normalized.add(new GeneratedLevelSpec.MapObjectSpec(
           GOAL_LINE_TYPE, defaultGoalLinePosition(screenWidth, screenHeight)));
     }
+    ensureMinimumNonGoalObjects(normalized, allowedObjectIds, screenWidth, screenHeight);
     return List.copyOf(normalized);
   }
 
@@ -126,5 +127,36 @@ final class GeneratedMapObjectNormalizer {
     return new GeneratedLevelSpec.PointSpec(
         support.clamp(screenWidth * support.d("defaultObjectXRatio"), 0.0, screenWidth),
         support.clamp(screenHeight * support.d("defaultObjectYRatio"), 0.0, screenHeight));
+  }
+
+  private void ensureMinimumNonGoalObjects(List<GeneratedLevelSpec.MapObjectSpec> objects,
+      List<String> allowedObjectIds, double screenWidth, double screenHeight) {
+    long nonGoalCount = objects.stream()
+        .filter(object -> !GOAL_LINE_TYPE.equals(object.type()))
+        .count();
+    int minimumNonGoalObjects = support.n("minimumNonGoalObjects");
+    if (nonGoalCount >= minimumNonGoalObjects) {
+      return;
+    }
+
+    List<String> preferredTypes = support.csvStrings("defaultGeneratedObjectTypes").stream()
+        .filter(allowedObjectIds::contains)
+        .toList();
+    if (preferredTypes.isEmpty()) {
+      return;
+    }
+
+    int objectsToAdd = minimumNonGoalObjects - (int) nonGoalCount;
+    double leftMargin = support.d("generatedObjectLeftMarginRatio") * screenWidth;
+    double rightMargin = support.d("generatedObjectRightMarginRatio") * screenWidth;
+    double usableWidth = Math.max(screenWidth - leftMargin - rightMargin, 1.0);
+    for (int index = 0; index < objectsToAdd; index++) {
+      String type = preferredTypes.get(index % preferredTypes.size());
+      double positionRatio = (index + 1.0) / (objectsToAdd + 1.0);
+      double x = leftMargin + usableWidth * positionRatio;
+      double y = support.clamp(screenHeight * support.d("generatedObjectYRatio"), 0.0, screenHeight);
+      objects.add(new GeneratedLevelSpec.MapObjectSpec(
+          type, new GeneratedLevelSpec.PointSpec(x, y)));
+    }
   }
 }

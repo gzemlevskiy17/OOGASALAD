@@ -65,9 +65,9 @@ final class GeneratedMapSpecNormalizer {
       List<GeneratedLevelSpec.PointSpec> knotLocations, double screenWidth, double screenHeight,
       GeneratedLevelSpec.PointSpec spawnPoint, List<GeneratedLevelSpec.MapObjectSpec> objects) {
     List<GeneratedLevelSpec.PointSpec> safeKnots = support.safeList(knotLocations);
-    int minimumKnotCount = support.n("minimumKnotCount");
-    if (safeKnots.size() < minimumKnotCount) {
-      LOG.warn(support.s("defaultKnotsSynthesizedLogMessage"), minimumKnotCount);
+    int preferredKnotCount = support.n("preferredMinimumKnotCount");
+    if (safeKnots.size() < preferredKnotCount) {
+      LOG.warn(support.s("defaultKnotsSynthesizedLogMessage"), preferredKnotCount);
       safeKnots = synthesizeDefaultKnots(screenWidth, screenHeight);
     }
 
@@ -76,7 +76,7 @@ final class GeneratedMapSpecNormalizer {
       normalized.add(normalizeKnotPoint(safeKnots.get(index), index, safeKnots.size(), screenWidth,
           screenHeight));
     }
-    supportNormalizer.flattenSupportZones(normalized, spawnPoint, objects);
+    supportNormalizer.flattenSupportZones(normalized, spawnPoint, objects, screenWidth);
     return List.copyOf(normalized);
   }
 

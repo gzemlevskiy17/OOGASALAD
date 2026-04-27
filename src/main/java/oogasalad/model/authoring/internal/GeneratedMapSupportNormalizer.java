@@ -1,9 +1,12 @@
 package oogasalad.model.authoring.internal;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 import oogasalad.model.authoring.api.GeneratedLevelSpec;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Applies playability shaping rules to normalized map terrain, spawn, and goal support zones.
@@ -12,7 +15,9 @@ import oogasalad.model.authoring.api.GeneratedLevelSpec;
  */
 final class GeneratedMapSupportNormalizer {
 
+  private static final Logger LOG = LogManager.getLogger(GeneratedMapSupportNormalizer.class);
   private static final String GOAL_LINE_TYPE = "GoalLine";
+  private static final double SAME_X_EPSILON = 1e-6;
 
   private final NormalizationSupport support;
 
@@ -35,9 +40,14 @@ final class GeneratedMapSupportNormalizer {
    * @author Emilio Garcia
    */
   void flattenSupportZones(List<GeneratedLevelSpec.PointSpec> knots,
-      GeneratedLevelSpec.PointSpec spawnPoint, List<GeneratedLevelSpec.MapObjectSpec> objects) {
+      GeneratedLevelSpec.PointSpec spawnPoint, List<GeneratedLevelSpec.MapObjectSpec> objects,
+      double screenWidth) {
+    ensureConnectedSupportZone(knots, spawnPoint.x(), screenWidth);
     flattenSupportZone(knots, spawnPoint.x());
-    findGoalLine(objects).ifPresent(goalLine -> flattenSupportZone(knots, goalLine.position().x()));
+    findGoalLine(objects).ifPresent(goalLine -> {
+      ensureConnectedSupportZone(knots, goalLine.position().x(), screenWidth);
+      flattenSupportZone(knots, goalLine.position().x());
+    });
   }
 
   /**
@@ -95,6 +105,48 @@ final class GeneratedMapSupportNormalizer {
       GeneratedLevelSpec.PointSpec knot = knots.get(index);
       knots.set(index, new GeneratedLevelSpec.PointSpec(knot.x(), flatY));
     }
+  }
+
+  private void ensureConnectedSupportZone(List<GeneratedLevelSpec.PointSpec> knots, double targetX,
+      double screenWidth) {
+    if (knots.isEmpty()) {
+      return;
+    }
+    int nearestIndex = nearestKnotIndex(knots, targetX);
+    GeneratedLevelSpec.PointSpec nearest = knots.get(nearestIndex);
+    double flatY = nearest.y();
+    double gap = Math.abs(nearest.x() - targetX);
+    double maximumSupportedGap = support.d("supportZoneMaxGap");
+    double halfWidth = support.d("supportPlatformHalfWidth");
+
+    if (gap > maximumSupportedGap) {
+      addBridgeKnot(knots, nearest, targetX, flatY);
+    }
+    addSupportKnot(knots, support.clamp(targetX - halfWidth, 0.0, screenWidth), flatY);
+    addSupportKnot(knots, support.clamp(targetX, 0.0, screenWidth), flatY);
+    addSupportKnot(knots, support.clamp(targetX + halfWidth, 0.0, screenWidth), flatY);
+    knots.sort(Comparator.comparingDouble(GeneratedLevelSpec.PointSpec::x));
+    LOG.debug("Shaped generated terrain support around x={}", targetX);
+  }
+
+  private void addBridgeKnot(List<GeneratedLevelSpec.PointSpec> knots,
+      GeneratedLevelSpec.PointSpec nearest, double targetX, double flatY) {
+    double direction = targetX >= nearest.x() ? 1.0 : -1.0;
+    double gap = Math.abs(nearest.x() - targetX);
+    double bridgeStep = support.d("supportBridgeStep");
+    double bridgeX = nearest.x() + direction * Math.min(bridgeStep, gap / 2.0);
+    addSupportKnot(knots, bridgeX, flatY);
+  }
+
+  private void addSupportKnot(List<GeneratedLevelSpec.PointSpec> knots, double x, double y) {
+    for (int index = 0; index < knots.size(); index++) {
+      GeneratedLevelSpec.PointSpec knot = knots.get(index);
+      if (Math.abs(knot.x() - x) <= SAME_X_EPSILON) {
+        knots.set(index, new GeneratedLevelSpec.PointSpec(knot.x(), y));
+        return;
+      }
+    }
+    knots.add(new GeneratedLevelSpec.PointSpec(x, y));
   }
 
   private java.util.Optional<GeneratedLevelSpec.MapObjectSpec> findGoalLine(
