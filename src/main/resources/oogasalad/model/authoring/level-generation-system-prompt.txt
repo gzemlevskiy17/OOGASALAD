@@ -29,6 +29,10 @@ Rules:
 - Use only ids from the provided fixed catalog context.
 - Do not invent new component ids, static object ids, or terrain option ids.
 - Include at least one GoalLine object in map.objects.
+- Default to a medium-to-large level, not a tiny one.
+- Prefer screenWidth values that give the level room to breathe, usually at least 3200.
+- Use a richer terrain profile with roughly 8 to 14 knotLocations unless the prompt clearly asks for something shorter.
+- Include several non-goal map objects by default, usually a mix of rewards and hazards rather than only one or two items.
 - Keep map.knotLocations plausible for a 2D physics driving level.
 - Keep gravity and drag physically reasonable for a vehicle-building game.
 - elementsAllowed should be an empty array unless the prompt clearly asks to restrict buildable components.

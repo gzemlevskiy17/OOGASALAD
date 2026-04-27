@@ -1,8 +1,14 @@
 package oogasalad.model.authoring.internal;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
+import oogasalad.data.api.CollisionAction;
+import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
+import oogasalad.data.api.StaticComponentInfo;
+import oogasalad.data.api.TerrainInfo;
 import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.model.authoring.api.GoodPiggiesCatalog;
 import oogasalad.model.authoring.api.GoodPiggiesCatalogException;
@@ -68,12 +74,7 @@ public class GoodPiggiesCatalogProvider {
     try {
       GameConfig config = gameLoader.loadGame(catalogPath);
       validateConfig(config, catalogPath);
-      cachedCatalog = new GoodPiggiesCatalog(
-          config.gameId(),
-          config.primaryComponentId(),
-          config.components(),
-          config.staticComponents(),
-          config.terrainTypes());
+      cachedCatalog = hydrateCatalog(config, catalogPath);
       LOG.info(PROPS.getString("catalogLoadSuccessLogMessage"), catalogPath);
       return cachedCatalog;
     } catch (RuntimeException exception) {
@@ -109,29 +110,81 @@ public class GoodPiggiesCatalogProvider {
       LOG.error(message);
       throw new GoodPiggiesCatalogException(message);
     }
-    if (isBlank(config.primaryComponentId())) {
-      String message = PROPS.getString("missingPrimaryComponentError");
-      LOG.error(message);
-      throw new GoodPiggiesCatalogException(message);
-    }
-    if (config.components().isEmpty()) {
-      String message = PROPS.getString("emptyComponentsError");
-      LOG.error(message);
-      throw new GoodPiggiesCatalogException(message);
-    }
-    if (config.staticComponents().isEmpty()) {
-      String message = PROPS.getString("emptyStaticComponentsError");
-      LOG.error(message);
-      throw new GoodPiggiesCatalogException(message);
-    }
-    if (config.terrainTypes().isEmpty()) {
-      String message = PROPS.getString("emptyTerrainTypesError");
-      LOG.error(message);
-      throw new GoodPiggiesCatalogException(message);
-    }
   }
 
   private boolean isBlank(String value) {
     return value == null || value.isBlank();
+  }
+
+  private GoodPiggiesCatalog hydrateCatalog(GameConfig config, String catalogPath) {
+    boolean usesFallback = isBlank(config.primaryComponentId())
+        || config.components().isEmpty()
+        || config.staticComponents().isEmpty()
+        || config.terrainTypes().isEmpty();
+    if (usesFallback) {
+      LOG.warn(PROPS.getString("catalogFallbackLogMessage"), catalogPath);
+    }
+
+    String primaryComponentId = usesFallback && isBlank(config.primaryComponentId())
+        ? PROPS.getString("fallbackPrimaryComponentId")
+        : config.primaryComponentId();
+    List<ComponentInfo> components = config.components().isEmpty()
+        ? buildFallbackComponents()
+        : config.components();
+    List<StaticComponentInfo> staticComponents = config.staticComponents().isEmpty()
+        ? buildFallbackStaticComponents()
+        : config.staticComponents();
+    List<TerrainInfo> terrainTypes = config.terrainTypes().isEmpty()
+        ? buildFallbackTerrainTypes()
+        : config.terrainTypes();
+
+    return new GoodPiggiesCatalog(
+        config.gameId(),
+        primaryComponentId,
+        components,
+        staticComponents,
+        terrainTypes);
+  }
+
+  private List<ComponentInfo> buildFallbackComponents() {
+    List<ComponentInfo> components = new ArrayList<>();
+    for (String id : csv("fallbackComponentIds")) {
+      components.add(new ComponentInfo(id, "", 0.0, List.of()));
+    }
+    return components;
+  }
+
+  private List<StaticComponentInfo> buildFallbackStaticComponents() {
+    List<String> ids = csv("fallbackStaticComponentIds");
+    List<String> actionTypes = csv("fallbackCollisionTypes");
+    List<Double> actionAmounts = csvDoubles("fallbackCollisionAmounts");
+    List<StaticComponentInfo> staticComponents = new ArrayList<>();
+    for (int i = 0; i < ids.size(); i++) {
+      staticComponents.add(new StaticComponentInfo(
+          ids.get(i),
+          "",
+          0.0,
+          new CollisionAction(actionTypes.get(i), actionAmounts.get(i))));
+    }
+    return staticComponents;
+  }
+
+  private List<TerrainInfo> buildFallbackTerrainTypes() {
+    List<String> ids = csv("fallbackTerrainIds");
+    List<String> colors = csv("fallbackTerrainColors");
+    List<Double> frictions = csvDoubles("fallbackTerrainFrictions");
+    List<TerrainInfo> terrainTypes = new ArrayList<>();
+    for (int i = 0; i < ids.size(); i++) {
+      terrainTypes.add(new TerrainInfo(ids.get(i), "", colors.get(i), frictions.get(i)));
+    }
+    return terrainTypes;
+  }
+
+  private List<String> csv(String key) {
+    return List.of(PROPS.getString(key).split("\\s*,\\s*"));
+  }
+
+  private List<Double> csvDoubles(String key) {
+    return csv(key).stream().map(Double::parseDouble).toList();
   }
 }
