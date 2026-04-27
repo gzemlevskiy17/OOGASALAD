@@ -48,6 +48,7 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
@@ -285,9 +286,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private void attachVehicleHpHud(GamePlayAppScreen screen,
-      Map<PlacedComponent, GameComponent> placements) {
+      Map<PlacedComponent, RigidBody> placements) {
     Map<PlacedComponent, Damageable> placementHp = new LinkedHashMap<>();
-    for (Map.Entry<PlacedComponent, GameComponent> entry : placements.entrySet()) {
+    for (Map.Entry<PlacedComponent, RigidBody> entry : placements.entrySet()) {
       if (entry.getValue() instanceof Damageable d) {
         placementHp.put(entry.getKey(), d);
       }
@@ -328,7 +329,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
         .findFirst().orElse(null);
     double spawnX = spawn != null ? spawn.x() : 380.0;
     double spawnY = spawn != null ? spawn.y() : 330.0;
-    Map<PlacedComponent, GameComponent> placements =
+    Map<PlacedComponent, RigidBody> placements =
         vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
     return new BuiltWorld(world, bounds, placements, loadedConfig);
   }
@@ -428,8 +429,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private record BuiltWorld(World world, LevelBounds bounds,
-                            Map<PlacedComponent, GameComponent> placements,
-                            GameConfig gameConfig) {
+                            Map<PlacedComponent, RigidBody> placements, GameConfig gameConfig) {
 
   }
 

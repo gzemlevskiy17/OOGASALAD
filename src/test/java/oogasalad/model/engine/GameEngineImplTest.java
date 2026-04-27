@@ -1,7 +1,9 @@
 package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
@@ -10,6 +12,11 @@ import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
+import oogasalad.model.engine.internal.components.FinishLineComponent;
+import oogasalad.model.engine.internal.components.PassThroughComponent;
+import oogasalad.model.engine.internal.components.RockComponent;
+import oogasalad.model.engine.internal.components.StaticComponent;
+import oogasalad.model.engine.internal.components.StructuralComponent;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -26,7 +33,7 @@ class GameEngineImplTest {
   private static final int SUB_STEPS = 4;
 
   private static final CollisionDetector NO_HITS = (a, b) -> Optional.empty();
-  private static final CollisionSolver NO_SOLVE = (a, b, c) -> {
+  private static final CollisionSolver NO_SOLVE = (a, b, c, d) -> {
   };
 
   private static DynamicComponent box(double mass, double x, double y, boolean gravity) {
@@ -126,6 +133,44 @@ class GameEngineImplTest {
 
     assertEquals(0, body.getStaticState().getLinearPosition().x(), EPS);
     assertEquals(0, body.getStaticState().getLinearPosition().y(), EPS);
+  }
+
+  @Test
+  void findSuperClass_resolvesDynamicStatic()
+      throws ReflectiveOperationException {
+    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
+    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+    method.setAccessible(true);
+
+    CollisionPair result = (CollisionPair) method.invoke(engine,
+        new CollisionPair(RockComponent.class, DriveBody.class));
+
+    assertEquals(CollisionPair.of(StaticComponent.class, DynamicComponent.class), result);
+  }
+
+  @Test
+  void findSuperClass_resolvesStaticDynamic() throws ReflectiveOperationException {
+    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
+    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+    method.setAccessible(true);
+
+    CollisionPair result = (CollisionPair) method.invoke(engine,
+        new CollisionPair(StructuralComponent.class, FinishLineComponent.class));
+
+    assertEquals(CollisionPair.of(DynamicComponent.class, PassThroughComponent.class), result);
+  }
+
+  @Test
+  void findSuperClass_returnsNullOnStaticStaticPair()
+      throws ReflectiveOperationException {
+    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
+    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+    method.setAccessible(true);
+
+    CollisionPair result = (CollisionPair) method.invoke(engine,
+        new CollisionPair(StaticComponent.class, StaticComponent.class));
+
+    assertNull(result);
   }
 
   private static final class DriveBody extends DynamicComponent implements Driveable {

@@ -82,7 +82,7 @@ public class TerrainPropertiesPanel {
     this.selected = placeable;
     nameValue.setText(placeable.getDisplayName());
     typeValue.setText(placeable.getClass().getSimpleName());
-    positionValue.setText(String.format("(%d, %d)", (int) placeable.getX(), (int) placeable.getY()));
+    positionValue.setText(String.format("(%d, %d)", (int) placeable.x(), (int) placeable.y()));
     sizeValue.setText(String.format("%.0f \u00d7 %.0f", placeable.getWidth(), placeable.getHeight()));
     String sprite = placeable.getSprite();
     textureValue.setText(sprite == null || sprite.isBlank() ? "none" : sprite);
@@ -134,7 +134,7 @@ public class TerrainPropertiesPanel {
   private void replaceBlock(AuthoringPlaceable old, double friction, double restitution) {
     world.removeObject((GameObject) old);
     TerrainBlock replacement = new TerrainBlock(
-        old.getDisplayName(), old.getX(), old.getY(),
+        old.getDisplayName(), old.x(), old.y(),
         old.getWidth(), old.getHeight(),
         old.getSprite(), old.isTiled(),
         friction, old.getColor(), restitution);

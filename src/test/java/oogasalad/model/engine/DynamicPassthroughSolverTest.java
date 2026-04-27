@@ -96,7 +96,7 @@ class DynamicPassthroughSolverTest {
   void solve_pickup_invokesEffectExactlyOnce() {
     PickupScenario s = newPickupScenario();
 
-    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision(), true);
 
     assertEquals(1, s.effect().callCount());
   }
@@ -105,7 +105,7 @@ class DynamicPassthroughSolverTest {
   void solve_pickup_passesDynamicAsTargetToEffect() {
     PickupScenario s = newPickupScenario();
 
-    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision(), true);
 
     assertSame(s.dynamic(), s.effect().lastTarget());
   }
@@ -114,7 +114,7 @@ class DynamicPassthroughSolverTest {
   void solve_pickup_marksPickupConsumed() {
     PickupScenario s = newPickupScenario();
 
-    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision(), true);
 
     assertTrue(s.pickup().isConsumed());
   }
@@ -123,7 +123,7 @@ class DynamicPassthroughSolverTest {
   void solve_pickup_deactivatesPickup() {
     PickupScenario s = newPickupScenario();
 
-    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision(), true);
 
     assertFalse(s.pickup().isActive());
   }
@@ -133,7 +133,7 @@ class DynamicPassthroughSolverTest {
     PickupScenario s = newPickupScenario();
     DynamicSnapshot before = snapshotDynamic(s.dynamic());
 
-    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision());
+    new DynamicPassthroughSolver().solve(s.dynamic(), s.pickup(), s.collision(), true);
 
     assertEquals(before, snapshotDynamic(s.dynamic()));
   }
@@ -143,8 +143,8 @@ class DynamicPassthroughSolverTest {
     PickupScenario s = newPickupScenario();
     DynamicPassthroughSolver solver = new DynamicPassthroughSolver();
 
-    solver.solve(s.dynamic(), s.pickup(), s.collision());
-    solver.solve(s.dynamic(), s.pickup(), s.collision());
+    solver.solve(s.dynamic(), s.pickup(), s.collision(), true);
+    solver.solve(s.dynamic(), s.pickup(), s.collision(), true);
 
     assertEquals(1, s.effect().callCount());
   }
@@ -165,7 +165,7 @@ class DynamicPassthroughSolverTest {
     double penX = pen.x();
     double penY = pen.y();
 
-    new DynamicPassthroughSolver().solve(dynamic, passThrough, collision);
+    new DynamicPassthroughSolver().solve(dynamic, passThrough, collision, true);
 
     assertEquals(beforeDyn, snapshotDynamic(dynamic), "dynamic body state must be unchanged");
     assertEquals(beforePass, snapshotPassThrough(passThrough),

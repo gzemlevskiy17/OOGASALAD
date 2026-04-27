@@ -34,7 +34,7 @@ public record CanvasAction(ActionType type, int col, int row,
   /** Creates a PLACE action from the given placeable's current state. */
   public static CanvasAction place(AuthoringPlaceable p) {
     return new CanvasAction(ActionType.PLACE,
-        (int) p.getX(), (int) p.getY(),
+        (int) p.x(), (int) p.y(),
         p.getWidth(), p.getHeight(),
         p.getColor(), p.getSprite(),
         p.isTiled(), p.getFriction(), p.getRestitution(), p.getDisplayName(), p);
@@ -43,7 +43,7 @@ public record CanvasAction(ActionType type, int col, int row,
   /** Creates a REMOVE action from the given placeable's current state. */
   public static CanvasAction remove(AuthoringPlaceable p) {
     return new CanvasAction(ActionType.REMOVE,
-        (int) p.getX(), (int) p.getY(),
+        (int) p.x(), (int) p.y(),
         p.getWidth(), p.getHeight(),
         p.getColor(), p.getSprite(),
         p.isTiled(), p.getFriction(), p.getRestitution(), p.getDisplayName(), p);

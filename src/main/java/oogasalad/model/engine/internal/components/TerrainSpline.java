@@ -20,7 +20,7 @@ import oogasalad.model.engine.internal.spline.SplineTessellator;
  * tooling) still work; the broad-phase AABB and narrow-phase SAT both go through
  * {@link #getCollisionPolygons()}.
  *
- * <p>The component's position ({@link #getX()}, {@link #getY()}) is the axis-aligned bounding-box
+ * <p>The component's position ({@link #x()}, {@link #y()}) is the axis-aligned bounding-box
  * top-left corner of the spline curve. {@link #getWidth()} and {@link #getHeight()} describe the
  * bounding box down to the baseline — these are what the gameplay factory uses to compute world
  * bounds, and what the authoring canvas uses for the fallback rectangle drawing path.
@@ -102,18 +102,6 @@ public class TerrainSpline extends TerrainComponent {
     return ConvexPolygon.axisAlignedBox(boundingMinX(spline), boundingMinY(spline),
         Math.max(1.0, boundingMaxX(spline) - boundingMinX(spline)),
         Math.max(1.0, spline.baselineY() - boundingMinY(spline)));
-  }
-
-  // AuthoringPlaceable still uses get-prefixed accessors; Renderable was renamed to x()/y().
-  // Delegate so TerrainSpline satisfies both interfaces without duplicating state.
-  @Override
-  public double getX() {
-    return x();
-  }
-
-  @Override
-  public double getY() {
-    return y();
   }
 
   @Override

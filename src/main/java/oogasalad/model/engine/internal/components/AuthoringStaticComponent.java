@@ -38,16 +38,6 @@ public class AuthoringStaticComponent extends PassThroughComponent
   }
 
   @Override
-  public double getX() {
-    return x();
-  }
-
-  @Override
-  public double getY() {
-    return y();
-  }
-
-  @Override
   public double getWidth() {
     return width;
   }

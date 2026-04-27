@@ -22,8 +22,10 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import oogasalad.controller.authoring.internal.AiLevelGenerationCoordinator;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.internal.LevelScanner;
+import oogasalad.model.authoring.internal.GeneratedLevelModel;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
@@ -208,7 +210,7 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
     for (String levelKey : levels) {
       levelsList.getChildren().add(createLevelButton(levelKey));
     }
-    levelsList.getChildren().add(createAddNewLevelButton());
+    levelsList.getChildren().add(buildLevelActions());
   }
 
   private Button createLevelButton(String levelKey) {
@@ -219,8 +221,14 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
     return button;
   }
 
+  private VBox buildLevelActions() {
+    VBox actions = new VBox(d("paneSpacing"), createAddNewLevelButton(), createGenerateLevelButton());
+    actions.setAlignment(Pos.TOP_CENTER);
+    return actions;
+  }
+
   private Button createAddNewLevelButton() {
-    Button button = new Button(s("addNewLevelButtonText"));
+    Button button = new Button(s("createLevelButtonText"));
     button.setPrefSize(d("levelButtonWidth"), d("levelButtonHeight"));
     button.getStyleClass().add("level-button");
     button.setOnAction(event -> {
@@ -228,6 +236,25 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
       onOutcome.accept(Outcome.OPEN_AUTHORING);
     });
     return button;
+  }
+
+  private Button createGenerateLevelButton() {
+    Button button = new Button(s("generateLevelButtonText"));
+    button.setPrefSize(d("levelButtonWidth"), d("levelButtonHeight"));
+    button.getStyleClass().add("level-button");
+    button.setOnAction(event -> openAiLevelGeneration());
+    return button;
+  }
+
+  private void openAiLevelGeneration() {
+    AiLevelGenerationCoordinator coordinator = new AiLevelGenerationCoordinator(
+        new GeneratedLevelModel(),
+        result -> {
+          onWorldSelected.accept(selectedWorldKey);
+          onLevelSelected.accept(result.filePath());
+          onOutcome.accept(Outcome.OPEN_AUTHORING);
+        });
+    coordinator.open(getRoot().getScene() == null ? null : getRoot().getScene().getWindow());
   }
 
   private void openLevel(String levelKey) {

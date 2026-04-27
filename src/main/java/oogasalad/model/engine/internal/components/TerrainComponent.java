@@ -5,7 +5,10 @@ import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 
 /**
+ * Base authoring-aware terrain component for static terrain objects in the engine.
+ *
  * @author Xuye
+ * @author Emilio Garcia
  */
 public abstract class TerrainComponent extends StaticComponent implements AuthoringPlaceable {
 
@@ -20,14 +23,4 @@ public abstract class TerrainComponent extends StaticComponent implements Author
   public abstract double getHeight();
 
   public abstract boolean isTiled();
-
-  @Override
-  public double getX() {
-    return x();
-  }
-
-  @Override
-  public double getY() {
-    return y();
-  }
 }
