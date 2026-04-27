@@ -57,12 +57,6 @@ public class DistanceJoint extends AbstractJoint {
     this.damping = damping;
   }
 
-  private static Vector linearVelocity(RigidBody component) {
-    if (component instanceof DynamicComponent dynamic) {
-      return dynamic.getDynamicState().getLinearVelocity();
-    }
-    return new Vector(0, 0);
-  }
 
   /**
    * Returns the joint stiffness used by spring mode.
@@ -121,7 +115,52 @@ public class DistanceJoint extends AbstractJoint {
   @Override
   public void applyVelocity() {
     if (isRigid()) {
-      applyAnchorVelocityEqualization();
+      applyDistanceVelocityEqualization();
+    }
+  }
+
+  private void applyDistanceVelocityEqualization() {
+    double invMA = getComponentA().getInverseMass();
+    double invMB = getComponentB().getInverseMass();
+    double invIA = getComponentA().getInverseMomentOfInertia();
+    double invIB = getComponentB().getInverseMomentOfInertia();
+
+    Vector rA = getWorldAnchorA().subtract(getComponentA().getStaticState().getLinearPosition());
+    Vector rB = getWorldAnchorB().subtract(getComponentB().getStaticState().getLinearPosition());
+
+    Vector vA = linearVelocity(getComponentA());
+    Vector vB = linearVelocity(getComponentB());
+    double wA = angularVelocity(getComponentA());
+    double wB = angularVelocity(getComponentB());
+
+    Vector vAnchorA = vA.add(rA.crossWithScalar(wA));
+    Vector vAnchorB = vB.add(rB.crossWithScalar(wB));
+    Vector relVel = vAnchorB.subtract(vAnchorA);
+
+    Vector delta = getAnchorDelta();
+    if (delta.magnitude() == 0.0) {
+      return;
+    }
+    Vector n = delta.normalize();
+
+    double rnA = rA.crossWithVector(n);
+    double rnB = rB.crossWithVector(n);
+
+    double kMass = invMA + invMB + invIA * rnA * rnA + invIB * rnB * rnB;
+    if (kMass == 0.0) {
+      return;
+    }
+
+    double j = -relVel.dot(n) / kMass;
+    Vector impulse = n.multiply(j);
+
+    if (getComponentA() instanceof DynamicComponent dA) {
+      dA.getDynamicState().setLinearVelocity(vA.subtract(impulse.multiply(invMA)));
+      dA.getDynamicState().setAngularVelocity(wA - rnA * j * invIA);
+    }
+    if (getComponentB() instanceof DynamicComponent dB) {
+      dB.getDynamicState().setLinearVelocity(vB.add(impulse.multiply(invMB)));
+      dB.getDynamicState().setAngularVelocity(wB + rnB * j * invIB);
     }
   }
 

@@ -51,6 +51,21 @@ public abstract class AbstractJoint implements Joint {
     this.collideConnected = false;
   }
 
+  protected static Vector linearVelocity(RigidBody component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getDynamicState().getLinearVelocity();
+    }
+    return new Vector(0, 0);
+  }
+
+  //TODO: make fake state to get rid of
+  protected static double angularVelocity(RigidBody component) {
+    if (component instanceof DynamicComponent dynamic) {
+      return dynamic.getDynamicState().getAngularVelocity();
+    }
+    return 0.0;
+  }
+
   @Override
   public RigidBody getComponentA() {
     return objectA;
@@ -59,13 +74,6 @@ public abstract class AbstractJoint implements Joint {
   @Override
   public RigidBody getComponentB() {
     return objectB;
-  }
-
-  private static Vector linearVelocity(RigidBody component) {
-    if (component instanceof DynamicComponent dynamic) {
-      return dynamic.getDynamicState().getLinearVelocity();
-    }
-    return new Vector(0, 0);
   }
 
   /**
@@ -82,17 +90,14 @@ public abstract class AbstractJoint implements Joint {
     return localAnchorB;
   }
 
-  //TODO: make fake state to get rid of
-  private static double angularVelocity(RigidBody component) {
-    if (component instanceof DynamicComponent dynamic) {
-      return dynamic.getDynamicState().getAngularVelocity();
-    }
-    return 0.0;
-  }
-
   @Override
   public boolean isCollideConnected() {
     return collideConnected;
+  }
+
+  @Override
+  public void setCollideConnected(boolean collideConnected) {
+    this.collideConnected = collideConnected;
   }
 
   /**
@@ -100,11 +105,6 @@ public abstract class AbstractJoint implements Joint {
    */
   protected Vector getAnchorDelta() {
     return getWorldAnchorB().subtract(getWorldAnchorA());
-  }
-
-  @Override
-  public void setCollideConnected(boolean collideConnected) {
-    this.collideConnected = collideConnected;
   }
 
   /**

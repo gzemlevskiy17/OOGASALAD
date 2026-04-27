@@ -47,12 +47,6 @@ public class RevoluteJoint extends AbstractJoint {
     this.maxMotorTorque = 0.0;
   }
 
-  private static double angularVelocity(RigidBody component) {
-    if (component instanceof DynamicComponent dynamic) {
-      return dynamic.getDynamicState().getAngularVelocity();
-    }
-    return 0.0;
-  }
 
   public void setLimits(double lowerAngle, double upperAngle) {
     if (lowerAngle > upperAngle) {
