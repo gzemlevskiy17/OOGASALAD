@@ -9,14 +9,13 @@ import oogasalad.data.api.Settings;
  * Provides typed access to the gameplay settings stored in {@link GameConfig}.
  *
  * <p>This class is the boundary between JSON/dot-path configuration keys and the player runtime.
- * The session factory asks this object for domain concepts, such as the main character tag, instead
- * of reading raw setting strings directly.
+ * The session factory asks this object for game-wide gameplay concepts instead of reading raw
+ * setting strings directly.
  *
  * @author Paulina Vvedenskaya
  */
 final class GameplayConfigSettings {
 
-  static final String MAIN_CHARACTER_TAG_KEY = "win_condition.mainCharacterTag";
   static final String LOSS_TRACKED_TAGS_KEY = "loss_conditions.trackedTags";
 
   private static final Settings EMPTY_SETTINGS = new Settings() {
@@ -52,12 +51,12 @@ final class GameplayConfigSettings {
   }
 
   /**
-   * Reads which tag represents the playable main character for win/progress rules.
+   * Returns the raw loaded game catalog when the caller needs a game-wide typed value.
    *
-   * @return configured main character tag, or null to use checker defaults
+   * @return loaded game config, or null when the level has no catalog
    */
-  String mainCharacterTag() {
-    return setting(MAIN_CHARACTER_TAG_KEY);
+  GameConfig gameConfig() {
+    return config;
   }
 
   /**

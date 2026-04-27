@@ -17,7 +17,7 @@ import oogasalad.model.player.api.GameplayStatsTracker;
 public class GameplayStatsTrackerImpl implements GameplayStatsTracker {
 
   private final String levelId;
-  private final String mainCharacterTag;
+  private final String mainCharacterId;
   private Double startX;
   private Double startY;
   private Double finishX;
@@ -28,18 +28,17 @@ public class GameplayStatsTrackerImpl implements GameplayStatsTracker {
   private double elapsedSeconds;
 
   public GameplayStatsTrackerImpl(String levelId) {
-    this(levelId, DefaultTag.PIGS.value());
+    this(levelId, null);
   }
 
-  public GameplayStatsTrackerImpl(String levelId, String mainCharacterTag) {
+  public GameplayStatsTrackerImpl(String levelId, String mainCharacterId) {
     this.levelId = levelId;
-    this.mainCharacterTag = mainCharacterTag == null || mainCharacterTag.isBlank()
-        ? DefaultTag.PIGS.value() : mainCharacterTag;
+    this.mainCharacterId = mainCharacterId;
   }
 
   @Override
   public void sample(World world, double dtSeconds) {
-    List<GameObject> mainCharacters = world.getObjectsByTag(mainCharacterTag);
+    List<GameObject> mainCharacters = MainCharacterLookup.find(world, mainCharacterId);
     List<GameObject> finishes = world.getObjectsByTag(DefaultTag.FINISH_LINE.value());
     if (mainCharacters.isEmpty() || finishes.isEmpty()) {
       return;

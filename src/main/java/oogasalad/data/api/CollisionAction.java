@@ -1,7 +1,7 @@
 package oogasalad.data.api;
 
 /**
- * Engine behavior triggered when the primary component collides with a static object.
+ * Engine behavior triggered when the main character collides with a static object.
  *
  * @param type   registry key, e.g. "heal", "damage", "finish"
  * @param amount magnitude for actions that take one; ignored for zero-argument actions like

@@ -28,7 +28,7 @@ public class GameConfigImpl implements GameConfig {
 
   private final JsonNode root;
   private final String gameId;
-  private final String primaryComponentId;
+  private final String mainCharacterId;
   private final List<ComponentInfo> components;
   private final List<StaticComponentInfo> staticComponents;
   private final List<TerrainInfo> terrainTypes;
@@ -41,7 +41,7 @@ public class GameConfigImpl implements GameConfig {
       throw new LevelLoadException("Failed to read game config: " + filePath, e);
     }
     gameId = root.path("gameId").asText("");
-    primaryComponentId = root.path("primaryComponentId").asText("");
+    mainCharacterId = root.path("mainCharacterId").asText("");
     components = parseComponents(root.path("components"));
     staticComponents = parseStaticComponents(root.path("staticComponents"));
     terrainTypes = parseTerrainTypes(root.path("terrainTypes"));
@@ -50,7 +50,7 @@ public class GameConfigImpl implements GameConfig {
   private GameConfigImpl() {
     root = MAPPER.createObjectNode();
     gameId = "";
-    primaryComponentId = "";
+    mainCharacterId = "";
     components = new ArrayList<>();
     staticComponents = new ArrayList<>();
     terrainTypes = new ArrayList<>();
@@ -66,8 +66,8 @@ public class GameConfigImpl implements GameConfig {
   }
 
   @Override
-  public String primaryComponentId() {
-    return primaryComponentId;
+  public String mainCharacterId() {
+    return mainCharacterId;
   }
 
   @Override

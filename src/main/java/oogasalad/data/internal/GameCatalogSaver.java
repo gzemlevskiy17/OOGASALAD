@@ -23,14 +23,14 @@ public class GameCatalogSaver {
   private static final Logger LOG = LogManager.getLogger(GameCatalogSaver.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  public void save(String filePath, String gameId, String primaryComponentId,
+  public void save(String filePath, String gameId, String mainCharacterId,
       List<ComponentInfo> components,
       List<StaticComponentInfo> staticComponents,
       List<TerrainInfo> terrainTypes) {
 
     ObjectNode root = MAPPER.createObjectNode();
     root.put("gameId", gameId);
-    root.put("primaryComponentId", primaryComponentId);
+    root.put("mainCharacterId", mainCharacterId);
 
     ArrayNode compsNode = root.putArray("components");
     for (ComponentInfo c : components) {

@@ -177,7 +177,7 @@ public class LevelGenerationService {
     return String.format(
         PROPS.getString("catalogContextTemplate"),
         catalog.gameId(),
-        catalog.primaryComponentId(),
+        catalog.mainCharacterId(),
         joinQuoted(catalog.componentIds()),
         joinQuoted(catalog.staticComponentIds()),
         joinQuoted(catalog.terrainTypeIds()));

@@ -8,7 +8,7 @@ Old level files in `data/levels/{forest,glacier,mars,moon,desert}/` will be **de
 |---|-------|----------|
 | 1 | Vehicle palette cap (`max_selectable`) | Re-added as `mainCharacter.maxSelectable` (required, integer ≥ 0). |
 | 2 | Existing rectangle-terrain levels | Delete; do not migrate. |
-| 3 | Camera follow target | Marked once in `game.json` as `primaryComponentId`. Levels do not specify it. |
+| 3 | Camera follow target | Marked once in `game.json` as `mainCharacterId`. Levels do not specify it. |
 | 4 | Per-level physics | `gravity` and `drag` are required per level — no engine fallback. |
 | 5 | Multiple splines per level | Flat `map.knotLocations` only. Single spline. |
 
