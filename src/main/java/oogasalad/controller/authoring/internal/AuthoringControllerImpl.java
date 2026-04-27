@@ -82,12 +82,22 @@ public class AuthoringControllerImpl implements AuthoringController {
     new SplineInputHandler(canvas, toolSelector, splineDraft).register(root);
     new HoverPreviewInputHandler(canvas, toolSelector).register(root);
     new PaletteDropInputHandler(canvas, (col, row) -> placeFromPaletteDrop(col, row)).register(root);
+    new ClickPlaceInputHandler(canvas, toolSelector,
+        (col, row) -> placeFromPaletteDrop(col, row)).register(root);
   }
 
   @Override
   public void saveLevel(String fileName) {
     commitSplineDraftBeforeSave();
     persistence.save(fileName);
+  }
+
+  /**
+   * Commits the in-progress spline draft into the world and records the action so it can be
+   * undone. Call this from the UI commit button instead of accessing the draft directly.
+   */
+  public void commitSpline() {
+    commitSplineDraftBeforeSave();
   }
 
   private void commitSplineDraftBeforeSave() {
@@ -160,24 +170,36 @@ public class AuthoringControllerImpl implements AuthoringController {
   private void applyAction(CanvasAction action) {
     switch (action.type()) {
       case PLACE -> placeFromAction(action);
-      case REMOVE -> removePlaceableAt(action.col(), action.row());
+      case REMOVE -> removeFromAction(action);
     }
   }
 
   private void applyInverse(CanvasAction action) {
     switch (action.type()) {
-      case PLACE -> removePlaceableAt(action.col(), action.row());
+      case PLACE -> removeFromAction(action);
       case REMOVE -> placeFromAction(action);
     }
   }
 
   private void placeFromAction(CanvasAction action) {
+    if (action.object() != null) {
+      world.addObject((GameObject) action.object());
+      return;
+    }
     TerrainBlock block = new TerrainBlock(
         action.displayName(), action.col(), action.row(),
         action.width(), action.height(),
         action.sprite(), action.tiled(),
         action.friction(), action.color(), action.restitution());
     world.addObject(block);
+  }
+
+  private void removeFromAction(CanvasAction action) {
+    if (action.object() != null) {
+      world.removeObject((GameObject) action.object());
+      return;
+    }
+    removePlaceableAt(action.col(), action.row());
   }
 
   private void removePlaceableAt(int col, int row) {
