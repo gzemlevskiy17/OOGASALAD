@@ -32,15 +32,19 @@ import oogasalad.model.player.internal.PlacementValidator;
 import oogasalad.view.core.internal.AbstractAppScreen;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.SpriteCache;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Screen on which the player builds a vehicle.
  *
  * @author Iurii Beliaev
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
+  private static final Logger LOG = LogManager.getLogger(VehicleBuilderAppScreen.class);
   private static final ResourceBundle PROPS = ResourceBundle.getBundle(
       "oogasalad.view.player.VehicleBuilderAppScreen");
   private static final ResourceBundle PALETTE_CONFIG = ResourceBundle.getBundle(
@@ -52,6 +56,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private final PaletteSpriteRegistry spriteRegistry;
   private final BuildRulesRegistry buildRules;
   private final Map<String, List<String>> gridState = new HashMap<>();
+  private final List<StackPane> gridCells = new ArrayList<>();
   private List<String> availableComponentNames;
   private FlowPane componentFlow;
   private PlacementValidator validator;
@@ -145,11 +150,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
         }
       }
     }
-    gridState.clear();
+    resetWorkspace();
     if (componentFlow != null) {
       rebuildComponentPalette();
     }
-    clearError();
   }
 
   private static List<String> defaultComponentNames() {
@@ -189,6 +193,16 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
         placements.add(new PlacedComponent(rc[0], rc[1], type));
       }
     }return new VehicleLayout(placements);
+  }
+
+  /**
+   * Clears stale builder state every time the shared screen instance is shown again.
+   *
+   * @author Emilio Garcia
+   */
+  @Override
+  public void onEnter() {
+    resetWorkspace();
   }
 
   @Override
@@ -253,6 +267,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
         cell.setPrefSize(CELL_SIZE, CELL_SIZE);
         cell.setMaxSize(CELL_SIZE, CELL_SIZE);
         wireCellHandlers(cell, row, col);
+        gridCells.add(cell);
         grid.add(cell, col, row);
       }
     }
@@ -357,6 +372,16 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     for (String type : stack) {
       cell.getChildren().add(buildSpritePreview(type));
     }
+  }
+
+  private void resetWorkspace() {
+    gridState.clear();
+    for (StackPane cell : gridCells) {
+      cell.getChildren().clear();
+      cell.getStyleClass().remove("grid-cell-drag-hover");
+    }
+    clearError();
+    LOG.debug("Reset vehicle builder workspace");
   }
 
   private void showError(String reason) {
