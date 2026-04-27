@@ -69,6 +69,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private final World world;
   private AuthoringPlaceable selectedPlaceable;
   private Consumer<AuthoringPlaceable> onObjectSelected = obj -> {};
+  private Consumer<AuthoringPlaceable> onTerrainHoverEnter = p -> {};
+  private Runnable onTerrainHoverExit = () -> {};
 
   private Rectangle hoverOverlay;
   private int hoverCol = -1;
@@ -91,8 +93,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     this.defaultFill = Color.web(PROPS.getString("defaultFill"));
     this.gridStroke = Color.web(PROPS.getString("gridStroke"));
     this.gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
-    this.selectedPlaceable = new TerrainPlaceable(
-        cellSize, cellSize, "#8B4513", "assets/terrain/grass.png", true, 0.6, 0.4);
+    this.selectedPlaceable = null;
     this.root = new Pane();
     root.getStyleClass().add("authoring-canvas");
     root.getTransforms().add(zoomTransform);
@@ -175,14 +176,16 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   @Override
   public void setSelectedPlaceable(AuthoringPlaceable placeable) {
-    if (placeable != null) {
-      this.selectedPlaceable = placeable;
-      if (hoverOverlay != null) {
-        int col = hoverCol;
-        int row = hoverRow;
-        clearHoverPreview();
-        showHoverPreview(col, row);
-      }
+    this.selectedPlaceable = placeable;
+    if (placeable == null) {
+      clearHoverPreview();
+      return;
+    }
+    if (hoverOverlay != null) {
+      int col = hoverCol;
+      int row = hoverRow;
+      clearHoverPreview();
+      showHoverPreview(col, row);
     }
   }
 
@@ -204,6 +207,10 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   @Override
   public void showHoverPreview(int col, int row) {
+    if (selectedPlaceable == null) {
+      clearHoverPreview();
+      return;
+    }
     if (col == hoverCol && row == hoverRow) {
       return;
     }
@@ -231,6 +238,16 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     if (handler != null) {
       this.onObjectSelected = handler;
     }
+  }
+
+  @Override
+  public void setOnTerrainHoverEnter(Consumer<AuthoringPlaceable> handler) {
+    this.onTerrainHoverEnter = handler != null ? handler : p -> {};
+  }
+
+  @Override
+  public void setOnTerrainHoverExit(Runnable handler) {
+    this.onTerrainHoverExit = handler != null ? handler : () -> {};
   }
 
   @Override
@@ -298,6 +315,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     path.setStroke(TERRAIN_STROKE_COLOR);
     path.setStrokeWidth(1.0);
     path.setOnMousePressed(e -> onObjectSelected.accept(terrainSpline));
+    path.setOnMouseEntered(e -> onTerrainHoverEnter.accept(terrainSpline));
+    path.setOnMouseExited(e -> onTerrainHoverExit.run());
     return path;
   }
 
@@ -318,6 +337,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     }
 
     rect.setOnMousePressed(e -> onObjectSelected.accept(placeable));
+    rect.setOnMouseEntered(e -> onTerrainHoverEnter.accept(placeable));
+    rect.setOnMouseExited(e -> onTerrainHoverExit.run());
 
     return rect;
   }

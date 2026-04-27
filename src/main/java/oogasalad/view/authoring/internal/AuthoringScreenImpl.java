@@ -191,6 +191,8 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     terrainPropertiesPanel = new TerrainPropertiesPanel();
     canvas = new AuthoringCanvasImpl(world);
     canvas.setOnObjectSelected(terrainPropertiesPanel::show);
+    canvas.setOnTerrainHoverEnter(terrainPropertiesPanel::onCanvasTerrainHover);
+    canvas.setOnTerrainHoverExit(terrainPropertiesPanel::onCanvasTerrainHoverEnd);
     double cellSize = canvas.getCellSize();
     controller = new AuthoringControllerImpl(
         world, new LevelLoaderImpl(cellSize), new LevelSaverImpl(cellSize),
@@ -224,6 +226,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     subscribePalette(pigsPalette);
     subscribePalette(levelItemsPalette);
     subscribePalette(customPalette);
+    terrainPalette.setCatalogHoverHandler(terrainPropertiesPanel::showCatalogHover, terrainPropertiesPanel::endCatalogHover);
 
     terrainPaletteButton = createTabButton(s("terrainButtonText"));
     pigsPaletteButton = createTabButton(s("pigsButtonText"));
