@@ -2,16 +2,21 @@ package oogasalad.data.internal;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Filesystem conventions for the data layer. Keeps the "level.json sits next to its game.json" rule
  * in one place so callers don't reinvent it.
  *
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public final class LevelPaths {
 
+  private static final Logger LOG = LogManager.getLogger(LevelPaths.class);
   public static final String GAME_FILE_NAME = "game.json";
+  public static final String AI_GENERATION_CATALOG_FILE_NAME = "ai-generation-catalog.json";
   private static final String GAMES_DIR = "data/games";
 
   private LevelPaths() {
@@ -43,6 +48,11 @@ public final class LevelPaths {
   public static String gameFileForLevel(String levelPath, String gameType) {
     if (gameType == null || gameType.isBlank()) {
       return siblingGameFile(levelPath);
+    }
+    Path generatedCatalog = Path.of(GAMES_DIR, gameType, AI_GENERATION_CATALOG_FILE_NAME);
+    if (Files.exists(generatedCatalog)) {
+      LOG.debug("Resolved game catalog for '{}' through {}", gameType, generatedCatalog);
+      return generatedCatalog.toString();
     }
     Path centralCatalog = Path.of(GAMES_DIR, gameType, GAME_FILE_NAME);
     return Files.exists(centralCatalog) ? centralCatalog.toString() : siblingGameFile(levelPath);

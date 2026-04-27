@@ -1,0 +1,29 @@
+.ai-level-generation-dialog {
+  -fx-background-color: #fffdf8;
+}
+
+.ai-level-generation-dialog-content {
+  -fx-background-color: transparent;
+}
+
+.ai-level-generation-dialog-label {
+  -fx-font-family: "Serif";
+  -fx-font-size: 16px;
+  -fx-text-fill: #333333;
+}
+
+.ai-level-generation-dialog-textarea {
+  -fx-font-family: "Serif";
+  -fx-font-size: 14px;
+  -fx-background-color: white;
+  -fx-border-color: #b0b0b0;
+  -fx-border-width: 1;
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+}
+
+.ai-level-generation-dialog-status {
+  -fx-font-family: "Serif";
+  -fx-font-size: 13px;
+  -fx-text-fill: #b03a2e;
+}

@@ -90,8 +90,8 @@ public class LevelSaverImpl implements LevelSaver {
         spawnPoint.put("y", sp.y() * scale);
       } else if (obj instanceof AuthoringStaticComponent asc) {
         objects.add(buildMapObject(asc.getComponentType(),
-            (asc.getX() + asc.getWidth() / 2.0) * scale,
-            (asc.getY() + asc.getHeight() / 2.0) * scale));
+            (asc.x() + asc.getWidth() / 2.0) * scale,
+            (asc.y() + asc.getHeight() / 2.0) * scale));
       } else if (obj instanceof PickupComponent pc) {
         objects.add(
             buildMapObject(pc.getComponentType(), pc.x() * scale, pc.y() * scale));

@@ -25,8 +25,8 @@ public class DynamicPassthroughSolver {
    * @param collision       - Collision type object representing the collision between the two
    */
   public void solve(DynamicComponent referenceObject, PassThroughComponent incidentObject,
-      Collision collision) {
-    if (incidentObject instanceof HasCollisionEffect actor) {
+      Collision collision, boolean isFirstIteration) {
+    if (isFirstIteration && incidentObject instanceof HasCollisionEffect actor) {
       CollisionEffect effect = actor.getCollisionEffect();
       if (effect != null) {
         effect.apply(referenceObject);

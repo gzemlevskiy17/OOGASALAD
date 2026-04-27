@@ -2,7 +2,7 @@ package oogasalad.model.engine.internal.joints;
 
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
-import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 
 /**
  * Compatibility wrapper for a soft {@link DistanceJoint}.
@@ -15,25 +15,25 @@ public class SpringJoint extends DistanceJoint {
   /**
    * Creates a spring joint with default stiffness and damping.
    */
-  public SpringJoint(GameComponent objectA, GameComponent objectB) {
+  public SpringJoint(RigidBody objectA, RigidBody objectB) {
     this(objectA, objectB, DEFAULT_STIFFNESS, DEFAULT_DAMPING);
   }
 
   /** Creates a spring joint that uses the initial anchor spacing as its target length. */
-  public SpringJoint(GameComponent objectA, GameComponent objectB, double stiffness, double damping) {
+  public SpringJoint(RigidBody objectA, RigidBody objectB, double stiffness, double damping) {
     super(objectA, objectB, stiffness, damping);
     stiff_zerocheck(stiffness);
   }
 
   /** Creates a spring joint with an allowed distance band around the anchors. */
-  public SpringJoint(GameComponent objectA, GameComponent objectB, double minDistance,
+  public SpringJoint(RigidBody objectA, RigidBody objectB, double minDistance,
       double maxDistance, double stiffness, double damping) {
     super(objectA, objectB, minDistance, maxDistance, stiffness, damping);
     stiff_zerocheck(stiffness);
   }
 
   /** Creates a spring joint with explicit local anchors, range limits, and spring parameters. */
-  public SpringJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
+  public SpringJoint(RigidBody objectA, RigidBody objectB, Vector localAnchorA,
       Vector localAnchorB, double minDistance, double maxDistance, double stiffness, double damping) {
     super(objectA, objectB, localAnchorA, localAnchorB, minDistance, maxDistance, stiffness,
         damping);

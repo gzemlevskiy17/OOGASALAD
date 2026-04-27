@@ -87,7 +87,10 @@ public class LevelProgression {
 
   /** Path the level loader reads; constructed from the id, not validated. */
   public String pathFor(LevelId id) {
-    return "data/levels/" + id.worldKey() + "/" + id.levelKey() + ".json";
+    return DataPaths.levelsRoot()
+        .resolve(id.worldKey())
+        .resolve(id.levelKey() + ".json")
+        .toString();
   }
 
   /** Next level in play order, or empty when {@code current} is the last or unknown. */

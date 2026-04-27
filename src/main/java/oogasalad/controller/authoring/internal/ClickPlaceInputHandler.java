@@ -4,30 +4,32 @@ import java.util.Objects;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.shape.Line;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
-import oogasalad.controller.authoring.internal.PaletteDropInputHandler.DropPlacer;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 
 /**
- * Places the currently-selected palette item on primary-button click. Inactive during spline
- * drafting so clicks go to the spline handler instead.
+ * Places the currently selected palette item when the user clicks an empty canvas cell.
  *
- * @author Paulina Vvedenskaya
+ * <p>The handler ignores spline mode and clicks that land on existing placed objects so
+ * object selection can coexist with click-to-place behavior.
+ *
+ * @author Emilio Garcia
  */
 public class ClickPlaceInputHandler implements CanvasInputHandler {
 
   private final AuthoringCanvas canvas;
   private final ToolSelector toolSelector;
-  private final DropPlacer placer;
+  private final PaletteDropInputHandler.DropPlacer placer;
 
   /**
-   * @param canvas       canvas providing grid coordinates and bounds checking
-   * @param toolSelector source of truth for the currently-active tool
-   * @param placer       callback to fire when a valid cell is clicked
+   * @param canvas canvas that exposes grid sizing and bounds checks
+   * @param toolSelector source of truth for the active authoring tool
+   * @param placer callback to invoke on valid click placement
    */
   public ClickPlaceInputHandler(AuthoringCanvas canvas, ToolSelector toolSelector,
-      DropPlacer placer) {
+      PaletteDropInputHandler.DropPlacer placer) {
     this.canvas = Objects.requireNonNull(canvas);
     this.toolSelector = Objects.requireNonNull(toolSelector);
     this.placer = Objects.requireNonNull(placer);
@@ -36,29 +38,25 @@ public class ClickPlaceInputHandler implements CanvasInputHandler {
   @Override
   public void register(Node root) {
     Objects.requireNonNull(root);
-    root.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> handleClick(event));
+    root.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> handleMousePressed(root, event));
   }
 
-  private void handleClick(MouseEvent event) {
-    if (event.getButton() != MouseButton.PRIMARY) {
+  private void handleMousePressed(Node root, MouseEvent event) {
+    if (toolSelector.getActiveTool() == ToolType.SPLINE || event.getButton() != MouseButton.PRIMARY) {
       return;
     }
-    if (toolSelector.getActiveTool() == ToolType.SPLINE) {
+    if (!isCanvasSurfaceClick(root, event.getTarget())) {
       return;
     }
-    int col = colOf(event);
-    int row = rowOf(event);
+    int col = (int) Math.floor(event.getX() / canvas.getCellSize());
+    int row = (int) Math.floor(event.getY() / canvas.getCellSize());
     if (!canvas.isWithinBounds(col, row)) {
       return;
     }
     placer.placeAt(col, row);
   }
 
-  private int colOf(MouseEvent event) {
-    return (int) Math.floor(event.getX() / canvas.getCellSize());
-  }
-
-  private int rowOf(MouseEvent event) {
-    return (int) Math.floor(event.getY() / canvas.getCellSize());
+  private boolean isCanvasSurfaceClick(Node root, Object target) {
+    return target == root || target instanceof Line;
   }
 }

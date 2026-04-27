@@ -2,7 +2,7 @@ package oogasalad.model.engine.internal.joints;
 
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
-import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 
 /**
  * One-sided distance constraint that only prevents connected bodies from separating too far.
@@ -16,12 +16,12 @@ public class RopeJoint extends AbstractJoint {
   /**
    * Creates a rope joint using each body's local origin as its anchor.
    */
-  public RopeJoint(GameComponent objectA, GameComponent objectB, double maxDistance) {
+  public RopeJoint(RigidBody objectA, RigidBody objectB, double maxDistance) {
     this(objectA, objectB, new Vector(0, 0), new Vector(0, 0), maxDistance);
   }
 
   /** Creates a rope joint with explicit local anchors and a maximum allowed separation. */
-  public RopeJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
+  public RopeJoint(RigidBody objectA, RigidBody objectB, Vector localAnchorA,
       Vector localAnchorB, double maxDistance) {
     super(objectA, objectB, localAnchorA, localAnchorB);
     if (maxDistance < getRestDistance()) {

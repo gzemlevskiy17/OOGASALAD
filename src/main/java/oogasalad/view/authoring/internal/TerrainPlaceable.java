@@ -50,12 +50,17 @@ public class TerrainPlaceable implements AuthoringPlaceable {
   }
 
   @Override
-  public double getX() {
+  public double x() {
     return 0;
   }
 
   @Override
-  public double getY() {
+  public double y() {
+    return 0;
+  }
+
+  @Override
+  public double rotation() {
     return 0;
   }
 

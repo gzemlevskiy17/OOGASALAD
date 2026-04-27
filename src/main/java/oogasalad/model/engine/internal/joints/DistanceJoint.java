@@ -3,7 +3,7 @@ package oogasalad.model.engine.internal.joints;
 import oogasalad.model.engine.EngineError;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
-import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 
 /**
  * Distance-preserving joint with optional softness.
@@ -22,14 +22,15 @@ public class DistanceJoint extends AbstractJoint {
    * Creates a distance joint that uses the initial anchor spacing as both its minimum and maximum
    * distance.
    */
-  public DistanceJoint(GameComponent objectA, GameComponent objectB, double stiffness, double damping) {
+  public DistanceJoint(RigidBody objectA, RigidBody objectB, double stiffness,
+      double damping) {
     this(objectA, objectB, new Vector(0, 0), new Vector(0, 0), -1.0, -1.0, stiffness, damping);
   }
 
   /**
    * Creates a distance joint with an allowed distance band and default center anchors.
    */
-  public DistanceJoint(GameComponent objectA, GameComponent objectB, double minDistance,
+  public DistanceJoint(RigidBody objectA, RigidBody objectB, double minDistance,
       double maxDistance, double stiffness, double damping) {
     this(objectA, objectB, new Vector(0, 0), new Vector(0, 0), minDistance, maxDistance, stiffness,
         damping);
@@ -38,7 +39,7 @@ public class DistanceJoint extends AbstractJoint {
   /**
    * Creates a distance joint with explicit local anchors, range limits, and spring parameters.
    */
-  public DistanceJoint(GameComponent objectA, GameComponent objectB, Vector localAnchorA,
+  public DistanceJoint(RigidBody objectA, RigidBody objectB, Vector localAnchorA,
       Vector localAnchorB, double minDistance, double maxDistance, double stiffness,
       double damping) {
     super(objectA, objectB, localAnchorA, localAnchorB);
@@ -56,29 +57,45 @@ public class DistanceJoint extends AbstractJoint {
     this.damping = damping;
   }
 
+
   /**
    * Returns the joint stiffness used by spring mode.
    */
-  public double getStiffness() {return stiffness;
+  public double getStiffness() {
+    return stiffness;
   }
 
-  /** Returns the damping coefficient used by spring mode. */
-  public double getDamping() {return damping;
+  /**
+   * Returns the damping coefficient used by spring mode.
+   */
+  public double getDamping() {
+    return damping;
   }
 
-  /** Returns the minimum allowed anchor separation. */
-  public double getMinDistance() {return minDistance;
+  /**
+   * Returns the minimum allowed anchor separation.
+   */
+  public double getMinDistance() {
+    return minDistance;
   }
 
-  /** Returns the maximum allowed anchor separation. */
-  public double getMaxDistance() {return maxDistance;
+  /**
+   * Returns the maximum allowed anchor separation.
+   */
+  public double getMaxDistance() {
+    return maxDistance;
   }
 
-  /** Returns whether this joint resolves as a rigid positional constraint. */
-  public boolean isRigid() {return stiffness == 0.0;
+  /**
+   * Returns whether this joint resolves as a rigid positional constraint.
+   */
+  public boolean isRigid() {
+    return stiffness == 0.0;
   }
 
-  /** Solves either the rigid or spring form of the distance constraint. */
+  /**
+   * Solves either the rigid or spring form of the distance constraint.
+   */
   @Override
   public void apply(double dt) {
     if (isRigid()) {
@@ -88,14 +105,9 @@ public class DistanceJoint extends AbstractJoint {
     solveSpring(dt);
   }
 
-  private static Vector linearVelocity(GameComponent component) {
-    if (component instanceof DynamicComponent dynamic) {
-      return dynamic.getDynamicState().getLinearVelocity();
-    }
-    return new Vector(0, 0);
-  }
-
-  /** Directly corrects body positions to restore the allowed distance. */
+  /**
+   * Directly corrects body positions to restore the allowed distance.
+   */
   protected void solveRigid() {
     applyDistanceCorrection(computeDistanceError(getCurrentDistance()));
   }
@@ -103,7 +115,52 @@ public class DistanceJoint extends AbstractJoint {
   @Override
   public void applyVelocity() {
     if (isRigid()) {
-      applyAnchorVelocityEqualization();
+      applyDistanceVelocityEqualization();
+    }
+  }
+
+  private void applyDistanceVelocityEqualization() {
+    double invMA = getComponentA().getInverseMass();
+    double invMB = getComponentB().getInverseMass();
+    double invIA = getComponentA().getInverseMomentOfInertia();
+    double invIB = getComponentB().getInverseMomentOfInertia();
+
+    Vector rA = getWorldAnchorA().subtract(getComponentA().getStaticState().getLinearPosition());
+    Vector rB = getWorldAnchorB().subtract(getComponentB().getStaticState().getLinearPosition());
+
+    Vector vA = linearVelocity(getComponentA());
+    Vector vB = linearVelocity(getComponentB());
+    double wA = angularVelocity(getComponentA());
+    double wB = angularVelocity(getComponentB());
+
+    Vector vAnchorA = vA.add(rA.crossWithScalar(wA));
+    Vector vAnchorB = vB.add(rB.crossWithScalar(wB));
+    Vector relVel = vAnchorB.subtract(vAnchorA);
+
+    Vector delta = getAnchorDelta();
+    if (delta.magnitude() == 0.0) {
+      return;
+    }
+    Vector n = delta.normalize();
+
+    double rnA = rA.crossWithVector(n);
+    double rnB = rB.crossWithVector(n);
+
+    double kMass = invMA + invMB + invIA * rnA * rnA + invIB * rnB * rnB;
+    if (kMass == 0.0) {
+      return;
+    }
+
+    double j = -relVel.dot(n) / kMass;
+    Vector impulse = n.multiply(j);
+
+    if (getComponentA() instanceof DynamicComponent dA) {
+      dA.getDynamicState().setLinearVelocity(vA.subtract(impulse.multiply(invMA)));
+      dA.getDynamicState().setAngularVelocity(wA - rnA * j * invIA);
+    }
+    if (getComponentB() instanceof DynamicComponent dB) {
+      dB.getDynamicState().setLinearVelocity(vB.add(impulse.multiply(invMB)));
+      dB.getDynamicState().setAngularVelocity(wB + rnB * j * invIB);
     }
   }
 
