@@ -26,19 +26,22 @@ import oogasalad.model.engine.api.Vector;
  *
  * @author Bad Piggies team
  */
-public record ParabolaSpline(List<Vector> knots, List<Vector> controls, double baselineY) {
+public record ParabolaSpline(List<Vector> knots, List<Vector> controls, double baselineY,
+    int resolution) {
 
   private static final int MIN_KNOTS = 2;
 
   /**
-   * @param knots     at least two distinct points defining the chain
-   * @param controls  one control point per adjacent knot pair; {@code null} means derive defaults
-   *                  as arithmetic midpoints (producing straight segments)
-   * @param baselineY ground reference Y (world pixels); must be strictly greater than every knot's
-   *                  Y
+   * @param knots      at least two distinct points defining the chain
+   * @param controls   one control point per adjacent knot pair; {@code null} means derive defaults
+   *                   as arithmetic midpoints (producing straight segments)
+   * @param baselineY  ground reference Y (world pixels); must be strictly greater than every knot's
+   *                   Y
+   * @param resolution number of tessellation slabs emitted per Bézier segment; must be ≥ 1
    * @throws IllegalArgumentException when any structural invariant is violated
    */
-  public ParabolaSpline(List<Vector> knots, List<Vector> controls, double baselineY) {
+  public ParabolaSpline(List<Vector> knots, List<Vector> controls, double baselineY,
+      int resolution) {
     Objects.requireNonNull(knots, "knots");
     if (knots.size() < MIN_KNOTS) {
       throw new IllegalArgumentException("spline needs at least " + MIN_KNOTS + " knots");
@@ -49,9 +52,13 @@ public record ParabolaSpline(List<Vector> knots, List<Vector> controls, double b
             "every knot must sit strictly above baselineY (y < " + baselineY + "); got " + k);
       }
     }
+    if (resolution < 1) {
+      throw new IllegalArgumentException("resolution must be >= 1; got " + resolution);
+    }
 
     this.knots = List.copyOf(knots);
     this.baselineY = baselineY;
+    this.resolution = resolution;
 
     int expectedControls = this.knots.size() - 1;
     List<Vector> resolved = (controls == null)
@@ -64,12 +71,22 @@ public record ParabolaSpline(List<Vector> knots, List<Vector> controls, double b
     this.controls = Collections.unmodifiableList(resolved);
   }
 
+  /** Convenience overload: explicit controls, resolution defaults to 1. */
+  public ParabolaSpline(List<Vector> knots, List<Vector> controls, double baselineY) {
+    this(knots, controls, baselineY, 1);
+  }
+
+  /** Convenience overload: derived controls, caller-specified resolution. */
+  public ParabolaSpline(List<Vector> knots, double baselineY, int resolution) {
+    this(knots, null, baselineY, resolution);
+  }
+
   /**
    * Convenience overload that derives control points as the midpoints between adjacent knots,
    * producing straight-line segments at tessellation time.
    */
   public ParabolaSpline(List<Vector> knots, double baselineY) {
-    this(knots, null, baselineY);
+    this(knots, null, baselineY, 1);
   }
 
   /**

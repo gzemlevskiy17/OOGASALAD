@@ -76,10 +76,13 @@ public final class SplineTessellator {
           "slabThickness must be strictly positive; got " + slabThickness);
     }
     List<ConvexPolygon> slabs = new ArrayList<>();
+    int res = spline.resolution();
     for (int segment = 0; segment < spline.segmentCount(); segment++) {
-      Vector left = spline.knots().get(segment);
-      Vector right = spline.knots().get(segment + 1);
-      addSlabIfNonDegenerate(slabs, left, right, slabThickness);
+      for (int i = 0; i < res; i++) {
+        Vector left = spline.evaluate(segment, (double) i / res);
+        Vector right = spline.evaluate(segment, (double) (i + 1) / res);
+        addSlabIfNonDegenerate(slabs, left, right, slabThickness);
+      }
     }
     return slabs;
   }
