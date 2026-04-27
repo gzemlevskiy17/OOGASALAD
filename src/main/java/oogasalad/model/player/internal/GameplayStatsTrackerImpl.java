@@ -17,6 +17,7 @@ import oogasalad.model.player.api.GameplayStatsTracker;
 public class GameplayStatsTrackerImpl implements GameplayStatsTracker {
 
   private final String levelId;
+  private final String mainCharacterTag;
   private Double startX;
   private Double startY;
   private Double finishX;
@@ -27,29 +28,35 @@ public class GameplayStatsTrackerImpl implements GameplayStatsTracker {
   private double elapsedSeconds;
 
   public GameplayStatsTrackerImpl(String levelId) {
+    this(levelId, DefaultTag.PIGS.value());
+  }
+
+  public GameplayStatsTrackerImpl(String levelId, String mainCharacterTag) {
     this.levelId = levelId;
+    this.mainCharacterTag = mainCharacterTag == null || mainCharacterTag.isBlank()
+        ? DefaultTag.PIGS.value() : mainCharacterTag;
   }
 
   @Override
   public void sample(World world, double dtSeconds) {
-    List<GameObject> pigs = world.getObjectsByTag(DefaultTag.PIGS.value());
+    List<GameObject> mainCharacters = world.getObjectsByTag(mainCharacterTag);
     List<GameObject> finishes = world.getObjectsByTag(DefaultTag.FINISH_LINE.value());
-    if (pigs.isEmpty() || finishes.isEmpty()) {
+    if (mainCharacters.isEmpty() || finishes.isEmpty()) {
       return;
     }
-    double pigX = pigs.get(0).x();
-    double pigY = pigs.get(0).y();
+    double mainCharacterX = mainCharacters.get(0).x();
+    double mainCharacterY = mainCharacters.get(0).y();
     if (startX == null) {
-      startX = pigX;
-      startY = pigY;
+      startX = mainCharacterX;
+      startY = mainCharacterY;
       finishX = finishes.get(0).x();
       finishY = finishes.get(0).y();
-      lastPigX = pigX;
-      lastPigY = pigY;
+      lastPigX = mainCharacterX;
+      lastPigY = mainCharacterY;
     } else {
-      distanceTraveled += Math.hypot(pigX - lastPigX, pigY - lastPigY);
-      lastPigX = pigX;
-      lastPigY = pigY;
+      distanceTraveled += Math.hypot(mainCharacterX - lastPigX, mainCharacterY - lastPigY);
+      lastPigX = mainCharacterX;
+      lastPigY = mainCharacterY;
     }
     elapsedSeconds += dtSeconds;
   }
