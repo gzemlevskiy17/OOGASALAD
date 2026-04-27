@@ -132,6 +132,16 @@ class GameConfigImplTest {
   }
 
   @Test
+  void getSetting_arrayValue_returnsCommaSeparatedText() throws IOException {
+    File f = writeConfig("""
+        { "input_mapping": { "activate_fan": ["F", "SPACE"] } }
+        """);
+
+    assertEquals("F,SPACE", new GameConfigImpl(f.getAbsolutePath())
+        .getSetting("input_mapping.activate_fan"));
+  }
+
+  @Test
   void getSetting_missingKey_returnsNull() throws IOException {
     File f = writeConfig("{\"gameId\": \"g\"}");
     assertNull(new GameConfigImpl(f.getAbsolutePath()).getSetting("nonexistent"));
