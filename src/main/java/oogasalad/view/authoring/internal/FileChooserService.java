@@ -37,8 +37,24 @@ public class FileChooserService {
    * @return the selected file, or empty if the user cancelled
    */
   public Optional<File> chooseSaveFile(Window owner) {
+    return chooseSaveFile(owner, null);
+  }
+
+  /**
+   * Prompts the user to pick a destination for saving a level JSON file, with a suggested
+   * starting directory. If {@code initialDir} is null or does not exist, falls back to the
+   * default from properties.
+   *
+   * @param owner      the window that should own the modal dialog
+   * @param initialDir preferred starting directory, or null for the default
+   * @return the selected file, or empty if the user cancelled
+   */
+  public Optional<File> chooseSaveFile(Window owner, File initialDir) {
     FileChooser chooser = baseChooser(PROPS.getString("saveDialogTitle"));
     chooser.setInitialFileName(PROPS.getString("defaultFileName"));
+    if (initialDir != null && initialDir.isDirectory()) {
+      chooser.setInitialDirectory(initialDir);
+    }
     return Optional.ofNullable(chooser.showSaveDialog(owner));
   }
 

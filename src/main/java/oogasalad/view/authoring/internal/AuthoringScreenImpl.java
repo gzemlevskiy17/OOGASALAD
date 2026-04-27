@@ -202,6 +202,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     terrainPropertiesPanel = new TerrainPropertiesPanel();
     canvas = new AuthoringCanvasImpl(world);
     canvas.setOnObjectSelected(terrainPropertiesPanel::show);
+    terrainPropertiesPanel.setEditContext(world, canvas::refreshGrid);
     double cellSize = canvas.getCellSize();
     controller = new AuthoringControllerImpl(
         world, new LevelLoaderImpl(), new LevelSaverImpl(cellSize), new GameLoaderImpl(),
@@ -377,10 +378,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     Button splineCommitButton = createSizedButton(
         s("splineCommitButtonText"), actionWidth * 0.7, actionHeight);
     splineCommitButton.getStyleClass().add("authoring-action-button");
-    splineCommitButton.setOnAction(event -> {
-      controller.getSplineDraft().commit();
-      canvas.refreshGrid();
-    });
+    splineCommitButton.setOnAction(event -> controller.commitSpline());
 
     toolButtons = List.of(selectButton, splineButton);
     selectButton.getStyleClass().add("tool-active");
@@ -574,7 +572,10 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private void handleSave(Window owner) {
-    fileChooserService.chooseSaveFile(owner).ifPresent(file -> {
+    java.io.File initialDir = gameConfig != null
+        ? new java.io.File("data/levels/" + gameConfig.gameId())
+        : null;
+    fileChooserService.chooseSaveFile(owner, initialDir).ifPresent(file -> {
       try {
         controller.saveLevel(file.getAbsolutePath());
       } catch (LevelSaveException e) {

@@ -362,10 +362,18 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   private Image tryLoadImage(String spritePath) {
+    if (spritePath == null || spritePath.isBlank()) {
+      return null;
+    }
     try {
       java.io.File file = new java.io.File(spritePath);
-      if (file.exists()) {
+      if (file.isFile()) {
         return new Image(file.toURI().toString());
+      }
+      String normalized = spritePath.startsWith("/") ? spritePath.substring(1) : spritePath;
+      java.net.URL resource = getClass().getClassLoader().getResource(normalized);
+      if (resource != null) {
+        return new Image(resource.toExternalForm());
       }
     } catch (Exception e) {
       LOG.warn("Could not load sprite: {}", spritePath);
