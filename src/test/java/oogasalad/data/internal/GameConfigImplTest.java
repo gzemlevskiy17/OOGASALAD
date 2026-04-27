@@ -30,25 +30,25 @@ class GameConfigImplTest {
   @Test
   void gameId_parsedFromJson() throws IOException {
     File f = writeConfig("""
-        { "gameId": "badpiggies", "primaryComponentId": "body",
+        { "gameId": "badpiggies", "mainCharacterId": "body",
           "components": [], "staticComponents": [], "terrainTypes": [] }
         """);
     assertEquals("badpiggies", new GameConfigImpl(f.getAbsolutePath()).gameId());
   }
 
   @Test
-  void primaryComponentId_parsedFromJson() throws IOException {
+  void mainCharacterId_parsedFromJson() throws IOException {
     File f = writeConfig("""
-        { "gameId": "g", "primaryComponentId": "body",
+        { "gameId": "g", "mainCharacterId": "body",
           "components": [], "staticComponents": [], "terrainTypes": [] }
         """);
-    assertEquals("body", new GameConfigImpl(f.getAbsolutePath()).primaryComponentId());
+    assertEquals("body", new GameConfigImpl(f.getAbsolutePath()).mainCharacterId());
   }
 
   @Test
   void components_parsedWithButtonsAndMass() throws IOException {
     File f = writeConfig("""
-        { "gameId": "g", "primaryComponentId": "body",
+        { "gameId": "g", "mainCharacterId": "body",
           "components": [
             { "id": "motor", "spriteUrl": "motor.png", "mass": 2.0,
               "buttons": [{ "name": "go right", "direction": {"x": 1, "y": 0} }] }
@@ -68,7 +68,7 @@ class GameConfigImplTest {
   @Test
   void staticComponents_parsedWithCollisionAction() throws IOException {
     File f = writeConfig("""
-        { "gameId": "g", "primaryComponentId": "body",
+        { "gameId": "g", "mainCharacterId": "body",
           "components": [],
           "staticComponents": [
             { "id": "heart", "spriteUrl": "heart.png", "mass": 0,
@@ -86,7 +86,7 @@ class GameConfigImplTest {
   @Test
   void staticComponents_nullCollisionAction_parsedAsNull() throws IOException {
     File f = writeConfig("""
-        { "gameId": "g", "primaryComponentId": "body",
+        { "gameId": "g", "mainCharacterId": "body",
           "components": [],
           "staticComponents": [
             { "id": "deco", "spriteUrl": "deco.png", "mass": 0,
@@ -101,7 +101,7 @@ class GameConfigImplTest {
   @Test
   void terrainTypes_parsedWithFrictionAndColor() throws IOException {
     File f = writeConfig("""
-        { "gameId": "g", "primaryComponentId": "body",
+        { "gameId": "g", "mainCharacterId": "body",
           "components": [], "staticComponents": [],
           "terrainTypes": [
             { "id": "ice", "spriteUrl": null, "visualColor": "#ADE8F4", "friction": 0.1 }

@@ -129,7 +129,7 @@ class GameplayStatsTrackerImplTest {
   }
 
   @Test
-  void configuredMainCharacterTag_tracksNonPigMainCharacterToFinishLine() {
+  void gameMainCharacterId_tracksNonPigMainCharacterToFinishLine() {
     WorldImpl customWorld = new WorldImpl();
     customWorld.addComponent(new TaggedBody("hero", 0, 0));
     customWorld.addComponent(new GoalLineComponent(100, 0, 20, 100));

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class FinishLineWinCheckerTest {
 
   @Test
-  void hasWon_configuredMainCharacterTag_returnsTrueWhenMainCharacterReachesFinish() {
+  void hasWon_gameMainCharacterId_returnsTrueWhenMainCharacterReachesFinish() {
     WorldImpl world = new WorldImpl();
     world.addComponent(new TaggedBody("hero", 90, 0));
     GoalLineComponent goal = new GoalLineComponent(100, 0, 20, 80);
@@ -22,7 +22,7 @@ class FinishLineWinCheckerTest {
   }
 
   @Test
-  void hasWon_configuredMainCharacterTagDoesNotUsePigs() {
+  void hasWon_gameMainCharacterIdDoesNotUsePigs() {
     WorldImpl world = new WorldImpl();
     world.addComponent(new TaggedBody("pigs", 90, 0));
     GoalLineComponent goal = new GoalLineComponent(100, 0, 20, 80);

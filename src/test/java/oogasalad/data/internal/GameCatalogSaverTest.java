@@ -36,14 +36,14 @@ class GameCatalogSaverTest {
   }
 
   @Test
-  void save_writesGameIdAndPrimaryComponentId() throws IOException {
+  void save_writesGameIdAndMainCharacterId() throws IOException {
     File out = savedFile("game.json");
     saver.save(out.getAbsolutePath(), "badpiggies", "body",
         List.of(), List.of(), List.of());
 
     JsonNode root = new ObjectMapper().readTree(out);
     assertEquals("badpiggies", root.path("gameId").asText());
-    assertEquals("body", root.path("primaryComponentId").asText());
+    assertEquals("body", root.path("mainCharacterId").asText());
   }
 
   @Test
@@ -108,7 +108,7 @@ class GameCatalogSaverTest {
 
     GameConfigImpl loaded = new GameConfigImpl(out.getAbsolutePath());
     assertEquals("badpiggies", loaded.gameId());
-    assertEquals("body", loaded.primaryComponentId());
+    assertEquals("body", loaded.mainCharacterId());
     assertEquals(1, loaded.components().size());
     assertEquals("body", loaded.components().get(0).id());
     assertEquals(1, loaded.terrainTypes().size());

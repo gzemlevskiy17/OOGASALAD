@@ -1,7 +1,6 @@
 package oogasalad.controller.player.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,14 +18,6 @@ class GameplayConfigSettingsTest {
   }
 
   @Test
-  void mainCharacterTag_readsCanonicalSetting() {
-    FakeGameConfig config = new FakeGameConfig();
-    config.mainCharacterTag = "dinosaur";
-
-    assertEquals("dinosaur", new GameplayConfigSettings(config).mainCharacterTag());
-  }
-
-  @Test
   void lossTrackedTags_splitsCommaSeparatedSetting() {
     FakeGameConfig config = new FakeGameConfig();
     config.lossTrackedTags = "dinosaur, vehicle";
@@ -39,16 +30,14 @@ class GameplayConfigSettingsTest {
   void missingConfig_returnsDefaults() {
     GameplayConfigSettings settings = new GameplayConfigSettings(null);
 
-    assertNull(settings.mainCharacterTag());
     assertTrue(settings.lossTrackedTags().isEmpty());
   }
 
   private static final class FakeGameConfig implements GameConfig {
-    String mainCharacterTag;
     String lossTrackedTags;
 
     @Override public String gameId() { return ""; }
-    @Override public String primaryComponentId() { return ""; }
+    @Override public String mainCharacterId() { return ""; }
     @Override public List<oogasalad.data.api.ComponentInfo> components() { return List.of(); }
     @Override public List<oogasalad.data.api.StaticComponentInfo> staticComponents() {
       return List.of();
@@ -58,7 +47,6 @@ class GameplayConfigSettingsTest {
     @Override
     public String getSetting(String key) {
       return switch (key) {
-        case GameplayConfigSettings.MAIN_CHARACTER_TAG_KEY -> mainCharacterTag;
         case GameplayConfigSettings.LOSS_TRACKED_TAGS_KEY -> lossTrackedTags;
         default -> null;
       };
