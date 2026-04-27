@@ -1,7 +1,6 @@
 package oogasalad.model.authoring.internal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.ResourceBundle;
@@ -26,8 +25,7 @@ public class GeneratedLevelModel {
   private static final Logger LOG = LogManager.getLogger(GeneratedLevelModel.class);
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.model.authoring.GeneratedLevelModel");
-  private static final ObjectMapper MAPPER = new ObjectMapper()
-      .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final LevelGenerationService generationService;
   private final GeneratedLevelSpecValidator validator;
@@ -72,11 +70,11 @@ public class GeneratedLevelModel {
   }
 
   /**
-   * Generates a new level from the provided free-form prompt and saves the resulting runtime JSON
-   * file to disk.
+   * Generates a new level from the provided free-form prompt and saves the resulting schema-native
+   * level JSON file to disk.
    *
    * @param prompt free-form user request describing the desired level
-   * @return generated level result with saved file path and normalized metadata
+   * @return generated level result with saved file path and normalized gravity
    * @author Emilio Garcia
    */
   public GeneratedLevelResult generateLevel(String prompt) {
@@ -85,10 +83,9 @@ public class GeneratedLevelModel {
     validator.validate(parsedSpec);
     GeneratedLevelSpec normalizedSpec = normalizer.normalize(parsedSpec);
     ObjectNode levelJson = jsonBuilder.build(normalizedSpec);
-    String filePath = fileService.save(levelJson, normalizedSpec.levelName());
+    String filePath = fileService.save(levelJson, normalizedSpec.gameMetadata().levelName());
     LOG.info(PROPS.getString("generationSuccessLogMessage"), filePath);
-    return new GeneratedLevelResult(filePath, normalizedSpec.gravity(),
-        normalizedSpec.backgroundImage());
+    return new GeneratedLevelResult(filePath, normalizedSpec.gameMetadata().gravity());
   }
 
   private GeneratedLevelSpec parseSpec(String rawSpecJson) {

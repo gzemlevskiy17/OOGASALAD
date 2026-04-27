@@ -5,8 +5,7 @@ package oogasalad.model.authoring.api;
  *
  * @param filePath absolute path to the saved generated level JSON file
  * @param gravity normalized gravity value associated with the generated level
- * @param backgroundImage normalized background image path associated with the generated level
  * @author Emilio Garcia
  */
-public record GeneratedLevelResult(String filePath, double gravity, String backgroundImage) {
+public record GeneratedLevelResult(String filePath, double gravity) {
 }
