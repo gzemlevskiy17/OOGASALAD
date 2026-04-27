@@ -3,149 +3,126 @@ package oogasalad.model.authoring.api;
 import java.util.List;
 
 /**
- * Immutable intermediate specification produced by AI level generation before normalization and
- * conversion into the repository's runtime level JSON shape.
+ * Schema-aligned intermediate specification produced by AI level generation before validation,
+ * normalization, and serialization into the repository's level-file format.
  *
- * <p>This model intentionally stays smaller and more stable than the final saved file format so AI
- * generation can target one contract while the downstream JSON builder adapts to loader changes.
+ * <p>The canonical shape mirrors the new level schema:
+ * <ul>
+ *   <li>{@code gameMetadata}</li>
+ *   <li>{@code map}</li>
+ *   <li>{@code mainCharacter}</li>
+ * </ul>
  *
- * @param style generation style hint such as blocks, splines, or mixed
- * @param levelName generated level display name
- * @param gravity optional gravity suggestion for {@code LevelAttributes}
- * @param backgroundImage optional background image path for {@code LevelAttributes}
- * @param worldWidth optional world width hint used when synthesizing bounds and finish placement
- * @param spawn optional spawn placement
- * @param finishLine optional finish line placement
- * @param vehiclePalette optional allowed vehicle-component metadata
- * @param terrainBlocks generated block terrain suggestions
- * @param terrainSplines generated spline terrain suggestions
- * @param rocks generated rock obstacle suggestions
- * @param pickups generated pickup suggestions
+ * @param gameMetadata level-wide runtime metadata
+ * @param map authored map data including knots, spawn point, and placed objects
+ * @param mainCharacter player/build-constraint metadata for the level
  * @author Emilio Garcia
  */
 public record GeneratedLevelSpec(
-    String style,
-    String levelName,
-    Double gravity,
-    String backgroundImage,
-    Double worldWidth,
-    SpawnSpec spawn,
-    FinishLineSpec finishLine,
-    VehiclePaletteSpec vehiclePalette,
-    List<TerrainBlockSpec> terrainBlocks,
-    List<TerrainSplineSpec> terrainSplines,
-    List<RockSpec> rocks,
-    List<PickupSpec> pickups) {
+    GameMetadataSpec gameMetadata,
+    MapSpec map,
+    MainCharacterSpec mainCharacter) {
 
   /**
-   * Creates an immutable generated-level specification.
+   * Creates an immutable schema-aligned generated-level specification.
    *
    * @author Emilio Garcia
    */
   public GeneratedLevelSpec {
-    terrainBlocks = terrainBlocks == null ? List.of() : List.copyOf(terrainBlocks);
-    terrainSplines = terrainSplines == null ? List.of() : List.copyOf(terrainSplines);
-    rocks = rocks == null ? List.of() : List.copyOf(rocks);
-    pickups = pickups == null ? List.of() : List.copyOf(pickups);
+    gameMetadata = gameMetadata == null ? new GameMetadataSpec(null, null, null, null, null, null)
+        : gameMetadata;
+    map = map == null ? new MapSpec(List.of(), null, List.of(), List.of()) : map;
+    mainCharacter = mainCharacter == null
+        ? new MainCharacterSpec(null, List.of(), null, null, null)
+        : mainCharacter;
   }
 
   /**
-   * Spawn position suggestion in authored world coordinates.
+   * Level-wide metadata matching the {@code gameMetadata} schema section.
    *
-   * @param x x-coordinate
-   * @param y y-coordinate
+   * @param levelName authored level name
+   * @param gameType referenced game id
+   * @param screenWidth logical authored level width
+   * @param screenHeight logical authored level height
+   * @param gravity world gravity
+   * @param drag world drag coefficient
    * @author Emilio Garcia
    */
-  public record SpawnSpec(Double x, Double y) {
+  public record GameMetadataSpec(
+      String levelName,
+      String gameType,
+      Double screenWidth,
+      Double screenHeight,
+      Double gravity,
+      Double drag) {
   }
 
   /**
-   * Finish-line placement suggestion in authored world coordinates.
+   * Authored map data matching the {@code map} schema section.
    *
-   * @param x x-coordinate
-   * @param y y-coordinate
-   * @param width finish-line width
-   * @param height finish-line height
+   * @param knotLocations spline knot locations for the terrain track
+   * @param spawnPoint level spawn point
+   * @param objects placed map objects constrained to the selected game catalog
+   * @param terrainOptions optional authoring terrain hints
    * @author Emilio Garcia
    */
-  public record FinishLineSpec(Double x, Double y, Double width, Double height) {
-  }
-
-  /**
-   * Allowed vehicle-component metadata for the generated level.
-   *
-   * @param maxSelectable maximum number of selectable components
-   * @param allowedComponents stable component IDs allowed in the level
-   * @author Emilio Garcia
-   */
-  public record VehiclePaletteSpec(Integer maxSelectable, List<String> allowedComponents) {
+  public record MapSpec(
+      List<PointSpec> knotLocations,
+      PointSpec spawnPoint,
+      List<MapObjectSpec> objects,
+      List<String> terrainOptions) {
 
     /**
-     * Creates immutable vehicle-palette metadata.
+     * Creates immutable map data.
      *
      * @author Emilio Garcia
      */
-    public VehiclePaletteSpec {
-      allowedComponents = allowedComponents == null ? List.of() : List.copyOf(allowedComponents);
+    public MapSpec {
+      knotLocations = knotLocations == null ? List.of() : List.copyOf(knotLocations);
+      objects = objects == null ? List.of() : List.copyOf(objects);
+      terrainOptions = terrainOptions == null ? List.of() : List.copyOf(terrainOptions);
     }
   }
 
   /**
-   * Rectangular terrain block suggestion.
+   * Main-character metadata matching the {@code mainCharacter} schema section.
    *
-   * @param x x-coordinate
-   * @param y y-coordinate
-   * @param width block width
-   * @param height block height
-   * @param texture texture path
-   * @param tileTexture true when the texture should tile
-   * @param friction surface friction coefficient
-   * @param restitution restitution coefficient
+   * <p>{@code cameraFollows} is kept as an optional field because the sample Good Piggies level
+   * files and level-attribute model already use it, even though the schema file on this branch has
+   * not fully caught up yet.
+   *
+   * @param gridSize vehicle-builder grid size
+   * @param elementsAllowed component ids allowed in the builder for this level
+   * @param maxSelectable maximum number of buildable components allowed
+   * @param maxHP starting/max HP for the tracked main character
+   * @param cameraFollows optional camera-follow target convention
    * @author Emilio Garcia
    */
-  public record TerrainBlockSpec(
-      Double x,
-      Double y,
-      Double width,
-      Double height,
-      String texture,
-      Boolean tileTexture,
-      Double friction,
-      Double restitution) {
-  }
-
-  /**
-   * Quadratic spline terrain suggestion.
-   *
-   * @param knots spline knot list
-   * @param controls spline control-point list
-   * @param baselineY fill baseline below the curve
-   * @param resolution tessellation resolution hint
-   * @param texture texture path
-   * @param tileTexture true when the texture should tile
-   * @param friction surface friction coefficient
-   * @param color fallback fill color
-   * @author Emilio Garcia
-   */
-  public record TerrainSplineSpec(
-      List<PointSpec> knots,
-      List<PointSpec> controls,
-      Double baselineY,
-      Integer resolution,
-      String texture,
-      Boolean tileTexture,
-      Double friction,
-      String color) {
+  public record MainCharacterSpec(
+      Double gridSize,
+      List<String> elementsAllowed,
+      Integer maxSelectable,
+      Double maxHP,
+      String cameraFollows) {
 
     /**
-     * Creates immutable spline terrain data.
+     * Creates immutable main-character metadata.
      *
      * @author Emilio Garcia
      */
-    public TerrainSplineSpec {
-      knots = knots == null ? List.of() : List.copyOf(knots);
-      controls = controls == null ? List.of() : List.copyOf(controls);
+    public MainCharacterSpec {
+      elementsAllowed = elementsAllowed == null ? List.of() : List.copyOf(elementsAllowed);
     }
+  }
+
+  /**
+   * Map object entry matching the schema's placed object structure.
+   *
+   * @param type referenced static-object or terrain-option id
+   * @param position object position
+   * @author Emilio Garcia
+   */
+  public record MapObjectSpec(String type, PointSpec position) {
   }
 
   /**
@@ -158,45 +135,4 @@ public record GeneratedLevelSpec(
   public record PointSpec(Double x, Double y) {
   }
 
-  /**
-   * Rock obstacle suggestion.
-   *
-   * @param x x-coordinate
-   * @param y y-coordinate
-   * @param width rock width
-   * @param height rock height
-   * @param friction rock friction coefficient
-   * @param restitution rock restitution coefficient
-   * @param damage contact damage amount
-   * @author Emilio Garcia
-   */
-  public record RockSpec(
-      Double x,
-      Double y,
-      Double width,
-      Double height,
-      Double friction,
-      Double restitution,
-      Double damage) {
-  }
-
-  /**
-   * Pickup suggestion.
-   *
-   * @param type supported pickup type identifier
-   * @param x x-coordinate
-   * @param y y-coordinate
-   * @param width pickup width
-   * @param height pickup height
-   * @param amount pickup amount or score value
-   * @author Emilio Garcia
-   */
-  public record PickupSpec(
-      String type,
-      Double x,
-      Double y,
-      Double width,
-      Double height,
-      Double amount) {
-  }
 }
