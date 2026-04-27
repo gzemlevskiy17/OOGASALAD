@@ -1,0 +1,116 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Ramp Jump to Platform",
+    "gameType" : "badpiggies",
+    "screenWidth" : 3400.0,
+    "screenHeight" : 1400.0,
+    "gravity" : -2.0,
+    "drag" : 0.12
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 0.0,
+      "y" : 1200.0
+    }, {
+      "x" : 100.0,
+      "y" : 1200.0
+    }, {
+      "x" : 220.0,
+      "y" : 1200.0
+    }, {
+      "x" : 350.0,
+      "y" : 1100.0
+    }, {
+      "x" : 700.0,
+      "y" : 950.0
+    }, {
+      "x" : 1200.0,
+      "y" : 800.0
+    }, {
+      "x" : 1500.0,
+      "y" : 730.0
+    }, {
+      "x" : 1800.0,
+      "y" : 670.0
+    }, {
+      "x" : 2000.0,
+      "y" : 630.0
+    }, {
+      "x" : 2200.0,
+      "y" : 650.0
+    }, {
+      "x" : 2360.0,
+      "y" : 700.0
+    }, {
+      "x" : 2500.0,
+      "y" : 880.0
+    }, {
+      "x" : 2700.0,
+      "y" : 900.0
+    }, {
+      "x" : 2730.0,
+      "y" : 900.0
+    }, {
+      "x" : 2900.0,
+      "y" : 800.0
+    }, {
+      "x" : 3000.0,
+      "y" : 800.0
+    }, {
+      "x" : 3020.0,
+      "y" : 800.0
+    }, {
+      "x" : 3140.0,
+      "y" : 800.0
+    } ],
+    "objects" : [ {
+      "type" : "Coin",
+      "position" : {
+        "x" : 1350.0,
+        "y" : 750.0
+      }
+    }, {
+      "type" : "Bomb",
+      "position" : {
+        "x" : 1700.0,
+        "y" : 660.0
+      }
+    }, {
+      "type" : "Heart",
+      "position" : {
+        "x" : 2200.0,
+        "y" : 600.0
+      }
+    }, {
+      "type" : "Rock",
+      "position" : {
+        "x" : 2500.0,
+        "y" : 890.0
+      }
+    }, {
+      "type" : "GoalLine",
+      "position" : {
+        "x" : 3020.0,
+        "y" : 770.0
+      }
+    }, {
+      "type" : "Coin",
+      "position" : {
+        "x" : 1700.0,
+        "y" : 840.0
+      }
+    } ],
+    "terrainOptions" : [ "GrassHills", "DirtPath" ],
+    "spawnPoint" : {
+      "x" : 100.0,
+      "y" : 1100.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 20.0,
+    "elementsAllowed" : [ ],
+    "maxSelectable" : 9,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}
