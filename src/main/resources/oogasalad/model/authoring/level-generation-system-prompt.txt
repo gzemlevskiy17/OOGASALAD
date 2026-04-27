@@ -34,6 +34,7 @@ Rules:
 - Use a richer terrain profile with roughly 8 to 14 knotLocations unless the prompt clearly asks for something shorter.
 - Include several non-goal map objects by default, usually a mix of rewards and hazards rather than only one or two items.
 - Keep map.knotLocations plausible for a 2D physics driving level.
+- Put map.spawnPoint above a flat supported terrain section with at least 320 vertical pixels of clearance.
 - Keep gravity and drag physically reasonable for a vehicle-building game.
 - Use negative gravity values. Default earth-like gravity is -9.8.
 - If the prompt asks for low gravity, moon gravity, lunar gravity, floating, or gliding, set gravity close to -1.0 to -3.0.

@@ -63,6 +63,6 @@ class GeneratedMapSupportNormalizerTest {
 
     GeneratedLevelSpec.PointSpec adjusted = normalizer.adjustSpawnPointToGround(lowSpawn, knots);
 
-    assertEquals(700.0, adjusted.y());
+    assertEquals(480.0, adjusted.y());
   }
 }

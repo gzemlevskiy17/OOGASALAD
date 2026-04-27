@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -96,6 +97,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double FALLBACK_WORLD_WIDTH = 2600.0;
   private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
   private static final double GRAVITY_SCHEMA_TO_ENGINE_SCALE = 100.0;
+  private static final double SPAWN_TERRAIN_BUFFER = 40.0;
+  private static final double GEOMETRY_EPSILON = 1e-6;
   // Regardless of how tiny the authored terrain is, the world must be at least one
   // viewport + padding on each axis. Without this floor, a level with just a few
   // blocks near the top of the canvas yields a world shorter than the viewport,
@@ -333,6 +336,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
         .findFirst().orElse(null);
     double spawnX = spawn != null ? spawn.x() : 380.0;
     double spawnY = spawn != null ? spawn.y() : 330.0;
+    spawnY = adjustedSpawnYForVehicleGrounding(layout, world, spawnX, spawnY);
     Map<PlacedComponent, RigidBody> placements =
         vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
     return new BuiltWorld(world, bounds, placements, loadedConfig, gravityVector(attributes));
@@ -340,6 +344,72 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private Vector gravityVector(LevelAttributes attributes) {
     return new Vector(0.0, Math.abs(attributes.getGravity()) * GRAVITY_SCHEMA_TO_ENGINE_SCALE);
+  }
+
+  static double adjustedSpawnYForVehicleGrounding(VehicleLayout layout, World world,
+      double spawnX, double requestedSpawnY) {
+    OptionalDouble surfaceY = terrainSurfaceYAt(world, spawnX);
+    return surfaceY.isPresent()
+        ? Math.min(requestedSpawnY,
+            surfaceY.getAsDouble() - vehicleBottomOffset(layout) - SPAWN_TERRAIN_BUFFER)
+        : requestedSpawnY;
+  }
+
+  private static double vehicleBottomOffset(VehicleLayout layout) {
+    int deepestRow = layout.placements().stream()
+        .mapToInt(PlacedComponent::row)
+        .max()
+        .orElse(0);
+    return deepestRow * VehicleFactory.CELL_SIZE + VehicleFactory.CELL_SIZE / 2.0;
+  }
+
+  private static OptionalDouble terrainSurfaceYAt(World world, double x) {
+    double surfaceY = Double.POSITIVE_INFINITY;
+    boolean foundSurface = false;
+    for (GameComponent component : world.getAllComponents()) {
+      OptionalDouble candidate = terrainSurfaceYFor(component, x);
+      if (candidate.isPresent()) {
+        surfaceY = Math.min(surfaceY, candidate.getAsDouble());
+        foundSurface = true;
+      }
+    }
+    return foundSurface ? OptionalDouble.of(surfaceY) : OptionalDouble.empty();
+  }
+
+  private static OptionalDouble terrainSurfaceYFor(GameComponent component, double x) {
+    if (component instanceof TerrainSpline terrainSpline) {
+      return splineSurfaceYAt(terrainSpline, x);
+    }
+    if (component instanceof TerrainBlock terrainBlock
+        && isBetween(x, terrainBlock.x(), terrainBlock.x() + terrainBlock.getWidth())) {
+      return OptionalDouble.of(terrainBlock.y());
+    }
+    return OptionalDouble.empty();
+  }
+
+  private static OptionalDouble splineSurfaceYAt(TerrainSpline terrain, double x) {
+    ParabolaSpline spline = terrain.getSpline();
+    for (int segment = 0; segment < spline.segmentCount(); segment++) {
+      Vector start = spline.knots().get(segment);
+      Vector end = spline.knots().get(segment + 1);
+      if (isBetween(x, start.x(), end.x())) {
+        return OptionalDouble.of(spline.evaluate(segment, segmentProgress(start.x(), end.x(), x))
+            .y());
+      }
+    }
+    return OptionalDouble.empty();
+  }
+
+  private static boolean isBetween(double value, double first, double second) {
+    return value >= Math.min(first, second) && value <= Math.max(first, second);
+  }
+
+  private static double segmentProgress(double startX, double endX, double x) {
+    double span = endX - startX;
+    if (Math.abs(span) < GEOMETRY_EPSILON) {
+      return 0.0;
+    }
+    return Math.max(0.0, Math.min(1.0, (x - startX) / span));
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {

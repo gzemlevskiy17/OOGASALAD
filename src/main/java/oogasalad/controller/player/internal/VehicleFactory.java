@@ -25,10 +25,11 @@ import oogasalad.model.player.api.VehicleLayout;
  * dispatched by each part's {@link JointStyle}.
  *
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public class VehicleFactory {
 
-  private static final double CELL_SIZE = 60.0;
+  static final double CELL_SIZE = 60.0;
 
   private final VehiclePartRegistry registry;
 
