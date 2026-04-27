@@ -76,6 +76,7 @@ public class LevelSaverImpl implements LevelSaver {
 
     ArrayNode knots = map.putArray("knotLocations");
     ArrayNode objects = map.putArray("objects");
+    ArrayNode terrainOptions = map.putArray("terrainOptions");
     ObjectNode spawnPoint = map.putObject("spawnPoint");
     spawnPoint.put("x", 350.0);
     spawnPoint.put("y", 300.0);
@@ -83,6 +84,7 @@ public class LevelSaverImpl implements LevelSaver {
     for (GameObject obj : world.getObjects()) {
       if (obj instanceof TerrainSpline ts) {
         serializeSplineKnots(ts, knots);
+        terrainOptions.add(ts.getDisplayName());
       } else if (obj instanceof SpawnPointComponent sp) {
         spawnPoint.put("x", sp.x() * scale);
         spawnPoint.put("y", sp.y() * scale);
@@ -128,6 +130,7 @@ public class LevelSaverImpl implements LevelSaver {
     }
     mc.put("maxSelectable", attrs.getMaxSelectable());
     mc.put("maxHP", attrs.getMaxHP());
+    mc.put("cameraFollows", attrs.getCameraFollows());
     return mc;
   }
 }

@@ -114,6 +114,9 @@ public class LevelScanner {
           return;
         }
         String filename = entry.getFileName().toString();
+        if (LevelPaths.GAME_FILE_NAME.equals(filename)) {
+          return; // game catalog lives alongside levels but is not itself a level
+        }
         String levelKey = filename.substring(0, filename.length() - JSON_SUFFIX.length());
         if (!filterByProgression || LevelProgression.LEVEL_ORDER.contains(levelKey)) {
           levelKeys.add(levelKey);

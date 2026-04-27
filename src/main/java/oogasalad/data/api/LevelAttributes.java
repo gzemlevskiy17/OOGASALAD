@@ -29,6 +29,7 @@ public class LevelAttributes {
   private List<String> elementsAllowed = new ArrayList<>();
   private int maxSelectable = 5;
   private double maxHP = 100;
+  private String cameraFollows = "vehicle";
 
   public String getLevelName() {
     return levelName;
@@ -109,6 +110,15 @@ public class LevelAttributes {
 
   public void setMaxHP(double maxHP) {
     this.maxHP = maxHP;
+  }
+
+  public String getCameraFollows() {
+    return cameraFollows;
+  }
+
+  public void setCameraFollows(String cameraFollows) {
+    this.cameraFollows = cameraFollows == null || cameraFollows.isBlank()
+        ? "vehicle" : cameraFollows;
   }
 
   // ── Legacy aliases kept so existing callers compile without changes ──

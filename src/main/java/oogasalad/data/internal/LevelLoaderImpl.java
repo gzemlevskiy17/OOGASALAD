@@ -104,6 +104,7 @@ public class LevelLoaderImpl implements LevelLoader {
     attrs.setGridSize(node.path("gridSize").asDouble(attrs.getGridSize()));
     attrs.setMaxSelectable(node.path("maxSelectable").asInt(attrs.getMaxSelectable()));
     attrs.setMaxHP(node.path("maxHP").asDouble(attrs.getMaxHP()));
+    attrs.setCameraFollows(node.path("cameraFollows").asText(attrs.getCameraFollows()));
     JsonNode allowed = node.path("elementsAllowed");
     if (allowed.isArray()) {
       List<String> ids = new ArrayList<>();
@@ -147,12 +148,24 @@ public class LevelLoaderImpl implements LevelLoader {
     if (game == null || !terrainOptions.isArray() || terrainOptions.size() == 0) {
       return null;
     }
-    String firstId = terrainOptions.get(0).asText();
+    String firstId = terrainOptions.get(0).asText().trim();
+    if (firstId.isEmpty()) {
+      return null;
+    }
     for (TerrainInfo info : game.terrainTypes()) {
       if (info.id().equals(firstId)) {
         return info;
       }
     }
+    String lower = firstId.toLowerCase();
+    for (TerrainInfo info : game.terrainTypes()) {
+      if (info.id().toLowerCase().equals(lower)) {
+        return info;
+      }
+    }
+    LOG.warn(
+        "terrainOptions[0] is '{}' but no terrainTypes id matches in game.json; spline uses defaults",
+        firstId);
     return null;
   }
 
@@ -193,20 +206,37 @@ public class LevelLoaderImpl implements LevelLoader {
       throw new LevelLoadException("Cannot load map.objects without a GameConfig");
     }
     for (JsonNode entry : objectsArray) {
-      String typeId = entry.path("type").asText("");
+      String typeId = entry.path("type").asText("").trim();
       double x = entry.path("position").path("x").asDouble(0);
       double y = entry.path("position").path("y").asDouble(0);
       StaticComponentInfo info = lookupStatic(typeId, game);
       if (info == null) {
-        throw new LevelLoadException("Unknown mapObject type: '" + typeId + "'");
+        if (typeId.isEmpty()) {
+          LOG.warn("Skipping map object with empty type");
+          continue;
+        }
+        LOG.warn(
+            "Skipping map object type '{}' — no staticComponents entry with this id in game.json. "
+                + "Add it to the catalog or remove the object from the level.",
+            typeId);
+        continue;
       }
       addStaticObject(info, x, y, world);
     }
   }
 
   private StaticComponentInfo lookupStatic(String typeId, GameConfig game) {
+    if (game == null || typeId.isEmpty()) {
+      return null;
+    }
     for (StaticComponentInfo info : game.staticComponents()) {
       if (info.id().equals(typeId)) {
+        return info;
+      }
+    }
+    String lower = typeId.toLowerCase();
+    for (StaticComponentInfo info : game.staticComponents()) {
+      if (info.id().toLowerCase().equals(lower)) {
         return info;
       }
     }
