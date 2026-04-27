@@ -9,13 +9,21 @@ import oogasalad.model.engine.internal.components.PigComponent;
  */
 public final class PigPartSpec extends AbstractVehiclePartSpec {
 
-  private static final double MASS = 2.0;
+  private static final double DEFAULT_MASS = 2.0;
   private static final double FRICTION = 0.3;
   private static final double RESTITUTION = 0.5;
   private static final double MAX_HP = 100.0;
 
+  private final double mass;
+
   public PigPartSpec(String paletteName) {
     super(paletteName, JointStyle.PIG);
+    this.mass = DEFAULT_MASS;
+  }
+
+  public PigPartSpec(String paletteName, double mass, double width, double height) {
+    super(paletteName, JointStyle.PIG, width, height);
+    this.mass = mass;
   }
 
   @Override
@@ -26,8 +34,8 @@ public final class PigPartSpec extends AbstractVehiclePartSpec {
             bodyHeight()),
         "",
         FRICTION,
-        MASS,
-        boxMomentOfInertia(MASS, bodyWidth(), bodyHeight()),
+        mass,
+        boxMomentOfInertia(mass, bodyWidth(), bodyHeight()),
         RESTITUTION,
         true,
         MAX_HP,

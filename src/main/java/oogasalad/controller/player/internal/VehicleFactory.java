@@ -40,6 +40,10 @@ public class VehicleFactory {
     this.registry = registry;
   }
 
+  public VehiclePartRegistry getRegistry() {
+    return registry;
+  }
+
   /**
    * Builds the vehicle and returns each placement mapped to its created component, in placement
    * order (structurals first, pigs last), so HUD/UI code can look up per-cell HP without

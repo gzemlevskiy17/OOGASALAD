@@ -12,6 +12,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.model.help.internal.HelpChatModel;
 import oogasalad.view.accounts.api.AccountOutcome;
@@ -24,6 +26,7 @@ import oogasalad.view.help.internal.HelpChatWindow;
  */
 public class GameMenuScreen extends AbstractAppScreen {
 
+  private static final Logger LOG = LogManager.getLogger(GameMenuScreen.class);
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.core.GameMenu");
   private static final ThreadLocal<BooleanSupplier> PENDING_LOGIN_STATE = new ThreadLocal<>();
@@ -57,7 +60,13 @@ public class GameMenuScreen extends AbstractAppScreen {
     menuLayout.getStyleClass().add("screen-root");
     menuLayout.setPadding(new Insets(Double.parseDouble(PROPS.getString("rootPadding"))));
 
-    helpChatWindow = new HelpChatWindow(new HelpChatModel());
+    boolean helpAvailable = false;
+    try {
+      helpChatWindow = new HelpChatWindow(new HelpChatModel());
+      helpAvailable = true;
+    } catch (Exception e) {
+      LOG.warn("Help chat unavailable (missing API key?): {}", e.getMessage());
+    }
 
     Button settingsButton = new Button(PROPS.getString("settingsButtonText"));
     Button helpButton = new Button(PROPS.getString("helpButtonText"));
@@ -65,7 +74,11 @@ public class GameMenuScreen extends AbstractAppScreen {
     settingsButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     helpButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     profileButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
-    helpButton.setOnAction(event -> helpChatWindow.toggle());
+    if (helpAvailable) {
+      helpButton.setOnAction(event -> helpChatWindow.toggle());
+    } else {
+      helpButton.setDisable(true);
+    }
     profileButton.setOnAction(event -> {
       if (isLoggedIn.getAsBoolean()) {
         onOutcome.accept(Outcome.OPEN_PROFILE);
@@ -102,7 +115,10 @@ public class GameMenuScreen extends AbstractAppScreen {
     logoutButton.setOnAction(event -> onAccountAction.accept(new AccountOutcome.LogoutRequested()));
     menuLayout.setBottom(wrapBottomLeft(logoutButton));
 
-    return new StackPane(menuLayout, helpChatWindow.getRoot());
+    if (helpChatWindow != null) {
+      return new StackPane(menuLayout, helpChatWindow.getRoot());
+    }
+    return new StackPane(menuLayout);
   }
 
   private VBox wrapTopLeft(Button... buttons) {

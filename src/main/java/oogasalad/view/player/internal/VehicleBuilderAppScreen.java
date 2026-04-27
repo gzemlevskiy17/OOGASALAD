@@ -22,6 +22,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.data.api.GameConfig;
 import oogasalad.model.player.api.BuildRulesRegistry;
 import oogasalad.model.player.api.Containment;
 import oogasalad.model.player.api.PlacedComponent;
@@ -116,6 +117,16 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
     container.getChildren().addAll(title, scroll);
     return container;
+  }
+
+  /**
+   * Provides the game catalog so the builder can read component names and sprites from
+   * game.json instead of the hardcoded properties file.
+   */
+  public void setGameConfig(GameConfig config) {
+    if (config != null) {
+      spriteRegistry.registerFromConfig(config);
+    }
   }
 
   /**

@@ -9,13 +9,22 @@ import oogasalad.model.engine.internal.components.StructuralComponent;
  */
 public final class StructuralPartSpec extends AbstractVehiclePartSpec {
 
-  private static final double MASS = 1.5;
+  private static final double DEFAULT_MASS = 1.5;
   private static final double FRICTION = 0.3;
   private static final double RESTITUTION = 0.5;
   private static final double MAX_HP = 100.0;
 
+  private final double mass;
+
   public StructuralPartSpec(String paletteName, JointStyle jointStyle) {
     super(paletteName, jointStyle);
+    this.mass = DEFAULT_MASS;
+  }
+
+  public StructuralPartSpec(String paletteName, JointStyle jointStyle,
+      double mass, double width, double height) {
+    super(paletteName, jointStyle, width, height);
+    this.mass = mass;
   }
 
   @Override
@@ -28,8 +37,8 @@ public final class StructuralPartSpec extends AbstractVehiclePartSpec {
         collider,
         "",
         FRICTION,
-        MASS,
-        boxMomentOfInertia(MASS, bodyWidth(), bodyHeight()),
+        mass,
+        boxMomentOfInertia(mass, bodyWidth(), bodyHeight()),
         RESTITUTION,
         true,
         MAX_HP,
