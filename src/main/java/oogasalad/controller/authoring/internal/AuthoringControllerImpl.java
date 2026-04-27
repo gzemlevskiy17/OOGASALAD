@@ -1,119 +1,53 @@
 package oogasalad.controller.authoring.internal;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.ResourceBundle;
-import java.util.function.Consumer;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
 import oogasalad.controller.authoring.api.AuthoringController;
-import oogasalad.controller.authoring.api.AuthoringPlacementException;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
+import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
-import oogasalad.view.authoring.internal.TerrainPlaceable;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
- * Coordinates the level editor: translates grid interactions into model changes,
- * delegates save/load to the data layer, and triggers canvas redraws.
+ * Coordinates the authoring environment: composes input handlers and services, exposes the
+ * level-editing API. Mouse routing, persistence, and spawn invariants live in collaborator
+ * classes; this class is the thin glue.
  *
- * Grid interaction rules:
- *   DRAW  → snap mouse position to grid cell, place a 1x1 TerrainBlock there.
- *   ERASE → snap mouse position to grid cell, remove any placed object whose
- *           bounds contain that cell.
- *
- * Collaborators: World (model state via interface only),
- *                LevelLoaderImpl (populates world from file),
- *                LevelSaverImpl (persists world to file),
- *                ToolSelectorImpl (current editor tool),
- *                AuthoringCanvasImpl (refreshed after each model change).
+ * @author Paulina Vvedenskaya
  */
 public class AuthoringControllerImpl implements AuthoringController {
 
-  private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
-  private static final ResourceBundle MESSAGES = ResourceBundle.getBundle(
-      "oogasalad.controller.authoring.AuthoringController");
-
   private final World world;
-  private final LevelLoader loader;
-  private final LevelSaver saver;
-  private final LevelAttributes levelAttributes;
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
-  private final PlacementValidator placementValidator;
   private final CanvasActionHistory history;
   private final SplineDraftController splineDraft;
+  private final SpawnPointService spawnPointService;
+  private final AuthoringPersistenceService persistence;
 
   private AuthoringPlaceable selectedPlaceable;
-  private Consumer<String> placementErrorHandler = message -> { };
-  private Consumer<ToolType> toolChangeListener;
-  private int lastDragCol = -1;
-  private int lastDragRow = -1;
-  private boolean spawnDragActive = false;
 
   public AuthoringControllerImpl(World world, LevelLoader loader, LevelSaver saver,
-      LevelAttributes levelAttributes, ToolSelector toolSelector, AuthoringCanvas canvas) {
+      GameLoader gameLoader, LevelAttributes levelAttributes, ToolSelector toolSelector,
+      AuthoringCanvas canvas) {
     this.world = world;
-    this.loader = loader;
-    this.saver = saver;
-    this.levelAttributes = levelAttributes;
     this.toolSelector = toolSelector;
     this.canvas = canvas;
-    this.placementValidator = new PlacementValidator();
     this.history = new CanvasActionHistory();
     this.splineDraft = new SplineDraftController(world, canvas);
-    this.selectedPlaceable = null;
-    ensureSpawnPoint();
-  }
-
-  private SpawnPointComponent getSpawnPoint() {
-    return world.getAllComponents().stream()
-        .filter(SpawnPointComponent.class::isInstance)
-        .map(SpawnPointComponent.class::cast)
-        .findFirst().orElse(null);
-  }
-
-  private boolean isNearSpawnMarker(double canvasX, double canvasY) {
-    SpawnPointComponent sp = getSpawnPoint();
-    if (sp == null) return false;
-    double cellSize = canvas.getCellSize();
-    double spawnPx = sp.x() * cellSize;
-    double spawnPy = sp.y() * cellSize;
-    double hitRadius = cellSize * 1.5;
-    double dx = canvasX - spawnPx;
-    double dy = canvasY - spawnPy;
-    return dx * dx + dy * dy <= hitRadius * hitRadius;
-  }
-
-  private void moveSpawnTo(double canvasX, double canvasY) {
-    SpawnPointComponent sp = getSpawnPoint();
-    if (sp == null) return;
-    double cellSize = canvas.getCellSize();
-    sp.moveTo(canvasX / cellSize, canvasY / cellSize);
-    canvas.refreshGrid();
-  }
-
-  private boolean hasSpawnPoint() {
-    return world.getAllComponents().stream().anyMatch(SpawnPointComponent.class::isInstance);
-  }
-
-  private void ensureSpawnPoint() {
-    if (!hasSpawnPoint()) {
-      double cellSize = canvas.getCellSize();
-      world.addObject(new SpawnPointComponent(350.0 / cellSize, 300.0 / cellSize));
-    }
+    this.spawnPointService = new SpawnPointService(world);
+    this.persistence = new AuthoringPersistenceService(
+        loader, saver, gameLoader, world, levelAttributes, spawnPointService, history, canvas);
+    spawnPointService.getSpawnPoint();
   }
 
   /** @return the spline-draft controller, exposed so the UI shell can wire resolution edits. */
@@ -122,319 +56,61 @@ public class AuthoringControllerImpl implements AuthoringController {
   }
 
   public void setActiveTool(ToolSelector.ToolType type) {
-    // Cancel any in-progress spline draft when leaving SPLINE mode so stale knots don't persist
-    // as invisible overlays waiting for the next click.
-    if (toolSelector.getActiveTool() == ToolType.SPLINE && type != ToolType.SPLINE
-        && splineDraft.draftSize() > 0) {
-      splineDraft.cancel();
+    if (toolSelector.getActiveTool() == ToolType.SPLINE && type != ToolType.SPLINE) {
+      splineDraft.cancelIfDrafting();
     }
     toolSelector.setActiveTool(type);
-    if (type == ToolType.SELECT) {canvas.clearHoverPreview();}
   }
 
-  public void setSelectedPlaceable(AuthoringPlaceable placeable) {this.selectedPlaceable = placeable;}
-
-  public void setToolChangeListener(Consumer<ToolType> listener) {
-    this.toolChangeListener = listener;
+  public void setSelectedPlaceable(AuthoringPlaceable placeable) {
+    if (placeable != null) {
+      this.selectedPlaceable = placeable;
+    }
   }
 
-  public void setPlacementErrorHandler(Consumer<String> placementErrorHandler) {
-    if (placementErrorHandler != null) {
-      this.placementErrorHandler = placementErrorHandler;
+  public void setSplineTerrainStyle(AuthoringPlaceable placeable) {
+    if (placeable != null) {
+      splineDraft.setTerrainStyle(placeable.getDisplayName(), placeable.getSprite(),
+          placeable.isTiled(), placeable.getFriction(), placeable.getColor());
     }
   }
 
   @Override
   public void initializeCanvasHandlers() {
     Node root = canvas.getVisualRoot();
-    double cellSize = canvas.getCellSize();
-
-    root.setOnMouseMoved(e -> {
-      root.setCursor(Cursor.DEFAULT);
-      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
-        canvas.clearHoverPreview();
-        splineDraft.moveCursor(e.getX() / cellSize, e.getY() / cellSize);
-        return;
-      }
-      if (toolSelector.getActiveTool() == ToolType.SELECT) {
-        canvas.clearHoverPreview();
-        return;
-      }
-      if (selectedPlaceable == null) {
-        canvas.clearHoverPreview();
-        return;
-      }
-      int col = (int) Math.floor(e.getX() / cellSize);
-      int row = (int) Math.floor(e.getY() / cellSize);
-      canvas.showHoverPreview(col, row);
-    });
-
-    root.setOnMouseExited(e -> {
-      canvas.clearHoverPreview();
-      root.setCursor(Cursor.DEFAULT);
-    });
-
-    // Batch lifecycle runs as capture-phase filters so it fires even when a
-    // child (e.g. a placed block's Rectangle) consumes the MOUSE_PRESSED event
-    // for object selection. Without this, drags starting on top of an
-    // existing block would record each cell as its own undo step.
-    root.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-      ToolType t = toolSelector.getActiveTool();
-      if (e.getButton() == MouseButton.PRIMARY
-          && t != ToolType.SPLINE && t != ToolType.SELECT) {
-        history.beginBatch();
-      }
-    });
-    root.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> {
-      ToolType t = toolSelector.getActiveTool();
-      if (e.getButton() == MouseButton.PRIMARY
-          && t != ToolType.SPLINE && t != ToolType.SELECT) {
-        history.endBatch();
-      }
-    });
-
-    root.setOnMousePressed(e -> {
-      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
-        handleSplinePress(e);
-        return;
-      }
-      if (isNearSpawnMarker(e.getX(), e.getY())) {
-        spawnDragActive = true;
-        return;
-      }
-      startStrokeAt(e.getX(), e.getY());
-    });
-    root.setOnMouseDragged(e -> {
-      if (toolSelector.getActiveTool() == ToolType.SPLINE) {
-        splineDraft.moveCursor(e.getX() / cellSize, e.getY() / cellSize);
-        return;
-      }
-      if (spawnDragActive) {
-        moveSpawnTo(e.getX(), e.getY());
-        return;
-      }
-      extendStrokeTo(e.getX(), e.getY());
-    });
-    root.setOnMouseReleased(e -> {
-      if (spawnDragActive) {
-        spawnDragActive = false;
-        moveSpawnTo(e.getX(), e.getY());
-        return;
-      }
-      if (toolSelector.getActiveTool() == ToolType.PAINT) {
-        toolSelector.setActiveTool(ToolType.SELECT);
-        if (toolChangeListener != null) {
-          toolChangeListener.accept(ToolType.SELECT);
-        }
-      }
-    });
-
-    // Drag-and-drop from a palette item (separate event stream from the
-    // mouse-press paint stroke above). ComponentPaletteImpl starts a Dragboard
-    // gesture in setOnDragDetected; the handlers below preview and place the
-    // dropped block at the cursor cell.
-    root.setOnDragOver(e -> {
-      if (e.getGestureSource() != root && e.getDragboard().hasString()) {
-        e.acceptTransferModes(TransferMode.COPY);
-        int col = (int) Math.floor(e.getX() / cellSize);
-        int row = (int) Math.floor(e.getY() / cellSize);
-        canvas.showHoverPreview(col, row);
-      }
-      e.consume();
-    });
-
-    root.setOnDragExited(e -> {
-      canvas.clearHoverPreview();
-      e.consume();
-    });
-
-    // A drop from the palette is an explicit placement gesture — it should place the
-    // dragged block regardless of the active tool. Previously this deferred to
-    // handleCellInteraction, which only placed under DRAW. With the Draw button removed
-    // from the UI, that path is no longer user-reachable, so drops now always place.
-    root.setOnDragDropped(e -> {
-      boolean placed = false;
-      if (e.getDragboard().hasString()) {
-        int col = (int) Math.floor(e.getX() / cellSize);
-        int row = (int) Math.floor(e.getY() / cellSize);
-        if (canvas.isWithinBounds(col, row)) {
-          history.beginBatch();
-          try {
-            placeSelectedObject(col, row);
-          } catch (AuthoringPlacementException ex) {
-            placementErrorHandler.accept(ex.getMessage());
-          } finally {
-            history.endBatch();
-          }
-          canvas.refreshGrid();
-          placed = true;
-        }
-      }
-      e.setDropCompleted(placed);
-      e.consume();
-    });
-  }
-
-  /**
-   * Primary click adds a knot at the sub-cell cursor position; secondary (right) click commits
-   * the current draft. This keeps the single-click flow fast ("place N knots, right-click to
-   * finalize") and avoids introducing keyboard handlers to the canvas.
-   */
-  private void handleSplinePress(MouseEvent e) {
-    double cellSize = canvas.getCellSize();
-    double col = e.getX() / cellSize;
-    double row = e.getY() / cellSize;
-    if (e.getButton() == MouseButton.PRIMARY) {
-      splineDraft.addKnot(col, row);
-    } else if (e.getButton() == MouseButton.SECONDARY) {
-      splineDraft.commit();
-      canvas.refreshGrid();
-    }
-  }
-
-  private void startStrokeAt(double x, double y) {
-    double cellSize = canvas.getCellSize();
-    int col = (int) Math.floor(x / cellSize);
-    int row = (int) Math.floor(y / cellSize);
-    if (!canvas.isWithinBounds(col, row)) {
-      return;
-    }
-    handleCellInteraction(col, row);
-    lastDragCol = col;
-    lastDragRow = row;
-  }
-
-  private void extendStrokeTo(double x, double y) {
-    if (toolSelector.getActiveTool() == ToolType.PAINT) {
-      return;
-    }
-    double cellSize = canvas.getCellSize();
-    int col = (int) Math.floor(x / cellSize);
-    int row = (int) Math.floor(y / cellSize);
-    if (!canvas.isWithinBounds(col, row)) {
-      return;
-    }
-    int spanCols;
-    int spanRows;
-    if (selectedPlaceable != null) {
-      spanCols = selectedPlaceable.colSpan(cellSize);
-      spanRows = selectedPlaceable.rowSpan(cellSize);
-    } else if (toolSelector.getActiveTool() == ToolType.ERASE) {
-      spanCols = 1;
-      spanRows = 1;
-    } else {
-      return;
-    }
-    int[] lastPlaced = fillLine(lastDragCol, lastDragRow, col, row, spanCols, spanRows);
-    lastDragCol = lastPlaced[0];
-    lastDragRow = lastPlaced[1];
-  }
-
-  /**
-   * Translates a mouse position into a grid cell and applies the active tool.
-   * Called on both click and drag events from the canvas.
-   */
-  @Override
-  public void handleGridInteraction(MouseEvent event) {
-    handleGridInteraction(event.getX(), event.getY());
-  }
-
-  /**
-   * Core grid interaction logic. Package-private so tests can invoke it
-   * directly without needing to construct a JavaFX MouseEvent.
-   */
-  void handleGridInteraction(double x, double y) {
-    double cellSize = canvas.getCellSize();
-    int col = (int) Math.floor(x / cellSize);
-    int row = (int) Math.floor(y / cellSize);
-    if (canvas.isWithinBounds(col, row)) {
-      handleCellInteraction(col, row);
-    }
-  }
-
-  /**
-   * Applies the active tool at the given grid cell. Package-private so tests
-   * can invoke it directly.
-   */
-  void handleCellInteraction(int col, int row) {
-    ToolType tool = toolSelector.getActiveTool();
-    if (tool == ToolType.SELECT) {
-      return;
-    }
-    try {
-      if (tool == ToolType.DRAW) {
-        placeSelectedObject(col, row);
-      } else if (tool == ToolType.ERASE) {
-        eraseAt(col, row);
-      } else if (tool == ToolType.PAINT) {
-        floodFillAt(col, row);
-      }
-    } catch (AuthoringPlacementException e) {
-      placementErrorHandler.accept(e.getMessage());
-    }
-    canvas.refreshGrid();
-  }
-
-  private void eraseAt(int col, int row) {
-    OccupancyGrid grid = buildOccupancyGrid();
-    AuthoringPlaceable target = grid.getObjectAt(col, row);
-    if (target != null) {
-      history.record(CanvasAction.remove(target));
-      world.removeObject((GameObject) target);
-    }
-  }
-
-  /**
-   * Interpolates a line between two grid cells calling handleCellInteraction for each cell along the line.
-   */
-  private int[] fillLine(int x0, int y0, int x1, int y1, int spanCols, int spanRows) {
-    int dx = Math.abs(x1 - x0);
-    int dy = Math.abs(y1 - y0);
-    int sx = x0 < x1 ? 1 : -1;
-    int sy = y0 < y1 ? 1 : -1;
-    int err = dx - dy;
-    int lastPlacedCol = x0;
-    int lastPlacedRow = y0;
-    boolean firstPoint = true;
-    while (true) {
-      boolean reachedNextPlacement =
-          Math.abs(x0 - lastPlacedCol) >= spanCols || Math.abs(y0 - lastPlacedRow) >= spanRows;
-      if (!firstPoint && reachedNextPlacement) {
-        handleCellInteraction(x0, y0);
-        lastPlacedCol = x0;
-        lastPlacedRow = y0;
-      }
-      if (x0 == x1 && y0 == y1) {
-        break;
-      }
-      firstPoint = false;
-      int e2 = 2 * err;
-      if (e2 > -dy) {
-        err -= dy;
-        x0 += sx;
-      }
-      if (e2 < dx) {
-        err += dx;
-        y0 += sy;
-      }
-    }
-    return new int[] {lastPlacedCol, lastPlacedRow};
+    new SpawnDragInputHandler(canvas, spawnPointService, toolSelector).register(root);
+    new SplineInputHandler(canvas, toolSelector, splineDraft).register(root);
+    new HoverPreviewInputHandler(canvas, toolSelector).register(root);
+    new PaletteDropInputHandler(canvas, (col, row) -> placeFromPaletteDrop(col, row)).register(root);
+    new ClickPlaceInputHandler(canvas, toolSelector,
+        (col, row) -> placeFromPaletteDrop(col, row)).register(root);
   }
 
   @Override
   public void saveLevel(String fileName) {
-    saver.saveLevel(fileName, world, levelAttributes);
-    LOG.info("Saved level to {}", fileName);
+    commitSplineDraftBeforeSave();
+    persistence.save(fileName);
+  }
+
+  /**
+   * Commits the in-progress spline draft into the world and records the action so it can be
+   * undone. Call this from the UI commit button instead of accessing the draft directly.
+   */
+  public void commitSpline() {
+    commitSplineDraftBeforeSave();
+  }
+
+  private void commitSplineDraftBeforeSave() {
+    TerrainSpline committed = splineDraft.commit();
+    if (committed != null) {
+      history.record(CanvasAction.place(committed));
+      canvas.refreshGrid();
+    }
   }
 
   @Override
   public void loadLevel(String fileName) {
-    world.clear();
-    loader.loadLevel(fileName, world, levelAttributes, null);
-    ensureSpawnPoint();
-    history.clear();
-    canvas.refreshGrid();
-    LOG.info("Loaded level from {}", fileName);
+    persistence.load(fileName);
   }
 
   @Override
@@ -466,133 +142,86 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void clearLevel() {
     world.clear();
     history.clear();
-    ensureSpawnPoint();
+    spawnPointService.getSpawnPoint();
+    canvas.refreshGrid();
+  }
+
+  GameObject placeSelectedObject(int col, int row) {
+    if (selectedPlaceable == null) {
+      return null;
+    }
+    double cellSize = canvas.getCellSize();
+    AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
+    world.addObject((GameObject) placedObject);
+    history.record(CanvasAction.place(placedObject));
+    return (GameObject) placedObject;
+  }
+
+  private void placeFromPaletteDrop(int col, int row) {
+    history.beginBatch();
+    try {
+      placeSelectedObject(col, row);
+    } finally {
+      history.endBatch();
+    }
     canvas.refreshGrid();
   }
 
   private void applyAction(CanvasAction action) {
     switch (action.type()) {
       case PLACE -> placeFromAction(action);
-      case REMOVE -> removePlaceableAt(action.col(), action.row());
+      case REMOVE -> removeFromAction(action);
     }
   }
 
   private void applyInverse(CanvasAction action) {
     switch (action.type()) {
-      case PLACE -> removePlaceableAt(action.col(), action.row());
+      case PLACE -> removeFromAction(action);
       case REMOVE -> placeFromAction(action);
     }
   }
 
   private void placeFromAction(CanvasAction action) {
+    if (action.object() != null) {
+      world.addObject((GameObject) action.object());
+      return;
+    }
     TerrainBlock block = new TerrainBlock(
-        action.col(), action.row(),
+        action.displayName(), action.col(), action.row(),
         action.width(), action.height(),
         action.sprite(), action.tiled(),
-        action.friction(), action.color(), action.restitution(), action.catalogName());
+        action.friction(), action.color(), action.restitution());
     world.addObject(block);
   }
 
+  private void removeFromAction(CanvasAction action) {
+    if (action.object() != null) {
+      world.removeObject((GameObject) action.object());
+      return;
+    }
+    removePlaceableAt(action.col(), action.row());
+  }
+
   private void removePlaceableAt(int col, int row) {
-    AuthoringPlaceable target = buildOccupancyGrid().getObjectAt(col, row);
+    AuthoringPlaceable target = findPlaceableAt(col, row);
     if (target != null) {
       world.removeObject((GameObject) target);
     }
   }
 
-  GameObject placeSelectedObject(int col, int row) {
-    if (selectedPlaceable == null) {return null;}
-    double cellSize = canvas.getCellSize();
-    AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
-    OccupancyGrid grid = buildOccupancyGrid();
-    if (placementValidator.overlapsExistingPlacement(placedObject, grid)) {
-      autoFillEnclosed(col, row, grid);
-      return null;
-    }
-    world.addObject((GameObject) placedObject);
-    history.record(CanvasAction.place(placedObject));
-    return (GameObject) placedObject;
+  private AuthoringPlaceable findPlaceableAt(int col, int row) {
+    List<AuthoringPlaceable> placeables = collectPlaceables();
+    OccupancyGrid grid = new OccupancyGrid(placeables, canvas.getGridCols(), canvas.getGridRows());
+    return grid.getObjectAt(col, row);
   }
 
-  private void floodFillAt(int col, int row) {
-    if (selectedPlaceable == null) {return;}
-    double cellSize = canvas.getCellSize();
-    OccupancyGrid grid = buildOccupancyGrid();
-    FillExecutor executor = new FillExecutor();
-    int minRow = canvas.getGridRows() / 2;
-    List<int[]> cellsToFill = executor.computeFillRegion(grid, col, row, minRow);
-
-    TerrainPlaceable unitPlaceable = new TerrainPlaceable(
-        selectedPlaceable.getCatalogName(),
-        cellSize, cellSize,
-        selectedPlaceable.getColor(),
-        selectedPlaceable.getSprite(),
-        selectedPlaceable.isTiled(),
-        selectedPlaceable.getFriction(),
-        selectedPlaceable.getRestitution());
-
-    history.beginBatch();
-    try {
-      for (int[] cell : cellsToFill) {
-        AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
-        world.addObject((GameObject) placed);
-        history.record(CanvasAction.place(placed));
-      }
-    } finally {
-      history.endBatch();
-    }
-  }
-
-  private static final int[][] NEIGHBOR_DIRS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-
-  private void autoFillEnclosed(int col, int row, OccupancyGrid grid) {
-    FillExecutor executor = new FillExecutor();
-    FillExecutor.FillResult best = null;
-
-    for (int[] dir : NEIGHBOR_DIRS) {
-      int nc = col + dir[0];
-      int nr = row + dir[1];
-      if (!grid.isInBounds(nc, nr) || grid.isOccupied(nc, nr)) {
-        continue;
-      }
-      FillExecutor.FillResult result = executor.computeEnclosedRegion(grid, nc, nr);
-      if (result.status() == FillExecutor.FillStatus.FILLED) {
-        if (best == null || result.cells().size() < best.cells().size()) {
-          best = result;
-        }
+  private List<AuthoringPlaceable> collectPlaceables() {
+    List<AuthoringPlaceable> placeables = new ArrayList<>();
+    for (GameObject object : world.getObjects()) {
+      if (object instanceof AuthoringPlaceable placeable) {
+        placeables.add(placeable);
       }
     }
-
-    if (best == null) {
-      return;
-    }
-
-    double cellSize = canvas.getCellSize();
-    TerrainPlaceable unitPlaceable = new TerrainPlaceable(
-        selectedPlaceable.getCatalogName(),
-        cellSize, cellSize,
-        selectedPlaceable.getColor(),
-        selectedPlaceable.getSprite(),
-        selectedPlaceable.isTiled(),
-        selectedPlaceable.getFriction(),
-        selectedPlaceable.getRestitution());
-    history.beginBatch();
-    try {
-      for (int[] cell : best.cells()) {
-        AuthoringPlaceable placed = unitPlaceable.createAt(cell[0], cell[1], cellSize);
-        world.addObject((GameObject) placed);
-        history.record(CanvasAction.place(placed));
-      }
-    } finally {
-      history.endBatch();
-    }
-  }
-
-  private OccupancyGrid buildOccupancyGrid() {
-    List<AuthoringPlaceable> placeables = world.getObjects().stream()
-        .filter(AuthoringPlaceable.class::isInstance)
-        .map(AuthoringPlaceable.class::cast)
-        .toList();
-    return new OccupancyGrid(placeables, canvas.getGridCols(), canvas.getGridRows());
+    return placeables;
   }
 }

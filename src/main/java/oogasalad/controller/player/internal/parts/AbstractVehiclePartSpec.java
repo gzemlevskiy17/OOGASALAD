@@ -17,6 +17,14 @@ abstract class AbstractVehiclePartSpec implements VehiclePartSpec {
     this.bodyHeight = Palette.height(paletteName);
   }
 
+  AbstractVehiclePartSpec(String paletteName, JointStyle jointStyle,
+      double bodyWidth, double bodyHeight) {
+    this.paletteName = paletteName;
+    this.jointStyle = jointStyle;
+    this.bodyWidth = bodyWidth;
+    this.bodyHeight = bodyHeight;
+  }
+
   static double boxMomentOfInertia(double mass, double width, double height) {
     return mass * (width * width + height * height) / 12.0;
   }

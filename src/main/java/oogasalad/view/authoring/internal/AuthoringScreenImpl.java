@@ -25,9 +25,13 @@ import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
+import oogasalad.data.api.StaticComponentInfo;
+import oogasalad.data.api.TerrainInfo;
+import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
@@ -43,6 +47,8 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringScreen");
+  private static final String DEFAULT_TERRAIN_COLOR = "#8B4513";
+  private static final String DEFAULT_STATIC_COLOR = "#F5C542";
 
   /**
    * Preview file used when the designer clicks Run. We write the authored world here, point the
@@ -60,18 +66,17 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     TERRAIN,
     PIGS,
     LEVEL_ITEMS,
-    CUSTOM,
     SETTINGS
   }
 
   private Consumer<String> onRunLevel = path -> {};
+  private GameConfig gameConfig;
   private AuthoringControllerImpl controller;
   private StackPane canvasHost;
   private VehicleComponentScrollPalette vehiclePalette;
   private ComponentPaletteImpl terrainPalette;
   private ComponentPaletteImpl pigsPalette;
   private ComponentPaletteImpl levelItemsPalette;
-  private ComponentPaletteImpl customPalette;
   private AuthoringAlertService alertService;
   private FileChooserService fileChooserService;
   private HBox paletteModeRow;
@@ -81,7 +86,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private Button terrainPaletteButton;
   private Button pigsPaletteButton;
   private Button levelItemsPaletteButton;
-  private Button customPaletteButton;
   private Button settingsPaletteButton;
   private HBox levelPaletteTabs;
   private Label selectedItemsLabel;
@@ -140,11 +144,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
     wireModeHandlers();
     refreshDisplayedMode();
-    controller.setToolChangeListener(type -> {
-      if (type == ToolType.SELECT && toolButtons != null && !toolButtons.isEmpty()) {
-        updateToolButtonStyles(toolButtons.get(0));
-      }
-    });
 
     return layout;
   }
@@ -184,6 +183,18 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     }
   }
 
+  /**
+   * Sets the active game catalog so the level editor knows which game it is authoring for. Call
+   * this before navigating to OPEN_AUTHORING.
+   */
+  public void setGameConfig(GameConfig config) {
+    this.gameConfig = config;
+    if (config != null && levelAttributes != null) {
+      levelAttributes.setGameType(config.gameId());
+    }
+    refreshCatalogPalettes();
+  }
+
   private void initializeAuthoringState() {
     world = new WorldImpl();
     levelAttributes = new LevelAttributes();
@@ -191,17 +202,14 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     terrainPropertiesPanel = new TerrainPropertiesPanel();
     canvas = new AuthoringCanvasImpl(world);
     canvas.setOnObjectSelected(terrainPropertiesPanel::show);
-    canvas.setOnTerrainHoverEnter(terrainPropertiesPanel::onCanvasTerrainHover);
-    canvas.setOnTerrainHoverExit(terrainPropertiesPanel::onCanvasTerrainHoverEnd);
+    terrainPropertiesPanel.setEditContext(world, canvas::refreshGrid);
     double cellSize = canvas.getCellSize();
     controller = new AuthoringControllerImpl(
-        world, new LevelLoaderImpl(cellSize), new LevelSaverImpl(cellSize),
+        world, new LevelLoaderImpl(), new LevelSaverImpl(cellSize), new GameLoaderImpl(),
         levelAttributes, new ToolSelectorImpl(), canvas);
     alertService = new AuthoringAlertService();
     fileChooserService = new FileChooserService();
     selectedItemsLabel = buildSelectedItemsLabel();
-    controller.setPlacementErrorHandler(
-        message -> alertService.showWarning(s("placementWarningTitle"), message));
     controller.initializeCanvasHandlers();
 
     canvasScrollPane = new ScrollPane(canvas.getVisualRoot());
@@ -214,24 +222,22 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     canvasHost = new StackPane(canvasScrollPane);
 
     vehiclePalette = new VehicleComponentScrollPalette();
-    vehiclePalette.setSelectedComponentsHandler(levelAttributes::setAllowedVehicleComponents);
+    vehiclePalette.setSelectedComponentsHandler(
+        ids -> levelAttributes.setElementsAllowed(ids));
     vehiclePalette.setSelectionSummaryHandler(this::updateSelectedItemsSummary);
-    levelAttributes.setMaxSelectableVehicleItems(vehiclePalette.getMaxSelectableItems());
+    levelAttributes.setMaxSelectable(vehiclePalette.getMaxSelectableItems());
 
     terrainPalette = new ComponentPaletteImpl();
-    pigsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.PigsPalette");
-    levelItemsPalette = new ComponentPaletteImpl("oogasalad.view.authoring.LevelItemsPalette");
-    customPalette = new ComponentPaletteImpl("oogasalad.view.authoring.CustomPalette");
+    pigsPalette = new ComponentPaletteImpl();
+    levelItemsPalette = new ComponentPaletteImpl();
     subscribePalette(terrainPalette);
+    terrainPalette.subscribe(controller::setSplineTerrainStyle);
     subscribePalette(pigsPalette);
     subscribePalette(levelItemsPalette);
-    subscribePalette(customPalette);
-    terrainPalette.setCatalogHoverHandler(terrainPropertiesPanel::showCatalogHover, terrainPropertiesPanel::endCatalogHover);
 
     terrainPaletteButton = createTabButton(s("terrainButtonText"));
     pigsPaletteButton = createTabButton(s("pigsButtonText"));
     levelItemsPaletteButton = createTabButton(s("levelItemsButtonText"));
-    customPaletteButton = createTabButton(s("customButtonText"));
     settingsPaletteButton = createTabButton(s("settingsButtonText"));
     levelPaletteTabs = buildLevelPaletteTabs();
     paletteModeRow = buildPaletteModeRow();
@@ -240,6 +246,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     vehicleModeButton = createTabButton(s("vehicleButtonText"));
     currentMode = AuthoringMode.LEVEL;
     currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
+    refreshCatalogPalettes();
   }
 
   private void subscribePalette(ComponentPaletteImpl palette) {
@@ -339,10 +346,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
       currentLevelPaletteMode = LevelPaletteMode.LEVEL_ITEMS;
       refreshDisplayedMode();
     });
-    customPaletteButton.setOnAction(event -> {
-      currentLevelPaletteMode = LevelPaletteMode.CUSTOM;
-      refreshDisplayedMode();
-    });
     settingsPaletteButton.setOnAction(event -> {
       currentLevelPaletteMode = LevelPaletteMode.SETTINGS;
       refreshDisplayedMode();
@@ -368,36 +371,21 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     double actionHeight = d("topActionButtonHeight");
 
     Button selectButton = createSizedButton(s("selectButtonText"), actionWidth, actionHeight);
-    Button eraseButton = createSizedButton(s("eraseButtonText"), actionWidth, actionHeight);
-    Button paintButton = createSizedButton(s("paintButtonText"), actionWidth, actionHeight);
     Button splineButton = createSizedButton(s("splineButtonText"), actionWidth, actionHeight);
     selectButton.getStyleClass().add("authoring-action-button");
-    eraseButton.getStyleClass().add("authoring-action-button");
-    paintButton.getStyleClass().add("authoring-action-button");
     splineButton.getStyleClass().add("authoring-action-button");
 
     Button splineCommitButton = createSizedButton(
         s("splineCommitButtonText"), actionWidth * 0.7, actionHeight);
     splineCommitButton.getStyleClass().add("authoring-action-button");
-    splineCommitButton.setOnAction(event -> {
-      controller.getSplineDraft().commit();
-      canvas.refreshGrid();
-    });
+    splineCommitButton.setOnAction(event -> controller.commitSpline());
 
-    toolButtons = List.of(selectButton, eraseButton, paintButton, splineButton);
+    toolButtons = List.of(selectButton, splineButton);
     selectButton.getStyleClass().add("tool-active");
 
     selectButton.setOnAction(event -> {
       controller.setActiveTool(ToolType.SELECT);
       updateToolButtonStyles(selectButton);
-    });
-    eraseButton.setOnAction(event -> {
-      controller.setActiveTool(ToolType.ERASE);
-      updateToolButtonStyles(eraseButton);
-    });
-    paintButton.setOnAction(event -> {
-      controller.setActiveTool(ToolType.PAINT);
-      updateToolButtonStyles(paintButton);
     });
     splineButton.setOnAction(event -> {
       controller.setActiveTool(ToolType.SPLINE);
@@ -453,7 +441,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     runButton.setOnAction(event -> handleRun());
 
     HBox toolButtonBox = new HBox(d("topBarSpacing"),
-        selectButton, eraseButton, paintButton, splineButton,
+        selectButton, splineButton,
         splineCommitButton,
         zoomOutButton, zoomInButton, fitButton);
     toolButtonBox.setAlignment(Pos.CENTER_LEFT);
@@ -481,10 +469,45 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private HBox buildLevelPaletteTabs() {
     HBox tabs = new HBox(
         terrainPaletteButton,
-        customPaletteButton,
+        levelItemsPaletteButton,
         settingsPaletteButton);
     tabs.setAlignment(Pos.CENTER_LEFT);
     return tabs;
+  }
+
+  private void refreshCatalogPalettes() {
+    if (terrainPalette == null || levelItemsPalette == null || vehiclePalette == null) {
+      return;
+    }
+    if (gameConfig == null) {
+      vehiclePalette.setAvailableComponentIds(List.of());
+      terrainPalette.setItems(List.of());
+      levelItemsPalette.setItems(List.of());
+      return;
+    }
+    vehiclePalette.setAvailableComponentIds(gameConfig.components().stream()
+        .map(component -> component.id())
+        .toList());
+    terrainPalette.setItems(gameConfig.terrainTypes().stream()
+        .map(this::terrainEntry)
+        .toList());
+    levelItemsPalette.setItems(gameConfig.staticComponents().stream()
+        .map(this::staticEntry)
+        .toList());
+  }
+
+  private ComponentPaletteImpl.PaletteEntry terrainEntry(TerrainInfo info) {
+    String color = info.visualColor() == null || info.visualColor().isBlank()
+        ? DEFAULT_TERRAIN_COLOR : info.visualColor();
+    String sprite = info.spriteUrl() == null ? "" : info.spriteUrl();
+    return new ComponentPaletteImpl.PaletteEntry(info.id(), color, 1, 1, sprite, false,
+        info.friction(), 0.2, false);
+  }
+
+  private ComponentPaletteImpl.PaletteEntry staticEntry(StaticComponentInfo info) {
+    String sprite = info.spriteUrl() == null ? "" : info.spriteUrl();
+    return new ComponentPaletteImpl.PaletteEntry(info.id(), DEFAULT_STATIC_COLOR, 1, 1, sprite,
+        false, 0, 0, true);
   }
 
   private Label buildSelectedItemsLabel() {
@@ -535,7 +558,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
         case TERRAIN -> terrainPalette.getVisualRoot();
         case PIGS -> pigsPalette.getVisualRoot();
         case LEVEL_ITEMS -> levelItemsPalette.getVisualRoot();
-        case CUSTOM -> customPalette.getVisualRoot();
         case SETTINGS -> levelAttributesPanel.getVisualRoot();
       };
     }
@@ -550,7 +572,10 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private void handleSave(Window owner) {
-    fileChooserService.chooseSaveFile(owner).ifPresent(file -> {
+    java.io.File initialDir = gameConfig != null
+        ? new java.io.File("data/levels/" + gameConfig.gameId())
+        : null;
+    fileChooserService.chooseSaveFile(owner, initialDir).ifPresent(file -> {
       try {
         controller.saveLevel(file.getAbsolutePath());
       } catch (LevelSaveException e) {

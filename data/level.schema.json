@@ -132,7 +132,7 @@
       "required": [
         "gridSize",
         "elementsAllowed",
-        "cameraFollows",
+        "maxSelectable",
         "maxHP"
       ],
       "additionalProperties": false,
@@ -149,9 +149,10 @@
             "type": "string"
           }
         },
-        "cameraFollows": {
-          "type": "string",
-          "description": "Component id whose position the camera tracks during play."
+        "maxSelectable": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum number of components the player may place in the vehicle for this level."
         },
         "maxHP": {
           "type": "number",

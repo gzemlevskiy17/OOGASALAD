@@ -35,11 +35,13 @@ import oogasalad.model.engine.internal.spline.SplineTessellator;
 public class TerrainSpline extends TerrainComponent {
 
   private static final String DEFAULT_COLOR = "#4A2C0F";
+  private static final String DEFAULT_NAME = "Spline Terrain";
   private static final String DEFAULT_SPRITE = "";
   private static final double DEFAULT_RESTITUTION = 0.5;
 
   private final ParabolaSpline spline;
   private final List<ConvexPolygon> slabs;
+  private final String displayName;
   private final double width;
   private final double height;
   private final String color;
@@ -55,8 +57,14 @@ public class TerrainSpline extends TerrainComponent {
    */
   public TerrainSpline(ParabolaSpline spline, String sprite, boolean tiled, double friction,
       String color) {
+    this(DEFAULT_NAME, spline, sprite, tiled, friction, color);
+  }
+
+  public TerrainSpline(String displayName, ParabolaSpline spline, String sprite, boolean tiled,
+      double friction, String color) {
     super(boundingMinX(Objects.requireNonNull(spline, "spline")), boundingMinY(spline), 0.0,
         firstSlabOrPlaceholder(spline), "", friction, DEFAULT_RESTITUTION);
+    this.displayName = displayName == null || displayName.isBlank() ? DEFAULT_NAME : displayName;
     this.spline = spline;
     this.slabs = SplineTessellator.tessellate(spline);
     this.width = boundingMaxX(spline) - boundingMinX(spline);
@@ -79,6 +87,11 @@ public class TerrainSpline extends TerrainComponent {
 
   public ParabolaSpline getSpline() {
     return spline;
+  }
+
+  @Override
+  public String getDisplayName() {
+    return displayName;
   }
 
   private static ConvexPolygon firstSlabOrPlaceholder(ParabolaSpline spline) {

@@ -31,12 +31,10 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
  * <p>All knot and baseline positions are stored in grid-cell units to match the rest of the
  * authoring pipeline; the {@link oogasalad.data.internal.LevelSaverImpl} scale factor converts to
  * world pixels on save. The baseline Y is anchored at the world bottom (the last grid row) so the
- * filled polygon represents actual ground extending down from the drawn curve, and the spawn line
- * from {@code AuthoringCanvas.properties} becomes the <em>upper</em> bound for knot placement:
- * designers can only drop knots at or below the spawn line, so every committed spline sits
- * underneath the vehicle instead of floating above it.
+ * filled polygon represents actual ground extending down from the drawn curve.
  *
  * @author Bad Piggies team
+ * @author Paulina Vvedenskaya
  */
 public class SplineDraftController {
 
@@ -46,7 +44,6 @@ public class SplineDraftController {
   private static final double KNOT_RADIUS = 5.0;
   private static final Color KNOT_COLOR = Color.CORNFLOWERBLUE;
   private static final Color GHOST_STROKE_COLOR = Color.CORNFLOWERBLUE;
-  private static final Color GHOST_FILL_COLOR = Color.rgb(70, 130, 180, 0.35);
   private static final Color CURSOR_HINT_COLOR = Color.rgb(100, 100, 100, 0.55);
   private static final int MIN_KNOTS_TO_COMMIT = 2;
   private static final String DEFAULT_COLOR = "#4A2C0F";
@@ -56,10 +53,14 @@ public class SplineDraftController {
   private final World world;
   private final AuthoringCanvas canvas;
   private final double baselineYCells;
-  private final double spawnYCells;
 
   private final List<Vector> draftKnots = new ArrayList<>();
   private Vector cursorHint;
+  private String terrainName = "Spline Terrain";
+  private String terrainSprite = DEFAULT_SPRITE;
+  private boolean terrainTiled = false;
+  private double terrainFriction = DEFAULT_FRICTION;
+  private String terrainColor = DEFAULT_COLOR;
 
   /**
    * @param world  the world that committed splines are added to
@@ -68,8 +69,6 @@ public class SplineDraftController {
   public SplineDraftController(World world, AuthoringCanvas canvas) {
     this.world = world;
     this.canvas = canvas;
-    double spawnYWorld = Double.parseDouble(CANVAS_PROPS.getString("spawnY"));
-    this.spawnYCells = spawnYWorld / canvas.getCellSize();
     // Baseline at the bottom of the grid: the filled spline polygon represents ground extending
     // from the authored curve all the way down to the world floor, and the ParabolaSpline
     // invariant "knot.y < baselineY" is trivially satisfied for any knot on-canvas.
@@ -81,14 +80,21 @@ public class SplineDraftController {
     return draftKnots.size();
   }
 
+  /**
+   * Sets the terrain style used by newly committed spline terrain.
+   */
+  public void setTerrainStyle(String name, String sprite, boolean tiled, double friction,
+      String color) {
+    terrainName = name == null || name.isBlank() ? "Spline Terrain" : name;
+    terrainSprite = sprite == null ? DEFAULT_SPRITE : sprite;
+    terrainTiled = tiled;
+    terrainFriction = friction;
+    terrainColor = color == null || color.isBlank() ? DEFAULT_COLOR : color;
+    renderDraftOverlay();
+  }
+
   /** Adds a knot at the given grid-cell coordinate. */
   public void addKnot(double col, double row) {
-    if (row < spawnYCells) {
-      // Refuse knots above the spawn guide: terrain is modelled as ground under the vehicle, so
-      // knots that sit higher on-screen than the spawn line would produce floating terrain above
-      // the car. Designers who need elevated platforms can still use block terrain for those.
-      return;
-    }
     if (row >= baselineYCells) {
       // Safety net: knots must also be strictly above the baseline or ParabolaSpline would reject
       // them. In practice this only matters if a click lands at or below the very last grid row.
@@ -116,7 +122,7 @@ public class SplineDraftController {
       ParabolaSpline spline = new ParabolaSpline(
           new ArrayList<>(draftKnots), baselineYCells);
       committed = new TerrainSpline(
-          spline, DEFAULT_SPRITE, false, DEFAULT_FRICTION, DEFAULT_COLOR);
+          terrainName, spline, terrainSprite, terrainTiled, terrainFriction, terrainColor);
       world.addObject(committed);
     }
     cancel();
@@ -129,6 +135,13 @@ public class SplineDraftController {
     cursorHint = null;
     canvas.clearOverlays();
     canvas.refreshGrid();
+  }
+
+  /** Discards the draft only if there is one in progress. No-op otherwise. */
+  public void cancelIfDrafting() {
+    if (draftSize() > 0) {
+      cancel();
+    }
   }
 
   /**
@@ -175,11 +188,19 @@ public class SplineDraftController {
     path.getElements().add(new LineTo(first.x() * cellSize, baselinePx));
     path.getElements().add(new ClosePath());
 
-    path.setFill(GHOST_FILL_COLOR);
+    path.setFill(parseGhostFillColor());
     path.setStroke(GHOST_STROKE_COLOR);
     path.setStrokeWidth(1.5);
     path.setMouseTransparent(true);
     return path;
+  }
+
+  private Color parseGhostFillColor() {
+    try {
+      return Color.web(terrainColor, 0.35);
+    } catch (IllegalArgumentException e) {
+      return Color.web(DEFAULT_COLOR, 0.35);
+    }
   }
 
   private Circle buildKnotMarker(Vector knot, double cellSize) {

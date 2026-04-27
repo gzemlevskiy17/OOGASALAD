@@ -21,12 +21,18 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.GameLoader;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.data.api.Settings;
+import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
 import oogasalad.model.engine.WorldImpl;
@@ -46,8 +52,8 @@ import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.components.VehicleComponent;
-import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
+import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
@@ -60,7 +66,6 @@ import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
 import oogasalad.view.core.api.Sprite;
-import oogasalad.view.core.api.SpriteRegistry;
 import oogasalad.view.core.internal.CameraImpl;
 import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
@@ -78,6 +83,7 @@ import oogasalad.view.player.internal.VehicleHpHud;
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
+  private static final Logger LOG = LogManager.getLogger(GameplaySessionFactoryImpl.class);
   private static final double MIN_VIEWPORT_SIZE = 1.0;
   private static final double DEFAULT_VIEW_WIDTH = 1280.0;
   private static final double DEFAULT_VIEW_HEIGHT = 720.0;
@@ -137,13 +143,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private final VehicleFactory vehicleFactory = new VehicleFactory();
   private final LevelLoader levelLoader;
+  private final GameLoader gameLoader;
   private final Supplier<String> levelPathSupplier;
 
   public GameplaySessionFactoryImpl(
       LevelLoader levelLoader,
+      GameLoader gameLoader,
       Supplier<String> levelPathSupplier
   ) {
     this.levelLoader = levelLoader;
+    this.gameLoader = gameLoader;
     this.levelPathSupplier = levelPathSupplier;
   }
 
@@ -173,10 +182,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       VehicleLayout layout) {
     screen.getGameLayer().getChildren().clear();
 
-    GameConfig config = buildConfig();
-    BuiltWorld built = buildWorld(config, layout);
+    Settings config = buildConfig();
+    BuiltWorld built = buildWorld(layout);
     World world = built.world();
     LevelBounds bounds = built.bounds();
+    GameConfig loadedGameConfig = built.gameConfig();
     GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl());
 
     WinConditionChecker winChecker = buildWinChecker();
@@ -201,7 +211,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     camera.setBehavior(behavior);
     wireResponsiveCamera(screen, camera);
     SpriteCache spriteCache = new SpriteCache();
-    SpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
+    PaletteSpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
+    if (loadedGameConfig != null) {
+      spriteRegistry.registerFromConfig(loadedGameConfig);
+    }
     Map<Renderable, Sprite> spritesByRenderable = new IdentityHashMap<>();
     Map<Renderable, Renderable> wheelConnectorRotationSources =
         wheelConnectorRotationSources(world);
@@ -288,12 +301,24 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     screen.attachOverlay(hud, Pos.BOTTOM_LEFT);
   }
 
-  private BuiltWorld buildWorld(GameConfig config, VehicleLayout layout) {
+  private BuiltWorld buildWorld(VehicleLayout layout) {
     World world = new WorldImpl();
+    GameConfig loadedConfig = null;
 
     String levelPath = levelPathSupplier.get();
     if (levelPath != null && !levelPath.isBlank()) {
-      levelLoader.loadLevel(levelPath, world, config);
+      LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+      try {
+        loadedConfig = gameLoader.loadGame(
+            LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
+      } catch (RuntimeException e) {
+        LOG.warn("Game config not found for level {}; running without catalog: {}", levelPath,
+            e.getMessage());
+      }
+      levelLoader.loadLevel(levelPath, loadedConfig, world);
+      if (loadedConfig != null) {
+        vehicleFactory.getRegistry().registerFromConfig(loadedConfig);
+      }
     }
 
     LevelBounds bounds = computeLevelBounds(world);
@@ -305,43 +330,59 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     double spawnY = spawn != null ? spawn.y() : 330.0;
     Map<PlacedComponent, GameComponent> placements =
         vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
-    return new BuiltWorld(world, bounds, placements);
+    return new BuiltWorld(world, bounds, placements, loadedConfig);
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
-    final double[] baseWidth = {Math.max(DEFAULT_VIEW_WIDTH, screen.getGameLayer().getWidth())};
-    final double[] baseHeight = {Math.max(DEFAULT_VIEW_HEIGHT, screen.getGameLayer().getHeight())};
-    final double[] zoom = {1.0};
-
-    Runnable applyViewport = () -> {
-      double viewWidth = Math.max(MIN_VIEWPORT_SIZE, baseWidth[0] / zoom[0]);
-      double viewHeight = Math.max(MIN_VIEWPORT_SIZE, baseHeight[0] / zoom[0]);
-      camera.setViewBoundaries(viewWidth, viewHeight);
-    };
+    CameraViewportState state = new CameraViewportState(
+        Math.max(DEFAULT_VIEW_WIDTH, screen.getGameLayer().getWidth()),
+        Math.max(DEFAULT_VIEW_HEIGHT, screen.getGameLayer().getHeight()));
 
     screen.getGameLayer().widthProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal.doubleValue() > 0) {
-        baseWidth[0] = newVal.doubleValue();
-        applyViewport.run();
+        state.baseWidth = newVal.doubleValue();
+        state.applyTo(camera);
       }
     });
     screen.getGameLayer().heightProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal.doubleValue() > 0) {
-        baseHeight[0] = newVal.doubleValue();
-        applyViewport.run();
+        state.baseHeight = newVal.doubleValue();
+        state.applyTo(camera);
       }
     });
     screen.getGameLayer().setOnScroll(event -> {
       if (!event.isControlDown()) {
         return;
       }
-      zoom[0] = event.getDeltaY() > 0 ? zoom[0] * ZOOM_STEP : zoom[0] / ZOOM_STEP;
-      zoom[0] = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom[0]));
-      applyViewport.run();
+      if (event.getDeltaY() > 0) {
+        state.zoom = state.zoom * ZOOM_STEP;
+      } else {
+        state.zoom = state.zoom / ZOOM_STEP;
+      }
+      state.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.zoom));
+      state.applyTo(camera);
       event.consume();
     });
 
-    applyViewport.run();
+    state.applyTo(camera);
+  }
+
+  private static class CameraViewportState {
+
+    double baseWidth;
+    double baseHeight;
+    double zoom = 1.0;
+
+    CameraViewportState(double baseWidth, double baseHeight) {
+      this.baseWidth = baseWidth;
+      this.baseHeight = baseHeight;
+    }
+
+    void applyTo(Camera camera) {
+      double viewWidth = Math.max(MIN_VIEWPORT_SIZE, baseWidth / zoom);
+      double viewHeight = Math.max(MIN_VIEWPORT_SIZE, baseHeight / zoom);
+      camera.setViewBoundaries(viewWidth, viewHeight);
+    }
   }
 
   Set<String> collectDriveToolIds(World world) {
@@ -387,7 +428,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private record BuiltWorld(World world, LevelBounds bounds,
-                            Map<PlacedComponent, GameComponent> placements) {
+                            Map<PlacedComponent, GameComponent> placements,
+                            GameConfig gameConfig) {
 
   }
 
@@ -415,8 +457,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new LevelBounds(width, height);
   }
 
-  private GameConfig buildConfig() {
-    return new GameConfig() {
+  private Settings buildConfig() {
+    return new Settings() {
       @Override
       public String getSetting(String key) { return ""; }
 

@@ -1,5 +1,6 @@
 package oogasalad.controller.core.internal;
 
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
@@ -9,11 +10,14 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
+import oogasalad.data.api.GameLoader;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelId;
-import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.api.LevelLoader;
-import oogasalad.data.internal.DataPaths;
+import oogasalad.data.api.LevelLockedException;
+import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.data.internal.LevelLoaderImpl;
+import oogasalad.data.internal.LevelPaths;
 import oogasalad.data.internal.LevelProgression;
 import oogasalad.data.internal.LevelScanner;
 import oogasalad.model.auth.api.AuthFactory;
@@ -32,6 +36,7 @@ import oogasalad.view.accounts.internal.ProfileScreen;
 import oogasalad.view.accounts.internal.UpdateProfileScreen;
 import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
+import oogasalad.view.authoring.internal.GameAuthoringScreenImpl;
 import oogasalad.view.core.internal.GameMenuScreen;
 import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
@@ -47,6 +52,7 @@ public class ScreenFactory {
 
   public static final String MENU_SCREEN_KEY = "MENU";
   public static final String AUTHORING_ENTRY_SCREEN_KEY = "AUTHORING_ENTRY";
+  public static final String GAME_AUTHORING_SCREEN_KEY = "GAME_AUTHORING_SCREEN";
   public static final String PLAYER_ENTRY_APP_SCREEN_KEY = "PLAYER_ENTRY";
   public static final String AUTHORING_SCREEN_KEY = "AUTHORING_SCREEN";
   public static final String VEHICLE_BUILDER_APP_SCREEN_KEY = "VEHICLE_BUILDER_SCREEN";
@@ -64,6 +70,8 @@ public class ScreenFactory {
   private final PlayHistoryRepository playHistoryRepo = new SqlitePlayHistoryRepo();
   private final ScoreCalculator scoreCalculator = new ScoreCalculatorImpl();
   private final UserProgressionRepository userProgressionRepo = new SqliteUserProgressionRepo();
+  private final LevelLoader levelLoader = new LevelLoaderImpl();
+  private final GameLoader gameLoader = new GameLoaderImpl();
 
   // Player screens stored as fields so the vehicle layout can be read before gameplay starts
   private VehicleBuilderAppScreen vehicleBuilderScreen;
@@ -83,13 +91,10 @@ public class ScreenFactory {
   private Consumer<String> activeErrorDisplay = msg -> {
   };
 
-  // Level catalog: scan the filesystem once, feed the result into LevelProgression so
-  // ordering/unlock logic can query it. The "others" list (root-level JSONs that don't fit
-  // the world/level shape) is passed to PlayerEntryAppScreen for its sandbox bucket. Selected
-  // level is held as a LevelId; the path is computed only at the moment the gameplay session
-  // asks for it.
+  // Initial level catalog for progression. Entry screens rescan dynamically so authored levels
+  // appear in the UI immediately after being created.
   private final LevelScanner.ScanResult scanResult =
-      new LevelScanner().scan(DataPaths.levelsRoot());
+      new LevelScanner(false).scan(Path.of("data", "levels"));
   private final LevelProgression progression =
       new LevelProgression(scanResult.worldsToLevels());
 
@@ -124,16 +129,8 @@ public class ScreenFactory {
       selectedLevelPath.set(null);
       return;
     }
-    if (!progression.all().contains(id)) {
-      // TODO: PlayerEntryAppScreen now greys out levels missing from disk, so reaching this
-      // throw should be impossible from the UI. The entry screen's try/catch only catches
-      // LevelLockedException, so an IllegalArgumentException here would bubble up unhandled.
-      // If we ever expose a way to enter a level outside the entry screen (URL handler, restart,
-      // etc.), wrap this in a user-facing exception or extend the entry screen's catch.
-      throw new IllegalArgumentException("Unknown level: " + id);
-    }
     String username = currentUsernameOrNull();
-    if (username != null) {
+    if (username != null && progression.all().contains(id)) {
       LevelId furthest = furthestReachedForUser(username);
       if (!progression.isUnlocked(id, furthest)) {
         throw new LevelLockedException(id, furthest);
@@ -163,7 +160,7 @@ public class ScreenFactory {
       return null;
     }
     if (PlayerEntryAppScreen.OTHERS_WORLD_KEY.equals(id.worldKey())) {
-      return DataPaths.levelsRoot().resolve(id.levelKey() + ".json").toString();
+      return "data/levels/others/" + id.levelKey() + ".json";
     }
     return progression.pathFor(id);
   }
@@ -189,24 +186,39 @@ public class ScreenFactory {
     registerAuthScreens();
   }
 
+  private LevelScanner.ScanResult scanLevels() {
+    return new LevelScanner(false).scan(Path.of("data", "levels"));
+  }
+
   private void registerNonAuthScreens() {
     AuthoringScreenImpl authoringScreen = new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set);
     screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authController::handle,
             authService.session()::isLoggedIn));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
-        new AuthoringEntryScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath));
+        new AuthoringEntryScreenImpl(this::guardedOutcome, this::scanLevels,
+            worldKey -> configureAuthoringForWorld(authoringScreen, worldKey),
+            path -> {
+              configureAuthoringForLevel(authoringScreen, path);
+              authoringScreen.loadLevelFromPath(path);
+            }));
+    screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY,
+        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath,
+            authoringScreen::setGameConfig));
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
-        new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected, progression,
-            scanResult.others()));
+        new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected,
+            this::scanLevels));
 
-    vehicleBuilderScreen = new VehicleBuilderAppScreen(this::guardedOutcome);
+    vehicleBuilderScreen = new VehicleBuilderAppScreen(this::guardedOutcome,
+        new oogasalad.view.core.internal.SpriteCache(),
+        new oogasalad.view.core.internal.PaletteSpriteRegistry(),
+        new oogasalad.model.player.internal.DefaultBuildRulesRegistry());
     screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);
 
-    LevelLoader levelLoader = new LevelLoaderImpl();
     GameplaySessionFactoryImpl sessionFactory = new GameplaySessionFactoryImpl(
         levelLoader,
+        gameLoader,
         this::pathForSelectedLevel
     );
 
@@ -223,6 +235,31 @@ public class ScreenFactory {
         scoreCalculator, playHistoryRepo, userProgressionRepo, progression,
         this::currentUsernameOrNull,
         winScreen::setStats, loseScreen::setStats);
+  }
+
+  private void configureAuthoringForWorld(AuthoringScreenImpl authoringScreen, String worldKey) {
+    if (worldKey == null || worldKey.isBlank()) {
+      authoringScreen.setGameConfig(null);
+      return;
+    }
+    String representativeLevelPath =
+        Path.of("data", "levels", worldKey, "level.json").toString();
+    try {
+      authoringScreen.setGameConfig(
+          gameLoader.loadGame(LevelPaths.gameFileForLevel(representativeLevelPath, worldKey)));
+    } catch (RuntimeException e) {
+      authoringScreen.setGameConfig(null);
+    }
+  }
+
+  private void configureAuthoringForLevel(AuthoringScreenImpl authoringScreen, String levelPath) {
+    try {
+      LevelAttributes attrs = levelLoader.loadAttributes(levelPath);
+      authoringScreen.setGameConfig(
+          gameLoader.loadGame(LevelPaths.gameFileForLevel(levelPath, attrs.getGameType())));
+    } catch (RuntimeException e) {
+      authoringScreen.setGameConfig(null);
+    }
   }
 
   private void registerAuthScreens() {
@@ -267,11 +304,39 @@ public class ScreenFactory {
       advanceToNextLevelAndRoute();
       return;
     }
+    if (outcome == Outcome.OPEN_VEHICLE_BUILDER) {
+      configureVehicleBuilderForSelectedLevel();
+    }
+    if (outcome == Outcome.SKIP_LOGIN) {
+      screenManager.onOutcome(Outcome.BACK_TO_MENU);
+      return;
+    }
     if (outcome == Outcome.BACK_TO_MENU && !authService.session().isLoggedIn()) {
       screenManager.onOutcome(Outcome.OPEN_LOGIN);
     } else {
       screenManager.onOutcome(outcome);
     }
+  }
+
+  private void configureVehicleBuilderForSelectedLevel() {
+    if (vehicleBuilderScreen == null) {
+      return;
+    }
+    String levelPath = pathForSelectedLevel();
+    if (levelPath == null || levelPath.isBlank()) {
+      vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
+      vehicleBuilderScreen.setGameConfig(null);
+      return;
+    }
+    LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+    try {
+      oogasalad.data.api.GameConfig config = gameLoader.loadGame(
+          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
+      vehicleBuilderScreen.setGameConfig(config);
+    } catch (RuntimeException e) {
+      vehicleBuilderScreen.setGameConfig(null);
+    }
+    vehicleBuilderScreen.setAllowedComponentIds(attributes.getElementsAllowed());
   }
 
   /**
@@ -286,6 +351,7 @@ public class ScreenFactory {
         current != null ? progression.nextAfter(current) : java.util.Optional.empty();
     if (next.isPresent()) {
       selectedLevel.set(next.get());
+      configureVehicleBuilderForSelectedLevel();
       screenManager.onOutcome(Outcome.OPEN_VEHICLE_BUILDER);
     } else {
       screenManager.onOutcome(Outcome.OPEN_PLAYER_ENTRY);

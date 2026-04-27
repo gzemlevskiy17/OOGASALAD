@@ -6,6 +6,7 @@
   "type": "object",
   "required": [
     "gameId",
+    "primaryComponentId",
     "components",
     "staticComponents",
     "terrainTypes"
@@ -15,6 +16,10 @@
     "gameId": {
       "type": "string",
       "description": "Unique identifier for this game. Levels reference it via gameMetadata.gameType."
+    },
+    "primaryComponentId": {
+      "type": "string",
+      "description": "Id of the component (from components[]) treated as the chassis: camera follow target and HP owner."
     },
     "components": {
       "type": "array",

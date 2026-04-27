@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for {@link SplineDraftController}.
  *
- * <p>Focus: knot-placement rules (rejects knots above spawn or below the grid baseline),
- * commit/cancel semantics, resolution clamping, and the overlay contract with the canvas
+ * <p>Focus: knot-placement rules (rejects knots at or below the grid baseline),
+ * commit/cancel semantics and the overlay contract with the canvas
  * (redraws happen after every mutation).
  *
  * <p>{@link SplineDraftController} renders draft overlays using JavaFX nodes. We bootstrap the
@@ -70,18 +70,16 @@ class SplineDraftControllerTest {
 
   @Test
   void addKnot_belowSpawnGuide_isAccepted() {
-    // Spawn is at row 15 in grid cells (spawnY=300, cellSize=20). Any row >= 15 and < 110 is
-    // valid ground.
     controller.addKnot(10.0, 20.0);
 
     assertEquals(1, controller.draftSize());
   }
 
   @Test
-  void addKnot_aboveSpawnGuide_isRejected() {
+  void addKnot_aboveSpawnGuide_isAccepted() {
     controller.addKnot(10.0, 5.0);
 
-    assertEquals(0, controller.draftSize());
+    assertEquals(1, controller.draftSize());
   }
 
   @Test
@@ -141,6 +139,22 @@ class SplineDraftControllerTest {
     assertEquals(1, world.components.size());
     assertInstanceOf(TerrainSpline.class, world.components.get(0));
     assertEquals(0, controller.draftSize(), "draft should be cleared after commit");
+  }
+
+  @Test
+  void commit_afterSettingTerrainStyle_usesSelectedTerrainStyle() {
+    controller.setTerrainStyle("Grass", "data/assets/grass.png", true, 0.8, "#00AA00");
+    controller.addKnot(0.0, 20.0);
+    controller.addKnot(10.0, 22.0);
+
+    TerrainSpline committed = controller.commit();
+
+    assertNotNull(committed);
+    assertEquals("Grass", committed.getDisplayName());
+    assertEquals("data/assets/grass.png", committed.getSprite());
+    assertTrue(committed.isTiled());
+    assertEquals(0.8, committed.getFriction(), 0.001);
+    assertEquals("#00AA00", committed.getColor());
   }
 
   @Test

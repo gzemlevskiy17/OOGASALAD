@@ -17,13 +17,14 @@ import oogasalad.model.engine.ConvexPolygon;
 public class TerrainBlock extends TerrainComponent {
 
   private static final String DEFAULT_COLOR = "#8B4513";
+  private static final String DEFAULT_NAME = "Terrain";
 
+  private final String displayName;
   private final double width;
   private final double height;
   private final String sprite;
   private final boolean tiled;
   private final String color;
-  private final String catalogName;
 
   /**
    * @param x        grid x-coordinate (left edge)
@@ -37,7 +38,7 @@ public class TerrainBlock extends TerrainComponent {
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction, double restitution) {
 
-    this(x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR, restitution, null);
+    this(DEFAULT_NAME, x, y, width, height, sprite, tiled, friction, DEFAULT_COLOR, restitution);
     setPolygon(ConvexPolygon.axisAlignedBox(x, y, width, height));
   }
 
@@ -46,16 +47,14 @@ public class TerrainBlock extends TerrainComponent {
    */
   public TerrainBlock(double x, double y, double width, double height,
       String sprite, boolean tiled, double friction, String color, double restitution) {
-    this(x, y, width, height, sprite, tiled, friction, color, restitution, null);
+    this(DEFAULT_NAME, x, y, width, height, sprite, tiled, friction, color, restitution);
   }
 
   /**
-   * @param catalogName key from the authoring terrain catalog, e.g. {@code "Earth"}; may be
-   *                    {@code null} for levels loaded from JSON
+   * @param displayName user-facing terrain catalog id displayed in the authoring side panel
    */
-  public TerrainBlock(double x, double y, double width, double height,
-      String sprite, boolean tiled, double friction, String color, double restitution,
-      String catalogName) {
+  public TerrainBlock(String displayName, double x, double y, double width, double height,
+      String sprite, boolean tiled, double friction, String color, double restitution) {
     super(
         x,
         y,
@@ -65,20 +64,21 @@ public class TerrainBlock extends TerrainComponent {
         friction,
         restitution);
 
+    this.displayName = displayName == null || displayName.isBlank() ? DEFAULT_NAME : displayName;
     this.width = width;
     this.height = height;
     this.sprite = sprite;
     this.tiled = tiled;
     this.color = color;
-    this.catalogName = catalogName;
   }
 
   @Override
-  public String getCatalogName() {
-    return catalogName;
+  public String getDisplayName() {
+    return displayName;
   }
 
   /** @return the CSS color string used as a fallback when the sprite cannot be loaded */
+  @Override
   public String getColor() {
     return color;
   }

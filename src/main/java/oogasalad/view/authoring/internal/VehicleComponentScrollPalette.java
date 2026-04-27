@@ -1,6 +1,7 @@
 package oogasalad.view.authoring.internal;
 
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -39,6 +40,8 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
       """;
 
   private final ScrollPane visualRoot;
+  private final HBox paletteContent;
+  private final List<String> componentNames = new ArrayList<>();
   private final SpriteCache spriteCache = new SpriteCache();
   private final AuthoringAlertService alertService = new AuthoringAlertService();
   private final Map<StackPane, SelectedVehicleComponent> selectedCells = new LinkedHashMap<>();
@@ -54,18 +57,13 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
    */
   public VehicleComponentScrollPalette() {
     double contentPadding = Double.parseDouble(PALETTE_CONFIG.getString("contentPadding"));
-    String[] componentNames = PALETTE_CONFIG.getString("componentNames").split(",");
 
-    HBox paletteContent = new HBox(Double.parseDouble(PALETTE_CONFIG.getString("itemSpacing")));
+    paletteContent = new HBox(Double.parseDouble(PALETTE_CONFIG.getString("itemSpacing")));
     paletteContent.setPadding(new Insets(contentPadding));
     paletteContent.setAlignment(Pos.CENTER);
     paletteContent.getStyleClass().add("authoring-level-palette");
-
-    for (String componentName : componentNames) {
-      if (!componentName.isBlank()) {
-        paletteContent.getChildren().add(createComponentCell(componentName.trim()));
-      }
-    }
+    componentNames.addAll(defaultComponentNames());
+    rebuildCells();
 
     double paletteHeight = Double.parseDouble(PALETTE_CONFIG.getString("viewportHeight"));
     visualRoot = new ScrollPane(paletteContent);
@@ -95,6 +93,23 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
    */
   public int getMaxSelectableItems() {
     return Integer.parseInt(PALETTE_CONFIG.getString("maxSelectableItems"));
+  }
+
+  public void setAvailableComponentIds(List<String> componentIds) {
+    componentNames.clear();
+    if (componentIds == null || componentIds.isEmpty()) {
+      componentNames.addAll(defaultComponentNames());
+    } else {
+      for (String componentName : componentIds) {
+        String name = componentName == null ? "" : componentName.trim();
+        if (!name.isBlank() && !componentNames.contains(name)) {
+          componentNames.add(name);
+        }
+      }
+    }
+    selectedCells.clear();
+    rebuildCells();
+    notifySelectionSummaryChanged();
   }
 
   /**
@@ -140,7 +155,7 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     cellContent.setAlignment(Pos.CENTER);
 
     String resourceKey = componentName.replace(" ", "");
-    String componentId = toStableComponentId(componentName);
+    String componentId = componentName;
     String spriteKey = resourceKey + ".sprite";
     if (PALETTE_CONFIG.containsKey(spriteKey)) {
       Image img = spriteCache.get(PALETTE_CONFIG.getString(spriteKey));
@@ -213,8 +228,21 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
         .collect(java.util.stream.Collectors.joining(", ")));
   }
 
-  private String toStableComponentId(String componentName) {
-    return componentName.trim().toLowerCase().replace(' ', '_');
+  private void rebuildCells() {
+    paletteContent.getChildren().clear();
+    for (String componentName : componentNames) {
+      paletteContent.getChildren().add(createComponentCell(componentName));
+    }
+  }
+
+  private static List<String> defaultComponentNames() {
+    List<String> result = new ArrayList<>();
+    for (String name : PALETTE_CONFIG.getString("componentNames").split(",")) {
+      if (!name.isBlank()) {
+        result.add(name.trim());
+      }
+    }
+    return result;
   }
 
   private record SelectedVehicleComponent(String id, String displayName) {

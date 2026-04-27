@@ -54,9 +54,13 @@ public class LoginScreen implements AppScreen {
     createButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     createButton.setOnAction(e -> onNav.accept(Outcome.OPEN_CREATE_ACCOUNT));
 
+    Button skipButton = new Button(PROPS.getString("skipLoginButton"));
+    skipButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    skipButton.setOnAction(e -> onNav.accept(Outcome.SKIP_LOGIN));
+
     VBox center = new VBox(
         Double.parseDouble(PROPS.getString("spacing")),
-        title, usernameField, passwordField, loginButton, createButton, errorLabel);
+        title, usernameField, passwordField, loginButton, createButton, skipButton, errorLabel);
     center.setAlignment(Pos.CENTER);
     center.getStyleClass().add("accounts-form");
     layout.setCenter(center);

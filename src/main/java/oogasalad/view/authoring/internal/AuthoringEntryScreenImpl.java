@@ -1,154 +1,250 @@
 package oogasalad.view.authoring.internal;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
-import oogasalad.controller.authoring.internal.AiLevelGenerationCoordinator;
+import java.util.function.Supplier;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.model.authoring.internal.GeneratedLevelModel;
+import oogasalad.data.internal.LevelScanner;
 import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
- * Entry screen for the authoring environment.
+ * Hub screen for the authoring environment. The left pane lists existing worlds with
+ * "Edit Existing World" and "Add a New World" actions at the bottom; the right pane shows
+ * the levels of the selected world (or a placeholder until one is picked) with an
+ * "Add a New Level" action at the bottom.
  *
- * @author Emilio Garcia
+ * @author Paulina Vvedenskaya
  */
 public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringEntry");
-  private static final ThreadLocal<Consumer<String>> PENDING_LOAD_HANDLER = new ThreadLocal<>();
-  private static final ThreadLocal<FileChooserService> PENDING_FILE_CHOOSER = new ThreadLocal<>();
+  private static final String LEVELS_DIR = "data/levels";
 
-  private final Consumer<String> loadLevelHandler;
-  private final FileChooserService fileChooserService;
+  private final Supplier<LevelScanner.ScanResult> scanResultSupplier;
+  private LevelScanner.ScanResult scanResult;
+  private final Consumer<String> onWorldSelected;
+  private final Consumer<String> onLevelSelected;
 
-  /**
-   * Creates the authoring entry screen with no-op load behavior.
-   *
-   * @param onOutcome callback used to request screen navigation
-   * @author Emilio Garcia
-   */
-  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome) {
-    this(onOutcome, path -> {
-    });
-  }
+  private VBox worldsList;
+  private VBox levelsList;
+  private Label rightPlaceholder;
+  private Button editExistingWorldButton;
+  private String selectedWorldKey;
+  private Button selectedWorldButton;
 
   /**
-   * Creates the authoring entry screen with a callback that will be invoked when the user selects
-   * an existing level file to load.
-   *
-   * @param onOutcome callback used to request screen navigation
-   * @param loadLevelHandler callback that receives the selected file path before opening authoring
-   * @author Emilio Garcia
+   * @param onOutcome       navigation callback fired by the hub's buttons
+   * @param scanResult      filesystem scan listing worlds and their levels; populated into the left
+   *                        pane on {@link #onEnter()}
+   * @param onWorldSelected callback receiving the world key before opening the level editor
+   * @param onLevelSelected callback receiving the absolute path of a level when the user picks one
+   *                        from the right pane
    */
-  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler) {
-    super(prepare(onOutcome, loadLevelHandler));
-    this.loadLevelHandler = consumeLoadHandler();
-    this.fileChooserService = consumeFileChooserService();
+  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome,
+      LevelScanner.ScanResult scanResult, Consumer<String> onWorldSelected,
+      Consumer<String> onLevelSelected) {
+    this(onOutcome, () -> scanResult, onWorldSelected, onLevelSelected);
   }
 
-  private static Consumer<Outcome> prepare(Consumer<Outcome> onOutcome,
-      Consumer<String> loadLevelHandler) {
-    PENDING_LOAD_HANDLER.set(loadLevelHandler);
-    PENDING_FILE_CHOOSER.set(new FileChooserService());
-    return onOutcome;
-  }
-
-  private static Consumer<String> consumeLoadHandler() {
-    Consumer<String> handler = PENDING_LOAD_HANDLER.get();
-    PENDING_LOAD_HANDLER.remove();
-    return handler == null ? path -> {
-    } : handler;
-  }
-
-  private static FileChooserService consumeFileChooserService() {
-    FileChooserService chooserService = PENDING_FILE_CHOOSER.get();
-    PENDING_FILE_CHOOSER.remove();
-    return chooserService == null ? new FileChooserService() : chooserService;
+  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome,
+      Supplier<LevelScanner.ScanResult> scanResultSupplier, Consumer<String> onWorldSelected,
+      Consumer<String> onLevelSelected) {
+    super(onOutcome);
+    this.scanResultSupplier = Objects.requireNonNull(scanResultSupplier);
+    this.scanResult = this.scanResultSupplier.get();
+    this.onWorldSelected = Objects.requireNonNull(onWorldSelected);
+    this.onLevelSelected = Objects.requireNonNull(onLevelSelected);
   }
 
   @Override
   protected Parent createRoot() {
     BorderPane layout = buildRootPane();
-    layout.setCenter(buildCenterContent());
+    layout.setTop(buildTitle());
+    layout.setCenter(buildSplitPane());
     layout.setBottom(wrapBottomLeft(buildBackButton()));
-    return layout;
+    return wrapInScroll(layout);
+  }
+
+  private ScrollPane wrapInScroll(BorderPane layout) {
+    ScrollPane scroll = new ScrollPane(layout);
+    scroll.setFitToWidth(true);
+    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    scroll.getStyleClass().add("authoring-entry-scroll");
+    return scroll;
+  }
+
+  @Override
+  public void onEnter() {
+    scanResult = scanResultSupplier.get();
+    populateWorldButtons();
+    showRightPlaceholder();
+    updateEditWorldButtonState();
   }
 
   private BorderPane buildRootPane() {
     BorderPane pane = new BorderPane();
     pane.getStylesheets().add(
         getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
+    pane.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/player/player-entry.css").toExternalForm());
     pane.getStyleClass().add("screen-root");
     pane.setPadding(new Insets(d("rootPadding")));
     return pane;
   }
 
-  private VBox buildCenterContent() {
+  private Label buildTitle() {
     Label title = new Label(s("titleText"));
     title.setFont(Font.font(d("titleFontSize")));
     title.getStyleClass().add("authoring-entry-title");
-
-    VBox centerContent = new VBox(d("titleSectionSpacing"), title, buildButtonRow());
-    centerContent.setAlignment(Pos.TOP_CENTER);
-    centerContent.getStyleClass().add("authoring-entry-center");
-    return centerContent;
+    BorderPane.setAlignment(title, Pos.CENTER);
+    BorderPane.setMargin(title, new Insets(0, 0, d("paneSpacing"), 0));
+    return title;
   }
 
-  private HBox buildButtonRow() {
-    Consumer<String> activeLoadHandler = currentLoadHandler();
-    FileChooserService activeFileChooserService = currentFileChooserService();
-    AiLevelGenerationCoordinator aiGenerationCoordinator =
-        new AiLevelGenerationCoordinator(new GeneratedLevelModel(), result -> {
-          activeLoadHandler.accept(result.filePath());
-          onOutcome.accept(Outcome.OPEN_AUTHORING);
-        });
-
-    Button createNewLevelButton = new Button(s("createNewLevelButtonText"));
-    configureActionButton(createNewLevelButton);
-    createNewLevelButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_AUTHORING));
-
-    Button loadExistingLevelButton = new Button(s("loadExistingLevelButtonText"));
-    configureActionButton(loadExistingLevelButton);
-    loadExistingLevelButton.setOnAction(event -> activeFileChooserService
-        .chooseLoadFile(loadExistingLevelButton.getScene().getWindow())
-        .ifPresent(file -> {
-          activeLoadHandler.accept(file.getAbsolutePath());
-          onOutcome.accept(Outcome.OPEN_AUTHORING);
-        }));
-
-    Button generateAiLevelButton = new Button(s("generateAiLevelButtonText"));
-    configureActionButton(generateAiLevelButton);
-    generateAiLevelButton.setOnAction(
-        event -> aiGenerationCoordinator.open(generateAiLevelButton.getScene().getWindow()));
-
-    HBox buttonRow = new HBox(
-        d("buttonRegionSpacing"),
-        createNewLevelButton,
-        loadExistingLevelButton,
-        generateAiLevelButton);
-    buttonRow.setAlignment(Pos.CENTER);
-    buttonRow.setPadding(new Insets(d("buttonRegionPadding")));
-    buttonRow.getStyleClass().add("authoring-entry-button-row");
-    return buttonRow;
+  private HBox buildSplitPane() {
+    HBox split = new HBox(d("splitPaneSpacing"), buildLeftPane(), buildRightPane());
+    split.setAlignment(Pos.TOP_CENTER);
+    return split;
   }
 
-  private Consumer<String> currentLoadHandler() {
-    return loadLevelHandler == null ? consumeLoadHandler() : loadLevelHandler;
+  private VBox buildLeftPane() {
+    Label header = headerLabel(s("worldsHeaderText"));
+    worldsList = new VBox(d("paneSpacing"));
+    worldsList.setAlignment(Pos.TOP_CENTER);
+
+    editExistingWorldButton = actionButton(
+        s("editExistingWorldButtonText"),
+        event -> onOutcome.accept(Outcome.OPEN_GAME_AUTHORING));
+    editExistingWorldButton.setDisable(true);
+
+    Button addNewWorldButton = actionButton(
+        s("addNewWorldButtonText"),
+        event -> onOutcome.accept(Outcome.OPEN_GAME_AUTHORING));
+
+    VBox bottomActions = new VBox(d("paneSpacing"), editExistingWorldButton, addNewWorldButton);
+    bottomActions.setAlignment(Pos.TOP_CENTER);
+
+    VBox left = new VBox(d("paneSpacing"), header, worldsList, spacer(), bottomActions);
+    left.setAlignment(Pos.TOP_CENTER);
+    left.setPadding(new Insets(d("buttonRegionPadding")));
+    return left;
   }
 
-  private FileChooserService currentFileChooserService() {
-    return fileChooserService == null ? consumeFileChooserService() : fileChooserService;
+  private VBox buildRightPane() {
+    Label header = headerLabel(s("levelsHeaderText"));
+
+    rightPlaceholder = new Label(s("rightPlaceholderText"));
+    rightPlaceholder.setFont(Font.font(d("placeholderFontSize")));
+    rightPlaceholder.getStyleClass().add("authoring-entry-placeholder");
+
+    levelsList = new VBox(d("paneSpacing"));
+    levelsList.setAlignment(Pos.TOP_CENTER);
+
+    VBox right = new VBox(d("paneSpacing"), header, rightPlaceholder, levelsList);
+    right.setAlignment(Pos.TOP_CENTER);
+    right.setPadding(new Insets(d("buttonRegionPadding")));
+    return right;
+  }
+
+  private void populateWorldButtons() {
+    worldsList.getChildren().clear();
+    Map<String, List<String>> worldsToLevels = scanResult.worldsToLevels();
+    for (String worldKey : worldsToLevels.keySet()) {
+      worldsList.getChildren().add(createWorldButton(worldKey));
+    }
+  }
+
+  private Button createWorldButton(String worldKey) {
+    String displayName = worldKey;
+    String propKey = "world.button." + worldKey;
+    if (PROPS.containsKey(propKey)) {
+      displayName = PROPS.getString(propKey);
+    }
+    Button button = new Button(displayName);
+    button.setPrefSize(d("worldButtonWidth"), d("worldButtonHeight"));
+    button.getStyleClass().add("world-button");
+    button.getStyleClass().add("world-" + worldKey);
+    button.setOnAction(event -> selectWorld(button, worldKey));
+    return button;
+  }
+
+  private void selectWorld(Button button, String worldKey) {
+    if (selectedWorldButton != null) {
+      selectedWorldButton.getStyleClass().remove("world-selected");
+    }
+    selectedWorldButton = button;
+    selectedWorldKey = worldKey;
+    selectedWorldButton.getStyleClass().add("world-selected");
+    populateLevelsForSelectedWorld();
+    updateEditWorldButtonState();
+  }
+
+  private void populateLevelsForSelectedWorld() {
+    rightPlaceholder.setVisible(false);
+    rightPlaceholder.setManaged(false);
+    levelsList.getChildren().clear();
+    List<String> levels = scanResult.worldsToLevels().getOrDefault(selectedWorldKey, List.of());
+    for (String levelKey : levels) {
+      levelsList.getChildren().add(createLevelButton(levelKey));
+    }
+    levelsList.getChildren().add(createAddNewLevelButton());
+  }
+
+  private Button createLevelButton(String levelKey) {
+    Button button = new Button(levelKey);
+    button.setPrefSize(d("levelButtonWidth"), d("levelButtonHeight"));
+    button.getStyleClass().add("level-button");
+    button.setOnAction(event -> openLevel(levelKey));
+    return button;
+  }
+
+  private Button createAddNewLevelButton() {
+    Button button = new Button(s("addNewLevelButtonText"));
+    button.setPrefSize(d("levelButtonWidth"), d("levelButtonHeight"));
+    button.getStyleClass().add("level-button");
+    button.setOnAction(event -> {
+      onWorldSelected.accept(selectedWorldKey);
+      onOutcome.accept(Outcome.OPEN_AUTHORING);
+    });
+    return button;
+  }
+
+  private void openLevel(String levelKey) {
+    String path = Path.of(LEVELS_DIR, selectedWorldKey, levelKey + ".json").toString();
+    onWorldSelected.accept(selectedWorldKey);
+    onLevelSelected.accept(path);
+    onOutcome.accept(Outcome.OPEN_AUTHORING);
+  }
+
+  private void showRightPlaceholder() {
+    rightPlaceholder.setVisible(true);
+    rightPlaceholder.setManaged(true);
+    levelsList.getChildren().clear();
+  }
+
+  private void updateEditWorldButtonState() {
+    editExistingWorldButton.setDisable(selectedWorldKey == null);
   }
 
   private Button buildBackButton() {
@@ -158,13 +254,27 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
     return backButton;
   }
 
-  private void configureActionButton(Button button) {
+  private Button actionButton(String text, EventHandler<ActionEvent> onClick) {
+    Button button = new Button(text);
     button.setFont(Font.font(d("actionFontSize")));
-    button.setPrefSize(
-        d("actionButtonWidth"),
-        d("actionButtonHeight"));
+    button.setPrefSize(d("worldButtonWidth"), d("worldButtonHeight"));
     button.setWrapText(true);
     button.getStyleClass().add("authoring-entry-action");
+    button.setOnAction(onClick);
+    return button;
+  }
+
+  private Label headerLabel(String text) {
+    Label header = new Label(text);
+    header.setFont(Font.font(d("headerFontSize")));
+    header.getStyleClass().add("authoring-entry-header");
+    return header;
+  }
+
+  private Region spacer() {
+    Region spacer = new Region();
+    VBox.setVgrow(spacer, Priority.ALWAYS);
+    return spacer;
   }
 
   private StackPane wrapBottomLeft(Button button) {

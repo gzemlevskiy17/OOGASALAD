@@ -10,6 +10,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.model.player.internal.DefaultBuildRulesRegistry;
+import oogasalad.view.core.internal.PaletteSpriteRegistry;
+import oogasalad.view.core.internal.SpriteCache;
 import org.junit.jupiter.api.Test;
 import util.DukeApplicationTest;
 
@@ -20,7 +23,8 @@ class VehicleBuilderAppScreenTest extends DukeApplicationTest {
 
   @Override
   public void start(Stage stage) {
-    screen = new VehicleBuilderAppScreen(capturedOutcomes::add);
+    screen = new VehicleBuilderAppScreen(capturedOutcomes::add,
+        new SpriteCache(), new PaletteSpriteRegistry(), new DefaultBuildRulesRegistry());
     stage.setScene(new Scene(screen.getRoot(), 1000, 800));
     stage.show();
   }

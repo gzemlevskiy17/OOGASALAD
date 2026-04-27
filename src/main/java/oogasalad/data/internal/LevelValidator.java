@@ -4,48 +4,76 @@ import com.fasterxml.jackson.databind.JsonNode;
 import oogasalad.data.api.LevelLoadException;
 
 /**
- * Minimal structural validator for level JSON. Fails fast on the first problem it finds with a
- * descriptive {@link LevelLoadException}. Operates purely on the parsed {@link JsonNode}
- * tree — no World or engine state involved.
+ * Validates a parsed level JSON against the new level schema.
  *
- * <p>Current checks:
- * <ol>
- *   <li>Root has a {@code level} object.</li>
- *   <li>If present, {@code level.terrain} is an array (absent is allowed).</li>
- *   <li>If present, {@code level.rocks} is an array (absent is allowed).</li>
- *   <li>If present, {@code level.pickups} is an array (absent is allowed).</li>
- *   <li>Each terrain, rock, or pickup entry has positive {@code size.width} and
- *       {@code size.height}.</li>
- * </ol>
+ * <p>Required structure:
+ * <ul>
+ *   <li>{@code gameMetadata}: object with levelName, gameType, screenWidth, screenHeight,
+ *       gravity, drag</li>
+ *   <li>{@code map}: object with knotLocations (array), spawnPoint (object), objects (array)</li>
+ *   <li>{@code mainCharacter}: object with gridSize, elementsAllowed, maxSelectable, maxHP</li>
+ * </ul>
  */
 public class LevelValidator {
 
   public void validate(JsonNode root) {
-    JsonNode level = root.path("level");
-    if (!level.isObject()) {
-      throw new LevelLoadException("Level file missing required 'level' root object");
-    }
-
-    validateSizedArray(level.path("terrain"), "terrain");
-    validateSizedArray(level.path("rocks"), "rocks");
-    validateSizedArray(level.path("pickups"), "pickups");
+    validateGameMetadata(root.path("gameMetadata"));
+    validateMap(root.path("map"));
+    validateMainCharacter(root.path("mainCharacter"));
   }
 
-  private void validateSizedArray(JsonNode array, String fieldName) {
-    if (array.isMissingNode()) {
-      return;
+  private void validateGameMetadata(JsonNode meta) {
+    requireObject(meta, "gameMetadata");
+    requireText(meta, "levelName", "gameMetadata.levelName");
+    requireText(meta, "gameType", "gameMetadata.gameType");
+    requireNumber(meta, "screenWidth", "gameMetadata.screenWidth");
+    requireNumber(meta, "screenHeight", "gameMetadata.screenHeight");
+    requireNumber(meta, "gravity", "gameMetadata.gravity");
+    requireNumber(meta, "drag", "gameMetadata.drag");
+  }
+
+  private void validateMap(JsonNode map) {
+    requireObject(map, "map");
+    requireArray(map, "knotLocations", "map.knotLocations");
+    requireArray(map, "objects", "map.objects");
+    JsonNode spawn = map.path("spawnPoint");
+    if (spawn.isMissingNode() || !spawn.isObject()) {
+      throw new LevelLoadException("map.spawnPoint must be a {x, y} object");
     }
-    if (!array.isArray()) {
-      throw new LevelLoadException("'" + fieldName + "' must be an array");
+  }
+
+  private void validateMainCharacter(JsonNode mc) {
+    requireObject(mc, "mainCharacter");
+    requireNumber(mc, "gridSize", "mainCharacter.gridSize");
+    requireArray(mc, "elementsAllowed", "mainCharacter.elementsAllowed");
+    requireNumber(mc, "maxSelectable", "mainCharacter.maxSelectable");
+    requireNumber(mc, "maxHP", "mainCharacter.maxHP");
+  }
+
+  private void requireObject(JsonNode node, String fieldName) {
+    if (node.isMissingNode() || !node.isObject()) {
+      throw new LevelLoadException("Level file missing required object: '" + fieldName + "'");
     }
-    for (int i = 0; i < array.size(); i++) {
-      JsonNode entry = array.get(i);
-      JsonNode size = entry.path("size");
-      double width = size.path("width").asDouble(0);
-      double height = size.path("height").asDouble(0);
-      if (width <= 0 || height <= 0) {
-        throw new LevelLoadException(fieldName + "[" + i + "] has non-positive size");
-      }
+  }
+
+  private void requireText(JsonNode node, String key, String path) {
+    JsonNode field = node.path(key);
+    if (field.isMissingNode() || !field.isTextual()) {
+      throw new LevelLoadException("Level file missing required string: '" + path + "'");
+    }
+  }
+
+  private void requireNumber(JsonNode node, String key, String path) {
+    JsonNode field = node.path(key);
+    if (field.isMissingNode() || !field.isNumber()) {
+      throw new LevelLoadException("Level file missing required number: '" + path + "'");
+    }
+  }
+
+  private void requireArray(JsonNode node, String key, String path) {
+    JsonNode field = node.path(key);
+    if (field.isMissingNode() || !field.isArray()) {
+      throw new LevelLoadException("Level file missing required array: '" + path + "'");
     }
   }
 }

@@ -1,7 +1,7 @@
 package oogasalad.model.engine;
 
-import oogasalad.model.engine.api.ContactDamager;
-import oogasalad.model.engine.api.Damageable;
+import oogasalad.model.engine.api.CollisionEffect;
+import oogasalad.model.engine.api.HasCollisionEffect;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 
@@ -14,9 +14,13 @@ public class DynamicStaticSolver {
   private StaticComponent referenceObject;
   private DynamicComponent incidentObject;
 
-  private static void applyContactDamage(StaticComponent staticSide, DynamicComponent dynamicSide) {
-    if (staticSide instanceof ContactDamager damager && dynamicSide instanceof Damageable target) {
-      damager.damageContact(target);
+  private static void applyCollisionEffect(StaticComponent staticSide,
+      DynamicComponent dynamicSide) {
+    if (staticSide instanceof HasCollisionEffect actor) {
+      CollisionEffect effect = actor.getCollisionEffect();
+      if (effect != null) {
+        effect.apply(dynamicSide);
+      }
     }
   }
 
@@ -49,7 +53,7 @@ public class DynamicStaticSolver {
 
     resolveImpulseAtContacts(collision);
     ImpulseSolverUtilities.applyPositionalCorrection(collision, referenceObject, incidentObject);
-    applyContactDamage(objectB, objectA);
+    applyCollisionEffect(objectB, objectA);
   }
 
   /**

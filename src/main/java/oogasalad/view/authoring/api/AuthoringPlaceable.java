@@ -25,6 +25,10 @@ public interface AuthoringPlaceable extends Renderable {
     return (int) Math.ceil(getHeight() / cellSize);
   }
 
+  default String getDisplayName() {
+    return getClass().getSimpleName();
+  }
+
   default double left() {
     return x();
   }

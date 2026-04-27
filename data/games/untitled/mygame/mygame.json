@@ -1,0 +1,61 @@
+{
+  "gameId": "paulina's world",
+  "primaryComponentId": "pig",
+  "components": [
+    {
+      "id": "pig",
+      "spriteUrl": "data/assets/bp_bigPig.png",
+      "mass": 10.0,
+      "buttons": [
+        {
+          "name": "pig button",
+          "direction": {
+            "x": 0.0,
+            "y": 100.0
+          }
+        },
+        {
+          "name": "go right",
+          "direction": {
+            "x": 100.0,
+            "y": 0.0
+          }
+        }
+      ]
+    }
+  ],
+  "staticComponents": [
+    {
+      "id": "SO1",
+      "spriteUrl": "data/assets/star.png",
+      "mass": 10.0,
+      "onCollisionAction": {
+        "type": "damage",
+        "amount": 10.0
+      }
+    },
+    {
+      "id": "so2",
+      "spriteUrl": "data/assets/eyes.png",
+      "mass": 5.0,
+      "onCollisionAction": {
+        "type": "finish",
+        "amount": 20.0
+      }
+    }
+  ],
+  "terrainTypes": [
+    {
+      "id": "terrainOne",
+      "spriteUrl": "data/assets/back.png",
+      "visualColor": "8B4512",
+      "friction": 0.1
+    },
+    {
+      "id": "terrain2",
+      "spriteUrl": null,
+      "visualColor": "aaa999",
+      "friction": 0.9
+    }
+  ]
+}

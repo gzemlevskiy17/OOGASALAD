@@ -22,12 +22,12 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import oogasalad.controller.core.api.Outcome;
+import oogasalad.data.api.GameConfig;
 import oogasalad.model.player.api.BuildRulesRegistry;
 import oogasalad.model.player.api.Containment;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.ValidationResult;
 import oogasalad.model.player.api.VehicleLayout;
-import oogasalad.model.player.internal.DefaultBuildRulesRegistry;
 import oogasalad.model.player.internal.PlacementValidator;
 import oogasalad.view.core.internal.AbstractAppScreen;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
@@ -46,18 +46,27 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private static final ResourceBundle PALETTE_CONFIG = ResourceBundle.getBundle(
       "oogasalad.view.authoring.VehicleComponentPalette");
   private static final double CELL_SIZE = 60.0;
-  private static final SpriteCache SPRITE_CACHE = new SpriteCache();
-  private static final PaletteSpriteRegistry SPRITE_REGISTRY = new PaletteSpriteRegistry();
-  private static final BuildRulesRegistry BUILD_RULES = new DefaultBuildRulesRegistry();
   private static final String REMOVE_PAYLOAD = "__REMOVE__";
 
+  private final SpriteCache spriteCache;
+  private final PaletteSpriteRegistry spriteRegistry;
+  private final BuildRulesRegistry buildRules;
   private final Map<String, List<String>> gridState = new HashMap<>();
+  private List<String> availableComponentNames;
+  private FlowPane componentFlow;
   private PlacementValidator validator;
   private Label errorLabel;
 
-  public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome) {
+  public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome,
+      SpriteCache spriteCache, PaletteSpriteRegistry spriteRegistry,
+      BuildRulesRegistry buildRules) {
+    this.spriteCache = spriteCache;
+    this.spriteRegistry = spriteRegistry;
+    this.buildRules = buildRules;
+    // super() calls createRoot(), so the fields above must be assigned first.
     super(onOutcome);
   }
+
 
   private static String key(int row, int col) {
     return row + "," + col;
@@ -92,14 +101,12 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     Text title = new Text(s("component.title.text"));
     title.getStyleClass().add("component-title");
 
-    FlowPane componentFlow = new FlowPane();
+    componentFlow = new FlowPane();
     componentFlow.setHgap(8);
     componentFlow.setVgap(8);
     componentFlow.setAlignment(Pos.CENTER);
     componentFlow.getStyleClass().add("component-grid");
-    for (String name : PALETTE_CONFIG.getString("componentNames").split(",")) {
-      componentFlow.getChildren().add(createDraggableComponentCell(name.trim()));
-    }
+    rebuildComponentPalette();
 
     ScrollPane scroll = new ScrollPane(componentFlow);
     scroll.setFitToWidth(true);
@@ -110,6 +117,63 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
     container.getChildren().addAll(title, scroll);
     return container;
+  }
+
+  /**
+   * Provides the game catalog so the builder can read component names and sprites from
+   * game.json instead of the hardcoded properties file.
+   */
+  public void setGameConfig(GameConfig config) {
+    if (config != null) {
+      spriteRegistry.registerFromConfig(config);
+    }
+  }
+
+  /**
+   * Restricts the vehicle builder palette to the ids allowed by the selected level.
+   */
+  public void setAllowedComponentIds(List<String> componentIds) {
+    ensureAvailableComponentNames();
+    availableComponentNames.clear();
+    if (componentIds == null || componentIds.isEmpty()) {
+      availableComponentNames.addAll(defaultComponentNames());
+    } else {
+      for (String componentName : componentIds) {
+        String name = componentName == null ? "" : componentName.trim();
+        if (!name.isBlank() && !availableComponentNames.contains(name)) {
+          availableComponentNames.add(name);
+        }
+      }
+    }
+    gridState.clear();
+    if (componentFlow != null) {
+      rebuildComponentPalette();
+    }
+    clearError();
+  }
+
+  private static List<String> defaultComponentNames() {
+    List<String> result = new ArrayList<>();
+    for (String name : PALETTE_CONFIG.getString("componentNames").split(",")) {
+      if (!name.isBlank()) {
+        result.add(name.trim());
+      }
+    }
+    return result;
+  }
+
+  private void rebuildComponentPalette() {
+    ensureAvailableComponentNames();
+    componentFlow.getChildren().clear();
+    for (String name : availableComponentNames) {
+      componentFlow.getChildren().add(createDraggableComponentCell(name));
+    }
+  }
+
+  private void ensureAvailableComponentNames() {
+    if (availableComponentNames == null) {
+      availableComponentNames = new ArrayList<>(defaultComponentNames());
+    }
   }
 
   /**
@@ -169,7 +233,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   }
 
   private Node buildSpritePreview(String componentName) {
-    return SPRITE_REGISTRY.resolveByType(componentName).renderPreview(SPRITE_CACHE);
+    return spriteRegistry.resolveByType(componentName).renderPreview(spriteCache);
   }
 
   private Node createGridRegion() {
@@ -179,7 +243,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
     int cols = (int) d("grid.columns");
     int rows = (int) d("grid.rows");
-    this.validator = new PlacementValidator(BUILD_RULES, rows, cols);
+    this.validator = new PlacementValidator(buildRules, rows, cols);
 
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
@@ -264,7 +328,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     clearError();
 
     List<String> stack = gridState.computeIfAbsent(key(row, col), k -> new ArrayList<>());
-    if (BUILD_RULES.lookup(componentName).containment() == Containment.NONE) {
+    if (buildRules.lookup(componentName).containment() == Containment.NONE) {
       stack.clear();
     }
     stack.add(componentName);

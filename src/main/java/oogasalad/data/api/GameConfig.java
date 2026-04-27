@@ -1,18 +1,23 @@
 package oogasalad.data.api;
 
-/** Provides read-only access to parsed game settings and metadata. */
-public interface GameConfig {
-  /**
-   * Retrieves a setting value as a String.
-   * @param key the unique identifier for the setting.
-   * @return the value associated with the key.
-   */
-  String getSetting(String key);
+import java.util.List;
 
-  /**
-   * Retrieves a numeric setting (convenience method).
-   * @param key the unique identifier.
-   * @return the double representation of the setting.
-   */
-  double getNumericSetting(String key);
+/**
+ * Read-only view of a parsed game catalog (game.json).
+ *
+ * <p>Typed accessors reflect the new game schema. {@link #getSetting} /
+ * {@link #getNumericSetting} are kept for legacy callers (input mapping, etc.)
+ * that still use dot-path look-ups.
+ */
+public interface GameConfig extends Settings {
+
+  String gameId();
+
+  String primaryComponentId();
+
+  List<ComponentInfo> components();
+
+  List<StaticComponentInfo> staticComponents();
+
+  List<TerrainInfo> terrainTypes();
 }
