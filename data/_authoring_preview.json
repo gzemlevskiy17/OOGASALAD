@@ -1,59 +1,35 @@
 {
   "gameMetadata" : {
-    "levelName" : "Lunar Leap",
+    "levelName" : "Untitled Level",
     "gameType" : "badpiggies",
-    "screenWidth" : 3800.0,
-    "screenHeight" : 1200.0,
-    "gravity" : -1.0,
-    "drag" : 0.05
+    "screenWidth" : 3200.0,
+    "screenHeight" : 1600.0,
+    "gravity" : -9.8,
+    "drag" : 0.01
   },
   "map" : {
     "knotLocations" : [ {
-      "x" : 80.0,
-      "y" : 950.0
+      "x" : 13.0,
+      "y" : 1583.0
     }, {
-      "x" : 400.0,
-      "y" : 950.0
+      "x" : 554.0,
+      "y" : 1599.0
     }, {
-      "x" : 800.0,
-      "y" : 760.0
-    }, {
-      "x" : 1200.0,
-      "y" : 700.0
-    }, {
-      "x" : 1500.0,
-      "y" : 800.0
-    }, {
-      "x" : 1800.0,
-      "y" : 600.0
-    }, {
-      "x" : 2100.0,
-      "y" : 750.0
-    }, {
-      "x" : 2500.0,
-      "y" : 900.0
-    }, {
-      "x" : 2900.0,
-      "y" : 850.0
-    }, {
-      "x" : 3300.0,
-      "y" : 950.0
-    }, {
-      "x" : 3720.0,
-      "y" : 950.0
+      "x" : 868.0,
+      "y" : 1591.0
     } ],
     "objects" : [ ],
     "terrainOptions" : [ "Spline Terrain" ],
     "spawnPoint" : {
-      "x" : 120.0,
-      "y" : 850.0
+      "x" : 310.0,
+      "y" : 1463.0
     }
   },
   "mainCharacter" : {
-    "gridSize" : 20.0,
-    "elementsAllowed" : [ ],
-    "maxSelectable" : 10,
-    "maxHP" : 5.0,
+    "gridSize" : 60.0,
+    "elementsAllowed" : [ "Frame", "Wood Wheel", "Sled", "Fan", "BigPig" ],
+    "maxSelectable" : 5,
+    "maxHP" : 100.0,
     "cameraFollows" : "vehicle"
   }
 }
