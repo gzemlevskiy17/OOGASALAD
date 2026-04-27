@@ -54,7 +54,7 @@ final class GeneratedMainCharacterSpecNormalizer {
                 support.d("defaultMaxHp")),
             support.d("minMaxHp"),
             support.d("maxMaxHp")),
-        normalizeCameraFollows(safeMainCharacter.cameraFollows(), catalog));
+        normalizeCameraFollows());
   }
 
   private List<String> normalizeAllowedComponents(List<String> componentIds,
@@ -74,13 +74,7 @@ final class GeneratedMainCharacterSpecNormalizer {
     return List.copyOf(normalized);
   }
 
-  private String normalizeCameraFollows(String cameraFollows, GoodPiggiesCatalog catalog) {
-    String fallback = support.s("defaultCameraFollows");
-    String normalized = support.normalizeText(cameraFollows, fallback);
-    if (normalized.equals(fallback) || normalized.equals(catalog.primaryComponentId())) {
-      return normalized;
-    }
-    LOG.warn(support.s("cameraFollowsFallbackLogMessage"), normalized, fallback);
-    return fallback;
+  private String normalizeCameraFollows() {
+    return support.s("defaultCameraFollows");
   }
 }

@@ -80,8 +80,8 @@ public class GeneratedLevelModel {
   public GeneratedLevelResult generateLevel(String prompt) {
     String rawSpecJson = generationService.generateLevelSpecJson(prompt);
     GeneratedLevelSpec parsedSpec = parseSpec(rawSpecJson);
-    validator.validate(parsedSpec);
     GeneratedLevelSpec normalizedSpec = normalizer.normalize(parsedSpec);
+    validator.validate(normalizedSpec);
     ObjectNode levelJson = jsonBuilder.build(normalizedSpec);
     String filePath = fileService.save(levelJson, normalizedSpec.gameMetadata().levelName());
     LOG.info(PROPS.getString("generationSuccessLogMessage"), filePath);
