@@ -160,7 +160,7 @@ public class ScreenFactory {
       return null;
     }
     if (PlayerEntryAppScreen.OTHERS_WORLD_KEY.equals(id.worldKey())) {
-      return "data/levels/" + id.levelKey() + ".json";
+      return "data/levels/others/" + id.levelKey() + ".json";
     }
     return progression.pathFor(id);
   }
@@ -325,9 +325,17 @@ public class ScreenFactory {
     String levelPath = pathForSelectedLevel();
     if (levelPath == null || levelPath.isBlank()) {
       vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
+      vehicleBuilderScreen.setGameConfig(null);
       return;
     }
     LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+    try {
+      oogasalad.data.api.GameConfig config = gameLoader.loadGame(
+          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
+      vehicleBuilderScreen.setGameConfig(config);
+    } catch (RuntimeException e) {
+      vehicleBuilderScreen.setGameConfig(null);
+    }
     vehicleBuilderScreen.setAllowedComponentIds(attributes.getElementsAllowed());
   }
 

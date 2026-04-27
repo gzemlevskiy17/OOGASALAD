@@ -21,6 +21,8 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
@@ -64,7 +66,6 @@ import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
 import oogasalad.view.core.api.Sprite;
-import oogasalad.view.core.api.SpriteRegistry;
 import oogasalad.view.core.internal.CameraImpl;
 import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
@@ -82,6 +83,7 @@ import oogasalad.view.player.internal.VehicleHpHud;
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
+  private static final Logger LOG = LogManager.getLogger(GameplaySessionFactoryImpl.class);
   private static final double MIN_VIEWPORT_SIZE = 1.0;
   private static final double DEFAULT_VIEW_WIDTH = 1280.0;
   private static final double DEFAULT_VIEW_HEIGHT = 720.0;
@@ -184,6 +186,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     BuiltWorld built = buildWorld(layout);
     World world = built.world();
     LevelBounds bounds = built.bounds();
+    GameConfig loadedGameConfig = built.gameConfig();
     GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl());
 
     WinConditionChecker winChecker = buildWinChecker();
@@ -208,7 +211,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     camera.setBehavior(behavior);
     wireResponsiveCamera(screen, camera);
     SpriteCache spriteCache = new SpriteCache();
-    SpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
+    PaletteSpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
+    if (loadedGameConfig != null) {
+      spriteRegistry.registerFromConfig(loadedGameConfig);
+    }
     Map<Renderable, Sprite> spritesByRenderable = new IdentityHashMap<>();
     Map<Renderable, Renderable> wheelConnectorRotationSources =
         wheelConnectorRotationSources(world);
@@ -297,13 +303,22 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private BuiltWorld buildWorld(VehicleLayout layout) {
     World world = new WorldImpl();
+    GameConfig loadedConfig = null;
 
     String levelPath = levelPathSupplier.get();
     if (levelPath != null && !levelPath.isBlank()) {
       LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
-      GameConfig game = gameLoader.loadGame(
-          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
-      levelLoader.loadLevel(levelPath, game, world);
+      try {
+        loadedConfig = gameLoader.loadGame(
+            LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
+      } catch (RuntimeException e) {
+        LOG.warn("Game config not found for level {}; running without catalog: {}", levelPath,
+            e.getMessage());
+      }
+      levelLoader.loadLevel(levelPath, loadedConfig, world);
+      if (loadedConfig != null) {
+        vehicleFactory.getRegistry().registerFromConfig(loadedConfig);
+      }
     }
 
     LevelBounds bounds = computeLevelBounds(world);
@@ -315,7 +330,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     double spawnY = spawn != null ? spawn.y() : 330.0;
     Map<PlacedComponent, GameComponent> placements =
         vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
-    return new BuiltWorld(world, bounds, placements);
+    return new BuiltWorld(world, bounds, placements, loadedConfig);
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
@@ -413,7 +428,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private record BuiltWorld(World world, LevelBounds bounds,
-                            Map<PlacedComponent, GameComponent> placements) {
+                            Map<PlacedComponent, GameComponent> placements,
+                            GameConfig gameConfig) {
 
   }
 
