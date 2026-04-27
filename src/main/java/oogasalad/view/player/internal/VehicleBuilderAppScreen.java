@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.geometry.Pos;
@@ -56,7 +57,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private final PaletteSpriteRegistry spriteRegistry;
   private final BuildRulesRegistry buildRules;
   private final Map<String, List<String>> gridState = new HashMap<>();
-  private final List<StackPane> gridCells = new ArrayList<>();
+  private final List<StackPane> gridCells;
   private List<String> availableComponentNames;
   private FlowPane componentFlow;
   private PlacementValidator validator;
@@ -68,6 +69,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     this.spriteCache = spriteCache;
     this.spriteRegistry = spriteRegistry;
     this.buildRules = buildRules;
+    this.gridCells = new ArrayList<>();
     // super() calls createRoot(), so the fields above must be assigned first.
     super(onOutcome);
   }
@@ -129,9 +131,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
    * game.json instead of the hardcoded properties file.
    */
   public void setGameConfig(GameConfig config) {
-    if (config != null) {
-      spriteRegistry.registerFromConfig(config);
-    }
+    Optional.ofNullable(config).ifPresent(selectedConfig -> {
+      spriteRegistry.registerFromConfig(selectedConfig);
+      buildRules.registerFromConfig(selectedConfig);
+    });
   }
 
   /**
@@ -335,20 +338,27 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
   private boolean placeComponentInCell(StackPane cell, String componentName, int row, int col) {
     PlacedComponent candidate = new PlacedComponent(row, col, componentName);
-    ValidationResult result = validator.canPlace(getVehicleLayout(), candidate, 0);
-    if (!result.valid()) {
-      showError(result.reason());
+    try {
+      ValidationResult result = validator.canPlace(getVehicleLayout(), candidate, 0);
+      if (!result.valid()) {
+        showError(result.reason());
+        return false;
+      }
+      clearError();
+
+      List<String> stack = gridState.computeIfAbsent(key(row, col), k -> new ArrayList<>());
+      if (buildRules.lookup(componentName).containment() == Containment.NONE) {
+        stack.clear();
+      }
+      stack.add(componentName);
+      renderStack(cell, stack);
+      return true;
+    } catch (IllegalArgumentException exception) {
+      LOG.warn("Rejected vehicle component '{}' because placement rules are unavailable",
+          componentName, exception);
+      showError(exception.getMessage());
       return false;
     }
-    clearError();
-
-    List<String> stack = gridState.computeIfAbsent(key(row, col), k -> new ArrayList<>());
-    if (buildRules.lookup(componentName).containment() == Containment.NONE) {
-      stack.clear();
-    }
-    stack.add(componentName);
-    renderStack(cell, stack);
-    return true;
   }
 
   private void popTopComponent(StackPane cell, int row, int col) {
