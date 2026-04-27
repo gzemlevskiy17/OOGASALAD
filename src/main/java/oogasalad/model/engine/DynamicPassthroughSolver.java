@@ -24,8 +24,8 @@ public class DynamicPassthroughSolver {
    * @param collision       - Collision type object representing the collision between the two
    */
   public void solve(DynamicComponent referenceObject, PassThroughComponent incidentObject,
-      Collision collision) {
-    if (incidentObject instanceof PickupComponent pickup) {
+      Collision collision, boolean isFirstIteration) {
+    if (isFirstIteration && incidentObject instanceof PickupComponent pickup) {
       pickup.applyTo(referenceObject);
     }
   }

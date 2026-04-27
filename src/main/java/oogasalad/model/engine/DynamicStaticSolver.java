@@ -8,17 +8,25 @@ import oogasalad.model.engine.internal.components.StaticComponent;
 /**
  * Solves collisions between a dynamic body and a static body.
  *
- * <p><strong>Purpose:</strong> Applies impulse response, positional correction, and optional
+ * <p>
+ * <strong>Purpose:</strong> Applies impulse response, positional correction,
+ * and optional
  * contact damage effects for dynamic-vs-static collisions.
  *
- * <p><strong>Assumptions:</strong> The provided collision manifold and penetration data were
- * generated for {@code objectA} and {@code objectB} during the current simulation step.
+ * <p>
+ * <strong>Assumptions:</strong> The provided collision manifold and penetration
+ * data were
+ * generated for {@code objectA} and {@code objectB} during the current
+ * simulation step.
  *
- * <p><strong>Dependencies:</strong> Delegates numerical response to
- * {@link ImpulseSolverUtilities} and gameplay side effects to {@link ContactDamager} /
+ * <p>
+ * <strong>Dependencies:</strong> Delegates numerical response to
+ * {@link ImpulseSolverUtilities} and gameplay side effects to
+ * {@link ContactDamager} /
  * {@link Damageable} contracts.
  *
- * <p><strong>Example:</strong>
+ * <p>
+ * <strong>Example:</strong>
  *
  * <pre>{@code
  * DynamicStaticSolver solver = new DynamicStaticSolver();
@@ -34,7 +42,8 @@ public class DynamicStaticSolver {
   private DynamicComponent incidentObject;
 
   /**
-   * Applies contact-triggered damage when both collision sides implement the required contracts.
+   * Applies contact-triggered damage when both collision sides implement the
+   * required contracts.
    *
    * @param staticSide  static side that may inflict contact damage
    * @param dynamicSide dynamic side that may receive damage
@@ -44,51 +53,62 @@ public class DynamicStaticSolver {
       damager.damageContact(target);
     }
   }
-  //TODO: refactor
+  // TODO: refactor
 
   /**
    * Resolves one collision using the impulse solver pipeline.
    *
-   * <p>Use this method from engine collision orchestration after detection has produced per-pair
+   * <p>
+   * Use this method from engine collision orchestration after detection has
+   * produced per-pair
    * collision data for the current step.
    *
-   * <p><strong>Assumptions:</strong> {@code collision} is non-null and contains enough contact
+   * <p>
+   * <strong>Assumptions:</strong> {@code collision} is non-null and contains
+   * enough contact
    * and normal information for response calculations.
    *
    * @param objectA   reference object whose collision normal is used for response
    * @param objectB   incident object being resolved against the reference object
-   * @param collision collision data containing manifold and penetration information
+   * @param collision collision data containing manifold and penetration
+   *                  information
    */
   public void solve(DynamicComponent objectA, StaticComponent objectB,
-      Collision collision) {
-    //TODO: move this into the dispatcher. document the convention
+      Collision collision, boolean isFirstIteration) {
+    // TODO: move this into the dispatcher. document the convention
     if (objectA == collision.getReferenceObject()) {
       collision.setPenetration(collision.getPenetration().multiply(-1));
     }
     this.referenceObject = objectB;
     this.incidentObject = objectA;
-    //TODO: a and b are no longer technically incident and reference
+    // TODO: a and b are no longer technically incident and reference
 
-    resolveImpulseAtContacts(collision);
-    ImpulseSolverUtilities.applyPositionalCorrection(collision, referenceObject, incidentObject);
-    applyContactDamage(objectB, objectA);
+    resolveImpulseAtContacts(collision, isFirstIteration);
+    if (isFirstIteration) {
+      applyContactDamage(objectB, objectA);
+    }
   }
 
   /**
    * Applies impulse-based collision response at each manifold contact.
    *
-   * <p>This updates linear and angular velocities in-place on both colliding object states.
+   * <p>
+   * This updates linear and angular velocities in-place on both colliding object
+   * states.
    *
-   * <p><strong>Assumptions:</strong> {@code referenceObject} and {@code incidentObject} have been
-   * set by {@link #solve(DynamicComponent, StaticComponent, Collision)} before invocation.
+   * <p>
+   * <strong>Assumptions:</strong> {@code referenceObject} and
+   * {@code incidentObject} have been
+   * set by {@link #solve(DynamicComponent, StaticComponent, Collision)} before
+   * invocation.
    *
    * @param collision detected collision pair
    */
-  private void resolveImpulseAtContacts(Collision collision) {
-    DynamicState referenceDynamicState = new DynamicState(); //initialize placeholder state with 0 values
+  private void resolveImpulseAtContacts(Collision collision, boolean isFirstIteration) {
+    DynamicState referenceDynamicState = new DynamicState(); // initialize placeholder state with 0 values
     DynamicState incidentDynamicState = incidentObject.getDynamicState();
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(collision, referenceObject,
-        incidentObject, incidentDynamicState, referenceDynamicState);
+        incidentObject, incidentDynamicState, referenceDynamicState, isFirstIteration);
   }
 }
