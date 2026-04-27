@@ -61,6 +61,13 @@ final class NormalizationSupport {
         .toList();
   }
 
+  List<String> csvStrings(String key) {
+    return List.of(props.getString(key).split(",")).stream()
+        .map(String::trim)
+        .filter(token -> !token.isEmpty())
+        .toList();
+  }
+
   double defaultIfNull(Double value, double fallback) {
     return value == null ? fallback : value;
   }
