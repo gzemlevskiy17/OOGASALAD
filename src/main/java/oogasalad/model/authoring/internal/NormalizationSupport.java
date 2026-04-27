@@ -53,8 +53,21 @@ final class NormalizationSupport {
     return values == null ? List.of() : values;
   }
 
+  List<Double> csvDoubles(String key) {
+    return List.of(props.getString(key).split(",")).stream()
+        .map(String::trim)
+        .filter(token -> !token.isEmpty())
+        .map(Double::parseDouble)
+        .toList();
+  }
+
   double defaultIfNull(Double value, double fallback) {
     return value == null ? fallback : value;
+  }
+
+  int clampInt(Integer value, int fallback, int min, int max) {
+    int resolved = value == null ? fallback : value;
+    return Math.max(min, Math.min(max, resolved));
   }
 
   double clamp(double value, double min, double max) {

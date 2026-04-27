@@ -1,20 +1,18 @@
 package oogasalad.model.authoring.internal;
 
-import java.util.List;
 import java.util.ResourceBundle;
 import oogasalad.model.authoring.api.GeneratedLevelSpec;
-import oogasalad.model.authoring.api.GeneratedLevelSpec.TerrainBlockSpec;
 import oogasalad.model.authoring.api.GeneratedLevelSpecValidationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Normalizes AI-generated level specifications into a safe, fully populated intermediate form
- * before final JSON conversion.
+ * Normalizes AI-generated schema-aligned level specifications into a safe Good Piggies level
+ * shape before JSON serialization.
  *
- * <p>The normalizer fills defaults, clamps physics values into sane ranges, repairs malformed
- * spline control data, and guarantees that at least one terrain structure exists so later builder
- * stages do not have to synthesize world geometry themselves.
+ * <p>The normalizer fills defaults from the schema-era authoring contract, clamps physics values
+ * into safe ranges, synthesizes a minimal knot track when missing, and guarantees the map contains
+ * at least one finish object and one terrain option from the fixed Good Piggies catalog.
  *
  * @author Emilio Garcia
  */
@@ -24,34 +22,44 @@ public class GeneratedLevelSpecNormalizer {
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.model.authoring.GeneratedLevelSpecNormalizer");
 
-  private final LevelMetadataNormalizer metadataNormalizer;
-  private final VehiclePaletteNormalizer vehiclePaletteNormalizer;
-  private final TerrainBlockSpecNormalizer terrainBlockNormalizer;
-  private final TerrainSplineSpecNormalizer terrainSplineNormalizer;
-  private final RockSpecNormalizer rockNormalizer;
-  private final PickupSpecNormalizer pickupNormalizer;
-  private final DefaultTerrainSynthesizer terrainSynthesizer;
+  private final GoodPiggiesCatalogProvider catalogProvider;
+  private final GeneratedGameMetadataNormalizer gameMetadataNormalizer;
+  private final GeneratedMapSpecNormalizer mapNormalizer;
+  private final GeneratedMainCharacterSpecNormalizer mainCharacterNormalizer;
 
   /**
-   * Creates a generated-level normalizer using resource-backed defaults and clamp ranges.
+   * Creates a generated-level normalizer using the fixed Good Piggies catalog and resource-backed
+   * normalization defaults.
    *
    * @author Emilio Garcia
    */
   public GeneratedLevelSpecNormalizer() {
-    this.metadataNormalizer = new LevelMetadataNormalizer(PROPS);
-    this.vehiclePaletteNormalizer = new VehiclePaletteNormalizer(PROPS);
-    this.terrainBlockNormalizer = new TerrainBlockSpecNormalizer(PROPS);
-    this.terrainSplineNormalizer = new TerrainSplineSpecNormalizer(PROPS);
-    this.rockNormalizer = new RockSpecNormalizer(PROPS);
-    this.pickupNormalizer = new PickupSpecNormalizer(PROPS);
-    this.terrainSynthesizer = new DefaultTerrainSynthesizer(PROPS);
+    this(new GoodPiggiesCatalogProvider());
+  }
+
+  /**
+   * Creates a generated-level normalizer with an injected Good Piggies catalog provider.
+   *
+   * @param catalogProvider provider for the fixed Good Piggies catalog
+   * @author Emilio Garcia
+   */
+  public GeneratedLevelSpecNormalizer(GoodPiggiesCatalogProvider catalogProvider) {
+    if (catalogProvider == null) {
+      String message = PROPS.getString("nullCatalogProviderError");
+      LOG.error(message);
+      throw new GeneratedLevelSpecValidationException(message);
+    }
+    this.catalogProvider = catalogProvider;
+    this.gameMetadataNormalizer = new GeneratedGameMetadataNormalizer(PROPS);
+    this.mapNormalizer = new GeneratedMapSpecNormalizer(PROPS);
+    this.mainCharacterNormalizer = new GeneratedMainCharacterSpecNormalizer(PROPS);
   }
 
   /**
    * Returns a normalized copy of the provided generated-level spec.
    *
    * @param spec generated level specification to normalize
-   * @return normalized generated level specification
+   * @return normalized Good Piggies level specification
    * @author Emilio Garcia
    */
   public GeneratedLevelSpec normalize(GeneratedLevelSpec spec) {
@@ -61,40 +69,18 @@ public class GeneratedLevelSpecNormalizer {
       throw new GeneratedLevelSpecValidationException(message);
     }
 
-    NormalizedLevelMetadata metadata = metadataNormalizer.normalize(
-        spec.style(),
-        spec.levelName(),
-        spec.gravity(),
-        spec.backgroundImage(),
-        spec.worldWidth(),
-        spec.spawn(),
-        spec.finishLine());
+    var catalog = catalogProvider.load();
+    GeneratedLevelSpec.GameMetadataSpec normalizedMetadata =
+        gameMetadataNormalizer.normalize(spec.gameMetadata(), catalog.gameId());
+    GeneratedLevelSpec.MapSpec normalizedMap =
+        mapNormalizer.normalize(
+            spec.map(),
+            normalizedMetadata.screenWidth(),
+            normalizedMetadata.screenHeight(),
+            catalog);
+    GeneratedLevelSpec.MainCharacterSpec normalizedMainCharacter =
+        mainCharacterNormalizer.normalize(spec.mainCharacter(), catalog);
 
-    List<TerrainBlockSpec> terrainBlocks = terrainBlockNormalizer.normalize(spec.terrainBlocks(),
-        metadata.worldWidth());
-    List<oogasalad.model.authoring.api.GeneratedLevelSpec.TerrainSplineSpec> terrainSplines =
-        terrainSplineNormalizer.normalize(spec.terrainSplines());
-    if (terrainBlocks.isEmpty() && terrainSplines.isEmpty()) {
-      terrainBlocks = List.of(terrainSynthesizer.synthesize(metadata.worldWidth()));
-    }
-
-    List<oogasalad.model.authoring.api.GeneratedLevelSpec.RockSpec> rocks =
-        rockNormalizer.normalize(spec.rocks());
-    List<oogasalad.model.authoring.api.GeneratedLevelSpec.PickupSpec> pickups =
-        pickupNormalizer.normalize(spec.pickups());
-
-    return new GeneratedLevelSpec(
-        metadata.style(),
-        metadata.levelName(),
-        metadata.gravity(),
-        metadata.backgroundImage(),
-        metadata.worldWidth(),
-        metadata.spawn(),
-        metadata.finishLine(),
-        vehiclePaletteNormalizer.normalize(spec.vehiclePalette()),
-        terrainBlocks,
-        terrainSplines,
-        rocks,
-        pickups);
+    return new GeneratedLevelSpec(normalizedMetadata, normalizedMap, normalizedMainCharacter);
   }
 }
