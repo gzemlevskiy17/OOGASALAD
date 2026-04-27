@@ -122,6 +122,6 @@ class FallOffWorldLossCheckerTest {
     @Override public void clear() { components.clear(); }
     @Override public void addJoint(Joint j) {}
     @Override public void removeJoint(Joint j) {}
-    @Override public double getDragCoefficient() {return 0.0;}
+    @Override public double getDragCoefficient() { return 0.0; }
   }
 }

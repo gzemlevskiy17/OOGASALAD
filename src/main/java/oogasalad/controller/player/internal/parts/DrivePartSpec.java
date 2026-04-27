@@ -3,6 +3,7 @@ package oogasalad.controller.player.internal.parts;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DriveComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
+import oogasalad.model.engine.internal.components.RigidBody;
 
 /**
  * @author Paulina Vvedenskaya
@@ -32,7 +33,7 @@ public final class DrivePartSpec extends AbstractVehiclePartSpec {
   }
 
   @Override
-  public GameComponent create(double x, double y) {
+  public RigidBody create(double x, double y) {
     DriveComponent drive = new DriveComponent(
         x, y, 0, mass, FRICTION, MAX_HP, paletteName(), bodyWidth(), bodyHeight());
     drive.setThrustDirection(thrustDirection);

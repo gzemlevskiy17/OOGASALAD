@@ -81,12 +81,13 @@ class RevoluteJointTest {
         () -> new RevoluteJoint(objectA, objectB, new Vector(0, 0), new Vector(0, 0)));
   }
 
-  @Test
-  void constructor_allowsPassthroughPairs() {
-    TestDynamicComponent dynamic = new TestDynamicComponent(0, 0, 0);
-    TestPassThroughComponent passthrough = new TestPassThroughComponent(0, 0, 0);
-    new RevoluteJoint(dynamic, passthrough);
-  }
+  //TODO: remove; joints should only use rigidbodies
+//  @Test
+//  void constructor_allowsPassthroughPairs() {
+//    TestDynamicComponent dynamic = new TestDynamicComponent(0, 0, 0);
+//    TestPassThroughComponent passthrough = new TestPassThroughComponent(0, 0, 0);
+//    new RevoluteJoint(dynamic, passthrough);
+//  }
 
   @Test
   void apply_withLimitsClampsRelativeAngle() {

@@ -382,6 +382,11 @@ class LevelLoaderImplTest {
       return 0.0;
     }
     int objectCount() { return components.size(); }
+
+    @Override
+    public double getDragCoefficient() {
+      return 0.0;
+    }
   }
 
   private static class FakeGameConfig implements oogasalad.data.api.GameConfig {

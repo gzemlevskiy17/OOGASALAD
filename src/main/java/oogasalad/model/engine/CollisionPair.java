@@ -13,7 +13,7 @@ import oogasalad.model.engine.api.CollisionSolver;
  * component types. The {@code of} method is used to normalize pair ordering before storing in
  * maps.
  *
- * <p><strong>Dependencies:</strong> Used by {@link CollisionDispatcher} as a {@link HashMap} key.
+ * <p><strong>Dependencies:</strong> Used by {@link CollisionDispatcher} as a
  * Relies on {@link Class} equality and naming for ordering normalization.
  *
  * <p><strong>Example:</strong>
@@ -28,11 +28,33 @@ import oogasalad.model.engine.api.CollisionSolver;
  */
 public record CollisionPair(Class<?> objectA, Class<?> objectB) {
 
+  /**
+   * Creates a canonicalized collision pair whose class order is deterministic by class name.
+   *
+   * <p>Use this factory when building map keys so lookups do not depend on collision direction.
+   *
+   * @param objectA first object type in arbitrary order
+   * @param objectB second object type in arbitrary order
+   * @return normalized pair with lexicographically ordered class names
+   */
   public static CollisionPair of(Class<?> objectA, Class<?> objectB) {
     if (objectA.getName().compareTo(objectB.getName()) < 0) {
       return new CollisionPair(objectA, objectB);
     } else {
       return new CollisionPair(objectB, objectA);
     }
+  }
+
+  /**
+   * Returns a readable representation of the normalized type pair.
+   *
+   * @return debug string containing both paired classes
+   */
+  @Override
+  public String toString() {
+    return "CollisionPair{" +
+        "objectA=" + objectA +
+        ", objectB=" + objectB +
+        '}';
   }
 }
