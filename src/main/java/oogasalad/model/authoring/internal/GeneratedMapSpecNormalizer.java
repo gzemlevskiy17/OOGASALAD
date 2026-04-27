@@ -16,10 +16,10 @@ import org.apache.logging.log4j.Logger;
 final class GeneratedMapSpecNormalizer {
 
   private static final Logger LOG = LogManager.getLogger(GeneratedMapSpecNormalizer.class);
-  private static final String GOAL_LINE_TYPE = "GoalLine";
 
   private final NormalizationSupport support;
   private final GeneratedMapObjectNormalizer objectNormalizer;
+  private final GeneratedMapSupportNormalizer supportNormalizer;
 
   /**
    * Creates a map normalizer backed by the given resource bundle.
@@ -30,6 +30,7 @@ final class GeneratedMapSpecNormalizer {
   GeneratedMapSpecNormalizer(ResourceBundle props) {
     this.support = new NormalizationSupport(props);
     this.objectNormalizer = new GeneratedMapObjectNormalizer(props);
+    this.supportNormalizer = new GeneratedMapSupportNormalizer(props);
   }
 
   /**
@@ -46,20 +47,28 @@ final class GeneratedMapSpecNormalizer {
       double screenHeight, GoodPiggiesCatalog catalog) {
     GeneratedLevelSpec.MapSpec safeMap =
         map == null ? new GeneratedLevelSpec.MapSpec(List.of(), null, List.of(), List.of()) : map;
+    GeneratedLevelSpec.PointSpec normalizedSpawnPoint =
+        normalizeSpawnPoint(safeMap.spawnPoint(), screenWidth, screenHeight);
+    List<GeneratedLevelSpec.MapObjectSpec> normalizedObjects =
+        objectNormalizer.normalizeObjects(safeMap.objects(), screenWidth, screenHeight, catalog);
+    List<GeneratedLevelSpec.PointSpec> normalizedKnots =
+        normalizeKnots(safeMap.knotLocations(), screenWidth, screenHeight, normalizedSpawnPoint,
+            normalizedObjects);
     return new GeneratedLevelSpec.MapSpec(
-        normalizeKnots(safeMap.knotLocations(), screenWidth, screenHeight),
-        normalizeSpawnPoint(safeMap.spawnPoint(), screenWidth, screenHeight),
-        objectNormalizer.normalizeObjects(safeMap.objects(), screenWidth, screenHeight, catalog),
+        normalizedKnots,
+        supportNormalizer.adjustSpawnPointToGround(normalizedSpawnPoint, normalizedKnots),
+        supportNormalizer.adjustObjectsToGround(normalizedObjects, normalizedKnots),
         objectNormalizer.normalizeTerrainOptions(safeMap.terrainOptions(), catalog));
   }
 
   private List<GeneratedLevelSpec.PointSpec> normalizeKnots(
-      List<GeneratedLevelSpec.PointSpec> knotLocations, double screenWidth, double screenHeight) {
+      List<GeneratedLevelSpec.PointSpec> knotLocations, double screenWidth, double screenHeight,
+      GeneratedLevelSpec.PointSpec spawnPoint, List<GeneratedLevelSpec.MapObjectSpec> objects) {
     List<GeneratedLevelSpec.PointSpec> safeKnots = support.safeList(knotLocations);
     int minimumKnotCount = support.n("minimumKnotCount");
     if (safeKnots.size() < minimumKnotCount) {
       LOG.warn(support.s("defaultKnotsSynthesizedLogMessage"), minimumKnotCount);
-      return synthesizeDefaultKnots(screenWidth, screenHeight);
+      safeKnots = synthesizeDefaultKnots(screenWidth, screenHeight);
     }
 
     List<GeneratedLevelSpec.PointSpec> normalized = new ArrayList<>();
@@ -67,6 +76,7 @@ final class GeneratedMapSpecNormalizer {
       normalized.add(normalizeKnotPoint(safeKnots.get(index), index, safeKnots.size(), screenWidth,
           screenHeight));
     }
+    supportNormalizer.flattenSupportZones(normalized, spawnPoint, objects);
     return List.copyOf(normalized);
   }
 
