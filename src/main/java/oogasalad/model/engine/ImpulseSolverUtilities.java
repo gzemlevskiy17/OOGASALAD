@@ -6,16 +6,24 @@ import oogasalad.model.engine.internal.components.RigidBody;
 /**
  * Utility methods for impulse-based collision response.
  *
- * <p><strong>Purpose:</strong> Centralizes normal/friction impulse calculation, warm starting,
- * and positional correction so collision solvers can apply consistent rigid-body response.
+ * <p>
+ * <strong>Purpose:</strong> Centralizes normal/friction impulse calculation,
+ * warm starting,
+ * and positional correction so collision solvers can apply consistent
+ * rigid-body response.
  *
- * <p><strong>Assumptions:</strong> Input collisions provide a non-empty manifold and a valid
- * penetration direction. Rigid body states are mutable and belong to the same simulation step.
+ * <p>
+ * <strong>Assumptions:</strong> Input collisions provide a non-empty manifold
+ * and a valid
+ * penetration direction. Rigid body states are mutable and belong to the same
+ * simulation step.
  *
- * <p><strong>Dependencies:</strong> Uses {@link Collision}, {@link DynamicState},
+ * <p>
+ * <strong>Dependencies:</strong> Uses {@link Collision}, {@link DynamicState},
  * {@link StaticState}, and {@link RigidBody} state accessors and mutators.
  *
- * <p><strong>Example:</strong>
+ * <p>
+ * <strong>Example:</strong>
  *
  * <pre>{@code
  * ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
@@ -32,10 +40,14 @@ public class ImpulseSolverUtilities {
    */
   private static final double SOLVER_EPSILON = 1e-9;
   /**
-   * Below this approach-speed threshold, contacts are treated as perfectly inelastic (e=0).
-   * Prevents resting contacts from endlessly bouncing when gravity adds a small approach velocity
-   * every frame that restitution would otherwise reflect into a persistent oscillation. Set above a
-   * single gravity impulse ({@code g·dt ≈ 16 px/s} at 60 Hz, g=980) but well under any real landing
+   * Below this approach-speed threshold, contacts are treated as perfectly
+   * inelastic (e=0).
+   * Prevents resting contacts from endlessly bouncing when gravity adds a small
+   * approach velocity
+   * every frame that restitution would otherwise reflect into a persistent
+   * oscillation. Set above a
+   * single gravity impulse ({@code g·dt ≈ 16 px/s} at 60 Hz, g=980) but well
+   * under any real landing
    * or collision velocity.
    */
   private static final double RESTITUTION_APPROACH_THRESHOLD = 40.0;
@@ -58,7 +70,8 @@ public class ImpulseSolverUtilities {
   }
 
   /**
-   * Computes effective-mass denominator for an impulse applied along the provided direction.
+   * Computes effective-mass denominator for an impulse applied along the provided
+   * direction.
    *
    * @param referenceObject     reference rigid body
    * @param incidentObject      incident rigid body
@@ -78,7 +91,8 @@ public class ImpulseSolverUtilities {
   }
 
   /**
-   * Computes scalar normal impulse for a single contact using restitution and effective mass.
+   * Computes scalar normal impulse for a single contact using restitution and
+   * effective mass.
    */
   private static double computeImpulse(RigidBody referenceObject, RigidBody incidentObject,
       ContactPointPhysics contactPointPhysics,
@@ -128,16 +142,17 @@ public class ImpulseSolverUtilities {
       return 0.0;
     }
 
-    double tangentImpulse =
-        -contactPointPhysics.relativeVelocity.dot(unitTangent) / effectiveMassDenominator;
+    double tangentImpulse = -contactPointPhysics.relativeVelocity.dot(unitTangent) / effectiveMassDenominator;
     double friction = Math.sqrt(referenceObject.getFriction() * incidentObject.getFriction());
     double maximumFriction = normalImpulse * friction;
     return Math.max(-maximumFriction, Math.min(tangentImpulse, maximumFriction));
   }
 
   /**
-   * Computes the relative velocity of the incident object with respect to the reference object at a
-   * contact point. Uses the formula: v_rel = (v_incident + w_incident x r_incident) - (v_reference
+   * Computes the relative velocity of the incident object with respect to the
+   * reference object at a
+   * contact point. Uses the formula: v_rel = (v_incident + w_incident x
+   * r_incident) - (v_reference
    * + w_reference x r_reference).
    *
    * @param contactPointPhysics   contact data to evaluate
@@ -161,7 +176,8 @@ public class ImpulseSolverUtilities {
   }
 
   /**
-   * Applies an impulse at the contact point to both bodies' linear and angular velocities.
+   * Applies an impulse at the contact point to both bodies' linear and angular
+   * velocities.
    *
    * @param referenceObject       reference rigid body
    * @param incidentObject        incident rigid body
@@ -177,21 +193,23 @@ public class ImpulseSolverUtilities {
         .subtract(impulse.multiply(referenceObject.getInverseMass())));
     referenceDynamicState.setAngularVelocity(referenceDynamicState.getAngularVelocity()
         - contactPointPhysics.positionFromReference.crossWithVector(impulse)
-        * referenceObject.getInverseMomentOfInertia());
+            * referenceObject.getInverseMomentOfInertia());
 
     incidentDynamicState.setLinearVelocity(incidentDynamicState.getLinearVelocity()
         .add(impulse.multiply(incidentObject.getInverseMass())));
     incidentDynamicState.setAngularVelocity(incidentDynamicState.getAngularVelocity()
         + contactPointPhysics.positionFromIncident.crossWithVector(impulse)
-        * incidentObject.getInverseMomentOfInertia());
+            * incidentObject.getInverseMomentOfInertia());
   }
 
   /**
    * Checks whether cached normal impulse data can be reused for warm starting.
    *
-   * @param collision           collision that may contain cached impulses from a prior step
+   * @param collision           collision that may contain cached impulses from a
+   *                            prior step
    * @param referenceUnitNormal current reference normal used this step
-   * @return true when cache exists, has compatible direction, and has non-zero normal impulse
+   * @return true when cache exists, has compatible direction, and has non-zero
+   *         normal impulse
    */
   private static boolean canWarmStart(Collision collision, Vector referenceUnitNormal) {
     Vector cachedNormal = collision.getCachedNormal();
@@ -201,7 +219,8 @@ public class ImpulseSolverUtilities {
   }
 
   /**
-   * Applies the cached normal impulse at each contact before solving fresh impulses.
+   * Applies the cached normal impulse at each contact before solving fresh
+   * impulses.
    *
    * @param collision             collision containing cached impulse and manifold
    * @param referenceObject       rigid body used as reference side
@@ -250,7 +269,8 @@ public class ImpulseSolverUtilities {
   }
 
   /**
-   * Creates per-contact physics data and populates relative positions for both bodies.
+   * Creates per-contact physics data and populates relative positions for both
+   * bodies.
    *
    * @param contactPoint         manifold point being processed
    * @param collision            collision that owns the manifold
@@ -300,7 +320,8 @@ public class ImpulseSolverUtilities {
    * @param referenceDynamicState     mutable reference-side dynamic state
    * @param incidentDynamicState      mutable incident-side dynamic state
    * @param referenceUnitNormal       reference normal direction
-   * @param currentTotalNormalImpulse normal impulse magnitude used as friction limit
+   * @param currentTotalNormalImpulse normal impulse magnitude used as friction
+   *                                  limit
    * @return scalar tangential impulse applied at this contact
    */
   private static double applyFrictionImpulseAtContact(ContactPointPhysics contactPointPhysics,
@@ -324,26 +345,35 @@ public class ImpulseSolverUtilities {
   /**
    * Moves objects out of overlap.
    *
-   * <p>Uses Baumgarte-style positional projection: each frame resolves {@code correctionFraction}
-   * of the remaining penetration (above a small {@code slop} tolerance), and splits the motion
-   * between the two bodies proportionally to their inverse masses. Static bodies (inverse mass 0)
-   * therefore absorb none of the correction, while lighter dynamic bodies absorb more than heavier
-   * ones. This method is expected to be called multiple times per frame (either by the solver
-   * iteration loop or by the joint/collision interleave in the engine) so the remaining penetration
+   * <p>
+   * Uses Baumgarte-style positional projection: each frame resolves
+   * {@code correctionFraction}
+   * of the remaining penetration (above a small {@code slop} tolerance), and
+   * splits the motion
+   * between the two bodies proportionally to their inverse masses. Static bodies
+   * (inverse mass 0)
+   * therefore absorb none of the correction, while lighter dynamic bodies absorb
+   * more than heavier
+   * ones. This method is expected to be called multiple times per frame (either
+   * by the solver
+   * iteration loop or by the joint/collision interleave in the engine) so the
+   * remaining penetration
    * decays geometrically to zero.
    *
-   * @param collision       detected collision pair; penetration must point from the reference body
+   * @param collision       detected collision pair; penetration must point from
+   *                        the reference body
    *                        outward toward the incident body (true MTV direction)
-   * @param referenceObject body that receives the negative share of the correction
-   * @param incidentObject  body that receives the positive share of the correction
+   * @param referenceObject body that receives the negative share of the
+   *                        correction
+   * @param incidentObject  body that receives the positive share of the
+   *                        correction
    */
   public static void applyPositionalCorrection(Collision collision, RigidBody referenceObject,
       RigidBody incidentObject) {
     final double correctionFraction = 0.4; // TODO: put into properties file
-    final double slop = 0.01;              // ignore sub-pixel overlaps to avoid jitter
+    final double slop = 0.01; // ignore sub-pixel overlaps to avoid jitter
 
-    double totalInverseMass =
-        incidentObject.getInverseMass() + referenceObject.getInverseMass();
+    double totalInverseMass = incidentObject.getInverseMass() + referenceObject.getInverseMass();
     if (totalInverseMass == 0.0) {
       return; // two static bodies: nothing movable to correct
     }
@@ -377,11 +407,15 @@ public class ImpulseSolverUtilities {
   /**
    * Resolves normal and friction impulses for all contacts in the manifold.
    *
-   * <p><strong>Assumptions:</strong> The collision manifold and penetration normal were produced
-   * by the detector for this frame. Passed dynamic states are mutable snapshots for the current
+   * <p>
+   * <strong>Assumptions:</strong> The collision manifold and penetration normal
+   * were produced
+   * by the detector for this frame. Passed dynamic states are mutable snapshots
+   * for the current
    * integration step.
    *
-   * @param collision             collision data containing penetration and manifold points
+   * @param collision             collision data containing penetration and
+   *                              manifold points
    * @param referenceObject       reference rigid body for impulse sign convention
    * @param incidentObject        incident rigid body
    * @param incidentDynamicState  incident-side dynamic state to mutate
@@ -389,7 +423,7 @@ public class ImpulseSolverUtilities {
    */
   public static void resolveImpulseAtContactsHelper(Collision collision, RigidBody referenceObject,
       RigidBody incidentObject, DynamicState incidentDynamicState,
-      DynamicState referenceDynamicState) {
+      DynamicState referenceDynamicState, boolean isFirstIteration) {
     Vector referenceUnitNormal = collision.getPenetration().normalize();
     StaticState referenceStaticState = referenceObject.getStaticState();
     StaticState incidentStaticState = incidentObject.getStaticState();
@@ -397,8 +431,10 @@ public class ImpulseSolverUtilities {
       return;
     }
 
-    applyCachedImpulse(collision, referenceObject, incidentObject, referenceDynamicState,
-        incidentDynamicState, incidentStaticState, referenceStaticState, referenceUnitNormal);
+    if (isFirstIteration) {
+      applyCachedImpulse(collision, referenceObject, incidentObject, referenceDynamicState,
+          incidentDynamicState, incidentStaticState, referenceStaticState, referenceUnitNormal);
+    }
 
     double cachedPerContact;
     if (canWarmStart(collision, referenceUnitNormal)) {
