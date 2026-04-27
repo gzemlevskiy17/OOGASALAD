@@ -55,12 +55,6 @@ public class RigidJoint extends DistanceJoint {
     this.referenceAngle = objectB.rotation() - objectA.rotation();
   }
 
-  private static double angularVelocity(RigidBody component) {
-    if (component instanceof DynamicComponent dynamic) {
-      return dynamic.getDynamicState().getAngularVelocity();
-    }
-    return 0.0;
-  }
 
   /**
    * Registers three rigid bars on the three pairs of bodies: AB, BC, and AC.
@@ -151,13 +145,24 @@ public class RigidJoint extends DistanceJoint {
    */
   @Override
   public void apply(double dt) {
-    super.apply(dt);
+    if (getMinDistance() == 0.0 && getMaxDistance() == 0.0) {
+      Vector delta = getAnchorDelta();
+      if (delta.magnitude() > ANCHOR_POSITION_SLOP) {
+        applyAnchorPositionCorrection(0.8);
+      }
+    } else {
+      super.apply(dt);
+    }
     solveRelativeAngle();
   }
 
   @Override
   public void applyVelocity() {
-    super.applyVelocity();
+    if (getMinDistance() == 0.0 && getMaxDistance() == 0.0) {
+      applyAnchorVelocityEqualization();
+    } else {
+      super.applyVelocity();
+    }
     equalizeRelativeAngularVelocity();
   }
 
