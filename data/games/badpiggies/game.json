@@ -1,138 +1,127 @@
 {
   "gameId": "badpiggies",
-  "primaryComponentId": "Frame",
+  "primaryComponentId": "BigPig",
   "components": [
     {
-      "id": "Frame",
-      "spriteUrl": "assets/components/bp_body.png",
-      "mass": 5.0,
-      "buttons": []
-    },
-    {
-      "id": "Wood Wheel",
-      "spriteUrl": "assets/components/bp_wheel.png",
-      "mass": 1.0,
-      "buttons": []
-    },
-    {
-      "id": "Engine",
-      "spriteUrl": "assets/components/bp_motor.png",
-      "mass": 2.0,
+      "id": "BigPig",
+      "spriteUrl": "data/assets/vehicle/bp_bigPig.png",
+      "mass": 10.0,
       "buttons": [
-        {
-          "name": "go right",
-          "direction": {
-            "x": 1,
-            "y": 0
-          }
-        },
-        {
-          "name": "go left",
-          "direction": {
-            "x": -1,
-            "y": 0
-          }
-        }
+        { "name": "Move Left",  "direction": { "x": -300.0, "y": 0.0 } },
+        { "name": "Move Right", "direction": { "x":  300.0, "y": 0.0 } },
+        { "name": "Jump",       "direction": { "x":    0.0, "y": 400.0 } }
       ]
     },
     {
-      "id": "Fan",
-      "spriteUrl": "assets/components/bp_fan.png",
-      "mass": 1.5,
+      "id": "SmallPig",
+      "spriteUrl": "data/assets/vehicle/bp_smallPig.png",
+      "mass": 5.0,
       "buttons": [
-        {
-          "name": "boost up",
-          "direction": {
-            "x": 0,
-            "y": -1
-          }
-        }
+        { "name": "Move Left",  "direction": { "x": -200.0, "y": 0.0 } },
+        { "name": "Move Right", "direction": { "x":  200.0, "y": 0.0 } }
       ]
     },
     {
       "id": "Balloon",
-      "spriteUrl": "assets/components/bp_balloon.png",
-      "mass": 0.5,
+      "spriteUrl": "data/assets/vehicle/bp_balloon.png",
+      "mass": 1.0,
+      "buttons": [
+        { "name": "Inflate", "direction": { "x": 0.0, "y": 500.0 } }
+      ]
+    },
+    {
+      "id": "Fan",
+      "spriteUrl": "data/assets/vehicle/bp_fan.png",
+      "mass": 3.0,
+      "buttons": [
+        { "name": "Thrust Left",  "direction": { "x": -400.0, "y": 0.0 } },
+        { "name": "Thrust Right", "direction": { "x":  400.0, "y": 0.0 } }
+      ]
+    },
+    {
+      "id": "Engine",
+      "spriteUrl": "data/assets/vehicle/bp_engine.png",
+      "mass": 8.0,
+      "buttons": [
+        { "name": "Drive Left",  "direction": { "x": -500.0, "y": 0.0 } },
+        { "name": "Drive Right", "direction": { "x":  500.0, "y": 0.0 } }
+      ]
+    },
+    {
+      "id": "Frame",
+      "spriteUrl": "data/assets/vehicle/bp_frame.png",
+      "mass": 6.0,
+      "buttons": []
+    },
+    {
+      "id": "Sled",
+      "spriteUrl": "data/assets/vehicle/bp_sled.png",
+      "mass": 4.0,
+      "buttons": []
+    },
+    {
+      "id": "Wood Wheel",
+      "spriteUrl": "",
+      "mass": 2.0,
+      "buttons": []
+    },
+    {
+      "id": "Metal Wheel",
+      "spriteUrl": "",
+      "mass": 3.0,
       "buttons": []
     }
   ],
   "staticComponents": [
     {
+      "id": "Rock",
+      "spriteUrl": "data/assets/bp_rock.png",
+      "mass": 0.0,
+      "onCollisionAction": { "type": "damage", "amount": 25.0 }
+    },
+    {
       "id": "Coin",
-      "spriteUrl": "assets/pickups/bp_coin.png",
-      "mass": 0,
-      "onCollisionAction": {
-        "type": "score",
-        "amount": 10
-      }
+      "spriteUrl": "data/assets/bp_coin.png",
+      "mass": 0.0,
+      "onCollisionAction": { "type": "score", "amount": 10.0 }
     },
     {
       "id": "Heart",
-      "spriteUrl": "assets/pickups/bp_heart.png",
-      "mass": 0,
-      "onCollisionAction": {
-        "type": "heal",
-        "amount": 25
-      }
+      "spriteUrl": "data/assets/bp_heart.png",
+      "mass": 0.0,
+      "onCollisionAction": { "type": "heal", "amount": 25.0 }
     },
     {
       "id": "Bomb",
-      "spriteUrl": "assets/pickups/bp_bomb.png",
-      "mass": 0,
-      "onCollisionAction": {
-        "type": "damage",
-        "amount": 30
-      }
+      "spriteUrl": "data/assets/bp_bomb.png",
+      "mass": 0.0,
+      "onCollisionAction": { "type": "damage", "amount": 50.0 }
     },
     {
-      "id": "XP Boost",
-      "spriteUrl": "assets/pickups/bp_xp.png",
-      "mass": 0,
-      "onCollisionAction": {
-        "type": "score",
-        "amount": 25
-      }
+      "id": "XPBoost",
+      "spriteUrl": "data/assets/bp_xp.png",
+      "mass": 0.0,
+      "onCollisionAction": { "type": "score", "amount": 50.0 }
     },
     {
       "id": "GoalLine",
-      "spriteUrl": "assets/objects/finish_flag.png",
-      "mass": 0,
-      "onCollisionAction": {
-        "type": "finish",
-        "amount": 0
-      }
+      "spriteUrl": "data/assets/bp_goalLine.png",
+      "mass": 0.0,
+      "onCollisionAction": { "type": "finish", "amount": 0.0 }
     }
   ],
   "terrainTypes": [
     {
-      "id": "grass",
-      "spriteUrl": "assets/terrain/grass.png",
-      "visualColor": null,
+      "id": "GrassHills",
+      "spriteUrl": null,
+      "visualColor": "#4A7C59",
       "friction": 0.6
     },
     {
-      "id": "dirt",
-      "spriteUrl": "assets/terrain/dirt.png",
-      "visualColor": "#8B4513",
-      "friction": 0.5
-    },
-    {
-      "id": "ice",
-      "spriteUrl": "assets/terrain/ice.png",
-      "visualColor": "#ADE8F4",
-      "friction": 0.1
-    },
-    {
-      "id": "sand",
-      "spriteUrl": "assets/terrain/sand.png",
-      "visualColor": "#C2B280",
+      "id": "DirtPath",
+      "spriteUrl": "data/assets/back.png",
+      "visualColor": "#8B5E3C",
       "friction": 0.4
-    },
-    {
-      "id": "rock",
-      "spriteUrl": "assets/terrain/rock.png",
-      "visualColor": "#808080",
-      "friction": 0.7
     }
   ]
 }
