@@ -33,7 +33,7 @@ class GameEngineImplTest {
   private static final int SUB_STEPS = 4;
 
   private static final CollisionDetector NO_HITS = (a, b) -> Optional.empty();
-  private static final CollisionSolver NO_SOLVE = (a, b, c) -> {
+  private static final CollisionSolver NO_SOLVE = (a, b, c, d) -> {
   };
 
   private static DynamicComponent box(double mass, double x, double y, boolean gravity) {
