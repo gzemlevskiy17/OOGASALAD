@@ -83,6 +83,19 @@ public class GoodPiggiesCatalogProvider {
     }
   }
 
+  /**
+   * Loads and returns the cached Good Piggies catalog.
+   *
+   * <p>This alias keeps newer generation-pipeline collaborators readable while preserving the
+   * original explicit {@link #loadCatalog()} API.
+   *
+   * @return validated Good Piggies catalog
+   * @author Emilio Garcia
+   */
+  public GoodPiggiesCatalog load() {
+    return loadCatalog();
+  }
+
   private void validateConfig(GameConfig config, String catalogPath) {
     String expectedGameId = PROPS.getString("expectedGameId");
     if (config == null) {

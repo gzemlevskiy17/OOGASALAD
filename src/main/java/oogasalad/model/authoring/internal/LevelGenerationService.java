@@ -9,9 +9,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import oogasalad.model.authoring.api.GoodPiggiesCatalog;
 import oogasalad.model.authoring.api.LevelGenerationConfigurationException;
 import oogasalad.model.authoring.api.LevelGenerationRequestException;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +33,7 @@ public class LevelGenerationService {
   private static final Map<String, String> DOT_ENV = loadDotEnv();
 
   private final OpenAIClient client;
+  private final GoodPiggiesCatalogProvider catalogProvider;
   private final String modelName;
   private final String systemPrompt;
 
@@ -41,11 +44,22 @@ public class LevelGenerationService {
    * @author Emilio Garcia
    */
   public LevelGenerationService() {
+    this(new GoodPiggiesCatalogProvider());
+  }
+
+  /**
+   * Creates the level generation service with an injected Good Piggies catalog provider.
+   *
+   * @param catalogProvider provider for the fixed Good Piggies catalog
+   * @author Emilio Garcia
+   */
+  public LevelGenerationService(GoodPiggiesCatalogProvider catalogProvider) {
+    this.catalogProvider = requireCatalogProvider(catalogProvider);
     String apiKey = getEnv(PROPS.getString("apiKeyEnvVarName"));
     String baseUrl = getEnv(PROPS.getString("baseUrlEnvVarName"));
     validateRuntimeConfiguration(apiKey, baseUrl);
     this.modelName = PROPS.getString("modelName");
-    this.systemPrompt = loadSystemPrompt();
+    this.systemPrompt = buildSystemPrompt();
     try {
       client = OpenAIOkHttpClient.builder()
           .apiKey(apiKey)
@@ -125,7 +139,19 @@ public class LevelGenerationService {
     }
   }
 
-  private String loadSystemPrompt() {
+  private String buildSystemPrompt() {
+    String basePrompt = loadSystemPromptTemplate();
+    GoodPiggiesCatalog catalog = catalogProvider.load();
+    String catalogContext = buildCatalogContext(catalog);
+    if (catalogContext.isBlank()) {
+      String message = PROPS.getString("blankCatalogContextError");
+      LOG.error(message);
+      throw new LevelGenerationConfigurationException(message);
+    }
+    return basePrompt + System.lineSeparator() + System.lineSeparator() + catalogContext;
+  }
+
+  private String loadSystemPromptTemplate() {
     String resourcePath = PROPS.getString("systemPromptResource");
     try (InputStream inputStream = LevelGenerationService.class.getResourceAsStream(resourcePath)) {
       if (inputStream == null) {
@@ -145,6 +171,26 @@ public class LevelGenerationService {
       LOG.error("{} resource={}", message, resourcePath, exception);
       throw new LevelGenerationConfigurationException(message, exception);
     }
+  }
+
+  private String buildCatalogContext(GoodPiggiesCatalog catalog) {
+    return String.format(
+        PROPS.getString("catalogContextTemplate"),
+        catalog.gameId(),
+        catalog.primaryComponentId(),
+        joinQuoted(catalog.componentIds()),
+        joinQuoted(catalog.staticComponentIds()),
+        joinQuoted(catalog.terrainTypeIds()));
+  }
+
+  private GoodPiggiesCatalogProvider requireCatalogProvider(
+      GoodPiggiesCatalogProvider catalogProvider) {
+    if (catalogProvider == null) {
+      String message = PROPS.getString("nullCatalogProviderError");
+      LOG.error(message);
+      throw new LevelGenerationConfigurationException(message);
+    }
+    return catalogProvider;
   }
 
   /**
@@ -177,5 +223,12 @@ public class LevelGenerationService {
       LOG.warn(PROPS.getString("dotEnvReadWarning"), exception.getMessage());
     }
     return map;
+  }
+
+  private String joinQuoted(List<String> values) {
+    return values.stream()
+        .map(value -> "\"" + value + "\"")
+        .reduce((left, right) -> left + ", " + right)
+        .orElse("");
   }
 }
