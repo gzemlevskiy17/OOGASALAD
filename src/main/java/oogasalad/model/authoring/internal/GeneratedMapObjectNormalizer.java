@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Set;
 import oogasalad.model.authoring.api.GeneratedLevelSpec;
 import oogasalad.model.authoring.api.GoodPiggiesCatalog;
 import org.apache.logging.log4j.LogManager;
@@ -46,7 +45,7 @@ final class GeneratedMapObjectNormalizer {
       List<GeneratedLevelSpec.MapObjectSpec> objects, double screenWidth, double screenHeight,
       GoodPiggiesCatalog catalog) {
     List<GeneratedLevelSpec.MapObjectSpec> normalized = new ArrayList<>();
-    Set<String> allowedObjectIds = catalog.staticComponentIds();
+    List<String> allowedObjectIds = catalog.staticComponentIds();
     boolean foundGoalLine = false;
 
     for (GeneratedLevelSpec.MapObjectSpec object : support.safeList(objects)) {

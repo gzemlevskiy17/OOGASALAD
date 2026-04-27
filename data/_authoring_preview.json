@@ -1,0 +1,77 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Forest 1",
+    "gameType" : "piggies",
+    "screenWidth" : 1920.0,
+    "screenHeight" : 1080.0,
+    "gravity" : -9.8,
+    "drag" : 0.02
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 0.0,
+      "y" : 16000.0
+    }, {
+      "x" : 12000.0,
+      "y" : 15200.0
+    }, {
+      "x" : 24000.0,
+      "y" : 16400.0
+    }, {
+      "x" : 36000.0,
+      "y" : 15600.0
+    }, {
+      "x" : 48000.0,
+      "y" : 16400.0
+    }, {
+      "x" : 545.0,
+      "y" : 91.0
+    }, {
+      "x" : 143.0,
+      "y" : 79.0
+    }, {
+      "x" : 118.0,
+      "y" : 2128.5
+    }, {
+      "x" : 635.0,
+      "y" : 2070.5
+    }, {
+      "x" : 484.0,
+      "y" : 2133.5
+    }, {
+      "x" : 754.0,
+      "y" : 2186.5
+    } ],
+    "objects" : [ {
+      "type" : "Heart",
+      "position" : {
+        "x" : 16000.0,
+        "y" : 14400.0
+      }
+    }, {
+      "type" : "Bomb",
+      "position" : {
+        "x" : 30000.0,
+        "y" : 15200.0
+      }
+    }, {
+      "type" : "GoalLine",
+      "position" : {
+        "x" : 47000.0,
+        "y" : 14400.0
+      }
+    } ],
+    "terrainOptions" : [ "grass", "grass" ],
+    "spawnPoint" : {
+      "x" : 2000.0,
+      "y" : 12000.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 60.0,
+    "elementsAllowed" : [ "Frame", "Wood Wheel" ],
+    "maxSelectable" : 5,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}
