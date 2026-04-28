@@ -19,6 +19,7 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.PickupComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.effects.HPChangerEffect;
 import oogasalad.model.engine.internal.effects.ScoreEffect;
@@ -61,6 +62,7 @@ public class LevelLoaderImpl implements LevelLoader {
 
     JsonNode map = root.path("map");
     loadTerrainSpline(map, game, world);
+    loadBlocks(map.path("blocks"), world);
     loadSpawnPoint(map.path("spawnPoint"), world);
     loadObjects(map.path("objects"), game, world);
 
@@ -186,6 +188,24 @@ public class LevelLoaderImpl implements LevelLoader {
       points.add(new Vector(x, y));
     }
     return points;
+  }
+
+  private void loadBlocks(JsonNode blocksNode, World world) {
+    if (!blocksNode.isArray()) {
+      return;
+    }
+    for (JsonNode entry : blocksNode) {
+      String displayName = entry.path("displayName").asText("Terrain");
+      double x = entry.path("x").asDouble(0);
+      double y = entry.path("y").asDouble(0);
+      double width = entry.path("width").asDouble(DEFAULT_OBJECT_SIZE);
+      double height = entry.path("height").asDouble(DEFAULT_OBJECT_SIZE);
+      String sprite = entry.path("sprite").asText("");
+      boolean tiled = entry.path("tiled").asBoolean(true);
+      double friction = entry.path("friction").asDouble(0.5);
+      String color = entry.path("color").asText("#8B4513");
+      world.addObject(new TerrainBlock(displayName, x, y, width, height, sprite, tiled, friction, color, 0.0));
+    }
   }
 
   private void loadSpawnPoint(JsonNode spawnNode, World world) {

@@ -14,6 +14,7 @@ import oogasalad.model.engine.internal.components.AuthoringStaticComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.PickupComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import org.apache.logging.log4j.LogManager;
@@ -74,6 +75,7 @@ public class LevelSaverImpl implements LevelSaver {
     ObjectNode map = MAPPER.createObjectNode();
 
     ArrayNode knots = map.putArray("knotLocations");
+    ArrayNode blocks = map.putArray("blocks");
     ArrayNode objects = map.putArray("objects");
     ArrayNode terrainOptions = map.putArray("terrainOptions");
     ObjectNode spawnPoint = map.putObject("spawnPoint");
@@ -84,6 +86,8 @@ public class LevelSaverImpl implements LevelSaver {
       if (obj instanceof TerrainSpline ts) {
         serializeSplineKnots(ts, knots);
         terrainOptions.add(ts.getDisplayName());
+      } else if (obj instanceof TerrainBlock tb) {
+        blocks.add(buildTerrainBlock(tb));
       } else if (obj instanceof SpawnPointComponent sp) {
         spawnPoint.put("x", sp.x() * scale);
         spawnPoint.put("y", sp.y() * scale);
@@ -109,6 +113,20 @@ public class LevelSaverImpl implements LevelSaver {
       pt.put("x", k.x() * scale);
       pt.put("y", k.y() * scale);
     }
+  }
+
+  private ObjectNode buildTerrainBlock(TerrainBlock tb) {
+    ObjectNode entry = MAPPER.createObjectNode();
+    entry.put("displayName", tb.getDisplayName());
+    entry.put("x", tb.x() * scale);
+    entry.put("y", tb.y() * scale);
+    entry.put("width", tb.getWidth() * scale);
+    entry.put("height", tb.getHeight() * scale);
+    entry.put("sprite", tb.getSprite() != null ? tb.getSprite() : "");
+    entry.put("tiled", tb.isTiled());
+    entry.put("friction", tb.getFriction());
+    entry.put("color", tb.getColor() != null ? tb.getColor() : "#8B4513");
+    return entry;
   }
 
   private ObjectNode buildMapObject(String type, double x, double y) {
