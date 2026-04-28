@@ -23,6 +23,7 @@ import oogasalad.model.player.api.VehicleLayout;
  * other pass validation because neither demands the shared edge.
  *
  * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
  */
 public class PlacementValidator {
 
@@ -51,6 +52,12 @@ public class PlacementValidator {
     if (rules.containment() == Containment.INSIDE_FRAME && !frameAt(layout, row, col)) {
       return ValidationResult.fail(type + " must be placed inside a Frame");
     }
+    if (rules.containment() == Containment.INSIDE_OR_OUTSIDE_FRAME
+        && !frameAt(layout, row, col)
+        && !hasAttachableCardinalNeighbor(layout, row, col)) {
+      return ValidationResult.fail(
+          type + " must be inside a Frame or in a cell touching vehicle parts");
+    }
     for (Side side : rules.rotatedRequiredOpenSides(rotationQuarters)) {
       if (neighborType(layout, row, col, side).isPresent()) {
         return ValidationResult.fail(type + " requires open space on " + side);
@@ -68,6 +75,35 @@ public class PlacementValidator {
       }
     }
     return ValidationResult.ok();
+  }
+
+  private boolean hasAttachableCardinalNeighbor(VehicleLayout layout, int row, int col) {
+    for (Side side : Side.values()) {
+      int r = row + switch (side) {
+        case TOP -> -1;
+        case BOTTOM -> 1;
+        default -> 0;
+      };
+      int c = col + switch (side) {
+        case LEFT -> -1;
+        case RIGHT -> 1;
+        default -> 0;
+      };
+      if (r < 0 || r >= gridRows || c < 0 || c >= gridCols) {
+        continue;
+      }
+      if (cellOffersPigAttachment(layout, r, c)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean cellOffersPigAttachment(VehicleLayout layout, int row, int col) {
+    return layout.placements().stream()
+        .anyMatch(p -> p.row() == row && p.col() == col
+            && registry.lookup(p.componentType()).containment()
+            != Containment.INSIDE_OR_OUTSIDE_FRAME);
   }
 
   private boolean frameAt(VehicleLayout layout, int row, int col) {
