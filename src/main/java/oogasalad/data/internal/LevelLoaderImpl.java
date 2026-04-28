@@ -44,6 +44,7 @@ public class LevelLoaderImpl implements LevelLoader {
   private static final double SPLINE_BASELINE_MARGIN = 200;
 
   private final ScoreService score = new ScoreServiceImpl();
+  private final LevelValidator validator = new LevelValidator();
 
   public ScoreService getScore() {
     return score;
@@ -53,11 +54,14 @@ public class LevelLoaderImpl implements LevelLoader {
   public void loadLevel(String fileName, GameConfig game, World world,
       LevelAttributes levelAttributes) {
     JsonNode root = parseFile(fileName);
-
-    if (levelAttributes != null) {
-      populateGameMetadata(root.path("gameMetadata"), levelAttributes);
-      populateMainCharacter(root.path("mainCharacter"), levelAttributes);
+    LevelAttributes activeAttributes = levelAttributes;
+    if (activeAttributes == null) {
+      activeAttributes = new LevelAttributes();
     }
+
+    populateGameMetadata(root.path("gameMetadata"), activeAttributes);
+    populateMainCharacter(root.path("mainCharacter"), activeAttributes);
+    validateGameTypeMatchesCatalog(activeAttributes, game);
 
     JsonNode map = root.path("map");
     loadTerrainSpline(map, game, world);
@@ -65,6 +69,17 @@ public class LevelLoaderImpl implements LevelLoader {
     loadObjects(map.path("objects"), game, world);
 
     LOG.info("Level loaded from {}", fileName);
+  }
+
+  private void validateGameTypeMatchesCatalog(LevelAttributes attrs, GameConfig game) {
+    if (game == null || game.gameId() == null || game.gameId().isBlank()) {
+      return;
+    }
+    if (attrs.getGameType().equals(game.gameId())) {
+      return;
+    }
+    throw new LevelLoadException("Level gameType '" + attrs.getGameType()
+        + "' does not match game catalog '" + game.gameId() + "'");
   }
 
   @Override
@@ -78,7 +93,9 @@ public class LevelLoaderImpl implements LevelLoader {
 
   private JsonNode parseFile(String fileName) {
     try {
-      return MAPPER.readTree(new File(fileName));
+      JsonNode root = MAPPER.readTree(new File(fileName));
+      validator.validate(root);
+      return root;
     } catch (IOException e) {
       throw new LevelLoadException("Could not read level file: " + fileName, e);
     }
@@ -162,10 +179,7 @@ public class LevelLoaderImpl implements LevelLoader {
         return info;
       }
     }
-    LOG.warn(
-        "terrainOptions[0] is '{}' but no terrainTypes id matches in game.json; spline uses defaults",
-        firstId);
-    return null;
+    throw new LevelLoadException("Unknown terrain option: '" + firstId + "'");
   }
 
   private double baselineFor(List<Vector> knots) {
@@ -210,15 +224,7 @@ public class LevelLoaderImpl implements LevelLoader {
       double y = entry.path("position").path("y").asDouble(0);
       StaticComponentInfo info = lookupStatic(typeId, game);
       if (info == null) {
-        if (typeId.isEmpty()) {
-          LOG.warn("Skipping map object with empty type");
-          continue;
-        }
-        LOG.warn(
-            "Skipping map object type '{}' — no staticComponents entry with this id in game.json. "
-                + "Add it to the catalog or remove the object from the level.",
-            typeId);
-        continue;
+        throw new LevelLoadException("Unknown map object type: '" + typeId + "'");
       }
       addStaticObject(info, x, y, world);
     }
