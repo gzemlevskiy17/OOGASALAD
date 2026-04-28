@@ -25,7 +25,6 @@ public class GameEngineImpl implements GameEngine {
   private static final double MAX_FRAME_TIME = 0.25;
 
   private final World world;
-  private final ForceIntegrator forceIntegrator;
   private final JointSolver jointSolver;
   private final SweptCollisionResolver sweptResolver;
   private final CollisionPhase collisionPhase;
@@ -50,7 +49,6 @@ public class GameEngineImpl implements GameEngine {
     this.subStepCount = subStepCount;
     this.accumulatedTime = 0.0;
 
-    this.forceIntegrator = new ForceIntegrator(world);
     this.jointSolver = new JointSolver(world);
     this.sweptResolver = new SweptCollisionResolver(world);
     CollisionDispatcher dispatcher = new CollisionDispatcher();
@@ -78,7 +76,7 @@ public class GameEngineImpl implements GameEngine {
 
   private void simulateSubStep(double elapsedTime) {
     List<DynamicComponent> dynamicComponents = world.getActiveDynamicComponents();
-    forceIntegrator.resetForces(dynamicComponents);
+    DynamicComponentUtilities.resetForces(dynamicComponents);
     for (GameObject gameObject : world.getObjects()) {
       gameObject.updatePolygon();
     }
@@ -87,29 +85,16 @@ public class GameEngineImpl implements GameEngine {
         sweptResolver.captureMotion(dynamicComponents);
 
     jointSolver.applyAll(elapsedTime, 1);
-    forceIntegrator.applyForces(dynamicComponents);
-    forceIntegrator.applyForcesToAcceleration(dynamicComponents);
-    integrateDynamicComponents(dynamicComponents, elapsedTime);
-    updatePolygons(dynamicComponents);
+    DynamicComponentUtilities.applyForces(dynamicComponents, world);
+    DynamicComponentUtilities.applyForcesToAcceleration(dynamicComponents);
+    DynamicComponentUtilities.integrateDynamicComponents(dynamicComponents, elapsedTime);
+    DynamicComponentUtilities.updateDynamicPolygons(dynamicComponents);
 
     sweptResolver.resolve(previousMotion);
-    updatePolygons(dynamicComponents);
+    DynamicComponentUtilities.updateDynamicPolygons(dynamicComponents);
 
     collisionPhase.solve(elapsedTime);
     //provide an update list of active components, as some may have been eliminated by solve
-    forceIntegrator.updateSleepStates(world.getActiveDynamicComponents(), elapsedTime);
-  }
-
-  private void integrateDynamicComponents(List<DynamicComponent> dynamicComponents,
-      double elapsedTime) {
-    for (DynamicComponent dynamicComponent : dynamicComponents) {
-      dynamicComponent.integrateObjectState(elapsedTime);
-    }
-  }
-
-  private void updatePolygons(List<DynamicComponent> dynamicComponents) {
-    for (DynamicComponent dynamicComponent : dynamicComponents) {
-      dynamicComponent.updatePolygon();
-    }
+    DynamicComponentUtilities.updateSleepStates(world.getActiveDynamicComponents(), elapsedTime);
   }
 }

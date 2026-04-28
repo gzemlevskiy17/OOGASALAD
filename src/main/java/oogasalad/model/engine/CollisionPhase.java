@@ -92,7 +92,7 @@ class CollisionPhase {
     for (int i = 0; i < SOLVER_ITERATIONS; i++) {
       jointSolver.applyPositionConstraints(elapsedTime, 1);
       dispatchCollisions(collisions, false, false);
-      updateDynamicPolygons();
+      DynamicComponentUtilities.updateDynamicPolygons(world.getActiveDynamicComponents());
     }
   }
 
@@ -208,14 +208,6 @@ class CollisionPhase {
       pairs.add(canonicalPair(a, b));
     }
     return pairs;
-  }
-
-  private void updateDynamicPolygons() {
-    for (GameObject go : world.getObjects()) {
-      if (go instanceof DynamicComponent) {
-        go.updatePolygon();
-      }
-    }
   }
 
   record CachedImpulse(double normalImpulse, double frictionImpulse,
