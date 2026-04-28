@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.Set;
 import oogasalad.data.api.ButtonInfo;
 import oogasalad.data.api.ComponentInfo;
@@ -18,28 +19,58 @@ import oogasalad.data.api.GameConfig;
  */
 public final class BuiltInVehicleCatalog {
 
+  private static final ResourceBundle CONFIG =
+      ResourceBundle.getBundle("oogasalad.data.internal.BuiltInVehicleCatalog");
+
+  private static final List<ComponentInfo> DEFAULT_COMPONENTS = loadDefaultComponents();
+
   private BuiltInVehicleCatalog() {}
 
-  // TODO: Remove hardcoded values
-  public static List<ComponentInfo> defaultComponents() {
+  private static List<ComponentInfo> loadDefaultComponents() {
     List<ComponentInfo> list = new ArrayList<>();
-    list.add(new ComponentInfo("BigPig", "data/assets/vehicle/bp_bigPig.png", 10.0, List.of()));
-    list.add(new ComponentInfo("SmallPig", "data/assets/vehicle/bp_smallPig.png", 5.0, List.of()));
-    list.add(new ComponentInfo("Balloon", "data/assets/vehicle/bp_balloon.png", 1.0,
-        List.of(new ButtonInfo("Inflate", 0.0, 500.0))));
-    list.add(new ComponentInfo("Fan", "data/assets/vehicle/bp_fan.png", 3.0,
-        List.of(
-            new ButtonInfo("Thrust Left", -400.0, 0.0),
-            new ButtonInfo("Thrust Right", 400.0, 0.0))));
-    list.add(new ComponentInfo("Engine", "data/assets/vehicle/bp_engine.png", 8.0,
-        List.of(
-            new ButtonInfo("Drive Left", -500.0, 0.0),
-            new ButtonInfo("Drive Right", 500.0, 0.0))));
-    list.add(new ComponentInfo("Frame", "data/assets/vehicle/bp_frame.png", 6.0, List.of()));
-    list.add(new ComponentInfo("Sled", "data/assets/vehicle/bp_sled.png", 4.0, List.of()));
-    list.add(new ComponentInfo("Wood Wheel", "", 2.0, List.of()));
-    list.add(new ComponentInfo("Metal Wheel", "", 3.0, List.of()));
+    for (String rawId : CONFIG.getString("componentIds").split(",")) {
+      String id = rawId.trim();
+      if (id.isEmpty()) {
+        continue;
+      }
+      String spriteKey = id + ".sprite";
+      String sprite = CONFIG.containsKey(spriteKey) ? CONFIG.getString(spriteKey) : "";
+      double mass = Double.parseDouble(CONFIG.getString(id + ".mass").trim());
+      list.add(new ComponentInfo(id, sprite, mass, parseButtons(id)));
+    }
     return List.copyOf(list);
+  }
+
+  private static List<ButtonInfo> parseButtons(String componentId) {
+    String key = componentId + ".buttons";
+    if (!CONFIG.containsKey(key)) {
+      return List.of();
+    }
+    String raw = CONFIG.getString(key).trim();
+    if (raw.isEmpty()) {
+      return List.of();
+    }
+    List<ButtonInfo> buttons = new ArrayList<>();
+    for (String segment : raw.split(";")) {
+      String part = segment.trim();
+      if (part.isEmpty()) {
+        continue;
+      }
+      String[] triple = part.split("\\|", 3);
+      if (triple.length != 3) {
+        throw new IllegalArgumentException(
+            "BuiltInVehicleCatalog: bad button for '" + componentId + "': " + part);
+      }
+      buttons.add(new ButtonInfo(
+          triple[0].trim(),
+          Double.parseDouble(triple[1].trim()),
+          Double.parseDouble(triple[2].trim())));
+    }
+    return List.copyOf(buttons);
+  }
+
+  public static List<ComponentInfo> defaultComponents() {
+    return DEFAULT_COMPONENTS;
   }
 
   /**
@@ -71,7 +102,9 @@ public final class BuiltInVehicleCatalog {
         have.add(c.id().trim());
       }
     }
+
     List<String> out = new ArrayList<>();
+
     for (ComponentInfo c : defaultComponents()) {
       if (!have.contains(c.id())) {
         out.add(c.id());
