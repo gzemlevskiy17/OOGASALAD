@@ -53,22 +53,8 @@ final class ButtonForceController {
         String id = buttonId(button);
         Vector force = new Vector(button.directionX(), button.directionY());
         String forceId = "button:" + id;
-        System.out.println("[ButtonForce] BIND \"" + id + "\" -> component=\""
-            + ci.id() + "\" force=(" + force.x() + ", " + force.y()
-            + ") mass=" + target.getMass() + " sleeping=" + target.isSleeping());
-        router.bind(id, () -> {
-          System.out.println("[ButtonForce] PRESSED \"" + id + "\" -> addExternalForce(\""
-              + forceId + "\", (" + force.x() + ", " + force.y()
-              + ")) sleeping=" + target.isSleeping());
-          target.addExternalForce(forceId, force);
-          System.out.println("[ButtonForce]   after add: sleeping=" + target.isSleeping()
-              + " externalTotal=(" + target.getExternalForceTotal().x()
-              + ", " + target.getExternalForceTotal().y() + ")");
-        });
-        router.bindRelease(id, () -> {
-          System.out.println("[ButtonForce] RELEASED \"" + id + "\"");
-          target.removeExternalForce(forceId);
-        });
+        router.bind(id, () -> target.addExternalForce(forceId, force));
+        router.bindRelease(id, () -> target.removeExternalForce(forceId));
       }
     }
   }
