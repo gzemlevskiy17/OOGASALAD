@@ -68,6 +68,9 @@ public class RendererImpl implements Renderer {
       if (object == null) {
         continue;
       }
+      if (!camera.isVisible(object)) {
+        continue;
+      }
       seenThisFrame.add(object);
       renderObject(object, camera);
     }
