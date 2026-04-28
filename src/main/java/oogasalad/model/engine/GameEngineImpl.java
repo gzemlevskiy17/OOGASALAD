@@ -15,6 +15,7 @@ import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
@@ -69,7 +70,6 @@ import org.apache.logging.log4j.Logger;
  */
 public class GameEngineImpl implements GameEngine {
 
-  private static final Vector DEFAULT_GRAVITY = new Vector(0, 980);
   private static final double DEFAULT_FIXED_TIME_STEP = 1.0 / 60.0;
   private static final int DEFAULT_SUB_STEP_COUNT = 4;
   private static final double MAX_FRAME_TIME = 0.25;
@@ -91,7 +91,6 @@ public class GameEngineImpl implements GameEngine {
   private static final int JOINT_SOLVER_ITERATIONS = 8;
   private final World world;
   private final CollisionDetector collisionDetector;
-  private final Vector gravityVector;
   private final CollisionDispatcher collisionDispatcher;
   // private final CollisionSolver overrideCollisionSolver;
   private final Map<List<GameObject>, CachedCollisionImpulse> collisionImpulseCache;
@@ -102,62 +101,26 @@ public class GameEngineImpl implements GameEngine {
   /**
    * Creates an engine with explicit simulation dependencies.
    *
-   * <p>
-   * <strong>Purpose:</strong> Initializes the physics engine with a world
-   * instance and
-   * collision detector. The engine internally creates a
-   * {@link CollisionDispatcher} to route
-   * collisions to appropriate solvers based on object type pairs.
+   * <p>Per-level physics constants (gravity, drag) are read from
+   * {@code world.getPhysicsEnvironment()} on each step rather than passed here.
    *
-   * <p>
-   * <strong>Assumptions:</strong> All arguments are non-null and remain valid for
-   * the engine
-   * lifetime. The provided world and detector follow their interface contracts.
-   *
-   * <p>
-   * <strong>Dependencies:</strong> Requires {@link World} and
-   * {@link CollisionDetector}
-   * implementations. Uses {@link CollisionDispatcher} and
-   * {@link DynamicDynamicSolver} internally.
-   *
-   * @param world             world that stores active simulation objects
+   * @param world             world that stores active simulation objects and the physics environment
    * @param collisionDetector pairwise detector used to build collision records
    */
   public GameEngineImpl(World world, CollisionDetector collisionDetector) {
-    this(world, collisionDetector, null, DEFAULT_GRAVITY, DEFAULT_FIXED_TIME_STEP,
-        DEFAULT_SUB_STEP_COUNT);
+    this(world, collisionDetector, null, DEFAULT_FIXED_TIME_STEP, DEFAULT_SUB_STEP_COUNT);
   }
 
   /**
-   * Compatibility constructor for tests and callers that inject a single response
-   * strategy.
+   * Compatibility constructor for tests and callers that inject a single response strategy.
    */
   public GameEngineImpl(World world, CollisionDetector collisionDetector,
       CollisionSolver collisionSolver) {
-    this(world, collisionDetector, collisionSolver, DEFAULT_GRAVITY, DEFAULT_FIXED_TIME_STEP,
-        DEFAULT_SUB_STEP_COUNT);
-  }
-
-  /**
-   * Creates an engine with explicit gravity, keeping per-level physics
-   * configuration injectable.
-   */
-  public GameEngineImpl(World world, CollisionDetector collisionDetector, Vector gravityVector) {
-    this(world, collisionDetector, null, gravityVector, DEFAULT_FIXED_TIME_STEP,
-        DEFAULT_SUB_STEP_COUNT);
-  }
-
-  /**
-   * Creates an engine with explicit fixed-step settings.
-   */
-  public GameEngineImpl(World world, CollisionDetector collisionDetector, Vector gravityVector,
-      double fixedTimeStep, int subStepCount) {
-    this(world, collisionDetector, null, gravityVector, fixedTimeStep, subStepCount);
+    this(world, collisionDetector, collisionSolver, DEFAULT_FIXED_TIME_STEP, DEFAULT_SUB_STEP_COUNT);
   }
 
   private GameEngineImpl(World world, CollisionDetector collisionDetector,
-      CollisionSolver collisionSolver, Vector gravityVector, double fixedTimeStep,
-      int subStepCount) {
+      CollisionSolver collisionSolver, double fixedTimeStep, int subStepCount) {
     if (fixedTimeStep <= 0.0) {
       throw new IllegalArgumentException("fixedTimeStep must be positive");
     }
@@ -169,7 +132,6 @@ public class GameEngineImpl implements GameEngine {
     this.collisionDispatcher = new CollisionDispatcher();
     // this.overrideCollisionSolver = collisionSolver;
     this.collisionImpulseCache = new HashMap<>();
-    this.gravityVector = gravityVector;
     this.fixedTimeStep = fixedTimeStep;
     this.subStepCount = subStepCount;
     this.accumulatedTime = 0.0;
@@ -289,14 +251,17 @@ public class GameEngineImpl implements GameEngine {
   }
 
   private void applyForces(Collection<GameObject> objects) {
+    PhysicsEnvironment physics = world.getPhysicsEnvironment();
+    Vector gravityVector = physics.gravity();
+    double drag = physics.drag();
     for (GameObject object : objects) {
       if (object instanceof DynamicComponent dynamicComponent) {
         if (dynamicComponent.isAffectedByGravity()) {
           dynamicComponent.addForce(gravityVector.multiply(dynamicComponent.getMass()));
           dynamicComponent.addForce(dynamicComponent.getDynamicState().getLinearVelocity()
-              .multiply(-world.getDragCoefficient()));
+              .multiply(-drag));
           dynamicComponent.addTorque(dynamicComponent.getDynamicState().getAngularVelocity()
-              * -world.getDragCoefficient());
+              * -drag);
         }
 
         if (object instanceof Driveable driveable) { // TODO: refactor

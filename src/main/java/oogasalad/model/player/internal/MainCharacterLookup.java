@@ -28,14 +28,21 @@ final class MainCharacterLookup {
    * @return matching runtime objects
    */
   static List<GameObject> find(World world, String mainCharacterId) {
-    String id = mainCharacterId == null || mainCharacterId.isBlank()
-        ? DefaultTag.PIGS.value() : mainCharacterId;
-    List<GameObject> byTag = world.getObjectsByTag(id);
+    if (mainCharacterId == null || mainCharacterId.isBlank()) {
+      return world.getObjectsByTag(DefaultTag.PIGS.value());
+    }
+    List<GameObject> byTag = world.getObjectsByTag(mainCharacterId);
     if (!byTag.isEmpty()) {
       return byTag;
     }
-    return world.getObjects().stream()
-        .filter(object -> object instanceof TypedComponent typed && id.equals(typed.getComponentType()))
+    List<GameObject> byType = world.getObjects().stream()
+        .filter(object -> object instanceof TypedComponent typed
+            && mainCharacterId.equals(typed.getComponentType()))
         .toList();
+    if (!byType.isEmpty()) {
+      return byType;
+    }
+    // fall back to any pig — handles cases where a different pig variant was placed
+    return world.getObjectsByTag(DefaultTag.PIGS.value());
   }
 }

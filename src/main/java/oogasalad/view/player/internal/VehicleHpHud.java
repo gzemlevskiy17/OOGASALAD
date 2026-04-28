@@ -3,10 +3,14 @@ package oogasalad.view.player.internal;
 import java.util.Map;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import oogasalad.model.engine.api.Damageable;
 import oogasalad.model.player.api.PlacedComponent;
 
@@ -25,15 +29,17 @@ import oogasalad.model.player.api.PlacedComponent;
  */
 public final class VehicleHpHud extends GridPane {
 
-  private static final double CELL_SIZE = 24.0;
+  private static final double CELL_SIZE = 36.0;
   private static final double CELL_GAP = 2.0;
   private static final double PADDING = 8.0;
+  private static final double LABEL_FONT_SIZE = 7.0;
   private static final Color EMPTY_COLOR = Color.web("#7a7a7a");
   private static final String BACKGROUND_STYLE =
       "-fx-background-color: rgba(0,0,0,0.55); -fx-background-radius: 6;";
 
   private final Map<PlacedComponent, ? extends Damageable> placementHp;
   private final Rectangle[][] cells;
+  private final Label[][] labels;
 
   public VehicleHpHud(int rows, int cols,
       Map<PlacedComponent, ? extends Damageable> placementHp) {
@@ -42,6 +48,7 @@ public final class VehicleHpHud extends GridPane {
     }
     this.placementHp = placementHp;
     this.cells = new Rectangle[rows][cols];
+    this.labels = new Label[rows][cols];
 
     setHgap(CELL_GAP);
     setVgap(CELL_GAP);
@@ -56,7 +63,17 @@ public final class VehicleHpHud extends GridPane {
         rect.setArcWidth(4);
         rect.setArcHeight(4);
         cells[r][c] = rect;
-        add(rect, c, r);
+
+        Label lbl = new Label();
+        lbl.setFont(Font.font(LABEL_FONT_SIZE));
+        lbl.setTextFill(Color.WHITE);
+        lbl.setAlignment(Pos.CENTER);
+        lbl.setWrapText(false);
+        labels[r][c] = lbl;
+
+        StackPane cell = new StackPane(rect, lbl);
+        cell.setAlignment(Pos.CENTER);
+        add(cell, c, r);
       }
     }
 
@@ -87,9 +104,11 @@ public final class VehicleHpHud extends GridPane {
       if (row < 0 || row >= cells.length || col < 0 || col >= cells[0].length) {
         continue;
       }
-      double frac = component.getMaxHp() <= 0 ? 0
-          : component.getCurrentHp() / component.getMaxHp();
+      double current = component.getCurrentHp();
+      double max = component.getMaxHp();
+      double frac = max <= 0 ? 0 : current / max;
       cells[row][col].setFill(hpColor(frac));
+      labels[row][col].setText((int) current + "/" + (int) max);
     }
   }
 }

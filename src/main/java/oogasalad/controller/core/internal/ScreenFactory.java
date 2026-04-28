@@ -11,8 +11,9 @@ import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.internal.LevelAttributes;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelId;
+import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.internal.GameLoaderImpl;
@@ -34,6 +35,7 @@ import oogasalad.view.accounts.internal.CreateAccountScreen;
 import oogasalad.view.accounts.internal.LoginScreen;
 import oogasalad.view.accounts.internal.ProfileScreen;
 import oogasalad.view.accounts.internal.UpdateProfileScreen;
+import oogasalad.view.authoring.internal.AuthoringAlertService;
 import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
 import oogasalad.view.authoring.internal.GameAuthoringScreenImpl;
@@ -212,6 +214,9 @@ public class ScreenFactory {
               configureGameAuthoringForWorld(gameAuthoringScreen, worldKey);
             },
             path -> {
+              // If validation rejects the level, alerts fire inside the helpers and the world
+              // stays untouched (validator runs before any mutation). We still let the user
+              // progress into the authoring screen so they can fix the file or start fresh.
               configureAuthoringForLevel(authoringScreen, path);
               authoringScreen.loadLevelFromPath(path);
             }));
@@ -281,8 +286,17 @@ public class ScreenFactory {
   }
 
   private void configureAuthoringForLevel(AuthoringScreenImpl authoringScreen, String levelPath) {
+    LevelAttributes attrs;
     try {
-      LevelAttributes attrs = levelLoader.loadAttributes(levelPath);
+      attrs = levelLoader.loadAttributes(levelPath);
+    } catch (LevelLoadException e) {
+      // The callback below also calls loadLevelFromPath which alerts on the same validation
+      // failure. Logging here is enough — alerting twice would show two popups for one bad file.
+      LOG.warn("Cannot resolve game config for invalid level '{}': {}", levelPath, e.getMessage());
+      authoringScreen.setGameConfig(null);
+      return;
+    }
+    try {
       authoringScreen.setGameConfig(
           gameLoader.loadGame(LevelPaths.gameFileForLevel(levelPath, attrs.getGameType())));
     } catch (RuntimeException e) {
@@ -334,8 +348,9 @@ public class ScreenFactory {
       advanceToNextLevelAndRoute();
       return;
     }
-    if (outcome == Outcome.OPEN_VEHICLE_BUILDER) {
-      configureVehicleBuilderForSelectedLevel();
+    if (outcome == Outcome.OPEN_VEHICLE_BUILDER && !configureVehicleBuilderForSelectedLevel()) {
+      // Validation rejected the level; the alert has been shown, stay on the current screen.
+      return;
     }
     if (outcome == Outcome.SKIP_LOGIN) {
       screenManager.onOutcome(Outcome.BACK_TO_MENU);
@@ -348,25 +363,35 @@ public class ScreenFactory {
     }
   }
 
-  private void configureVehicleBuilderForSelectedLevel() {
+  /**
+   * Returns true if the vehicle builder is ready to open for the selected level. Returns false
+   * when level-file validation rejected the level (in which case an alert has been shown and the
+   * caller should NOT transition to the vehicle builder screen).
+   */
+  private boolean configureVehicleBuilderForSelectedLevel() {
     if (vehicleBuilderScreen == null) {
-      return;
+      return true;
     }
 
     String levelPath = pathForSelectedLevel();
     if (levelPath == null || levelPath.isBlank()) {
       vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
       vehicleBuilderScreen.setGameConfig(null);
-      return;
+      return true;
     }
-
-    LevelAttributes levelAttributes = levelLoader.loadAttributes(levelPath);
-
-    //TODO: Remove null handling
+    LevelAttributes attributes;
+    try {
+      attributes = levelLoader.loadAttributes(levelPath);
+    } catch (LevelLoadException e) {
+      LOG.error("Cannot launch level '{}': {}", levelPath, e.getMessage(), e);
+      new AuthoringAlertService().showError(
+          "Cannot Launch Level", "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+      return false;
+    }
     GameConfig gameConfig = null;
     try {
       gameConfig = gameLoader.loadGame(
-          LevelPaths.gameFileForLevel(levelPath, levelAttributes.getGameType()));
+          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
       vehicleBuilderScreen.setGameConfig(gameConfig);
     } catch (RuntimeException e) {
       LOG.warn(
@@ -376,6 +401,7 @@ public class ScreenFactory {
     }
 
     vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig));
+    return true;
   }
 
   private static List<String> resolvedVehiclePaletteIds(GameConfig gameConfig) {
@@ -394,7 +420,11 @@ public class ScreenFactory {
         current != null ? progression.nextAfter(current) : java.util.Optional.empty();
     if (next.isPresent()) {
       selectedLevel.set(next.get());
-      configureVehicleBuilderForSelectedLevel();
+      if (!configureVehicleBuilderForSelectedLevel()) {
+        // Validation rejected the next level; alert was shown, fall back to the entry screen.
+        screenManager.onOutcome(Outcome.OPEN_PLAYER_ENTRY);
+        return;
+      }
       screenManager.onOutcome(Outcome.OPEN_VEHICLE_BUILDER);
     } else {
       screenManager.onOutcome(Outcome.OPEN_PLAYER_ENTRY);

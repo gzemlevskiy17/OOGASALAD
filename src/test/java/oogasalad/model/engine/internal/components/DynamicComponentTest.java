@@ -298,7 +298,7 @@ class DynamicComponentTest {
     int timeStep = 1;
     body.getDynamicState().setLinearVelocity(linearVelocity);
 
-    double dragCoefficient = world.getDragCoefficient();
+    double dragCoefficient = world.getPhysicsEnvironment().drag();
     double expectedLinearAcceleration = -linearVelocityX * dragCoefficient / body.getMass();
     body.addForce(body.getDynamicState().getLinearVelocity().multiply(-dragCoefficient));
     body.applyForceToAcceleration();
@@ -321,7 +321,7 @@ class DynamicComponentTest {
     body.setMomentOfInertia(momentOfInertia);
     body.getDynamicState().setAngularVelocity(angularVelocity);
 
-    double dragCoefficient = world.getDragCoefficient();
+    double dragCoefficient = world.getPhysicsEnvironment().drag();
     double expectedAngularAcceleration = -angularVelocity * dragCoefficient / momentOfInertia;
     body.addTorque(-dragCoefficient * body.getDynamicState().getAngularVelocity());
     body.applyForceToAcceleration();
