@@ -83,7 +83,6 @@ class DriveActionTest {
       return thrustDirection;
     }
 
-    @Override
     public void setThrustDirection(Vector v) {
       this.thrustDirection = v;
     }

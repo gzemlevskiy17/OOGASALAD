@@ -122,7 +122,7 @@ class LevelSaverImplTest {
   void saveLevel_writesMainCharacterFromAttributes() throws IOException {
     LevelAttributes attrs = new LevelAttributes();
     attrs.setGridSize(60);
-    attrs.setElementsAllowed(List.of("body", "wheel", "motor"));
+    attrs.setMainCharacterElementsAllowed(List.of("body", "wheel", "motor"));
     attrs.setMaxSelectable(5);
     attrs.setMaxHP(100);
 
