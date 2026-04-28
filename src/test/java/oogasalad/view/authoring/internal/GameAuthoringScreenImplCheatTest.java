@@ -126,6 +126,41 @@ class GameAuthoringScreenImplCheatTest extends DukeApplicationTest {
   }
 
   @Test
+  void Catalog_LoadAndReset_RefreshesVisibleCatalogLists() throws IOException {
+    sourceCatalog = writeCatalog(sourceCatalog.getParent().resolve("catalog-with-cheat.json"), """
+        [
+          {
+            "id": "repair_body",
+            "name": "Repair Body",
+            "enabled": true,
+            "trigger": { "keys": ["SHIFT", "R"] },
+            "effects": [
+              {
+                "type": "repair",
+                "target": { "kind": "mainCharacter", "id": "" },
+                "parameters": { "amount": 50 }
+              }
+            ]
+          }
+        ]
+        """);
+
+    runAsJFXAction(() -> screen.loadCatalogFromPath(sourceCatalog.toString()));
+
+    assertVisibleListContains("Terrain", "terrain-list", "grass");
+    assertVisibleListContains("Static Objects", "static-component-list", "heart");
+    assertVisibleListContains("Components", "component-list", "body");
+    assertVisibleListContains("Cheats", "cheat-list", "repair_body");
+
+    runAsJFXAction(screen::resetForNewCatalog);
+
+    assertVisibleListIsEmpty("Terrain", "terrain-list");
+    assertVisibleListIsEmpty("Static Objects", "static-component-list");
+    assertVisibleListIsEmpty("Components", "component-list");
+    assertVisibleListIsEmpty("Cheats", "cheat-list");
+  }
+
+  @Test
   void CheatsTab_HelpButton_IsAvailableForAuthorGuidance() {
     clickOn("Cheats");
 
@@ -163,6 +198,19 @@ class GameAuthoringScreenImplCheatTest extends DukeApplicationTest {
     return (ListView<String>) lookup("#" + id).queryAs(ListView.class);
   }
 
+  private void assertVisibleListContains(String tabName, String listId, String expectedText) {
+    clickOn(tabName);
+    assertTrue(stringList(listId).getItems().stream()
+            .anyMatch(item -> item.contains(expectedText)),
+        "Loaded catalog should display " + expectedText + " in " + tabName + ".");
+  }
+
+  private void assertVisibleListIsEmpty(String tabName, String listId) {
+    clickOn(tabName);
+    assertTrue(stringList(listId).getItems().isEmpty(),
+        "Resetting for a new catalog should clear the " + tabName + " list.");
+  }
+
   private JsonNode readSavedCatalog() throws IOException {
     return MAPPER.readTree(gamesDir.resolve("g").resolve("game.json").toFile());
   }
@@ -183,7 +231,9 @@ class GameAuthoringScreenImplCheatTest extends DukeApplicationTest {
               "onCollisionAction": { "type": "heal", "amount": 25 }
             }
           ],
-          "terrainTypes": [],
+          "terrainTypes": [
+            { "id": "grass", "spriteUrl": "grass.png", "visualColor": "#00AA00", "friction": 0.7 }
+          ],
           "cheats": %s
         }
         """.formatted(cheatsJson));
