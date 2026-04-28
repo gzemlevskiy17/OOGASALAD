@@ -83,26 +83,26 @@ class LevelAttributesTest {
   // ── Deprecated alias compatibility ───────────────────────────────────────
 
   @Test
-  void deprecatedAlias_getAllowedVehicleComponents_delegatesToElementsAllowed() {
+  void getAllowedVehicleComponents_delegatesToElementsAllowed() {
     attrs.setElementsAllowed(List.of("body", "wheel"));
-    assertEquals(List.of("body", "wheel"), attrs.getAllowedVehicleComponents());
+    assertEquals(List.of("body", "wheel"), attrs.getElementsAllowed());
   }
 
   @Test
-  void deprecatedAlias_setAllowedVehicleComponents_delegatesToElementsAllowed() {
-    attrs.setAllowedVehicleComponents(List.of("fan"));
+  void setAllowedVehicleComponents_delegatesToElementsAllowed() {
+    attrs.setElementsAllowed(List.of("fan"));
     assertEquals(List.of("fan"), attrs.getElementsAllowed());
   }
 
   @Test
-  void deprecatedAlias_getMaxSelectableVehicleItems_delegatesToMaxSelectable() {
+  void getMaxSelectableVehicleItems_delegatesToMaxSelectable() {
     attrs.setMaxSelectable(7);
-    assertEquals(7, attrs.getMaxSelectableVehicleItems());
+    assertEquals(7, attrs.getMaxSelectable());
   }
 
   @Test
-  void deprecatedAlias_setMaxSelectableVehicleItems_delegatesToMaxSelectable() {
-    attrs.setMaxSelectableVehicleItems(9);
+  void setMaxSelectableVehicleItems_delegatesToMaxSelectable() {
+    attrs.setMaxSelectable(9);
     assertEquals(9, attrs.getMaxSelectable());
   }
 }

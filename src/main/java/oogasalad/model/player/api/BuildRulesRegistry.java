@@ -7,16 +7,18 @@ import oogasalad.data.api.GameConfig;
  * validator reads through this registry — no component-type branching inside the validator.
  *
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public interface BuildRulesRegistry {
 
-  BuildRules lookup(String componentType);
-
   /**
-   * Registers placement rules for component ids loaded from a game catalog.
+   * Registers or overlays build rules for the selected game's component catalog.
    *
-   * @param config game catalog whose component ids should be buildable
+   * @param config selected game catalog
+   * @author Emilio Garcia
    */
   default void registerFromConfig(GameConfig config) {
   }
+
+  BuildRules lookup(String componentType);
 }

@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Test-only {@link PickupEffect} that records every {@code apply} invocation so tests can verify
+ * Test-only {@link CollisionEffect} that records every {@code apply} invocation so tests can verify
  * how many times an effect fired and against which target. This is intentionally a fake (records
  * calls) rather than a stub or noop.
  *
  * @author Paulina Vvedenskaya
  */
-public final class RecordingPickupEffect implements PickupEffect {
+public final class RecordingPickupEffect implements CollisionEffect {
 
   private final List<GameObject> targets = new ArrayList<>();
 

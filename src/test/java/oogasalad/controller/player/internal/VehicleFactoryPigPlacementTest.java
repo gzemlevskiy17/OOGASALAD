@@ -212,8 +212,8 @@ class VehicleFactoryPigPlacementTest {
         new PlacedComponent(2, 0, "Fan"),
         new PlacedComponent(2, 1, "Frame"),
         new PlacedComponent(2, 2, "Frame"),
-        new PlacedComponent(3, 1, "Wheel"),
-        new PlacedComponent(3, 2, "Wheel")
+        new PlacedComponent(3, 1, "Wood Wheel"),
+        new PlacedComponent(3, 2, "Wood Wheel")
     ));
     World world = new WorldImpl();
     new VehicleFactory().buildVehicle(layout, world, START_X, START_Y);

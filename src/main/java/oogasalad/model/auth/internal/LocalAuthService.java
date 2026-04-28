@@ -5,6 +5,8 @@ import oogasalad.model.auth.api.AuthResult;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
 import oogasalad.model.auth.api.SessionContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Authenticates players against a local SQLite database.
@@ -13,6 +15,8 @@ import oogasalad.model.auth.api.SessionContext;
  * keeping this class focused on login/register logic only.
  */
 public class LocalAuthService implements AuthService {
+
+  private static final Logger LOG = LogManager.getLogger(LocalAuthService.class);
 
   private final UserRepository repo;
   private PlayerProfile loggedInUser;
@@ -42,9 +46,11 @@ public class LocalAuthService implements AuthService {
     Optional<UserRecord> record = repo.findByUsername(username.trim());
     if (record.isEmpty() || !PasswordHasher.matches(password, record.get().passwordHash(),
         record.get().salt())) {
+      LOG.warn("Login failed for user '{}'", username.trim());
       return new AuthResult.Failure("Invalid username or password");
     }
     loggedInUser = toProfile(record.get());
+    LOG.info("Login succeeded for user '{}'", loggedInUser.username());
     return new AuthResult.Success(loggedInUser);
   }
 
@@ -70,6 +76,7 @@ public class LocalAuthService implements AuthService {
     String path = avatarPath == null ? "" : avatarPath;
     UserRecord saved = repo.save(username.trim(), hash, salt, path);
     loggedInUser = toProfile(saved);
+    LOG.info("Account created for user '{}'", loggedInUser.username());
     return new AuthResult.Success(loggedInUser);
   }
 
@@ -135,6 +142,9 @@ public class LocalAuthService implements AuthService {
    */
   @Override
   public void logout() {
+    if (loggedInUser != null) {
+      LOG.info("User '{}' logged out", loggedInUser.username());
+    }
     loggedInUser = null;
   }
 

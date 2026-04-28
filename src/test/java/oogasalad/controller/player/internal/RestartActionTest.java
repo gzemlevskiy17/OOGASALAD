@@ -1,21 +1,24 @@
 package oogasalad.controller.player.internal;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import oogasalad.controller.player.api.GameController;
+import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.GameLoader;
+import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelLoader;
+import oogasalad.model.engine.api.World;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import oogasalad.controller.player.api.GameController;
-import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelLoader;
-import oogasalad.model.engine.api.World;
 
 /**
  * Tests for RestartAction.
- *
  */
 class RestartActionTest {
 
@@ -26,6 +29,8 @@ class RestartActionTest {
   private World world;
   private GameConfig config;
   private RestartAction restartAction;
+  private GameLoader gameLoader;
+  private LevelAttributes attributes;
 
   @BeforeEach
   void setUp() {
@@ -33,7 +38,12 @@ class RestartActionTest {
     levelLoader = mock(LevelLoader.class);
     world       = mock(World.class);
     config      = mock(GameConfig.class);
-    restartAction = new RestartAction(controller, levelLoader, world, config, LEVEL_PATH);
+    gameLoader = mock(GameLoader.class);
+    attributes = new LevelAttributes();
+    attributes.setGameType("badpiggies");
+    when(levelLoader.loadAttributes(anyString())).thenReturn(attributes);
+    when(gameLoader.loadGame(anyString())).thenReturn(config);
+    restartAction = new RestartAction(controller, levelLoader, gameLoader, world, LEVEL_PATH);
   }
 
   @Test
@@ -42,32 +52,33 @@ class RestartActionTest {
 
     InOrder order = inOrder(controller, levelLoader);
     order.verify(controller).resetSimulation();
-    order.verify(levelLoader).loadLevel(LEVEL_PATH, world, config);
+    order.verify(levelLoader).loadLevel(anyString(), org.mockito.ArgumentMatchers.any(),
+        org.mockito.ArgumentMatchers.any());
     order.verify(controller).startSimulation();
   }
 
   @Test
-  void execute_loadsCorrectLevelPath() {
+  void execute_loadsAttributes() {
     restartAction.execute();
 
-    verify(levelLoader).loadLevel(LEVEL_PATH, world, config);
+    verify(levelLoader).loadAttributes(LEVEL_PATH);
   }
 
   @Test
   void constructor_nullController_throwsIllegalArgumentException() {
     assertThrows(IllegalArgumentException.class,
-        () -> new RestartAction(null, levelLoader, world, config, LEVEL_PATH));
+        () -> new RestartAction(null, levelLoader, gameLoader, world, LEVEL_PATH));
   }
 
   @Test
   void constructor_nullLevelLoader_throwsIllegalArgumentException() {
     assertThrows(IllegalArgumentException.class,
-        () -> new RestartAction(controller, null, world, config, LEVEL_PATH));
+        () -> new RestartAction(controller, null, gameLoader, world, LEVEL_PATH));
   }
 
   @Test
   void constructor_nullLevelPath_throwsIllegalArgumentException() {
     assertThrows(IllegalArgumentException.class,
-        () -> new RestartAction(controller, levelLoader, world, config, null));
+        () -> new RestartAction(controller, levelLoader, gameLoader, world, null));
   }
 }

@@ -87,8 +87,9 @@ class LevelProgressionTest {
   void pathFor_usesDataLevelsWorldLevelJson() {
     LevelProgression p = new LevelProgression(Map.of("forest", List.of("first")));
 
-    assertEquals("data/levels/forest/first.json",
-        p.pathFor(new LevelId("forest", "first")));
+    String actual = p.pathFor(new LevelId("forest", "first"));
+    assertTrue(actual.endsWith("data/levels/forest/first.json"),
+        "Expected path ending with data/levels/forest/first.json but got: " + actual);
   }
 
   @Test

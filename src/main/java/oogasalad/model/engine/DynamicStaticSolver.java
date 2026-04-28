@@ -46,7 +46,6 @@ public class DynamicStaticSolver {
       }
     }
   }
-  // TODO: refactor
 
   /**
    * Resolves one collision using the impulse solver pipeline.

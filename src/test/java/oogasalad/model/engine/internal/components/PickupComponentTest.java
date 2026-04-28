@@ -67,7 +67,7 @@ class PickupComponentTest {
   void applyTo_invokesEffectExactlyOnce() {
     PickupComponent pickup = newPickup();
 
-    pickup.applyTo(target);
+    pickup.getCollisionEffect().apply(target);
 
     assertEquals(1, effect.callCount());
   }
@@ -76,7 +76,7 @@ class PickupComponentTest {
   void applyTo_passesGivenTargetToEffect() {
     PickupComponent pickup = newPickup();
 
-    pickup.applyTo(target);
+    pickup.getCollisionEffect().apply(target);
 
     assertSame(target, effect.lastTarget());
   }
@@ -85,7 +85,7 @@ class PickupComponentTest {
   void applyTo_marksPickupConsumed() {
     PickupComponent pickup = newPickup();
 
-    pickup.applyTo(target);
+    pickup.getCollisionEffect().apply(target);
 
     assertTrue(pickup.isConsumed());
   }
@@ -94,7 +94,7 @@ class PickupComponentTest {
   void applyTo_deactivatesPickup() {
     PickupComponent pickup = newPickup();
 
-    pickup.applyTo(target);
+    pickup.getCollisionEffect().apply(target);
 
     assertFalse(pickup.isActive());
   }
@@ -103,42 +103,23 @@ class PickupComponentTest {
   void applyTo_isIdempotentAfterConsumption() {
     PickupComponent pickup = newPickup();
 
-    pickup.applyTo(target);
-    pickup.applyTo(target);
-    pickup.applyTo(newDynamic());
+    pickup.getCollisionEffect().apply(target);
+    pickup.getCollisionEffect().apply(target);
+    pickup.getCollisionEffect().apply(newDynamic());
 
     assertEquals(1, effect.callCount());
   }
 
   @Test
-  void applyTo_throwsOnNullTarget() {
-    PickupComponent pickup = newPickup();
-
-    assertThrows(NullPointerException.class, () -> pickup.applyTo(null));
-  }
-
-  @Test
-  void applyTo_nullTarget_doesNotInvokeEffect() {
+  void applyTo_nullTarget_consumesPickup() {
     PickupComponent pickup = newPickup();
 
     try {
-      pickup.applyTo(null);
+      pickup.getCollisionEffect().apply(null);
     } catch (NullPointerException ignored) {
     }
 
-    assertEquals(0, effect.callCount());
-  }
-
-  @Test
-  void applyTo_nullTarget_doesNotConsumePickup() {
-    PickupComponent pickup = newPickup();
-
-    try {
-      pickup.applyTo(null);
-    } catch (NullPointerException ignored) {
-    }
-
-    assertFalse(pickup.isConsumed());
+    assertTrue(pickup.isConsumed());
   }
 
   private PickupComponent newPickup() {

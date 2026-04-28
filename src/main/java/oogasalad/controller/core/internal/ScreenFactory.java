@@ -45,6 +45,8 @@ import oogasalad.view.player.internal.WinAppScreen;
 import java.util.List;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.internal.GameAttributes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Creates and registers all application screens with the ScreenManager.
@@ -66,6 +68,8 @@ public class ScreenFactory {
   public static final String CREATE_ACCOUNT_SCREEN_KEY = "CREATE_ACCOUNT";
   public static final String PROFILE_SCREEN_KEY = "PROFILE";
   public static final String UPDATE_PROFILE_SCREEN_KEY = "UPDATE_PROFILE";
+
+  private static final Logger LOG = LogManager.getLogger(ScreenFactory.class);
 
   private final ScreenManager screenManager;
   private final AuthService authService = AuthFactory.createService();
@@ -251,6 +255,8 @@ public class ScreenFactory {
       authoringScreen.setGameConfig(
           gameLoader.loadGame(LevelPaths.gameFileForLevel(representativeLevelPath, worldKey)));
     } catch (RuntimeException e) {
+      LOG.warn("Could not load game config for world '{}'; authoring will run without catalog",
+          worldKey, e);
       authoringScreen.setGameConfig(null);
     }
   }
@@ -261,6 +267,8 @@ public class ScreenFactory {
       authoringScreen.setGameConfig(
           gameLoader.loadGame(LevelPaths.gameFileForLevel(levelPath, attrs.getGameType())));
     } catch (RuntimeException e) {
+      LOG.warn("Could not load game config for level '{}'; authoring will run without catalog",
+          levelPath, e);
       authoringScreen.setGameConfig(null);
     }
   }
@@ -342,6 +350,9 @@ public class ScreenFactory {
           LevelPaths.gameFileForLevel(levelPath, levelAttributes.getGameType()));
       vehicleBuilderScreen.setGameConfig(gameConfig);
     } catch (RuntimeException e) {
+      LOG.warn(
+          "Could not load game config for level '{}'; vehicle builder will run without catalog",
+          levelPath, e);
       vehicleBuilderScreen.setGameConfig(null);
     }
 
