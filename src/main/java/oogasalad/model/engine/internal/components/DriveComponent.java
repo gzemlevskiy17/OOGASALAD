@@ -83,9 +83,4 @@ public class DriveComponent extends VehicleComponent implements Driveable {
   public void setPlayerControllable(boolean playerControllable) {
     this.playerControllable = playerControllable;
   }
-
-  @Override
-  public boolean isTrigger() {
-    return false;
-  }
 }

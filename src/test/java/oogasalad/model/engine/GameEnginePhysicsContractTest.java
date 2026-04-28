@@ -102,7 +102,6 @@ class GameEnginePhysicsContractTest {
     World world = new WorldImpl();
     TerrainBlock floor = new TerrainBlock(0, 0, 10, 10, "floor.png", false, 0.4, "#888888", 0.0);
     TestBox body = new TestBox(5, 5, 1, 1, 1.0, 0.0, false);
-    body.setCollisionFilter(0x0002, 0x0000);
     world.addComponent(floor);
     world.addComponent(body);
 
