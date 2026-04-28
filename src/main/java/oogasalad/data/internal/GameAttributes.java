@@ -8,9 +8,9 @@ import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.data.api.TerrainInfo;
 
 /**
- * Typed view over a game's catalog ({@code game.json}). This class only reflects game data — it does
- * not read level files. Callers combine it with {@link LevelAttributes} (e.g. {@code elementsAllowed})
- * where level-specific overrides matter.
+ * Typed view over a game's catalog ({@code game.json}). This class only reflects game data — it
+ * does not read level files. Callers combine it with {@link LevelAttributes} (e.g.
+ * {@code elementsAllowed}) where level-specific overrides matter.
  *
  * @author Iurii Beliaev
  */
@@ -26,12 +26,16 @@ public final class GameAttributes {
     return game.gameId();
   }
 
-  /** Returns MainCharacterComponentId */
+  /**
+   * Returns MainCharacterComponentId
+   */
   public String mainCharacterComponentId() {
     return game.mainCharacterId();
   }
 
-  /** Returns moveableComponentIds */
+  /**
+   * Returns moveableComponentIds
+   */
   public List<String> movableComponentIds() {
     return game.components().stream()
         .map(ComponentInfo::id)
@@ -39,7 +43,9 @@ public final class GameAttributes {
         .toList();
   }
 
-  /** Returns staticComponentIds */
+  /**
+   * Returns staticComponentIds
+   */
   public List<String> staticComponentIds() {
     return game.staticComponents().stream()
         .map(StaticComponentInfo::id)
@@ -47,7 +53,9 @@ public final class GameAttributes {
         .toList();
   }
 
-  /** Every {@link TerrainInfo#id} under {@code terrainTypes}. */
+  /**
+   * Every {@link TerrainInfo#id} under {@code terrainTypes}.
+   */
   public List<String> terrainTypeIds() {
     return game.terrainTypes().stream()
         .map(TerrainInfo::id)
@@ -55,7 +63,9 @@ public final class GameAttributes {
         .toList();
   }
 
-  /** Underlying config for callers that need full typed access. */
+  /**
+   * Underlying config for callers that need full typed access.
+   */
   public GameConfig gameConfig() {
     return game;
   }
