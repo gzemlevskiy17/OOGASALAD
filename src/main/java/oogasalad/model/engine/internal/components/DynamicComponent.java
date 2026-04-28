@@ -1,5 +1,7 @@
 package oogasalad.model.engine.internal.components;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.DynamicState;
 import oogasalad.model.engine.EngineError;
@@ -45,6 +47,7 @@ public abstract class DynamicComponent extends RigidBody {
   private boolean sleepingAllowed;
   private boolean sleeping;
   private double sleepTime;
+  private final Map<String, Vector> externalForces = new LinkedHashMap<>();
 
   /**
    * Creates a dynamic component with full geometric and physical configuration.
@@ -344,6 +347,43 @@ public abstract class DynamicComponent extends RigidBody {
 
     dynamicState.setLinearAcceleration(netForce.multiply(1.0 / m));
     dynamicState.setAngularAcceleration(netTorque * getInverseMomentOfInertia());
+  }
+
+  /**
+   * Adds or replaces a named external force applied each frame until removed.
+   */
+  public void addExternalForce(String id, Vector forceVector) {
+    if (forceVector != null && forceVector.magnitude() > 0 && this.sleeping) {
+      setSleeping(false);
+    }
+    externalForces.put(id, forceVector);
+  }
+
+  /**
+   * Removes a named external force.
+   */
+  public void removeExternalForce(String id) {
+    externalForces.remove(id);
+  }
+
+  /**
+   * Removes all named external forces.
+   */
+  public void clearExternalForces() {
+    externalForces.clear();
+  }
+
+  /**
+   * Returns the sum of all active named external forces.
+   */
+  public Vector getExternalForceTotal() {
+    Vector total = new Vector(0, 0);
+    for (Vector f : externalForces.values()) {
+      if (f != null) {
+        total = total.add(f);
+      }
+    }
+    return total;
   }
 
   /** Clears both torque and linear force accumulators. */

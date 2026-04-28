@@ -69,5 +69,13 @@ class ForceIntegrator {
     if (dynamicComponent instanceof Driveable driveable) {
       dynamicComponent.addForce(driveable.getDriveForce());
     }
+
+    Vector externalForce = dynamicComponent.getExternalForceTotal();
+    if (externalForce.magnitude() > 0) {
+      if (dynamicComponent.isSleeping()) {
+        dynamicComponent.setSleeping(false);
+      }
+      dynamicComponent.addForce(externalForce);
+    }
   }
 }
