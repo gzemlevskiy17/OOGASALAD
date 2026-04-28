@@ -68,7 +68,7 @@ public class LevelSaverImpl implements LevelSaver {
     }
   }
 
-  private ObjectNode buildGameMetadata(LevelAttributes attrs) {
+  private ObjectNode buildGameMetadata(oogasalad.data.internal.LevelAttributes attrs) {
     ObjectNode meta = MAPPER.createObjectNode();
     meta.put("levelName", attrs.getLevelName());
     meta.put("gameType", attrs.getGameType());
