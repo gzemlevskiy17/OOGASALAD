@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import oogasalad.model.engine.api.CollisionDetector;
-import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
@@ -138,56 +137,8 @@ class CollisionPhase {
   private void dispatchCollisions(List<Collision> collisions, boolean applyImpulse,
       boolean isFirstIteration) {
     for (Collision collision : collisions) {
-      dispatchSingleCollision(collision, applyImpulse, isFirstIteration);
+      collisionDispatcher.dispatch(collision, isFirstIteration, applyImpulse);
     }
-  }
-
-  private void dispatchSingleCollision(Collision collision, boolean applyImpulse,
-      boolean isFirstIteration) {
-    GameObject objectA = collision.getReferenceObject();
-    GameObject objectB = collision.getIncidentObject();
-    CollisionPair collisionPair = CollisionPair.of(objectA.getClass(), objectB.getClass());
-
-    if (!collisionDispatcher.getSolverMap().containsKey(collisionPair)) {
-      collisionPair = findSuperClassPair(collisionPair);
-    }
-    if (collisionPair == null) {
-      LOG.warn("No collision solver registered for pair: {} vs {}",
-          objectA.getClass(), objectB.getClass());
-      return;
-    }
-
-    if (!collisionPair.objectA().isAssignableFrom(objectA.getClass())) {
-      GameObject temp = objectA;
-      objectA = objectB;
-      objectB = temp;
-    }
-
-    CollisionSolver solver = collisionDispatcher.getSolverMap().get(collisionPair);
-    solver.solve(objectA, objectB, collision, isFirstIteration, applyImpulse);
-  }
-
-  private CollisionPair findSuperClassPair(CollisionPair pair) {
-    Map<CollisionPair, CollisionSolver> solverMap = collisionDispatcher.getSolverMap();
-    CollisionPair sorted = CollisionPair.of(pair.objectA(), pair.objectB());
-    if (solverMap.containsKey(sorted)) {
-      return sorted;
-    }
-
-    CollisionPair left = null;
-    if (pair.objectA().getSuperclass() != null) {
-      left = findSuperClassPair(
-          new CollisionPair(pair.objectA().getSuperclass(), pair.objectB()));
-    }
-    if (left != null) {
-      return left;
-    }
-
-    if (pair.objectB().getSuperclass() != null) {
-      return findSuperClassPair(
-          new CollisionPair(pair.objectA(), pair.objectB().getSuperclass()));
-    }
-    return null;
   }
 
   private void storeImpulse(List<GameObject> pairKey, Collision collision) {
