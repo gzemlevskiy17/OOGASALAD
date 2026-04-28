@@ -88,7 +88,7 @@
   },
   "mainCharacter" : {
     "gridSize" : 60.0,
-    "elementsAllowed" : [ ],
+    "elementsAllowed" : [ "Frame", "Wood Wheel", "BigPig" ],
     "maxSelectable" : 5,
     "maxHP" : 100.0,
     "cameraFollows" : "vehicle"
