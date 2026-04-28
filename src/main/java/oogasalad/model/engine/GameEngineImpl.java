@@ -11,9 +11,9 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
 /**
  * Main physics-step orchestrator for simulation updates in a world.
  *
- * <p>Coordinates per-frame simulation flow: apply forces, integrate state,
- * resolve swept collisions, and solve constraints. Each phase is delegated to a focused
- * collaborator.
+ * <p>Coordinates per-frame simulation flow across fixed-size substeps: apply forces, integrate
+ * state, resolve swept collisions, run {@link CollisionPhase}, and solve constraints. Each phase
+ * is delegated to a focused collaborator.
  *
  * @author Georgiy Zemlevskiy
  * @author Iurii Beliaev

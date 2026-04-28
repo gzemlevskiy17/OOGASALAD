@@ -13,14 +13,17 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
-import oogasalad.model.engine.internal.components.PassThroughComponent;
-import oogasalad.model.engine.internal.components.StaticComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Broad-phase collision filtering, narrow-phase dispatch, impulse caching, and position
- * correction.
+ * Broad-phase collision filtering, narrow-phase dispatch, warm-started impulse solving, and
+ * separate positional correction passes.
+ *
+ * <p>The phase performs three ordered steps each frame: detect collisions, resolve velocity
+ * impulses, then resolve overlap with position-only passes. Collision pair keys are canonicalized
+ * with {@link #canonicalPair(GameObject, GameObject)} so seen-pair filtering and impulse caching
+ * use the same ordering as solver dispatch.
  *
  * @author Paulina Vvedenskaya
  * @author Georgiy Zemlevskiy
@@ -61,6 +64,10 @@ class CollisionPhase {
     return canonicalPair(collision.getReferenceObject(), collision.getIncidentObject());
   }
 
+  /**
+   * Runs collision detection, warm starting, velocity iterations, positional correction, and
+   * impulse-cache updates for one simulation step.
+   */
   public void solve(double elapsedTime) {
     List<Collision> collisions = detectCollisions();
     warmStartCollisions(collisions);

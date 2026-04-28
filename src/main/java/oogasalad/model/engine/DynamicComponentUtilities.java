@@ -8,7 +8,12 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 
 /**
+ * Utility helpers for batch-updating dynamic components during the engine step.
  *
+ * <p>The engine uses these helpers to reset forces, apply accumulated forces, integrate motion,
+ * refresh polygons after movement or positional correction, and update sleep state.
+ *
+ * @author Paulina Vvedenskaya
  * @author Georgiy Zemlevskiy
  */
 public class DynamicComponentUtilities {

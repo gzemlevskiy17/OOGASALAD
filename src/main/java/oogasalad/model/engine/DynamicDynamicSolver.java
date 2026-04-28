@@ -6,16 +6,11 @@ import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 
 /**
- * Impulse-based collision response implementation for a single collision pair.
+ * Impulse-based collision response implementation for a single dynamic-dynamic collision pair.
  *
- * <p>
- * <strong>Purpose:</strong> Resolves detected collisions by computing impulses
- * at contact
- * manifolds and applying positional corrections. This maintains momentum
- * conservation while
- * separating overlapping objects. Use this after collision detection to update
- * linear and angular
- * motion using contact geometry, mass properties, and restitution.
+ * <p><strong>Purpose:</strong> Resolves detected collisions by computing contact impulses. When
+ * the current pass requests it, the solver also applies positional correction to separate
+ * overlapping bodies.
  *
  * <p>
  * <strong>Assumptions:</strong> Incoming {@link Collision} objects reference
@@ -28,11 +23,8 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  * incomplete
  * corrections.
  *
- * <p>
- * <strong>Dependencies:</strong> Relies on {@link Collision},
- * {@link DynamicState},
- * {@link GameObject}, {@link Vector}, and the {@link CollisionSolver} interface
- * contract. Uses
+ * <p><strong>Dependencies:</strong> Relies on {@link Collision}, {@link DynamicState},
+ * {@link GameObject}, {@link Vector}, and the {@link CollisionSolver} interface contract. Uses
  * internal {@link ContactPointPhysics} class to track per-contact physics data.
  *
  * <p>
@@ -40,19 +32,15 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  *
  * <pre>{@code
  * CollisionSolver solver = new DynamicDynamicSolver();
- * solver.solve(dynamicObjectA, dynamicObjectB, collision);
+ * solver.solve(dynamicObjectA, dynamicObjectB, collision, true, true);
  * }</pre>
  *
- * <p>
- * <strong>Details:</strong> Code and formulas borrowed from
+ * <p><strong>Details:</strong> Code and formulas borrowed from
  * <a
  * href=
  * "https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/,https://en.wikipedia.org/wiki/Collision_response#Impulse-based_reaction_model">...</a>.
- * The solver executes two main phases: (1) impulse resolution at contact points
- * via manifold
- * clipping and impulse calculations, and (2) positional correction to move
- * overlapping objects
- * apart incrementally.
+ * The solver computes impulse response first and only applies positional correction when the
+ * caller requests it.
  *
  * @author Georgiy Zemlevskiy
  *
@@ -75,10 +63,11 @@ public class DynamicDynamicSolver {
    * enough contact
    * and normal information for response calculations.
    *
-   * @param objectA   reference object whose collision normal is used for response
-   * @param objectB   incident object being resolved against the reference object
-   * @param collision collision data containing manifold and penetration
-   *                  information
+   * @param objectA reference object whose collision normal is used for response
+   * @param objectB incident object being resolved against the reference object
+   * @param collision collision data containing manifold and penetration information
+   * @param isFirstIteration true only on the first solver iteration for the collision set
+   * @param solveImpulse true when the current pass should also apply positional correction
    */
   public void solve(DynamicComponent objectA, DynamicComponent objectB,
       Collision collision, boolean isFirstIteration, boolean solveImpulse) {
