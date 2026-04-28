@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
@@ -123,7 +122,7 @@ class LevelSaverImplTest {
   void saveLevel_writesMainCharacterFromAttributes() throws IOException {
     LevelAttributes attrs = new LevelAttributes();
     attrs.setGridSize(60);
-    attrs.setElementsAllowed(List.of("body", "wheel", "motor"));
+    attrs.setMainCharacterElementsAllowed(List.of("body", "wheel", "motor"));
     attrs.setMaxSelectable(5);
     attrs.setMaxHP(100);
 
