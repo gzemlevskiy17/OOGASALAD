@@ -1,8 +1,10 @@
 package oogasalad.data.internal;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import oogasalad.data.api.ButtonInfo;
 import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
@@ -37,13 +39,48 @@ public final class BuiltInVehicleCatalog {
     return List.copyOf(list);
   }
 
+  /**
+   * Returns an immutable snapshot of a preset ComponentInfo if id matches a
+   * builtin entry (object fields defined in defaultComponents() map).
+   */
   public static Optional<ComponentInfo> templateById(String id) {
+    if (id == null || id.isBlank()) {
+      return Optional.empty();
+    }
+    String key = id.trim();
+    for (ComponentInfo c : defaultComponents()) {
+      if (key.equals(c.id())) {
+        return Optional.of(replicate(c));
+      }
+    }
     return Optional.empty();
-  };
-
-  public static List<String> idsNotYetInCatalog(List<ComponentInfo> current) {
-    return List.of();
   }
+
+  /** Preset ids not already present. */
+  public static List<String> idsNotYetInCatalog(List<ComponentInfo> current) {
+    Set<String> have = new HashSet<>();
+    for (ComponentInfo c : current) {
+      if (c.id() != null && !c.id().isBlank()) {
+        have.add(c.id().trim());
+      }
+    }
+    List<String> out = new ArrayList<>();
+    for (ComponentInfo c : defaultComponents()) {
+      if (!have.contains(c.id())) {
+        out.add(c.id());
+      }
+    }
+    return out;
+  }
+
+  /** New instance so later edits to one list entry do not touch the template. */
+  private static ComponentInfo replicate(ComponentInfo c) {
+    return new ComponentInfo(c.id(), c.spriteUrl(), c.mass(),
+        c.buttons().stream()
+            .map(b -> new ButtonInfo(b.name(), b.directionX(), b.directionY()))
+            .toList());
+  }
+
 
   public static List<String> defaultComponentIds() {
     return defaultComponents().stream().map(ComponentInfo::id).toList();
