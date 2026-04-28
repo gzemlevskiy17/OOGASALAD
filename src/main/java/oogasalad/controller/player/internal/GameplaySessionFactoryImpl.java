@@ -1,8 +1,10 @@
 package oogasalad.controller.player.internal;
 
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import oogasalad.controller.core.api.Outcome;
@@ -63,6 +65,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private final Supplier<String> levelPathSupplier;
   private final CameraTargetResolver cameraTargetResolver = new CameraTargetResolver();
   private final DriveActionBinder driveActionBinder = new DriveActionBinder();
+  private final ButtonForceController buttonForceController = new ButtonForceController();
   private final VehicleHudAttacher vehicleHudAttacher = new VehicleHudAttacher();
   private final GameplayCameraViewportController cameraViewportController =
       new GameplayCameraViewportController();
@@ -103,7 +106,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     GameplayWorldBuilder.BuiltWorld built = worldBuilder.build(layout);
     World world = built.world();
     InputRouter inputRouter = buildInputRouter();
-    configureInputControls(screen, inputRouter, world);
+    configureInputControls(screen, inputRouter, world, built.gameConfig());
     GameController controller = buildController(screen, built, inputRouter);
     controller.setOnOutcome(onOutcome);
 
@@ -163,11 +166,15 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private void configureInputControls(GamePlayAppScreen screen, InputRouter inputRouter,
-      World world) {
+      World world, GameConfig gameConfig) {
     driveActionBinder.bind(inputRouter, world);
+    buttonForceController.bind(inputRouter, gameConfig, world);
+    Set<String> toolIds = new LinkedHashSet<>();
+    toolIds.addAll(driveActionBinder.collectToolIds(world));
+    toolIds.addAll(buttonForceController.collectButtonIds(gameConfig, world));
+    screen.setAvailableTools(toolIds);
     screen.setOnToolActivated(toolId -> inputRouter.handleButtonPress(toolId));
     screen.setOnToolDeactivated(toolId -> inputRouter.handleButtonRelease(toolId));
-    screen.setAvailableTools(driveActionBinder.collectToolIds(world));
   }
 
   private Camera buildCamera(GamePlayAppScreen screen) {

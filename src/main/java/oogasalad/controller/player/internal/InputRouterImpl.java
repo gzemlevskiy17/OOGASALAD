@@ -39,6 +39,8 @@ public class InputRouterImpl implements InputRouter {
   @Override
   public void handleButtonPress(String buttonId) {
     Action action = buttonBindings.get(buttonId);
+    System.out.println("[InputRouter] handleButtonPress(\"" + buttonId + "\") bound="
+        + (action != null) + " knownKeys=" + buttonBindings.keySet());
     if (action != null) {
       action.execute();
     }

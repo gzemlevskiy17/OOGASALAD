@@ -48,7 +48,9 @@ public final class VehiclePartRegistry {
     String mainCharacterId = config.mainCharacterId();
     for (ComponentInfo ci : config.components()) {
       VehiclePartSpec spec = buildSpecFromConfig(ci, mainCharacterId);
-      register(spec);
+      if (spec != null) {
+        register(spec);
+      }
     }
   }
 
@@ -61,33 +63,51 @@ public final class VehiclePartRegistry {
     if (isPigPart(id, mainCharacterId)) {
       return new PigPartSpec(id, mass, w, h);
     }
-    VehiclePartSpec existing = getIfPresent(id);
-    if (existing != null) {
-      return existing;
-    }
     if (!ci.buttons().isEmpty()) {
-      double maxMagnitude = ci.buttons().stream()
-          .mapToDouble(b -> Math.sqrt(b.directionX() * b.directionX() + b.directionY() * b.directionY()))
-          .max().orElse(DEFAULT_THRUST);
-      double force = Math.max(maxMagnitude, DEFAULT_THRUST);
-      // If any two buttons have opposing directions on the same axis, treat as bidirectional
-      boolean bidirectional = ci.buttons().size() >= 2 && ci.buttons().stream().anyMatch(a ->
-          ci.buttons().stream().anyMatch(b ->
-              a != b && Math.signum(a.directionX()) == -Math.signum(b.directionX()) && a.directionY() == b.directionY()
-                  || Math.signum(a.directionY()) == -Math.signum(b.directionY()) && a.directionX() == b.directionX()));
-      ButtonInfo first = ci.buttons().get(0);
-      Vector direction = new Vector(first.directionX(), first.directionY()).normalize();
-      if (bidirectional) {
-        // Pick the positive-axis direction as the canonical direction
-        ButtonInfo pos = ci.buttons().stream()
-            .filter(b -> b.directionX() > 0 || b.directionY() < 0)
-            .findFirst().orElse(first);
-        direction = new Vector(pos.directionX(), pos.directionY()).normalize();
-        return new RelativeDirectionDrivePartSpec(id, direction, force, mass, w, h);
-      }
-      return new FixedDirectionDrivePartSpec(id, direction, force, mass, w, h);
+      return buildDriveSpec(ci, mass, w, h);
+    }
+    if (getIfPresent(id) != null) {
+      return null;
     }
     return new StructuralPartSpec(id, JointStyle.STRUCTURAL, mass, w, h);
+  }
+
+  private VehiclePartSpec buildDriveSpec(ComponentInfo ci, double mass, double w, double h) {
+    String id = ci.id();
+    double maxMagnitude = ci.buttons().stream()
+        .mapToDouble(b -> Math.sqrt(b.directionX() * b.directionX()
+            + b.directionY() * b.directionY()))
+        .max().orElse(DEFAULT_THRUST);
+    double force = Math.max(maxMagnitude, DEFAULT_THRUST);
+    boolean bidirectional = ci.buttons().size() >= 2 && hasBidirectionalButtons(ci);
+    ButtonInfo first = ci.buttons().get(0);
+    Vector direction = new Vector(first.directionX(), first.directionY()).normalize();
+    if (bidirectional) {
+      ButtonInfo pos = ci.buttons().stream()
+          .filter(b -> b.directionX() > 0 || b.directionY() < 0)
+          .findFirst().orElse(first);
+      direction = new Vector(pos.directionX(), pos.directionY()).normalize();
+      return new RelativeDirectionDrivePartSpec(id, direction, force, mass, w, h);
+    }
+    return new FixedDirectionDrivePartSpec(id, direction, force, mass, w, h);
+  }
+
+  private boolean hasBidirectionalButtons(ComponentInfo ci) {
+    for (ButtonInfo a : ci.buttons()) {
+      for (ButtonInfo b : ci.buttons()) {
+        if (a == b) {
+          continue;
+        }
+        boolean opposingX = Math.signum(a.directionX()) == -Math.signum(b.directionX())
+            && a.directionY() == b.directionY();
+        boolean opposingY = Math.signum(a.directionY()) == -Math.signum(b.directionY())
+            && a.directionX() == b.directionX();
+        if (opposingX || opposingY) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private boolean isPigPart(String id, String mainCharacterId) {

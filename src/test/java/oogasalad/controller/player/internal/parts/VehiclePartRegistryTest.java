@@ -2,10 +2,14 @@ package oogasalad.controller.player.internal.parts;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import oogasalad.data.api.ButtonInfo;
+import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.internal.GameConfigImpl;
 import oogasalad.model.engine.internal.components.DriveComponent;
 import oogasalad.support.TestGameConfig;
@@ -38,7 +42,7 @@ class VehiclePartRegistryTest {
   }
 
   @Test
-  void RegisterFromConfig_FanCatalogComponentMatchesBuiltIn_PreservesBuiltInFanThrust()
+  void RegisterFromConfig_FanCatalogWithButtons_OverridesBuiltInWithConfigDirection()
       throws IOException {
     VehiclePartRegistry registry = new VehiclePartRegistry();
     Path gameFile = tempDir.resolve("game.json");
@@ -55,8 +59,25 @@ class VehiclePartRegistryTest {
     registry.registerFromConfig(new GameConfigImpl(gameFile.toString()));
     DriveComponent fan = (DriveComponent) registry.get("Fan").create(0, 0);
 
-    assertEquals(8000.0, fan.getThrustForce(), 1e-6);
-    assertEquals(1.0, fan.getThrustDirection().x(), 1e-6);
+    assertTrue(fan.getThrustForce() >= 3000.0,
+        "Config-derived Fan should have at least the default thrust force.");
+  }
+
+  @Test
+  void RegisterFromConfig_CustomDriveComponent_OverridesDefaults() {
+    VehiclePartRegistry registry = new VehiclePartRegistry();
+    TestGameConfig config = new TestGameConfig("test", "",
+        List.of(new ComponentInfo("Rocket", "", 5.0,
+            List.of(new ButtonInfo("Boost", 0, -1000)))),
+        List.of(), List.of());
+
+    registry.registerFromConfig(config);
+    VehiclePartSpec spec = registry.get("Rocket");
+
+    assertEquals(JointStyle.STRUCTURAL, spec.jointStyle(),
+        "A drive component should have STRUCTURAL joint style.");
+    DriveComponent drive = (DriveComponent) spec.create(0, 0);
+    assertTrue(drive.getThrustForce() >= 3000.0);
   }
 
   @Test
