@@ -110,11 +110,12 @@ class GameCatalogSaverTest {
   void save_writesTerrainVisualColor() throws IOException {
     File out = savedFile("game.json");
     saver.save(out.getAbsolutePath(), "g", "body", List.of(), List.of(),
-        List.of(new TerrainInfo("grass", null, "#00AA00", 0.6)));
+        List.of(new TerrainInfo("grass", null, "#00AA00", "#112233", 0.6)));
 
     JsonNode t = new ObjectMapper().readTree(out).path("terrainTypes").get(0);
     assertTrue(t.path("spriteUrl").isNull());
     assertEquals("#00AA00", t.path("visualColor").asText());
+    assertEquals("#112233", t.path("trackColor").asText());
   }
 
   @Test
