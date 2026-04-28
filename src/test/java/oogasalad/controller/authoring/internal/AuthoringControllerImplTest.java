@@ -1,6 +1,5 @@
 package oogasalad.controller.authoring.internal;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,11 +8,14 @@ import java.util.ArrayList;
 import java.util.List;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
+import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.view.authoring.api.AuthoringCanvas;
@@ -30,6 +32,7 @@ class AuthoringControllerImplTest {
   private SpyLevelSaver saver;
   private FakeToolSelector toolSelector;
   private SpyCanvas canvas;
+  private GameLoader gameLoader;
 
   @BeforeEach
   void setUp() {
@@ -38,9 +41,11 @@ class AuthoringControllerImplTest {
     saver = new SpyLevelSaver();
     toolSelector = new FakeToolSelector();
     canvas = new SpyCanvas();
+    gameLoader = new GameLoaderImpl();
+
 
     controller = new AuthoringControllerImpl(
-        world, loader, saver, new LevelAttributes(), toolSelector, canvas);
+        world, loader, saver, gameLoader, new LevelAttributes(), toolSelector, canvas);
     selectDefaultTerrainBrush(controller, canvas);
   }
 
@@ -143,7 +148,7 @@ class AuthoringControllerImplTest {
   void setActiveTool_select_clearsHoverPreview() {
     HoverCountingCanvas c = new HoverCountingCanvas();
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
-        world, loader, saver, new LevelAttributes(), toolSelector, c);
+        world, loader, saver, gameLoader, new LevelAttributes(), toolSelector, c);
     int clearsBefore = c.clearHoverCount;
     selectDefaultTerrainBrush(ctrl, c);
     ctrl.setActiveTool(ToolType.SELECT);
@@ -321,7 +326,7 @@ class AuthoringControllerImplTest {
   void drawBeyondInitialBounds_blockIsStillPlaced() {
     ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
-        world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+        world, loader, saver, gameLoader, new LevelAttributes(), toolSelector, expanding);
     selectDefaultTerrainBrush(ctrl, expanding);
 
     toolSelector.setActiveTool(ToolType.DRAW);
@@ -335,7 +340,7 @@ class AuthoringControllerImplTest {
   void drawWithinBounds_canvasDoesNotExpand() {
     ExpandingSpyCanvas expanding = new ExpandingSpyCanvas(5, 5);
     AuthoringControllerImpl ctrl = new AuthoringControllerImpl(
-        world, loader, saver, new LevelAttributes(), toolSelector, expanding);
+        world, loader, saver, gameLoader, new LevelAttributes(), toolSelector, expanding);
     selectDefaultTerrainBrush(ctrl, expanding);
 
     toolSelector.setActiveTool(ToolType.DRAW);
@@ -362,6 +367,17 @@ class AuthoringControllerImplTest {
     @Override
     public List<GameComponent> getActiveComponents() {
       return List.copyOf(components);
+    }
+
+    /**
+     * Returns all registered dynamic components in registration order.
+     */
+    @Override
+    public List<DynamicComponent> getActiveDynamicComponents() {
+      return getActiveComponents().stream()
+          .filter(DynamicComponent.class::isInstance)
+          .map(DynamicComponent.class::cast)
+          .toList();
     }
 
     @Override
@@ -396,7 +412,11 @@ class AuthoringControllerImplTest {
 
   private static class SpyLevelLoader implements LevelLoader {
     String lastFileName;
-    @Override public void loadLevel(String f, World w, LevelAttributes a, GameConfig c) { lastFileName = f; }
+
+    @Override
+    public void loadLevel(String f, GameConfig c, World w, LevelAttributes a) {
+      lastFileName = f;
+    }
   }
 
   private static class SpyLevelSaver implements LevelSaver {

@@ -12,14 +12,19 @@ import org.junit.jupiter.api.Test;
 class LevelPathsTest {
 
   @Test
-  void gameFileForLevel_badPiggiesWithAlternateCatalog_prefersGenerationCatalog() {
+  void GameFileForLevel_BadPiggiesWithAlternateCatalog_PrefersGenerationCatalog() {
     assertEquals("data/games/badpiggies/ai-generation-catalog.json",
         LevelPaths.gameFileForLevel("data/levels/generated/generated-level.json", "badpiggies"));
   }
 
   @Test
-  void gameFileForLevel_blankGameType_usesSiblingGameFile() {
+  void GameFileForLevel_BlankGameType_UsesSiblingGameFile() {
     assertEquals("data/levels/example/game.json",
         LevelPaths.gameFileForLevel("data/levels/example/forest1.level.json", ""));
+  }
+
+  @Test
+  void SiblingGameFile_LevelPathWithoutParent_ReturnsDefaultGameFileName() {
+    assertEquals("game.json", LevelPaths.siblingGameFile("level.json"));
   }
 }

@@ -1,9 +1,7 @@
 package oogasalad.controller.authoring.internal;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.List;
+import oogasalad.model.player.internal.PlacementValidator;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,16 +15,6 @@ class PlacementValidatorTest {
    */
   private static AuthoringPlaceable box(double x, double y, double w, double h) {
     return new AuthoringPlaceable() {
-      @Override
-      public double getX() {
-        return x;
-      }
-
-      @Override
-      public double getY() {
-        return y;
-      }
-
       @Override
       public double getWidth() {
         return w;

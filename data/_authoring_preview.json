@@ -1,95 +1,35 @@
 {
   "gameMetadata" : {
-    "levelName" : "Lunar Glide",
+    "levelName" : "Untitled Level",
     "gameType" : "badpiggies",
-    "screenWidth" : 1920.0,
-    "screenHeight" : 1080.0,
-    "gravity" : -1.0,
-    "drag" : 0.02
+    "screenWidth" : 3200.0,
+    "screenHeight" : 1600.0,
+    "gravity" : -9.8,
+    "drag" : 0.01
   },
   "map" : {
     "knotLocations" : [ {
-      "x" : 120.0,
-      "y" : 880.0
+      "x" : 10.0,
+      "y" : 333.0
     }, {
-      "x" : 320.0,
-      "y" : 860.0
+      "x" : 590.0,
+      "y" : 333.0
     }, {
-      "x" : 560.0,
-      "y" : 900.0
-    }, {
-      "x" : 800.0,
-      "y" : 840.0
-    }, {
-      "x" : 1100.0,
-      "y" : 930.0
-    }, {
-      "x" : 1500.0,
-      "y" : 950.0
-    }, {
-      "x" : 1780.0,
-      "y" : 870.0
+      "x" : 755.0,
+      "y" : 301.0
     } ],
-    "objects" : [ {
-      "type" : "Rock",
-      "position" : {
-        "x" : 480.0,
-        "y" : 900.0
-      }
-    }, {
-      "type" : "Bomb",
-      "position" : {
-        "x" : 1050.0,
-        "y" : 920.0
-      }
-    }, {
-      "type" : "Coin",
-      "position" : {
-        "x" : 1300.0,
-        "y" : 900.0
-      }
-    }, {
-      "type" : "GoalLine",
-      "position" : {
-        "x" : 1760.0,
-        "y" : 850.0
-      }
-    }, {
-      "type" : "Rock",
-      "position" : {
-        "x" : 570.0,
-        "y" : 890.0
-      }
-    }, {
-      "type" : "Coin",
-      "position" : {
-        "x" : 630.0,
-        "y" : 870.0
-      }
-    }, {
-      "type" : "Bomb",
-      "position" : {
-        "x" : 690.0,
-        "y" : 850.0
-      }
-    }, {
-      "type" : "XPBoost",
-      "position" : {
-        "x" : 770.0,
-        "y" : 850.0
-      }
-    } ],
-    "terrainOptions" : [ "GrassHills" ],
+    "objects" : [ ],
+    "terrainOptions" : [ "Spline Terrain" ],
     "spawnPoint" : {
-      "x" : 140.0,
-      "y" : 850.0
+      "x" : 100.0,
+      "y" : 100.0
     }
   },
   "mainCharacter" : {
-    "gridSize" : 20.0,
-    "elementsAllowed" : [ ],
-    "maxSelectable" : 9,
-    "maxHP" : 3.0,
+    "gridSize" : 60.0,
+    "elementsAllowed" : [ "Frame", "Wood Wheel", "BigPig", "Fan" ],
+    "maxSelectable" : 5,
+    "maxHP" : 100.0,
     "cameraFollows" : "vehicle"
   }
 }

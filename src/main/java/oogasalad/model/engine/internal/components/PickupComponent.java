@@ -6,6 +6,8 @@ import oogasalad.model.engine.api.CollisionEffect;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.HasCollisionEffect;
 import oogasalad.model.engine.api.TypedComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A pass-through world object that, on contact with a dynamic body, fires a single
@@ -21,6 +23,8 @@ import oogasalad.model.engine.api.TypedComponent;
  */
 public final class PickupComponent extends PassThroughComponent
     implements TypedComponent, HasCollisionEffect {
+
+  private static final Logger LOG = LogManager.getLogger(PickupComponent.class);
 
   private final CollisionEffect effect;
   private final CollisionEffect wrappedEffect;
@@ -71,7 +75,7 @@ public final class PickupComponent extends PassThroughComponent
       return;
     }
     consumed = true;
-    System.out.println("[pickup] " + typeName + " consumed by " + describe(target));
+    LOG.debug("[pickup] {} consumed by {}", typeName, describe(target));
     effect.apply(target);
     destroy();
     onDestroyHook.run();

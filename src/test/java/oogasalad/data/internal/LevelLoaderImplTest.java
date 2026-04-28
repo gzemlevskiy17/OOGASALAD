@@ -2,6 +2,7 @@ package oogasalad.data.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -11,10 +12,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import oogasalad.data.api.ComponentInfo;
+import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
+import oogasalad.data.api.StaticComponentInfo;
+import oogasalad.data.api.TerrainInfo;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,7 +69,7 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world, levelAttributes);
 
     assertEquals(1, world.objectCount());
   }
@@ -89,7 +95,7 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world, levelAttributes);
 
     assertEquals(2, world.objectCount());
   }
@@ -98,7 +104,7 @@ class LevelLoaderImplTest {
   void loadLevel_emptyTerrainArray_addsNoObjects() throws IOException {
     File level = writeLevel("{\"level\": {\"terrain\": []}}");
 
-    loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world, levelAttributes);
 
     assertEquals(0, world.objectCount());
   }
@@ -108,13 +114,14 @@ class LevelLoaderImplTest {
     File level = writeLevel("{\"not_level\": {}}");
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world,
+            levelAttributes));
   }
 
   @Test
   void loadLevel_nonExistentFile_throwsLevelLoadException() {
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel("ghost_file.json", world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel("ghost_file.json", new FakeGameConfig(), world, levelAttributes));
   }
 
   @Test
@@ -122,7 +129,8 @@ class LevelLoaderImplTest {
     File level = writeLevel("not valid json {{{{");
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world,
+            levelAttributes));
   }
 
   @Test
@@ -142,7 +150,8 @@ class LevelLoaderImplTest {
         """);
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world,
+            levelAttributes));
   }
 
   // --- Spline deserialization ---
@@ -157,7 +166,7 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world);
     // Must not have added any TerrainSpline instances.
     assertTrue(world.components.stream().noneMatch(c -> c instanceof TerrainSpline));
   }
@@ -191,7 +200,7 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world);
 
     TerrainSpline spline = (TerrainSpline) world.components.stream()
         .filter(c -> c instanceof TerrainSpline).findFirst().orElseThrow();
@@ -205,7 +214,7 @@ class LevelLoaderImplTest {
 
   @Test
   void loadLevel_splineWithScaleFactor_invertsCoordinatesToGridUnits() throws IOException {
-    LevelLoaderImpl scaling = new LevelLoaderImpl(20.0);
+    LevelLoaderImpl scaling = new LevelLoaderImpl();
     File level = writeLevel("""
         {
           "level": {
@@ -226,7 +235,7 @@ class LevelLoaderImplTest {
         }
         """);
 
-    scaling.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig());
+    scaling.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world);
 
     TerrainSpline spline = (TerrainSpline) world.components.stream()
         .filter(c -> c instanceof TerrainSpline).findFirst().orElseThrow();
@@ -237,7 +246,8 @@ class LevelLoaderImplTest {
   }
 
   @Test
-  void loadLevel_splineWithFewerControlsThanExpected_fallsBackToDefaultMidpoints() throws IOException {
+  void loadLevel_splineWithFewerControlsThanExpected_fallsBackToDefaultMidpoints()
+      throws IOException {
     File level = writeLevel("""
         {
           "level": {
@@ -259,7 +269,7 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world);
 
     TerrainSpline spline = (TerrainSpline) world.components.stream()
         .filter(c -> c instanceof TerrainSpline).findFirst().orElseThrow();
@@ -289,7 +299,7 @@ class LevelLoaderImplTest {
         """);
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig()));
+        () -> loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world));
   }
 
   @Test
@@ -306,11 +316,11 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world);
 
     long count = world.components.stream().filter(c -> c instanceof TerrainSpline).count();
     assertEquals(2, count);
-    assertFalse(count == 0);
+    assertNotEquals(0, count);
   }
 
   @Test
@@ -325,7 +335,8 @@ class LevelLoaderImplTest {
         """);
 
     assertThrows(LevelLoadException.class,
-        () -> loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig()));
+        () -> loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world,
+            levelAttributes));
   }
 
   @Test
@@ -342,15 +353,16 @@ class LevelLoaderImplTest {
         }
         """);
 
-    loader.loadLevel(level.getAbsolutePath(), world, levelAttributes, new FakeGameConfig());
+    loader.loadLevel(level.getAbsolutePath(), new FakeGameConfig(), world, levelAttributes);
 
-    assertEquals(5, levelAttributes.getMaxSelectableVehicleItems());
-    assertEquals(List.of("pig", "wheel", "fan"), levelAttributes.getAllowedVehicleComponents());
+    assertEquals(5, levelAttributes.getMaxSelectable());
+    assertEquals(List.of("pig", "wheel", "fan"), levelAttributes.getElementsAllowed());
   }
 
   // --- Test doubles ---
 
   private static class FakeWorld implements World {
+
     private final List<GameComponent> components = new ArrayList<>();
 
     @Override
@@ -368,29 +380,90 @@ class LevelLoaderImplTest {
       return List.copyOf(components);
     }
 
+    /**
+     * Returns all registered dynamic components in registration order.
+     */
+    @Override
+    public List<DynamicComponent> getActiveDynamicComponents() {
+      return getActiveComponents().stream()
+          .filter(DynamicComponent.class::isInstance)
+          .map(DynamicComponent.class::cast)
+          .toList();
+    }
+
     @Override
     public List<Joint> getJoints() {
       return List.of();
     }
-    @Override public void addComponent(GameComponent component) { components.add(component); }
-    @Override public void removeComponent(GameComponent component) { components.remove(component); }
-    @Override public void clear() { components.clear(); }
-    @Override public void addJoint(Joint j) {}
-    @Override public void removeJoint(Joint j) {}
+
     @Override
-    public double getDragCoefficient() {
-      return 0.0;
+    public void addComponent(GameComponent component) {
+      components.add(component);
     }
-    int objectCount() { return components.size(); }
+
+    @Override
+    public void removeComponent(GameComponent component) {
+      components.remove(component);
+    }
+
+    @Override
+    public void clear() {
+      components.clear();
+    }
+
+    @Override
+    public void addJoint(Joint j) {
+    }
+
+    @Override
+    public void removeJoint(Joint j) {
+    }
 
     @Override
     public double getDragCoefficient() {
       return 0.0;
+    }
+
+    int objectCount() {
+      return components.size();
     }
   }
 
-  private static class FakeGameConfig implements oogasalad.data.api.GameConfig {
-    @Override public String getSetting(String key) { return null; }
-    @Override public double getNumericSetting(String key) { return 0; }
+  private static class FakeGameConfig implements GameConfig {
+
+    @Override
+    public String getSetting(String key) {
+      return null;
+    }
+
+    @Override
+    public double getNumericSetting(String key) {
+      return 0;
+    }
+
+    @Override
+    public String gameId() {
+      return "";
+    }
+
+    @Override
+    public String primaryComponentId() {
+      return "";
+    }
+
+    @Override
+    public List<ComponentInfo> components() {
+      return List.of();
+    }
+
+    @Override
+    public List<StaticComponentInfo> staticComponents() {
+      return List.of();
+    }
+
+    @Override
+    public List<TerrainInfo> terrainTypes() {
+      return List.of();
+    }
   }
 }

@@ -20,7 +20,7 @@ class GeneratedMapSupportNormalizerTest {
       ResourceBundle.getBundle("oogasalad.model.authoring.GeneratedLevelSpecNormalizer");
 
   @Test
-  void flattenSupportZones_goalNearExistingTerrain_addsExactFlatSupportKnot() {
+  void FlattenSupportZones_GoalNearExistingTerrain_AddsExactFlatSupportKnot() {
     GeneratedMapSupportNormalizer normalizer = new GeneratedMapSupportNormalizer(PROPS);
     List<GeneratedLevelSpec.PointSpec> knots = new ArrayList<>(List.of(
         new GeneratedLevelSpec.PointSpec(0.0, 800.0),
@@ -36,7 +36,7 @@ class GeneratedMapSupportNormalizerTest {
   }
 
   @Test
-  void adjustObjectsToGround_goalLineBottomTouchesSupportPlatform() {
+  void AdjustObjectsToGround_GoalLineAboveSupportPlatform_SnapsBottomToSupportPlatform() {
     GeneratedMapSupportNormalizer normalizer = new GeneratedMapSupportNormalizer(PROPS);
     List<GeneratedLevelSpec.PointSpec> knots = new ArrayList<>(List.of(
         new GeneratedLevelSpec.PointSpec(0.0, 800.0),
@@ -51,5 +51,18 @@ class GeneratedMapSupportNormalizerTest {
         normalizer.adjustObjectsToGround(List.of(goal), knots);
 
     assertEquals(770.0, adjusted.getFirst().position().y());
+  }
+
+  @Test
+  void AdjustSpawnPointToGround_SpawnBelowMinimumClearance_MovesSpawnAboveTerrain() {
+    GeneratedMapSupportNormalizer normalizer = new GeneratedMapSupportNormalizer(PROPS);
+    List<GeneratedLevelSpec.PointSpec> knots = List.of(
+        new GeneratedLevelSpec.PointSpec(0.0, 800.0),
+        new GeneratedLevelSpec.PointSpec(1000.0, 800.0));
+    GeneratedLevelSpec.PointSpec lowSpawn = new GeneratedLevelSpec.PointSpec(100.0, 780.0);
+
+    GeneratedLevelSpec.PointSpec adjusted = normalizer.adjustSpawnPointToGround(lowSpawn, knots);
+
+    assertEquals(700.0, adjusted.y());
   }
 }

@@ -307,7 +307,8 @@ class GameEnginePhysicsContractTest {
     }
 
     @Override
-    public void solve(GameObject objectA, GameObject objectB, Collision collision) {
+    public void solve(GameObject objectA, GameObject objectB, Collision collision,
+        boolean isFirstIteration) {
       solveCount.incrementAndGet();
     }
   }
