@@ -66,41 +66,29 @@ public class FollowPlayerCameraBehavior extends AbstractCameraBehavior {
   @Override
   protected double desiredX(Camera camera) {
     Renderable player = playerSupplier.get();
-
     if (player == null) {
-      return camera.getX(); // keep current position if no player available
+      return camera.getX();
     }
-
     double desired = player.x() - camera.getViewWidth() / 2.0 + offsetX;
-    return clampToWorldX(desired, camera.getViewWidth());
+    return clampToWorld(desired, camera.getViewWidth(), worldWidth);
   }
 
   @Override
   protected double desiredY(Camera camera) {
     Renderable player = playerSupplier.get();
-
     if (player == null) {
-      return camera.getY();// keep current position if no player available
+      return camera.getY();
     }
-
     double desired = player.y() - camera.getViewHeight() / 2.0 + offsetY;
-    return clampToWorldY(desired, camera.getViewHeight());
+    return clampToWorld(desired, camera.getViewHeight(), worldHeight);
   }
 
-  private double clampToWorldX(double desired, double viewportWidth) {
-    if (!Double.isFinite(worldWidth) || worldWidth <= 0) {
+  private double clampToWorld(double desired, double viewportExtent, double worldExtent) {
+    if (!Double.isFinite(worldExtent) || worldExtent <= 0) {
       return desired;
     }
-    double maxX = Math.max(0, worldWidth - viewportWidth);
-    return clamp(desired, 0, maxX);
-  }
-
-  private double clampToWorldY(double desired, double viewportHeight) {
-    if (!Double.isFinite(worldHeight) || worldHeight <= 0) {
-      return desired;
-    }
-    double maxY = Math.max(0, worldHeight - viewportHeight);
-    return clamp(desired, 0, maxY);
+    double maxAlongAxis = Math.max(0.0, worldExtent - viewportExtent);
+    return clamp(desired, 0.0, maxAlongAxis);
   }
 
   private static double clamp(double value, double min, double max) {
