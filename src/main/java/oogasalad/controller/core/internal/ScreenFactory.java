@@ -205,6 +205,9 @@ public class ScreenFactory {
         new AuthoringEntryScreenImpl(this::guardedOutcome, this::scanLevels,
             worldKey -> configureAuthoringForWorld(authoringScreen, worldKey),
             path -> {
+              // If validation rejects the level, alerts fire inside the helpers and the world
+              // stays untouched (validator runs before any mutation). We still let the user
+              // progress into the authoring screen so they can fix the file or start fresh.
               configureAuthoringForLevel(authoringScreen, path);
               authoringScreen.loadLevelFromPath(path);
             }));
@@ -265,9 +268,9 @@ public class ScreenFactory {
     try {
       attrs = levelLoader.loadAttributes(levelPath);
     } catch (LevelLoadException e) {
-      LOG.error("Cannot open level '{}' for authoring: {}", levelPath, e.getMessage(), e);
-      new AuthoringAlertService().showError(
-          "Cannot Open Level", "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+      // The callback below also calls loadLevelFromPath which alerts on the same validation
+      // failure. Logging here is enough — alerting twice would show two popups for one bad file.
+      LOG.warn("Cannot resolve game config for invalid level '{}': {}", levelPath, e.getMessage());
       authoringScreen.setGameConfig(null);
       return;
     }
@@ -323,8 +326,9 @@ public class ScreenFactory {
       advanceToNextLevelAndRoute();
       return;
     }
-    if (outcome == Outcome.OPEN_VEHICLE_BUILDER) {
-      configureVehicleBuilderForSelectedLevel();
+    if (outcome == Outcome.OPEN_VEHICLE_BUILDER && !configureVehicleBuilderForSelectedLevel()) {
+      // Validation rejected the level; the alert has been shown, stay on the current screen.
+      return;
     }
     if (outcome == Outcome.SKIP_LOGIN) {
       screenManager.onOutcome(Outcome.BACK_TO_MENU);
@@ -337,15 +341,20 @@ public class ScreenFactory {
     }
   }
 
-  private void configureVehicleBuilderForSelectedLevel() {
+  /**
+   * Returns true if the vehicle builder is ready to open for the selected level. Returns false
+   * when level-file validation rejected the level (in which case an alert has been shown and the
+   * caller should NOT transition to the vehicle builder screen).
+   */
+  private boolean configureVehicleBuilderForSelectedLevel() {
     if (vehicleBuilderScreen == null) {
-      return;
+      return true;
     }
     String levelPath = pathForSelectedLevel();
     if (levelPath == null || levelPath.isBlank()) {
       vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
       vehicleBuilderScreen.setGameConfig(null);
-      return;
+      return true;
     }
     LevelAttributes attributes;
     try {
@@ -354,9 +363,7 @@ public class ScreenFactory {
       LOG.error("Cannot launch level '{}': {}", levelPath, e.getMessage(), e);
       new AuthoringAlertService().showError(
           "Cannot Launch Level", "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
-      vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
-      vehicleBuilderScreen.setGameConfig(null);
-      return;
+      return false;
     }
     try {
       oogasalad.data.api.GameConfig config = gameLoader.loadGame(
@@ -368,6 +375,7 @@ public class ScreenFactory {
       vehicleBuilderScreen.setGameConfig(null);
     }
     vehicleBuilderScreen.setAllowedComponentIds(attributes.getElementsAllowed());
+    return true;
   }
 
   /**
@@ -382,7 +390,11 @@ public class ScreenFactory {
         current != null ? progression.nextAfter(current) : java.util.Optional.empty();
     if (next.isPresent()) {
       selectedLevel.set(next.get());
-      configureVehicleBuilderForSelectedLevel();
+      if (!configureVehicleBuilderForSelectedLevel()) {
+        // Validation rejected the next level; alert was shown, fall back to the entry screen.
+        screenManager.onOutcome(Outcome.OPEN_PLAYER_ENTRY);
+        return;
+      }
       screenManager.onOutcome(Outcome.OPEN_VEHICLE_BUILDER);
     } else {
       screenManager.onOutcome(Outcome.OPEN_PLAYER_ENTRY);
