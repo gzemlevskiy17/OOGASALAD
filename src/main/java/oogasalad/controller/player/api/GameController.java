@@ -2,11 +2,14 @@ package oogasalad.controller.player.api;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import javafx.scene.input.KeyCode;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.model.player.api.GameplayScore;
 
 /**
  * High-level controller of the game player environment.
+ *
+ *
  */
 public interface GameController {
   /** Starts the 60-FPS loop. On the first call, binds keys from config. */
@@ -48,4 +51,9 @@ public interface GameController {
    * Forwards a tool button press to the InputRouter to activate/deactivate the bound action.
    */
   void handleButtonPress(String buttonId);
+
+  /**
+   * Forwards a keyboard press to the InputRouter.
+   */
+  void handleKeyPress(KeyCode key);
 }

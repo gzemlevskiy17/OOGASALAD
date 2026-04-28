@@ -35,6 +35,8 @@ import oogasalad.view.core.api.Renderer;
  * <p>
  * Assumes Settings returns comma-separated key names for dot-path lookups, e.g.
  * getSetting("input_mapping.activate_engine") returns "W,UP".
+ *
+ * @author Emilio Garcia
  */
 public class GameControllerImpl implements GameController {
 
@@ -103,6 +105,11 @@ public class GameControllerImpl implements GameController {
   @Override
   public void handleButtonPress(String buttonId) {
     inputRouter.handleButtonPress(buttonId);
+  }
+
+  @Override
+  public void handleKeyPress(KeyCode key) {
+    inputRouter.handleKeyPress(key);
   }
 
   @Override
