@@ -74,6 +74,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private final GameCatalogSaver catalogSaver;
   private final Path gamesDir;
   private final Path levelsDir;
+  private final CheatAuthoringValidator cheatValidator = new CheatAuthoringValidator();
 
   private final List<TerrainInfo> terrainTypes = new ArrayList<>();
   private final List<StaticComponentInfo> staticComponents = new ArrayList<>();
@@ -437,6 +438,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
           requiredText(effectTypeF, "Effect Type"),
           cheatTargetFrom(targetKindF, targetIdF),
           parseParameterMap(parametersF.getText()));
+      cheatValidator.validateEffect(effect, staticComponents);
       pendingEffects.add(effect);
       refreshPendingEffectList(pendingEffects, effectList);
       clearFields(effectTypeF, targetKindF, targetIdF, parametersF);
@@ -466,12 +468,14 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     List<String> keys = parseKeyChord(keysF.getText());
     requireNonEmpty(keys, "Cheat key chord must include at least one key.");
     requireNonEmpty(pendingEffects, "Cheat must include at least one effect.");
-    return new CheatInfo(
+    CheatInfo cheat = new CheatInfo(
         id,
         Optional.of(nameF.getText().strip()).filter(value -> !value.isBlank()).orElse(id),
         enabledBox.isSelected(),
         new CheatTriggerInfo(keys),
         List.copyOf(pendingEffects));
+    cheatValidator.validateCheat(cheat, staticComponents);
+    return cheat;
   }
 
   private CheatTargetInfo cheatTargetFrom(TextField targetKindF, TextField targetIdF) {
@@ -615,6 +619,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       saveFilePath = catalogPath.toString();
       new AuthoringAlertService().showInfo("Saved", "Game catalog saved to " + saveFilePath);
     } catch (IOException | RuntimeException e) {
+      LOG.warn("Could not save game catalog: {}", e.getMessage());
       new AuthoringAlertService().showError("Save Error", e.getMessage());
     }
   }
@@ -628,6 +633,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     Files.createDirectories(levelsDir.resolve(gameId));
     String mainCharacterId = mainCharacterIdField.getText().strip();
     validateMainCharacterId(mainCharacterId);
+    cheatValidator.validateCheats(cheats, staticComponents);
     catalogSaver.save(catalogPath.toString(),
         gameId,
         mainCharacterId,
@@ -657,6 +663,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       saveFilePath = catalogPath.toString();
       return new GameConfigImpl(saveFilePath);
     } catch (IOException | RuntimeException e) {
+      LOG.warn("Could not prepare current game config: {}", e.getMessage());
       new AuthoringAlertService().showError("Save Error", e.getMessage());
       return GameConfigImpl.empty();
     }
