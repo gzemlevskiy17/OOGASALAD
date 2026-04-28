@@ -1,9 +1,10 @@
 package oogasalad.controller.player.internal;
 
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
@@ -27,10 +28,14 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
+import oogasalad.controller.player.internal.cheats.CheatInputHandler;
+import oogasalad.controller.player.internal.cheats.CheatKeyBinder;
+import oogasalad.controller.player.internal.cheats.CheatRuntimeContext;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
@@ -54,11 +59,13 @@ import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.PlacedComponent;
+import oogasalad.model.player.api.ScoreService;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.model.player.internal.FallOffWorldLossChecker;
 import oogasalad.model.player.internal.FinishLineWinChecker;
 import oogasalad.model.player.internal.GameplayStatsTrackerImpl;
+import oogasalad.model.player.internal.ScoreServiceImpl;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
@@ -192,7 +199,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     GameConfig loadedGameConfig = built.gameConfig();
     GameplayConfigSettings gameplayConfig = new GameplayConfigSettings(loadedGameConfig);
     LevelAttributes levelAttributes = built.levelAttributes();
-    GameEngine engine = new GameEngineImpl(
+    GameEngineImpl engine = new GameEngineImpl(
         world, new CollisionDetectorImpl(), gravityVector(levelAttributes));
 
     WinConditionChecker winChecker = buildWinChecker(loadedGameConfig);
@@ -285,10 +292,12 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
         gameplayConfig.controllerSettings(), tracker
     );
     controller.setOnOutcome(onOutcome);
+    CheatInputHandler cheatInputHandler = buildCheatInputHandler(
+        loadedGameConfig, world, engine, controller, scoreService());
 
     attachVehicleHpHud(screen, built.placements());
 
-    return new GameplaySession(controller);
+    return new GameplaySession(controller, cheatInputHandler);
   }
 
   private void attachVehicleHpHud(GamePlayAppScreen screen,
@@ -343,7 +352,29 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private Vector gravityVector(LevelAttributes attributes) {
-    return new Vector(0.0, Math.abs(attributes.getGravity()) * GRAVITY_SCHEMA_TO_ENGINE_SCALE);
+    return gravityVector(attributes.getGravity());
+  }
+
+  private Vector gravityVector(double schemaGravity) {
+    return new Vector(0.0, Math.abs(schemaGravity) * GRAVITY_SCHEMA_TO_ENGINE_SCALE);
+  }
+
+  private CheatInputHandler buildCheatInputHandler(GameConfig gameConfig, World world,
+      GameEngine engine, GameController controller, ScoreService scoreService) {
+    return Optional.ofNullable(gameConfig)
+        .filter(config -> !config.cheats().isEmpty())
+        .map(config -> CheatKeyBinder.defaults().bind(config,
+            new CheatRuntimeContext(world, config, mainCharacterId(config),
+                controller::completeRun, gravity -> engine.setGravity(gravityVector(gravity)),
+                scoreService)))
+        .orElseGet(() -> new CheatInputHandler(List.of()));
+  }
+
+  private ScoreService scoreService() {
+    if (levelLoader instanceof LevelLoaderImpl loaderImpl) {
+      return loaderImpl.getScore();
+    }
+    return new ScoreServiceImpl();
   }
 
   static double adjustedSpawnYForVehicleGrounding(VehicleLayout layout, World world,

@@ -123,5 +123,9 @@ class GameplaySessionKeyInputTest {
     public void handleKeyPress(KeyCode key) {
       pressedKeys.add(key);
     }
+
+    @Override
+    public void completeRun(Outcome outcome) {
+    }
   }
 }
