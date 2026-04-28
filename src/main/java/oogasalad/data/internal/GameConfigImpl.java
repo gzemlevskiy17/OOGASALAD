@@ -5,8 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import oogasalad.data.api.ButtonInfo;
+import oogasalad.data.api.CheatEffectInfo;
+import oogasalad.data.api.CheatInfo;
+import oogasalad.data.api.CheatTargetInfo;
+import oogasalad.data.api.CheatTriggerInfo;
 import oogasalad.data.api.CollisionAction;
 import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
@@ -20,6 +26,7 @@ import org.apache.logging.log4j.Logger;
  * Parses a {@code game.json} file into a typed {@link GameConfig}.
  *
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public class GameConfigImpl implements GameConfig {
 
@@ -32,6 +39,7 @@ public class GameConfigImpl implements GameConfig {
   private final List<ComponentInfo> components;
   private final List<StaticComponentInfo> staticComponents;
   private final List<TerrainInfo> terrainTypes;
+  private final List<CheatInfo> cheats;
 
   public GameConfigImpl(String filePath) {
     try {
@@ -45,6 +53,7 @@ public class GameConfigImpl implements GameConfig {
     components = parseComponents(root.path("components"));
     staticComponents = parseStaticComponents(root.path("staticComponents"));
     terrainTypes = parseTerrainTypes(root.path("terrainTypes"));
+    cheats = parseCheats(root.path("cheats"));
   }
 
   private GameConfigImpl() {
@@ -54,6 +63,7 @@ public class GameConfigImpl implements GameConfig {
     components = new ArrayList<>();
     staticComponents = new ArrayList<>();
     terrainTypes = new ArrayList<>();
+    cheats = new ArrayList<>();
   }
 
   public static GameConfigImpl empty() {
@@ -83,6 +93,11 @@ public class GameConfigImpl implements GameConfig {
   @Override
   public List<TerrainInfo> terrainTypes() {
     return List.copyOf(terrainTypes);
+  }
+
+  @Override
+  public List<CheatInfo> cheats() {
+    return List.copyOf(cheats);
   }
 
   @Override
@@ -196,6 +211,70 @@ public class GameConfigImpl implements GameConfig {
           entry.path("visualColor").isNull() ? null : entry.path("visualColor").asText(null);
       double friction = entry.path("friction").asDouble(0);
       result.add(new TerrainInfo(id, spriteUrl, visualColor, friction));
+    }
+    return result;
+  }
+
+  private List<CheatInfo> parseCheats(JsonNode array) {
+    List<CheatInfo> result = new ArrayList<>();
+    if (!array.isArray()) {
+      return result;
+    }
+    for (JsonNode entry : array) {
+      result.add(parseCheat(entry));
+    }
+    return result;
+  }
+
+  private CheatInfo parseCheat(JsonNode entry) {
+    return new CheatInfo(
+        entry.path("id").asText(""),
+        entry.path("name").asText(""),
+        entry.path("enabled").asBoolean(true),
+        parseCheatTrigger(entry.path("trigger")),
+        parseCheatEffects(entry.path("effects")));
+  }
+
+  private CheatTriggerInfo parseCheatTrigger(JsonNode node) {
+    List<String> keys = new ArrayList<>();
+    JsonNode keyNodes = node.path("keys");
+    if (keyNodes.isArray()) {
+      for (JsonNode key : keyNodes) {
+        keys.add(key.asText(""));
+      }
+    }
+    return new CheatTriggerInfo(keys);
+  }
+
+  private List<CheatEffectInfo> parseCheatEffects(JsonNode array) {
+    List<CheatEffectInfo> result = new ArrayList<>();
+    if (!array.isArray()) {
+      return result;
+    }
+    for (JsonNode entry : array) {
+      result.add(parseCheatEffect(entry));
+    }
+    return result;
+  }
+
+  private CheatEffectInfo parseCheatEffect(JsonNode entry) {
+    return new CheatEffectInfo(
+        entry.path("type").asText(""),
+        parseCheatTarget(entry.path("target")),
+        parseCheatParameters(entry.path("parameters")));
+  }
+
+  private CheatTargetInfo parseCheatTarget(JsonNode node) {
+    if (node.isMissingNode() || node.isNull()) {
+      return null;
+    }
+    return new CheatTargetInfo(node.path("kind").asText(""), node.path("id").asText(""));
+  }
+
+  private Map<String, String> parseCheatParameters(JsonNode node) {
+    Map<String, String> result = new LinkedHashMap<>();
+    if (node.isObject()) {
+      node.fields().forEachRemaining(field -> result.put(field.getKey(), field.getValue().asText()));
     }
     return result;
   }

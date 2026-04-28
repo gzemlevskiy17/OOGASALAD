@@ -10,10 +10,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import oogasalad.data.api.LevelLoadException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * Tests JSON-backed game catalog parsing.
+ *
+ * @author Emilio Garcia
+ */
 class GameConfigImplTest {
 
   @TempDir
@@ -115,12 +121,49 @@ class GameConfigImplTest {
   }
 
   @Test
+  void Cheats_SpawnPowerupEffect_ReturnsTypedCheatInfo() throws IOException {
+    File f = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": [], "staticComponents": [], "terrainTypes": [],
+          "cheats": [
+            {
+              "id": "spawn_heart",
+              "name": "Spawn Heart",
+              "enabled": true,
+              "trigger": { "keys": ["SHIFT", "P"] },
+              "effects": [
+                {
+                  "type": "spawnPowerup",
+                  "target": { "kind": "world" },
+                  "parameters": { "componentId": "Heart", "x": 400, "y": 600 }
+                }
+              ]
+            }
+          ] }
+        """);
+
+    var cheat = new GameConfigImpl(f.getAbsolutePath()).cheats().getFirst();
+    var effect = cheat.effects().getFirst();
+
+    assertEquals("spawn_heart", cheat.id());
+    assertEquals("Spawn Heart", cheat.name());
+    assertTrue(cheat.enabled());
+    assertEquals(List.of("SHIFT", "P"), cheat.trigger().keys());
+    assertEquals("spawnPowerup", effect.type());
+    assertEquals("world", effect.target().kind());
+    assertEquals("Heart", effect.parameters().get("componentId"));
+    assertEquals("400", effect.parameters().get("x"));
+    assertEquals("600", effect.parameters().get("y"));
+  }
+
+  @Test
   void empty_returnsBlankCatalog() {
     var gc = GameConfigImpl.empty();
     assertEquals("", gc.gameId());
     assertTrue(gc.components().isEmpty());
     assertTrue(gc.staticComponents().isEmpty());
     assertTrue(gc.terrainTypes().isEmpty());
+    assertTrue(gc.cheats().isEmpty());
   }
 
   // ── Legacy dot-path API ──────────────────────────────────────────────────

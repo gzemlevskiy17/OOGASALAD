@@ -8,6 +8,8 @@ import java.util.List;
  * <p>Typed accessors reflect the new game schema. {@link #getSetting} /
  * {@link #getNumericSetting} are kept for legacy callers (input mapping, etc.)
  * that still use dot-path look-ups.
+ *
+ * @author Emilio Garcia
  */
 public interface GameConfig extends Settings {
 
@@ -20,4 +22,6 @@ public interface GameConfig extends Settings {
   List<StaticComponentInfo> staticComponents();
 
   List<TerrainInfo> terrainTypes();
+
+  List<CheatInfo> cheats();
 }
