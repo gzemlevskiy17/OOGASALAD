@@ -161,6 +161,18 @@ class SplineDraftControllerTest {
   }
 
   @Test
+  void commit_afterSettingNonTiledTerrainStyle_stillTilesSplineTerrain() {
+    controller.setTerrainStyle("Dirt", "data/assets/dirt.png", false, 0.5, "#8B5E3C");
+    controller.addKnot(0.0, 20.0);
+    controller.addKnot(10.0, 22.0);
+
+    TerrainSpline committed = controller.commit();
+
+    assertNotNull(committed);
+    assertTrue(committed.isTiled());
+  }
+
+  @Test
   void cancel_clearsDraftAndOverlays() {
     controller.addKnot(10.0, 20.0);
     controller.addKnot(20.0, 25.0);
@@ -196,7 +208,6 @@ class SplineDraftControllerTest {
     /**
      * Returns all registered dynamic components in registration order.
      */
-    @Override
     public List<DynamicComponent> getActiveDynamicComponents() {
       return getActiveComponents().stream()
           .filter(DynamicComponent.class::isInstance)
@@ -298,12 +309,12 @@ class SplineDraftControllerTest {
     }
 
     @Override
-    public void setZoom(double factor) {
+    public double getZoom() {
+      return 1.0;
     }
 
     @Override
-    public double getZoom() {
-      return 1.0;
+    public void setZoom(double factor) {
     }
 
     @Override

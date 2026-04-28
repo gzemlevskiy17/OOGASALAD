@@ -13,23 +13,23 @@ import org.apache.logging.log4j.Logger;
  */
 public class Main extends Application {
 
-    private static final Logger LOG = LogManager.getLogger(Main.class);
+  private static final Logger LOG = LogManager.getLogger(Main.class);
     private static final double VERSION = 0.001;
-    private static final Thread.UncaughtExceptionHandler UNCAUGHT_HANDLER =
-        (t, e) -> LOG.error("Uncaught exception on thread '{}'", t.getName(), e);
+  private static final Thread.UncaughtExceptionHandler UNCAUGHT_HANDLER =
+      (t, e) -> LOG.error("Uncaught exception on thread '{}'", t.getName(), e);
 
     /**
      * Start of the program.
      */
     static void main(String[] args) {
-        Thread.setDefaultUncaughtExceptionHandler(UNCAUGHT_HANDLER);
+      Thread.setDefaultUncaughtExceptionHandler(UNCAUGHT_HANDLER);
         launch(args);
     }
 
     @Override
     public void start(Stage stage) {
-        Thread.currentThread().setUncaughtExceptionHandler(UNCAUGHT_HANDLER);
-        LOG.info("Good Piggies starting (version={})", VERSION);
+      Thread.currentThread().setUncaughtExceptionHandler(UNCAUGHT_HANDLER);
+      LOG.info("Good Piggies starting (version={})", VERSION);
         ScreenManager screenManager = new ScreenManagerImpl(stage);
         ScreenFactory screenFactory = new ScreenFactory(screenManager);
         screenFactory.registerScreens();
@@ -39,10 +39,10 @@ public class Main extends Application {
         stage.setMaximized(true);
     }
 
-    @Override
-    public void stop() {
-        LOG.info("Good Piggies stopping");
-    }
+  @Override
+  public void stop() {
+    LOG.info("Good Piggies stopping");
+  }
 
     /**
      * Returns the current application version used by the starter sanity test.

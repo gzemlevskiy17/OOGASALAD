@@ -38,7 +38,8 @@ class GeneratedLevelSpecValidatorTest {
     GeneratedLevelSpecValidator validator = new GeneratedLevelSpecValidator(
         GeneratedLevelFixtures.provider(GeneratedLevelFixtures.catalog()));
 
-    assertThrows(GeneratedLevelSpecValidationException.class, () -> validator.validate(invalidSpec));
+    assertThrows(GeneratedLevelSpecValidationException.class,
+        () -> validator.validate(invalidSpec));
   }
 
   @Test

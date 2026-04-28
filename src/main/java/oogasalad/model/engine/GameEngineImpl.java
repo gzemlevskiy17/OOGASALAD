@@ -19,7 +19,6 @@ import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
-import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.PassThroughComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 import oogasalad.model.engine.internal.joints.DistanceJoint;

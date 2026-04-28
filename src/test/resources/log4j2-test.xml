@@ -13,7 +13,7 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Logger name="oogasalad" level="warn" additivity="false">
+    <Logger additivity="false" level="warn" name="oogasalad">
       <AppenderRef ref="Console"/>
     </Logger>
     <Root level="error">

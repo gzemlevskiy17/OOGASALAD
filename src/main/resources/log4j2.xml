@@ -4,43 +4,43 @@
   monitorInterval="30" reloads this file every 30s, so you can change levels
   in a running app without a restart.
 -->
-<Configuration status="WARN" monitorInterval="30">
-
-  <Properties>
-    <Property name="LOG_DIR">log</Property>
-    <Property name="LOG_PATTERN">%d{HH:mm:ss.SSS} %-5level [%t] %logger{1.} - %msg%n</Property>
-  </Properties>
+<Configuration monitorInterval="30" status="WARN">
 
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="${LOG_PATTERN}"/>
     </Console>
 
-    <RollingFile name="RollingFile"
-                 fileName="${LOG_DIR}/oogasalad.log"
-                 filePattern="${LOG_DIR}/oogasalad-%d{yyyy-MM-dd}-%i.log.gz">
+    <RollingFile fileName="${LOG_DIR}/oogasalad.log"
+      filePattern="${LOG_DIR}/oogasalad-%d{yyyy-MM-dd}-%i.log.gz"
+      name="RollingFile">
+      <DefaultRolloverStrategy max="10"/>
       <PatternLayout pattern="${LOG_PATTERN}"/>
       <Policies>
-        <TimeBasedTriggeringPolicy interval="1"/>
         <SizeBasedTriggeringPolicy size="10 MB"/>
+        <TimeBasedTriggeringPolicy interval="1"/>
       </Policies>
-      <DefaultRolloverStrategy max="10"/>
     </RollingFile>
   </Appenders>
 
   <Loggers>
     <!-- Our code -->
-    <Logger name="oogasalad" level="info" additivity="false">
+    <Logger additivity="false" level="info" name="oogasalad">
       <AppenderRef ref="Console"/>
       <AppenderRef ref="RollingFile"/>
     </Logger>
 
     <!-- Quiet noisy third-party libs (sqlite-jdbc routes through SLF4J -> log4j2) -->
-    <Logger name="org.sqlite" level="warn"/>
+    <Logger level="warn" name="org.sqlite"/>
 
     <Root level="warn">
       <AppenderRef ref="Console"/>
       <AppenderRef ref="RollingFile"/>
     </Root>
   </Loggers>
+
+  <Properties>
+    <Property name="LOG_DIR">log</Property>
+    <Property name="LOG_PATTERN">%d{HH:mm:ss.SSS} %-5level [%t] %logger{1.} - %msg%n</Property>
+  </Properties>
 </Configuration>

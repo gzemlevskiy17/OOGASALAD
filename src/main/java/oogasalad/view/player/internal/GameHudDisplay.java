@@ -64,8 +64,8 @@ public class GameHudDisplay extends VBox {
   }
 
   /**
-   * Updates the score row, displayed as {@code "Score: N / 100"}. Negative values are clamped
-   * to {@code 0} and values above {@code 100} are clamped to {@code 100}.
+   * Updates the score row, displayed as {@code "Score: N / 100"}. Negative values are clamped to
+   * {@code 0} and values above {@code 100} are clamped to {@code 100}.
    *
    * @param score current score in {@code [0, 100]}
    */

@@ -1,6 +1,7 @@
 package oogasalad.view.player.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,7 +41,7 @@ class GameHudDisplayTest extends DukeApplicationTest {
   void scoreLabel_isFirstChildAboveTimeLabel() {
     assertSame(scoreLabel(), hud.getChildren().get(0));
     assertSame(timeLabel(), hud.getChildren().get(1));
-    assertTrue(hud.getChildren().get(2) instanceof ProgressBar);
+    assertInstanceOf(ProgressBar.class, hud.getChildren().get(2));
   }
 
   @Test

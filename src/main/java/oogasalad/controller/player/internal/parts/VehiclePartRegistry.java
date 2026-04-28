@@ -1,7 +1,6 @@
 package oogasalad.controller.player.internal.parts;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import oogasalad.data.api.ButtonInfo;
 import oogasalad.data.api.ComponentInfo;
@@ -14,7 +13,6 @@ import oogasalad.model.engine.api.Vector;
  * vehicle builder and physics engine without touching code.
  *
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public final class VehiclePartRegistry {
 
@@ -38,28 +36,32 @@ public final class VehiclePartRegistry {
 
   /**
    * Overlays registrations from a game catalog. Config entries override hardcoded defaults when
-   * the component id matches. Primary or pig-named components become pig parts; components with
-   * buttons become drive parts; everything else becomes structural.
+   * the component id matches. Components with buttons become drive parts; the main character
+   * becomes a pig part; everything else becomes structural.
    */
   public void registerFromConfig(GameConfig config) {
     if (config == null) {
       return;
     }
-    String primaryId = config.primaryComponentId();
+    String mainCharacterId = config.mainCharacterId();
     for (ComponentInfo ci : config.components()) {
-      VehiclePartSpec spec = buildSpecFromConfig(ci, primaryId);
+      VehiclePartSpec spec = buildSpecFromConfig(ci, mainCharacterId);
       register(spec);
     }
   }
 
-  private VehiclePartSpec buildSpecFromConfig(ComponentInfo ci, String primaryId) {
+  private VehiclePartSpec buildSpecFromConfig(ComponentInfo ci, String mainCharacterId) {
     String id = ci.id();
     double mass = ci.mass();
     double w = DEFAULT_SIZE;
     double h = DEFAULT_SIZE;
 
-    if (isPigPart(id, primaryId)) {
+    if (id.equals(mainCharacterId)) {
       return new PigPartSpec(id, mass, w, h);
+    }
+    VehiclePartSpec existing = getIfPresent(id);
+    if (existing != null) {
+      return existing;
     }
     if (!ci.buttons().isEmpty()) {
       ButtonInfo first = ci.buttons().get(0);
@@ -73,15 +75,16 @@ public final class VehiclePartRegistry {
     return new StructuralPartSpec(id, JointStyle.STRUCTURAL, mass, w, h);
   }
 
-  private boolean isPigPart(String id, String primaryId) {
-    return id.equals(primaryId) || id.toLowerCase(Locale.ROOT).contains("pig");
+  private VehiclePartSpec getIfPresent(String paletteName) {
+    if (paletteName == null) {
+      return null;
+    }
+    VehiclePartSpec spec = byName.get(paletteName);
+    return spec != null ? spec : byCaseInsensitive.get(paletteName.toLowerCase());
   }
 
   public VehiclePartSpec get(String paletteName) {
-    VehiclePartSpec spec = byName.get(paletteName);
-    if (spec == null) {
-      spec = byCaseInsensitive.get(paletteName.toLowerCase());
-    }
+    VehiclePartSpec spec = getIfPresent(paletteName);
     if (spec == null) {
       throw new IllegalArgumentException("Unknown vehicle part: " + paletteName);
     }

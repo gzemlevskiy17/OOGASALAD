@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.geometry.Pos;
@@ -62,6 +61,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private FlowPane componentFlow;
   private PlacementValidator validator;
   private Label errorLabel;
+  private String mainCharacterId = "";
+  private boolean hasGameConfig;
 
   public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome,
       SpriteCache spriteCache, PaletteSpriteRegistry spriteRegistry,
@@ -93,7 +94,13 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private Node createStartLevelRegion() {
     Button startButton = new Button(s("start.button.text"));
     startButton.getStyleClass().add("start-button");
-    startButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_GAMEPLAY));
+    startButton.setOnAction(event -> {
+      if (!hasMainCharacterInBuild()) {
+        showError("not able to start the game");
+        return;
+      }
+      onOutcome.accept(Outcome.OPEN_GAMEPLAY);
+    });
 
     VBox container = new VBox(startButton);
     container.getStyleClass().add("selection-region");
@@ -131,10 +138,18 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
    * game.json instead of the hardcoded properties file.
    */
   public void setGameConfig(GameConfig config) {
-    Optional.ofNullable(config).ifPresent(selectedConfig -> {
-      spriteRegistry.registerFromConfig(selectedConfig);
-      buildRules.registerFromConfig(selectedConfig);
-    });
+    hasGameConfig = config != null;
+    if (config != null) {
+      mainCharacterId = config.mainCharacterId();
+      buildRules.registerFromConfig(config);
+      spriteRegistry.registerFromConfig(config);
+    } else {
+      mainCharacterId = "";
+    }
+    ensureAvailableComponentNames();
+    if (componentFlow != null) {
+      rebuildComponentPalette();
+    }
   }
 
   /**
@@ -153,10 +168,13 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
         }
       }
     }
+    ensureMainCharacterAvailable();
+    gridState.clear();
     resetWorkspace();
     if (componentFlow != null) {
       rebuildComponentPalette();
     }
+    clearError();
   }
 
   private static List<String> defaultComponentNames() {
@@ -167,6 +185,24 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       }
     }
     return result;
+  }
+
+  private void ensureMainCharacterAvailable() {
+    if (mainCharacterId != null && !mainCharacterId.isBlank()
+        && !availableComponentNames.contains(mainCharacterId)) {
+      availableComponentNames.add(mainCharacterId);
+    }
+  }
+
+  private boolean hasMainCharacterInBuild() {
+    if (!hasGameConfig) {
+      return true;
+    }
+    if (mainCharacterId == null || mainCharacterId.isBlank()) {
+      return false;
+    }
+    return getRawVehicleLayout().placements().stream()
+        .anyMatch(component -> mainCharacterId.equals(component.componentType()));
   }
 
   private void rebuildComponentPalette() {
@@ -187,7 +223,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
    * Reads the current grid state and returns it as a VehicleLayout. Called by the gameplay factory
    * just before the session starts. Each stacked component becomes its own {@link PlacedComponent}.
    */
-  public VehicleLayout getVehicleLayout() {return getRawVehicleLayout();}
+  public VehicleLayout getVehicleLayout() {
+    return getRawVehicleLayout();
+  }
+
   private VehicleLayout getRawVehicleLayout() {
     List<PlacedComponent> placements = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry : gridState.entrySet()) {
@@ -195,14 +234,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       for (String type : entry.getValue()) {
         placements.add(new PlacedComponent(rc[0], rc[1], type));
       }
-    }return new VehicleLayout(placements);
+    }
+    return new VehicleLayout(placements);
   }
 
-  /**
-   * Clears stale builder state every time the shared screen instance is shown again.
-   *
-   * @author Emilio Garcia
-   */
   @Override
   public void onEnter() {
     resetWorkspace();

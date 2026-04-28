@@ -22,9 +22,16 @@ import oogasalad.model.player.api.LossConditionChecker;
 public class FallOffWorldLossChecker implements LossConditionChecker {
 
   private final double worldHeight;
+  private final List<String> trackedMainCharacterIds;
 
   public FallOffWorldLossChecker(double worldHeight) {
+    this(worldHeight, List.of());
+  }
+
+  public FallOffWorldLossChecker(double worldHeight, List<String> trackedMainCharacterIds) {
     this.worldHeight = worldHeight;
+    this.trackedMainCharacterIds = trackedMainCharacterIds == null
+        ? List.of() : List.copyOf(trackedMainCharacterIds);
   }
 
   @Override
@@ -42,6 +49,15 @@ public class FallOffWorldLossChecker implements LossConditionChecker {
   }
 
   private List<GameObject> collectTracked(World world) {
+    if (!trackedMainCharacterIds.isEmpty()) {
+      List<GameObject> tracked = new ArrayList<>();
+      for (String id : trackedMainCharacterIds) {
+        if (id != null && !id.isBlank()) {
+          tracked.addAll(MainCharacterLookup.find(world, id));
+        }
+      }
+      return tracked;
+    }
     List<GameObject> tracked = new ArrayList<>(world.getObjectsByTag(DefaultTag.PIGS.value()));
     if (tracked.isEmpty()) {
       tracked.addAll(world.getObjectsByTag(DefaultTag.VEHICLE.value()));

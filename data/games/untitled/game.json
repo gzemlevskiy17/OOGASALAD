@@ -1,6 +1,6 @@
 {
   "gameId": "paulina's world",
-  "primaryComponentId": "id",
+  "mainCharacterId": "id",
   "components": [],
   "staticComponents": [],
   "terrainTypes": []

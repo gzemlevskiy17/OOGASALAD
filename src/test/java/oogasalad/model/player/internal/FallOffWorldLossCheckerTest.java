@@ -105,17 +105,34 @@ class FallOffWorldLossCheckerTest {
     assertFalse(checker.hasLost(world));
   }
 
+  @Test
+  void hasLost_configuredTrackedTag_usesConfiguredObjectsInsteadOfPigs() {
+    FakeWorld world = new FakeWorld();
+    world.addComponent(new TaggedBody("hero", 0, WORLD_HEIGHT + 10));
+    FallOffWorldLossChecker checker = new FallOffWorldLossChecker(WORLD_HEIGHT, List.of("hero"));
+
+    assertTrue(checker.hasLost(world));
+  }
+
+  @Test
+  void hasLost_configuredTrackedTagIgnoresDefaultPig() {
+    FakeWorld world = new FakeWorld();
+    world.addComponent(new TaggedBody(DefaultTag.PIGS.value(), 0, WORLD_HEIGHT + 10));
+    world.addComponent(new TaggedBody("hero", 0, 100));
+    FallOffWorldLossChecker checker = new FallOffWorldLossChecker(WORLD_HEIGHT, List.of("hero"));
+
+    assertFalse(checker.hasLost(world));
+  }
+
   // --- Test doubles ---
 
   private static final class TaggedBody extends StaticComponent {
-
     TaggedBody(String tag, double x, double y) {
       super(x, y, 0, ConvexPolygon.axisAlignedBox(x - 5, y - 5, 10, 10), tag, 0, 0);
     }
   }
 
   private static final class FakeWorld implements World {
-
     private final List<GameComponent> components = new ArrayList<>();
 
     @Override

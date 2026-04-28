@@ -370,7 +370,8 @@ public class ScreenFactory {
           LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
       vehicleBuilderScreen.setGameConfig(config);
     } catch (RuntimeException e) {
-      LOG.warn("Could not load game config for level '{}'; vehicle builder will run without catalog",
+      LOG.warn(
+          "Could not load game config for level '{}'; vehicle builder will run without catalog",
           levelPath, e);
       vehicleBuilderScreen.setGameConfig(null);
     }

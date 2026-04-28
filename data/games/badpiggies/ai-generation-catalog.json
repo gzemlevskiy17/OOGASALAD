@@ -1,6 +1,6 @@
 {
   "gameId": "badpiggies",
-  "primaryComponentId": "BigPig",
+  "mainCharacterId": "BigPig",
   "components": [
     {
       "id": "BigPig",

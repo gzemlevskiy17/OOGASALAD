@@ -8,6 +8,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
@@ -65,7 +66,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private final List<StaticComponentInfo> staticComponents = new ArrayList<>();
   private final List<ComponentInfo> components = new ArrayList<>();
   private TextField gameIdField;
-  private TextField primaryComponentIdField;
+  private TextField mainCharacterIdField;
   private String saveFilePath = "data/games/untitled/game.json";
 
   public GameAuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler,
@@ -82,7 +83,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       GameConfig config = new GameConfigImpl(path);
       saveFilePath = path;
       gameIdField.setText(config.gameId());
-      primaryComponentIdField.setText(config.primaryComponentId());
+      mainCharacterIdField.setText(config.mainCharacterId());
       terrainTypes.clear();
       terrainTypes.addAll(config.terrainTypes());
       staticComponents.clear();
@@ -121,13 +122,15 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     gameIdField.setPromptText("game id, e.g. badpiggies");
     gameIdField.setPrefWidth(200);
 
-    primaryComponentIdField = new TextField();
-    primaryComponentIdField.setPromptText("primary component id");
-    primaryComponentIdField.setPrefWidth(200);
+    mainCharacterIdField = new TextField();
+    mainCharacterIdField.setPromptText("(set via button below)");
+    mainCharacterIdField.setPrefWidth(200);
+    mainCharacterIdField.setEditable(false);
+    mainCharacterIdField.setStyle("-fx-opacity: 1.0;");
 
     HBox metaRow = new HBox(12,
         new Label("Game ID:"), gameIdField,
-        new Label("Primary Component:"), primaryComponentIdField);
+        new Label("Main Character:"), mainCharacterIdField);
     metaRow.setAlignment(Pos.CENTER_LEFT);
 
     Button loadCatalogButton = new Button(s("loadCatalogButtonText"));
@@ -204,21 +207,44 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     TextField idF = field("id");
     TextField spriteF = field("spriteUrl");
     TextField massF = field("mass, e.g. 0");
-    TextField actionTypeF = field("action type: heal / damage / score / finish");
-    TextField actionAmountF = field("action amount, e.g. 25");
+    TextField hpChangeF = field("+25 heals, -25 damages");
 
-    Button add = new Button("Add");
-    add.setOnAction(e -> {
-      String aType = actionTypeF.getText().strip();
-      CollisionAction action = aType.isBlank() ? null
-          : new CollisionAction(aType, parseDouble(actionAmountF.getText(), 0));
+    Label hpLabel = new Label("HP Change:");
+    hpLabel.setPrefWidth(120);
+    HBox hpRow = new HBox(8, hpLabel, hpChangeF);
+
+    Label massLabel = new Label("Mass:");
+    massLabel.setPrefWidth(120);
+    HBox massRow = new HBox(8, massLabel, massF);
+
+    Button addHpObject = new Button("Add HP Object");
+    addHpObject.setOnAction(e -> {
+      double hpChange = parseDouble(hpChangeF.getText(), 0);
+      if (hpChange == 0) {
+        new AuthoringAlertService().showError("Invalid HP",
+            "HP change must be nonzero. Use positive to heal, negative to damage.");
+        return;
+      }
+      CollisionAction action = buildHpAction(hpChange);
       staticComponents.add(new StaticComponentInfo(
           idF.getText().strip(),
           spriteF.getText().strip(),
           parseDouble(massF.getText(), 0),
           action));
       refreshStaticList(list);
-      clearFields(idF, spriteF, massF, actionTypeF, actionAmountF);
+      clearFields(idF, spriteF, massF, hpChangeF);
+    });
+
+    Button addFinishLine = new Button("Add Finish Line");
+    addFinishLine.setOnAction(e -> {
+      String finishId = idF.getText().strip().isBlank() ? "GoalLine" : idF.getText().strip();
+      staticComponents.add(new StaticComponentInfo(
+          finishId,
+          spriteF.getText().strip(),
+          0,
+          new CollisionAction("finish", 0)));
+      refreshStaticList(list);
+      clearFields(idF, spriteF, massF, hpChangeF);
     });
 
     Button remove = new Button("Remove");
@@ -232,9 +258,18 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
     return new Tab("Static Objects", buildTabContent(list,
         formRow("ID", idF), spriteRow(spriteF),
-        formRow("Mass", massF), formRow("Action Type", actionTypeF),
-        formRow("Action Amount", actionAmountF),
-        buttonBar(add, remove)));
+        massRow, hpRow,
+        buttonBar(addHpObject, addFinishLine, remove)));
+  }
+
+  private CollisionAction buildHpAction(double hpChange) {
+    if (hpChange == 0) {
+      return null;
+    }
+    if (hpChange > 0) {
+      return new CollisionAction("heal", hpChange);
+    }
+    return new CollisionAction("damage", Math.abs(hpChange));
   }
 
   private void refreshStaticList(ListView<String> list) {
@@ -242,8 +277,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       return;
     }
     list.getItems().setAll(staticComponents.stream()
-        .map(s -> s.id() + (s.onCollisionAction() != null
-            ? "  [" + s.onCollisionAction().type() + "]" : "  [inert]")).toList());
+        .map(s -> s.id() + formatHpChange(s.onCollisionAction())).toList());
   }
 
   private Tab buildComponentsTab() {
@@ -286,11 +320,23 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       clearFields(idF, spriteF, massF);
     });
 
+    Button useAsMainCharacter = new Button("Use as Main Character");
+    useAsMainCharacter.setOnAction(e -> selectedComponentId(list)
+        .ifPresent(id -> {
+          mainCharacterIdField.setText(id);
+          new AuthoringAlertService().showInfo(
+              "Main Character Set", "Main character set to: " + id);
+        }));
+
     Button remove = new Button("Remove");
     remove.setOnAction(e -> {
       int idx = list.getSelectionModel().getSelectedIndex();
       if (idx >= 0) {
+        String removedId = components.get(idx).id();
         components.remove(idx);
+        if (removedId.equals(mainCharacterIdField.getText().strip())) {
+          mainCharacterIdField.clear();
+        }
         refreshComponentList(list);
       }
     });
@@ -300,9 +346,17 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
         new Label("Buttons:"), btnList,
         formRow("Button Name", btnNameF), formRow("Dir X", btnDxF), formRow("Dir Y", btnDyF),
         buttonBar(addBtn),
-        buttonBar(add, remove));
+        buttonBar(add, useAsMainCharacter, remove));
 
     return new Tab("Components", buildTabContent(list, form));
+  }
+
+  private Optional<String> selectedComponentId(ListView<String> list) {
+    int idx = list.getSelectionModel().getSelectedIndex();
+    if (idx < 0 || idx >= components.size()) {
+      return Optional.empty();
+    }
+    return Optional.of(components.get(idx).id());
   }
 
   private void refreshComponentList(ListView<String> list) {
@@ -359,11 +413,24 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     Path catalogPath = catalogPathFor(gameId);
     Files.createDirectories(catalogPath.getParent());
     Files.createDirectories(LEVELS_DIR.resolve(gameId));
+    String mainCharacterId = mainCharacterIdField.getText().strip();
+    validateMainCharacterId(mainCharacterId);
     catalogSaver.save(catalogPath.toString(),
         gameId,
-        primaryComponentIdField.getText().strip(),
+        mainCharacterId,
         components, staticComponents, terrainTypes);
     return catalogPath;
+  }
+
+  private void validateMainCharacterId(String mainCharacterId) {
+    if (mainCharacterId.isBlank()) {
+      throw new IllegalArgumentException("Main Character is required before saving a game catalog.");
+    }
+    boolean exists = components.stream().anyMatch(component -> mainCharacterId.equals(component.id()));
+    if (!exists) {
+      throw new IllegalArgumentException(
+          "Main Character must be one of the vehicle components.");
+    }
   }
 
   private Path catalogPathFor(String gameId) {
@@ -475,6 +542,22 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     for (TextField f : fields) {
       f.clear();
     }
+  }
+
+  private String formatHpChange(CollisionAction action) {
+    if (action == null) {
+      return "  [inert]";
+    }
+    if ("finish".equals(action.type())) {
+      return "  [finish line]";
+    }
+    if ("heal".equals(action.type())) {
+      return "  [+" + (int) action.amount() + " HP]";
+    }
+    if ("damage".equals(action.type())) {
+      return "  [-" + (int) action.amount() + " HP]";
+    }
+    return "  [" + action.type() + "]";
   }
 
   private String nullIfBlank(String s) {

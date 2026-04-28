@@ -504,7 +504,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     String color = info.visualColor() == null || info.visualColor().isBlank()
         ? DEFAULT_TERRAIN_COLOR : info.visualColor();
     String sprite = info.spriteUrl() == null ? "" : info.spriteUrl();
-    return new ComponentPaletteImpl.PaletteEntry(info.id(), color, 1, 1, sprite, false,
+    return new ComponentPaletteImpl.PaletteEntry(info.id(), color, 1, 1, sprite, true,
         info.friction(), 0.2, false);
   }
 

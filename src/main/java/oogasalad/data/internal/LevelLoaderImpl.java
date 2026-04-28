@@ -149,7 +149,7 @@ public class LevelLoaderImpl implements LevelLoader {
     if (color == null) {
       color = DEFAULT_TERRAIN_COLOR;
     }
-    return new TerrainSpline(terrain.id(), spline, sprite, false, terrain.friction(), color);
+    return new TerrainSpline(terrain.id(), spline, sprite, true, terrain.friction(), color);
   }
 
   private TerrainInfo pickTerrain(JsonNode terrainOptions, GameConfig game) {
