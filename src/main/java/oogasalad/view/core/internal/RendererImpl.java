@@ -54,10 +54,6 @@ public class RendererImpl implements Renderer {
     this.frameUpdater = frameUpdater;
   }
 
-  public Pane getRenderLayer() {
-    return renderLayer;
-  }
-
   @Override
   public void render(Camera camera, Collection<? extends Renderable> objects) {
     if (camera == null || objects == null) {
