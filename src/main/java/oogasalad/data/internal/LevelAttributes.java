@@ -26,7 +26,7 @@ public class LevelAttributes {
 
   // mainCharacter
   private double gridSize = 60;
-  private List<String> elementsAllowed = new ArrayList<>();
+  private List<String> mainCharacterElementsAllowed = new ArrayList<>();
   private int maxSelectable = 5;
   private double maxHP = 100;
   private String cameraFollows = "vehicle";
@@ -87,13 +87,13 @@ public class LevelAttributes {
     this.gridSize = gridSize;
   }
 
-  public List<String> getElementsAllowed() {
-    return List.copyOf(elementsAllowed);
+  public List<String> getMainCharacterElementsAllowed() {
+    return List.copyOf(mainCharacterElementsAllowed);
   }
 
-  public void setElementsAllowed(List<String> elementsAllowed) {
-    this.elementsAllowed =
-        elementsAllowed == null ? new ArrayList<>() : new ArrayList<>(elementsAllowed);
+  public void setMainCharacterElementsAllowed(List<String> mainCharacterElementsAllowed) {
+    this.mainCharacterElementsAllowed =
+        mainCharacterElementsAllowed == null ? new ArrayList<>() : new ArrayList<>(mainCharacterElementsAllowed);
   }
 
   public int getMaxSelectable() {

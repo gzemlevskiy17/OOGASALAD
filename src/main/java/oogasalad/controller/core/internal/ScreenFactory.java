@@ -322,21 +322,25 @@ public class ScreenFactory {
     if (vehicleBuilderScreen == null) {
       return;
     }
+
     String levelPath = pathForSelectedLevel();
     if (levelPath == null || levelPath.isBlank()) {
       vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
       vehicleBuilderScreen.setGameConfig(null);
       return;
     }
-    LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+
+    LevelAttributes levelAttributes = levelLoader.loadAttributes(levelPath);
+
     try {
       oogasalad.data.api.GameConfig config = gameLoader.loadGame(
-          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
+          LevelPaths.gameFileForLevel(levelPath, levelAttributes.getGameType()));
       vehicleBuilderScreen.setGameConfig(config);
     } catch (RuntimeException e) {
       vehicleBuilderScreen.setGameConfig(null);
     }
-    vehicleBuilderScreen.setAllowedComponentIds(attributes.getElementsAllowed());
+
+    vehicleBuilderScreen.setAllowedComponentIds(levelAttributes.getElementsAllowed());
   }
 
   /**
