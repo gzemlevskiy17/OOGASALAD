@@ -8,25 +8,22 @@ import oogasalad.model.engine.internal.components.StaticComponent;
 /**
  * Solves collisions between a dynamic body and a static body.
  *
- * <p>
- * <strong>Purpose:</strong> Applies impulse response, positional correction,
- * and optional contact damage effects for dynamic-vs-static collisions.
+ * <p><strong>Purpose:</strong> Applies impulse response, optional positional correction, and
+ * optional collision effects for dynamic-vs-static collisions.
  *
  * <p>
  * <strong>Assumptions:</strong> The provided collision manifold and penetration
  * data were generated for {@code objectA} and {@code objectB} during the current simulation step.
  *
- * <p>
- * <strong>Dependencies:</strong> Delegates numerical response to
- * {@link ImpulseSolverUtilities} and gameplay side effects to {@link ContactDamager} /
- * {@link Damageable} contracts.
+ * <p><strong>Dependencies:</strong> Delegates numerical response to {@link ImpulseSolverUtilities}
+ * and gameplay side effects to {@link CollisionEffect} / {@link HasCollisionEffect} contracts.
  *
  * <p>
  * <strong>Example:</strong>
  *
  * <pre>{@code
  * DynamicStaticSolver solver = new DynamicStaticSolver();
- * solver.solve(dynamicBody, staticBody, collision);
+ * solver.solve(dynamicBody, staticBody, collision, true, true);
  * }</pre>
  *
  * @author Georgiy Zemlevskiy
@@ -58,12 +55,14 @@ public class DynamicStaticSolver {
    * <strong>Assumptions:</strong> {@code collision} is non-null and contains
    * enough contact and normal information for response calculations.
    *
-   * @param objectA   reference object whose collision normal is used for response
-   * @param objectB   incident object being resolved against the reference object
+   * @param objectA dynamic object in the collision
+   * @param objectB static object in the collision
    * @param collision collision data containing manifold and penetration information
+   * @param isFirstIteration true only on the first solver iteration for the collision set
+   * @param solveImpulse true when the current pass should also apply positional correction
    */
   public void solve(DynamicComponent objectA, StaticComponent objectB,
-      Collision collision, boolean isFirstIteration) {
+      Collision collision, boolean isFirstIteration, boolean solveImpulse) {
     // TODO: move this into the dispatcher. document the convention
     if (objectA == collision.getReferenceObject()) {
       collision.setPenetration(collision.getPenetration().multiply(-1));
@@ -76,6 +75,10 @@ public class DynamicStaticSolver {
     if (isFirstIteration) {
       applyCollisionEffect(objectB, objectA);
     }
+
+    if (solveImpulse) {
+      ImpulseSolverUtilities.applyPositionalCorrection(collision, referenceObject, incidentObject);
+    }
   }
 
   /**
@@ -85,9 +88,9 @@ public class DynamicStaticSolver {
    * This updates linear and angular velocities in-place on both colliding object states.
    *
    * <p>
-   * <strong>Assumptions:</strong> {@code referenceObject} and
-   * {@code incidentObject} have been set by
-   * {@link #solve(DynamicComponent, StaticComponent, Collision)} before invocation.
+   * <strong>Assumptions:</strong> {@code referenceObject} and {@code incidentObject} have been set
+   * by {@link #solve(DynamicComponent, StaticComponent, Collision, boolean, boolean)} before
+   * invocation.
    *
    * @param collision detected collision pair
    */

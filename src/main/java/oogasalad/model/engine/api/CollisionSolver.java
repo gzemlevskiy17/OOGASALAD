@@ -5,8 +5,8 @@ import oogasalad.model.engine.Collision;
 /**
  * Contract for resolving a single detected collision between two objects.
  *
- * <p>Use this interface to encapsulate collision response strategy (for example, impulse-based
- * response) separately from broad-phase pair generation and narrow-phase detection.
+ * <p>Use this interface to encapsulate collision response strategy separately from broad-phase
+ * pair generation and narrow-phase detection.
  *
  * <p><strong>Assumptions:</strong> Input collisions contain enough manifold/penetration data for
  * the selected solver strategy. If collision metadata is incomplete, implementations may skip
@@ -19,30 +19,37 @@ import oogasalad.model.engine.Collision;
  *
  * <pre>{@code
  * CollisionSolver solver = new DynamicDynamicSolver();
- * solver.solve(collision);
+ * solver.solve(objectA, objectB, collision, true, true);
  * }</pre>
  *
  * <p><strong>Details:</strong> This interface is intentionally pair-scoped; orchestration code is
- * responsible for deciding which collisions to pass into {@link #solve(Collision)} and in what
- * order.
+ * responsible for deciding which collisions to pass into
+ * {@link #solve(GameObject, GameObject, Collision, boolean, boolean)} and whether the current pass
+ * should apply impulses or only position correction.
  *
  * @author Georgiy Zemlevskiy
  */
 @FunctionalInterface
 public interface CollisionSolver {
-  //TODO: comment
 
   /**
    * Applies a collision response strategy to one collision record.
    *
-   * <p>Use this method to mutate involved object states (for example, velocity and/or position)
-   * based on collision geometry and material properties.
+   * <p>Use this method to mutate involved object states based on collision geometry and material
+   * properties. {@code isFirstIteration} marks the first solver pass for one frame's collision, and
+   * {@code solveImpulse} indicates whether the implementation should also apply positional
+   * correction during the current pass.
    *
    * <p><strong>Assumptions:</strong> {@code collision} is non-null and references valid objects.
-   * Implementations may no-op when data is insufficient (for example, missing contact points).
+   * Implementations may no-op when data is insufficient (for example, missing contact points) or
+   * when the current pass is position-only.
    *
-   * @param collision collision data for one object pair at the current simulation step
+   * @param objectA          first object in solver order
+   * @param objectB          second object in solver order
+   * @param collision        collision data for one object pair at the current simulation step
+   * @param isFirstIteration true only on the first solver iteration for the collision set
+   * @param solveImpulse     true when the current pass should apply positional correction too
    */
-  void solve(GameObject objectA, GameObject objectB, Collision collision, boolean isFirstIteration);
-  //TODO: is it best that this mutates, or returns new object state?
+  void solve(GameObject objectA, GameObject objectB, Collision collision, boolean isFirstIteration,
+      boolean solveImpulse);
 }
