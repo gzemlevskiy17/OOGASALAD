@@ -42,6 +42,7 @@ import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.TypedComponent;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
@@ -94,6 +95,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double BOUNDS_PADDING = 400.0;
   private static final double FALLBACK_WORLD_WIDTH = 2600.0;
   private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
+  private static final double GRAVITY_SCALE = 100.0;
   // Regardless of how tiny the authored terrain is, the world must be at least one
   // viewport + padding on each axis. Without this floor, a level with just a few
   // blocks near the top of the canvas yields a world shorter than the viewport,
@@ -303,12 +305,12 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private BuiltWorld buildWorld(VehicleLayout layout) {
-    World world = new WorldImpl();
     GameConfig loadedConfig = null;
+    LevelAttributes attributes = new LevelAttributes();
 
     String levelPath = levelPathSupplier.get();
     if (levelPath != null && !levelPath.isBlank()) {
-      LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+      attributes = levelLoader.loadAttributes(levelPath);
       try {
         loadedConfig = gameLoader.loadGame(
             LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
@@ -316,6 +318,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
         LOG.warn("Game config not found for level {}; running without catalog: {}", levelPath,
             e.getMessage());
       }
+    }
+
+    World world = new WorldImpl(physicsEnvironment(attributes));
+    if (levelPath != null && !levelPath.isBlank()) {
       levelLoader.loadLevel(levelPath, loadedConfig, world);
       if (loadedConfig != null) {
         vehicleFactory.getRegistry().registerFromConfig(loadedConfig);
@@ -332,6 +338,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     Map<PlacedComponent, RigidBody> placements =
         vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
     return new BuiltWorld(world, bounds, placements, loadedConfig);
+  }
+
+  /**
+   * Authoring stores gravity in physics convention (negative = downward, magnitude in m/s²),
+   * but the engine works in screen-space (Y grows downward) at a 100× pixel scale, so the
+   * default LevelAttributes value -9.8 maps to engine vector (0, +980).
+   */
+  private static PhysicsEnvironment physicsEnvironment(LevelAttributes attributes) {
+    Vector gravity = new Vector(0, -attributes.getGravity() * GRAVITY_SCALE);
+    return new PhysicsEnvironment(gravity, attributes.getDrag());
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {

@@ -3,6 +3,7 @@ package oogasalad.model.engine;
 import java.util.ArrayList;
 import java.util.List;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -34,15 +35,23 @@ import oogasalad.model.engine.internal.components.GameComponent;
  */
 public class WorldImpl implements World {
 
-  private static final double DRAG_COEFFICIENT = 0.1; //TODO: read from authoring environment
+  private final PhysicsEnvironment physicsEnvironment;
   private List<GameComponent> allComponents;
   private List<GameComponent> activeComponents;
   private List<Joint> joints;
 
   /**
-   * Creates an empty world with no components or joints registered.
+   * Creates an empty world with no components or joints registered, using the default physics.
    */
   public WorldImpl() {
+    this(PhysicsEnvironment.DEFAULT);
+  }
+
+  /**
+   * Creates an empty world with the per-level physics environment sourced from level attributes.
+   */
+  public WorldImpl(PhysicsEnvironment physicsEnvironment) {
+    this.physicsEnvironment = physicsEnvironment;
     this.allComponents = new ArrayList<>();
     this.activeComponents = new ArrayList<>();
     this.joints = new ArrayList<>();
@@ -214,13 +223,9 @@ public class WorldImpl implements World {
     joints.remove(joint);
   }
 
-  /**
-   *
-   * @return Drag coefficient.
-   */
   @Override
-  public double getDragCoefficient() {
-    return DRAG_COEFFICIENT;
+  public PhysicsEnvironment getPhysicsEnvironment() {
+    return physicsEnvironment;
   }
 
 
