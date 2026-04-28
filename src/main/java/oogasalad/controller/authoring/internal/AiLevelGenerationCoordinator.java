@@ -68,8 +68,11 @@ public class AiLevelGenerationCoordinator {
 
   private void generateAsync(String prompt, Window owner) {
     CompletableFuture.runAsync(() -> {
+      LOG.info("Starting AI level generation (prompt length={})", prompt.length());
+      long startMillis = System.currentTimeMillis();
       try {
         GeneratedLevelResult result = model.generateLevel(prompt);
+        LOG.info("AI level generation succeeded in {}ms", System.currentTimeMillis() - startMillis);
         Platform.runLater(() -> successHandler.accept(result));
       } catch (RuntimeException exception) {
         LOG.error(PROPS.getString("generationFailureLogMessage"), exception);

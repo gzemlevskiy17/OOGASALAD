@@ -29,6 +29,12 @@ class GameConfigImplTest {
     return file;
   }
 
+  private void assertConfigLoadFails(File file) {
+    LevelLoadException exception = assertThrows(LevelLoadException.class,
+        () -> new GameConfigImpl(file.getAbsolutePath()));
+    assertNotNull(exception);
+  }
+
   // ── Typed accessors ──────────────────────────────────────────────────────
 
   @Test
@@ -52,7 +58,7 @@ class GameConfigImplTest {
   @Test
   void components_parsedWithButtonsAndMass() throws IOException {
     File f = writeConfig("""
-        { "gameId": "g", "mainCharacterId": "body",
+        { "gameId": "g", "mainCharacterId": "motor",
           "components": [
             { "id": "motor", "spriteUrl": "motor.png", "mass": 2.0,
               "buttons": [{ "name": "go right", "direction": {"x": 1, "y": 0} }] }
@@ -168,14 +174,19 @@ class GameConfigImplTest {
 
   @Test
   void getSetting_topLevelKey_returnsValue() throws IOException {
-    File f = writeConfig("{\"gameId\": \"badpiggies\"}");
+    File f = writeConfig("""
+        { "gameId": "badpiggies", "mainCharacterId": "body",
+          "components": [], "staticComponents": [], "terrainTypes": [] }
+        """);
     assertEquals("badpiggies", new GameConfigImpl(f.getAbsolutePath()).getSetting("gameId"));
   }
 
   @Test
   void getSetting_arrayValue_returnsCommaSeparatedText() throws IOException {
     File f = writeConfig("""
-        { "input_mapping": { "activate_fan": ["F", "SPACE"] } }
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": [], "staticComponents": [], "terrainTypes": [],
+          "input_mapping": { "activate_fan": ["F", "SPACE"] } }
         """);
 
     assertEquals("F,SPACE", new GameConfigImpl(f.getAbsolutePath())
@@ -184,20 +195,118 @@ class GameConfigImplTest {
 
   @Test
   void getSetting_missingKey_returnsNull() throws IOException {
-    File f = writeConfig("{\"gameId\": \"g\"}");
+    File f = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": [], "staticComponents": [], "terrainTypes": [] }
+        """);
     assertNull(new GameConfigImpl(f.getAbsolutePath()).getSetting("nonexistent"));
   }
 
   @Test
   void getNumericSetting_missingKey_throwsIllegalArgument() throws IOException {
-    File f = writeConfig("{\"gameId\": \"g\"}");
-    assertThrows(IllegalArgumentException.class,
+    File f = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": [], "staticComponents": [], "terrainTypes": [] }
+        """);
+    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
         () -> new GameConfigImpl(f.getAbsolutePath()).getNumericSetting("missing"));
+    assertNotNull(exception);
   }
 
   @Test
   void constructor_nonExistentFile_throwsLevelLoadException() {
-    assertThrows(LevelLoadException.class,
+    LevelLoadException exception = assertThrows(LevelLoadException.class,
         () -> new GameConfigImpl("does_not_exist.json"));
+    assertNotNull(exception);
+  }
+
+  @Test
+  void constructor_missingGameId_throwsLevelLoadException() throws IOException {
+    File file = writeConfig("""
+        { "mainCharacterId": "body",
+          "components": [], "staticComponents": [], "terrainTypes": [] }
+        """);
+
+    assertConfigLoadFails(file);
+  }
+
+  @Test
+  void constructor_nullComponentsArray_throwsLevelLoadException() throws IOException {
+    File file = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": null, "staticComponents": [], "terrainTypes": [] }
+        """);
+
+    assertConfigLoadFails(file);
+  }
+
+  @Test
+  void constructor_componentMissingId_throwsLevelLoadException() throws IOException {
+    File file = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": [
+            { "spriteUrl": "body.png", "mass": 1, "buttons": [] }
+          ],
+          "staticComponents": [], "terrainTypes": [] }
+        """);
+
+    assertConfigLoadFails(file);
+  }
+
+  @Test
+  void constructor_buttonMissingDirection_throwsLevelLoadException() throws IOException {
+    File file = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": [
+            { "id": "fan", "spriteUrl": "fan.png", "mass": 1,
+              "buttons": [{ "name": "push" }] }
+          ],
+          "staticComponents": [], "terrainTypes": [] }
+        """);
+
+    assertConfigLoadFails(file);
+  }
+
+  @Test
+  void constructor_staticComponentMissingCollisionActionType_throwsLevelLoadException()
+      throws IOException {
+    File file = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": [],
+          "staticComponents": [
+            { "id": "bad", "spriteUrl": "bad.png", "mass": 0,
+              "onCollisionAction": { "amount": 10 } }
+          ],
+          "terrainTypes": [] }
+        """);
+
+    assertConfigLoadFails(file);
+  }
+
+  @Test
+  void constructor_terrainMissingFriction_throwsLevelLoadException() throws IOException {
+    File file = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "body",
+          "components": [], "staticComponents": [],
+          "terrainTypes": [
+            { "id": "grass", "spriteUrl": null, "visualColor": "#00FF00" }
+          ] }
+        """);
+
+    assertConfigLoadFails(file);
+  }
+
+  @Test
+  void constructor_mainCharacterMissingFromNonEmptyComponentCatalog_throwsLevelLoadException()
+      throws IOException {
+    File file = writeConfig("""
+        { "gameId": "g", "mainCharacterId": "pig",
+          "components": [
+            { "id": "fan", "spriteUrl": "fan.png", "mass": 1, "buttons": [] }
+          ],
+          "staticComponents": [], "terrainTypes": [] }
+        """);
+
+    assertConfigLoadFails(file);
   }
 }

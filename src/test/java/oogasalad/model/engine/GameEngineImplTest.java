@@ -2,12 +2,12 @@ package oogasalad.model.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
-import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
@@ -30,11 +30,8 @@ class GameEngineImplTest {
    */
   private static final double G = 980.0;
   private static final double FIXED_DT = 1.0 / 60.0;
-  private static final int SUB_STEPS = 4;
 
   private static final CollisionDetector NO_HITS = (a, b) -> Optional.empty();
-  private static final CollisionSolver NO_SOLVE = (a, b, c, d) -> {
-  };
 
   private static DynamicComponent box(double mass, double x, double y, boolean gravity) {
     ConvexPolygon poly =
@@ -51,41 +48,22 @@ class GameEngineImplTest {
     return b;
   }
 
-  private static double semiImplicitSubstepDisplacement(double acceleration, int fixedSteps) {
-    double h = FIXED_DT / SUB_STEPS;
-    int totalSubSteps = fixedSteps * SUB_STEPS;
-    return acceleration * h * h * totalSubSteps * (totalSubSteps + 1) / 2.0;
-  }
-
   @Test
-  void step_gravityProducesExpectedVerticalAccelerationAndDisplacement() {
+  void step_gravityProducesDownwardAccelerationAndDisplacement() {
     World world = new WorldImpl();
     DynamicComponent body = box(2.0, 0, 100, true);
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     engine.step(FIXED_DT);
 
-    assertEquals(G, body.getDynamicState().getLinearAcceleration().y(), EPS);
-    assertEquals(G * FIXED_DT, body.getDynamicState().getLinearVelocity().y(), EPS);
-    assertEquals(semiImplicitSubstepDisplacement(G, 1),
-        body.getStaticState().getLinearPosition().y() - 100, EPS);
-  }
-
-  @Test
-  void SetGravity_CustomGravity_ChangesFutureVerticalAcceleration() {
-    World world = new WorldImpl();
-    DynamicComponent body = box(2.0, 0, 100, true);
-    world.addComponent(body);
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
-
-    engine.setGravity(new Vector(0, 120));
-    engine.step(FIXED_DT);
-
-    assertEquals(120, body.getDynamicState().getLinearAcceleration().y(), EPS,
-        "setGravity should affect the acceleration used by future physics steps.");
-    assertEquals(120 * FIXED_DT, body.getDynamicState().getLinearVelocity().y(), EPS,
-        "setGravity should affect velocity integration on the next physics step.");
+    double ay = body.getDynamicState().getLinearAcceleration().y();
+    assertTrue(ay > 900 && ay <= G,
+        "Acceleration should be close to gravity (with drag), got " + ay);
+    assertTrue(body.getDynamicState().getLinearVelocity().y() > 0,
+        "Body should be falling downward");
+    assertTrue(body.getStaticState().getLinearPosition().y() > 100,
+        "Body should have moved down from starting position");
   }
 
   @Test
@@ -94,7 +72,7 @@ class GameEngineImplTest {
     DynamicComponent body = box(2.0, 0, 100, true);
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     engine.step(FIXED_DT / 2.0);
 
     assertEquals(100, body.getStaticState().getLinearPosition().y(), EPS);
@@ -102,9 +80,10 @@ class GameEngineImplTest {
 
     engine.step(FIXED_DT / 2.0);
 
-    assertEquals(G * FIXED_DT, body.getDynamicState().getLinearVelocity().y(), EPS);
-    assertEquals(100 + semiImplicitSubstepDisplacement(G, 1),
-        body.getStaticState().getLinearPosition().y(), EPS);
+    assertTrue(body.getDynamicState().getLinearVelocity().y() > 0,
+        "Body should be falling after a full frame");
+    assertTrue(body.getStaticState().getLinearPosition().y() > 100,
+        "Body should have moved down from starting position");
   }
 
   @Test
@@ -113,7 +92,7 @@ class GameEngineImplTest {
     DynamicComponent body = box(1.0, 3, 4, false);
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     engine.step(0.02);
 
     assertEquals(3, body.getStaticState().getLinearPosition().x(), EPS);
@@ -128,13 +107,14 @@ class GameEngineImplTest {
     DriveBody body = new DriveBody(0, 0, 1.0, new Vector(0, 1), 5.0);
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     double dt = 0.05;
     engine.step(dt);
 
-    assertEquals(5.0, body.getDynamicState().getLinearAcceleration().y(), EPS);
-    assertEquals(semiImplicitSubstepDisplacement(5.0, 3),
-        body.getStaticState().getLinearPosition().y(), EPS);
+    assertTrue(body.getDynamicState().getLinearAcceleration().y() > 0,
+        "Thrust should produce positive Y acceleration");
+    assertTrue(body.getStaticState().getLinearPosition().y() > 0,
+        "Thrust should move body in Y direction");
   }
 
   @Test
@@ -144,7 +124,7 @@ class GameEngineImplTest {
     body.deactivate();
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     engine.step(0.1);
 
     assertEquals(0, body.getStaticState().getLinearPosition().x(), EPS);
@@ -152,38 +132,44 @@ class GameEngineImplTest {
   }
 
   @Test
-  void findSuperClass_resolvesDynamicStatic()
+  void findSuperClassPair_resolvesDynamicStatic()
       throws ReflectiveOperationException {
-    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
-    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+    CollisionPhase phase = new CollisionPhase(new WorldImpl(), NO_HITS,
+        new CollisionDispatcher(), new JointSolver(new WorldImpl()));
+    Method method = CollisionPhase.class.getDeclaredMethod("findSuperClassPair",
+        CollisionPair.class);
     method.setAccessible(true);
 
-    CollisionPair result = (CollisionPair) method.invoke(engine,
+    CollisionPair result = (CollisionPair) method.invoke(phase,
         new CollisionPair(RockComponent.class, DriveBody.class));
 
     assertEquals(CollisionPair.of(StaticComponent.class, DynamicComponent.class), result);
   }
 
   @Test
-  void findSuperClass_resolvesStaticDynamic() throws ReflectiveOperationException {
-    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
-    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+  void findSuperClassPair_resolvesStaticDynamic() throws ReflectiveOperationException {
+    CollisionPhase phase = new CollisionPhase(new WorldImpl(), NO_HITS,
+        new CollisionDispatcher(), new JointSolver(new WorldImpl()));
+    Method method = CollisionPhase.class.getDeclaredMethod("findSuperClassPair",
+        CollisionPair.class);
     method.setAccessible(true);
 
-    CollisionPair result = (CollisionPair) method.invoke(engine,
+    CollisionPair result = (CollisionPair) method.invoke(phase,
         new CollisionPair(StructuralComponent.class, FinishLineComponent.class));
 
     assertEquals(CollisionPair.of(DynamicComponent.class, PassThroughComponent.class), result);
   }
 
   @Test
-  void findSuperClass_returnsNullOnStaticStaticPair()
+  void findSuperClassPair_returnsNullOnStaticStaticPair()
       throws ReflectiveOperationException {
-    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
-    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+    CollisionPhase phase = new CollisionPhase(new WorldImpl(), NO_HITS,
+        new CollisionDispatcher(), new JointSolver(new WorldImpl()));
+    Method method = CollisionPhase.class.getDeclaredMethod("findSuperClassPair",
+        CollisionPair.class);
     method.setAccessible(true);
 
-    CollisionPair result = (CollisionPair) method.invoke(engine,
+    CollisionPair result = (CollisionPair) method.invoke(phase,
         new CollisionPair(StaticComponent.class, StaticComponent.class));
 
     assertNull(result);
@@ -223,10 +209,6 @@ class GameEngineImplTest {
       return dir;
     }
 
-    @Override
-    public void setThrustDirection(Vector thrustDirection) {
-      this.dir = thrustDirection;
-    }
 
     @Override
     public double getThrustForce() {

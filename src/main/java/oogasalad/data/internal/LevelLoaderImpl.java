@@ -20,6 +20,7 @@ import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.PickupComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
+import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.effects.HPChangerEffect;
 import oogasalad.model.engine.internal.effects.ScoreEffect;
@@ -40,6 +41,7 @@ public class LevelLoaderImpl implements LevelLoader {
 
   private static final Logger LOG = LogManager.getLogger(LevelLoaderImpl.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final LevelValidator VALIDATOR = new LevelValidator();
 
   private static final double DEFAULT_OBJECT_SIZE = 60;
   private static final double SPLINE_BASELINE_MARGIN = 200;
@@ -54,18 +56,33 @@ public class LevelLoaderImpl implements LevelLoader {
   public void loadLevel(String fileName, GameConfig game, World world,
       LevelAttributes levelAttributes) {
     JsonNode root = parseFile(fileName);
-
-    if (levelAttributes != null) {
-      populateGameMetadata(root.path("gameMetadata"), levelAttributes);
-      populateMainCharacter(root.path("mainCharacter"), levelAttributes);
+    LevelAttributes activeAttributes = levelAttributes;
+    if (activeAttributes == null) {
+      activeAttributes = new LevelAttributes();
     }
+
+    populateGameMetadata(root.path("gameMetadata"), activeAttributes);
+    populateMainCharacter(root.path("mainCharacter"), activeAttributes);
+    validateGameTypeMatchesCatalog(activeAttributes, game);
 
     JsonNode map = root.path("map");
     loadTerrainSpline(map, game, world);
+    loadBlocks(map.path("blocks"), world);
     loadSpawnPoint(map.path("spawnPoint"), world);
     loadObjects(map.path("objects"), game, world);
 
     LOG.info("Level loaded from {}", fileName);
+  }
+
+  private void validateGameTypeMatchesCatalog(LevelAttributes attrs, GameConfig game) {
+    if (game == null || game.gameId() == null || game.gameId().isBlank()) {
+      return;
+    }
+    if (attrs.getGameType().equals(game.gameId())) {
+      return;
+    }
+    throw new LevelLoadException("Level gameType '" + attrs.getGameType()
+        + "' does not match game catalog '" + game.gameId() + "'");
   }
 
   @Override
@@ -78,11 +95,14 @@ public class LevelLoaderImpl implements LevelLoader {
   }
 
   private JsonNode parseFile(String fileName) {
+    JsonNode root;
     try {
-      return MAPPER.readTree(new File(fileName));
+      root = MAPPER.readTree(new File(fileName));
     } catch (IOException e) {
       throw new LevelLoadException("Could not read level file: " + fileName, e);
     }
+    VALIDATOR.validate(root);
+    return root;
   }
 
   private void populateGameMetadata(JsonNode node, LevelAttributes attrs) {
@@ -111,7 +131,7 @@ public class LevelLoaderImpl implements LevelLoader {
       for (JsonNode entry : allowed) {
         ids.add(entry.asText());
       }
-      attrs.setElementsAllowed(ids);
+      attrs.setMainCharacterElementsAllowed(ids);
     }
   }
 
@@ -141,7 +161,7 @@ public class LevelLoaderImpl implements LevelLoader {
     if (color == null) {
       color = DEFAULT_TERRAIN_COLOR;
     }
-    return new TerrainSpline(terrain.id(), spline, sprite, false, terrain.friction(), color);
+    return new TerrainSpline(terrain.id(), spline, sprite, true, terrain.friction(), color);
   }
 
   private TerrainInfo pickTerrain(JsonNode terrainOptions, GameConfig game) {
@@ -163,10 +183,7 @@ public class LevelLoaderImpl implements LevelLoader {
         return info;
       }
     }
-    LOG.warn(
-        "terrainOptions[0] is '{}' but no terrainTypes id matches in game.json; spline uses defaults",
-        firstId);
-    return null;
+    throw new LevelLoadException("Unknown terrain option: '" + firstId + "'");
   }
 
   private double baselineFor(List<Vector> knots) {
@@ -187,6 +204,24 @@ public class LevelLoaderImpl implements LevelLoader {
       points.add(new Vector(x, y));
     }
     return points;
+  }
+
+  private void loadBlocks(JsonNode blocksNode, World world) {
+    if (!blocksNode.isArray()) {
+      return;
+    }
+    for (JsonNode entry : blocksNode) {
+      String displayName = entry.path("displayName").asText("Terrain");
+      double x = entry.path("x").asDouble(0);
+      double y = entry.path("y").asDouble(0);
+      double width = entry.path("width").asDouble(DEFAULT_OBJECT_SIZE);
+      double height = entry.path("height").asDouble(DEFAULT_OBJECT_SIZE);
+      String sprite = entry.path("sprite").asText("");
+      boolean tiled = entry.path("tiled").asBoolean(true);
+      double friction = entry.path("friction").asDouble(0.5);
+      String color = entry.path("color").asText("#8B4513");
+      world.addObject(new TerrainBlock(displayName, x, y, width, height, sprite, tiled, friction, color, 0.0));
+    }
   }
 
   private void loadSpawnPoint(JsonNode spawnNode, World world) {
@@ -211,15 +246,7 @@ public class LevelLoaderImpl implements LevelLoader {
       double y = entry.path("position").path("y").asDouble(0);
       StaticComponentInfo info = lookupStatic(typeId, game);
       if (info == null) {
-        if (typeId.isEmpty()) {
-          LOG.warn("Skipping map object with empty type");
-          continue;
-        }
-        LOG.warn(
-            "Skipping map object type '{}' — no staticComponents entry with this id in game.json. "
-                + "Add it to the catalog or remove the object from the level.",
-            typeId);
-        continue;
+        throw new LevelLoadException("Unknown map object type: '" + typeId + "'");
       }
       addStaticObject(info, x, y, world);
     }

@@ -58,7 +58,7 @@ public class SplineDraftController {
   private Vector cursorHint;
   private String terrainName = "Spline Terrain";
   private String terrainSprite = DEFAULT_SPRITE;
-  private boolean terrainTiled = false;
+  private boolean terrainTiled = true;
   private double terrainFriction = DEFAULT_FRICTION;
   private String terrainColor = DEFAULT_COLOR;
 
@@ -87,7 +87,7 @@ public class SplineDraftController {
       String color) {
     terrainName = name == null || name.isBlank() ? "Spline Terrain" : name;
     terrainSprite = sprite == null ? DEFAULT_SPRITE : sprite;
-    terrainTiled = tiled;
+    terrainTiled = true;
     terrainFriction = friction;
     terrainColor = color == null || color.isBlank() ? DEFAULT_COLOR : color;
     renderDraftOverlay();

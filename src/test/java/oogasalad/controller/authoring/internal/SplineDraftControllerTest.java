@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
@@ -24,8 +26,8 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link SplineDraftController}.
  *
  * <p>Focus: knot-placement rules (rejects knots at or below the grid baseline),
- * commit/cancel semantics and the overlay contract with the canvas
- * (redraws happen after every mutation).
+ * commit/cancel semantics and the overlay contract with the canvas (redraws happen after every
+ * mutation).
  *
  * <p>{@link SplineDraftController} renders draft overlays using JavaFX nodes. We bootstrap the
  * JavaFX toolkit once per class so node construction does not trip the "Toolkit not initialized"
@@ -49,7 +51,8 @@ class SplineDraftControllerTest {
     System.setProperty("monocle.platform", "Headless");
     System.setProperty("prism.order", "sw");
     try {
-      Platform.startup(() -> {});
+      Platform.startup(() -> {
+      });
     } catch (IllegalStateException alreadyStarted) {
       // Platform.startup throws IllegalStateException if the toolkit has already been initialized
       // by another test class. That is the desired no-op behaviour.
@@ -158,6 +161,18 @@ class SplineDraftControllerTest {
   }
 
   @Test
+  void commit_afterSettingNonTiledTerrainStyle_stillTilesSplineTerrain() {
+    controller.setTerrainStyle("Dirt", "data/assets/dirt.png", false, 0.5, "#8B5E3C");
+    controller.addKnot(0.0, 20.0);
+    controller.addKnot(10.0, 22.0);
+
+    TerrainSpline committed = controller.commit();
+
+    assertNotNull(committed);
+    assertTrue(committed.isTiled());
+  }
+
+  @Test
   void cancel_clearsDraftAndOverlays() {
     controller.addKnot(10.0, 20.0);
     controller.addKnot(20.0, 25.0);
@@ -172,39 +187,144 @@ class SplineDraftControllerTest {
   // --- Test doubles ---
 
   private static final class FakeWorld implements World {
+
     final List<GameComponent> components = new ArrayList<>();
-    @Override public List<GameComponent> getComponents() { return List.copyOf(components); }
-    @Override public List<GameComponent> getAllComponents() { return List.copyOf(components); }
-    @Override public List<GameComponent> getActiveComponents() { return List.copyOf(components); }
-    @Override public List<Joint> getJoints() { return List.of(); }
-    @Override public void addComponent(GameComponent c) { components.add(c); }
-    @Override public void removeComponent(GameComponent c) { components.remove(c); }
-    @Override public void clear() { components.clear(); }
-    @Override public void addJoint(Joint j) {}
-    @Override public void removeJoint(Joint j) {}
-    @Override public double getDragCoefficient() {return 0.0;}
+
+    @Override
+    public List<GameComponent> getComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<GameComponent> getAllComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<GameComponent> getActiveComponents() {
+      return List.copyOf(components);
+    }
+
+    /**
+     * Returns all registered dynamic components in registration order.
+     */
+    public List<DynamicComponent> getActiveDynamicComponents() {
+      return getActiveComponents().stream()
+          .filter(DynamicComponent.class::isInstance)
+          .map(DynamicComponent.class::cast)
+          .toList();
+    }
+
+    @Override
+    public List<Joint> getJoints() {
+      return List.of();
+    }
+
+    @Override
+    public void addComponent(GameComponent c) {
+      components.add(c);
+    }
+
+    @Override
+    public void removeComponent(GameComponent c) {
+      components.remove(c);
+    }
+
+    @Override
+    public void clear() {
+      components.clear();
+    }
+
+    @Override
+    public void addJoint(Joint j) {
+    }
+
+    @Override
+    public void removeJoint(Joint j) {
+    }
+
+    @Override
+    public PhysicsEnvironment getPhysicsEnvironment() {
+      return PhysicsEnvironment.DEFAULT;
+    }
   }
 
-  /** Counts overlay operations so we can verify the controller keeps the canvas in sync. */
+  /**
+   * Counts overlay operations so we can verify the controller keeps the canvas in sync.
+   */
   private static final class RecordingCanvas implements AuthoringCanvas {
+
     int overlaysCleared = 0;
     int overlayAdditions = 0;
     boolean refreshCalled = false;
 
-    @Override public javafx.scene.Node getVisualRoot() { return null; }
-    @Override public void refreshGrid() { refreshCalled = true; }
-    @Override public boolean isWithinBounds(int col, int row) { return true; }
-    @Override public double getCellSize() { return CELL_SIZE; }
-    @Override public int getGridCols() { return 160; }
-    @Override public int getGridRows() { return 110; }
-    @Override public void setSelectedPlaceable(AuthoringPlaceable p) {}
-    @Override public void placeBlock(int col, int row) {}
-    @Override public void showHoverPreview(int col, int row) {}
-    @Override public void clearHoverPreview() {}
-    @Override public void setOnObjectSelected(Consumer<AuthoringPlaceable> h) {}
-    @Override public void setZoom(double factor) {}
-    @Override public double getZoom() { return 1.0; }
-    @Override public void addOverlay(javafx.scene.Node node) { overlayAdditions++; }
-    @Override public void clearOverlays() { overlaysCleared++; }
+    @Override
+    public javafx.scene.Node getVisualRoot() {
+      return null;
+    }
+
+    @Override
+    public void refreshGrid() {
+      refreshCalled = true;
+    }
+
+    @Override
+    public boolean isWithinBounds(int col, int row) {
+      return true;
+    }
+
+    @Override
+    public double getCellSize() {
+      return CELL_SIZE;
+    }
+
+    @Override
+    public int getGridCols() {
+      return 160;
+    }
+
+    @Override
+    public int getGridRows() {
+      return 110;
+    }
+
+    @Override
+    public void setSelectedPlaceable(AuthoringPlaceable p) {
+    }
+
+    @Override
+    public void placeBlock(int col, int row) {
+    }
+
+    @Override
+    public void showHoverPreview(int col, int row) {
+    }
+
+    @Override
+    public void clearHoverPreview() {
+    }
+
+    @Override
+    public void setOnObjectSelected(Consumer<AuthoringPlaceable> h) {
+    }
+
+    @Override
+    public double getZoom() {
+      return 1.0;
+    }
+
+    @Override
+    public void setZoom(double factor) {
+    }
+
+    @Override
+    public void addOverlay(javafx.scene.Node node) {
+      overlayAdditions++;
+    }
+
+    @Override
+    public void clearOverlays() {
+      overlaysCleared++;
+    }
   }
 }

@@ -1,9 +1,9 @@
 package oogasalad.view.authoring.internal;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
-import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,8 +12,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -31,18 +29,25 @@ import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.data.api.TerrainInfo;
+import oogasalad.data.internal.GameAttributes;
 import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
 import oogasalad.view.core.internal.AbstractAppScreen;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Layout shell for the authoring environment.
+ *
+ * @author Emilio Garcia
+ * @author Beliaev Iurii
  */
 public class AuthoringScreenImpl extends AbstractAppScreen {
 
+  private static final Logger LOG = LogManager.getLogger(AuthoringScreenImpl.class);
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringScreen");
   private static final String DEFAULT_TERRAIN_COLOR = "#8B4513";
@@ -174,6 +179,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
       controller.loadLevel(path);
       preserveLoadedLevelOnNextEnter = true;
     } catch (LevelLoadException e) {
+      LOG.error("Level load rejected for '{}': {}", path, e.getMessage(), e);
       alertService.showError(PROPS.getString("loadErrorTitle"), e.getMessage());
     }
   }
@@ -212,20 +218,22 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     canvasScrollPane.setFitToHeight(false);
     canvasScrollPane.setPannable(false);
     canvasScrollPane.getStyleClass().add("authoring-canvas-scroll");
-    wireEdgePan(canvasScrollPane);
-    wireZoomScroll(canvasScrollPane);
+    CanvasZoomPanHandler.Settings zoomPanSettings = new CanvasZoomPanHandler.Settings(
+        d("edgePanThreshold"),
+        d("edgePanSpeed"),
+        d("zoomStep"));
+    new CanvasZoomPanHandler(canvas, canvasScrollPane, zoomPanSettings).wireHandlers();
     canvasHost = new StackPane(canvasScrollPane);
 
     vehiclePalette = new VehicleComponentScrollPalette();
-    vehiclePalette.setSelectedComponentsHandler(
-        ids -> levelAttributes.setElementsAllowed(ids));
+    vehiclePalette.setSelectedComponentsHandler(this::applyVehicleAllowedSelection);
     vehiclePalette.setSelectionSummaryHandler(this::updateSelectedItemsSummary);
     levelAttributes.setMaxSelectable(vehiclePalette.getMaxSelectableItems());
 
     terrainPalette = new ComponentPaletteImpl();
+    terrainPalette.setDragEnabled(false);
     pigsPalette = new ComponentPaletteImpl();
     levelItemsPalette = new ComponentPaletteImpl();
-    subscribePalette(terrainPalette);
     terrainPalette.subscribe(controller::setSplineTerrainStyle);
     subscribePalette(pigsPalette);
     subscribePalette(levelItemsPalette);
@@ -244,67 +252,27 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     refreshCatalogPalettes();
   }
 
+  /**
+   * Persists the vehicle-palette multi-select to {@code mainCharacter.elementsAllowed}, restricted
+   * to movable component ids from the active game catalog when {@link #gameConfig} is set.
+   */
+  private void applyVehicleAllowedSelection(List<String> selectedIds) {
+    if (selectedIds == null) {
+      levelAttributes.setMainCharacterElementsAllowed(List.of());
+      return;
+    }
+    if (gameConfig == null) {
+      levelAttributes.setMainCharacterElementsAllowed(selectedIds);
+      return;
+    }
+    HashSet<String> movable = new HashSet<>(new GameAttributes(gameConfig).movableComponentIds());
+    List<String> filtered = selectedIds.stream().filter(movable::contains).toList();
+    levelAttributes.setMainCharacterElementsAllowed(filtered);
+  }
+
   private void subscribePalette(ComponentPaletteImpl palette) {
     palette.subscribe(canvas::setSelectedPlaceable);
     palette.subscribe(controller::setSelectedPlaceable);
-  }
-
-  private void wireEdgePan(ScrollPane scroll) {
-    double threshold = d("edgePanThreshold");
-    double speed = d("edgePanSpeed");
-    double[] vel = {0, 0};
-
-    javafx.event.EventHandler<MouseEvent> edgeDetect = e -> {
-      double vw = scroll.getViewportBounds().getWidth();
-      double vh = scroll.getViewportBounds().getHeight();
-      vel[0] = edgeVelocity(e.getX(), vw, threshold, speed);
-      vel[1] = edgeVelocity(e.getY(), vh, threshold, speed);
-    };
-    scroll.addEventFilter(MouseEvent.MOUSE_MOVED, edgeDetect);
-    scroll.addEventFilter(MouseEvent.MOUSE_DRAGGED, edgeDetect);
-    scroll.addEventFilter(MouseEvent.MOUSE_EXITED, e -> {
-      vel[0] = 0;
-      vel[1] = 0;
-    });
-
-    new AnimationTimer() {
-      @Override
-      public void handle(long now) {
-        if (vel[0] != 0) {
-          scroll.setHvalue(clamp01(scroll.getHvalue() + vel[0]));
-        }
-        if (vel[1] != 0) {
-          scroll.setVvalue(clamp01(scroll.getVvalue() + vel[1]));
-        }
-      }
-    }.start();
-  }
-
-  private void wireZoomScroll(ScrollPane scroll) {
-    scroll.addEventFilter(ScrollEvent.SCROLL, e -> {
-      if (e.isControlDown()) {
-        double step = d("zoomStep");
-        double next = e.getDeltaY() > 0
-            ? canvas.getZoom() * step
-            : canvas.getZoom() / step;
-        canvas.setZoom(next);
-        e.consume();
-      }
-    });
-  }
-
-  private static double edgeVelocity(double pos, double size, double threshold, double speed) {
-    if (pos < threshold && threshold > 0) {
-      return -speed * (1 - pos / threshold);
-    }
-    if (pos > size - threshold && threshold > 0) {
-      return speed * (1 - (size - pos) / threshold);
-    }
-    return 0;
-  }
-
-  private static double clamp01(double value) {
-    return Math.max(0, Math.min(1, value));
   }
 
   private void fitCanvasToViewport() {
@@ -495,7 +463,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     String color = info.visualColor() == null || info.visualColor().isBlank()
         ? DEFAULT_TERRAIN_COLOR : info.visualColor();
     String sprite = info.spriteUrl() == null ? "" : info.spriteUrl();
-    return new ComponentPaletteImpl.PaletteEntry(info.id(), color, 1, 1, sprite, false,
+    return new ComponentPaletteImpl.PaletteEntry(info.id(), color, 1, 1, sprite, true,
         info.friction(), 0.2, false);
   }
 
@@ -574,6 +542,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
       try {
         controller.saveLevel(file.getAbsolutePath());
       } catch (LevelSaveException e) {
+        LOG.error("Level save rejected for '{}': {}", file.getAbsolutePath(), e.getMessage(), e);
         alertService.showError(PROPS.getString("saveErrorTitle"), e.getMessage());
       }
     });
@@ -588,6 +557,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     try {
       controller.saveLevel(RUN_PREVIEW_PATH);
     } catch (LevelSaveException e) {
+      LOG.error("Run-preview save rejected for '{}': {}", RUN_PREVIEW_PATH, e.getMessage(), e);
       alertService.showError(PROPS.getString("saveErrorTitle"), e.getMessage());
       return;
     }

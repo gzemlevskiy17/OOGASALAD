@@ -13,14 +13,15 @@ import org.junit.jupiter.api.Test;
  * lifecycle gate ({@code isActive()}) inherited from GameComponent — in particular, a destroyed
  * drive must produce zero thrust even if the player left it enabled.
  */
-class DriveComponentDriveableTest {
+class FixedDirectionDriveComponentDriveableTest {
 
   private static final double EPS = 1e-9;
-  private DriveComponent drive;
+  private FixedDirectionDriveComponent drive;
 
   @BeforeEach
   void setUp() {
-    drive = new DriveComponent(0, 0, 0, 10.0, 0.3, 100.0, "Fan", 60.0, 60.0);
+    drive = new FixedDirectionDriveComponent(0, 0, 0, 10.0, 0.3, 100.0, "Fan", 60.0, 60.0,
+        new Vector(1, 0));
   }
 
   @Test

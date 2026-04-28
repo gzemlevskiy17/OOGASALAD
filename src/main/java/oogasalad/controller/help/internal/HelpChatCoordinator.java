@@ -56,14 +56,17 @@ public class HelpChatCoordinator {
       return;
     }
 
+    LOG.info("User asked help chat question (length={})", userText.length());
     historyView.appendMessage(ChatMessage.userMessage(userText));
     inputBar.clearInput();
     inputBar.setInputEnabled(false);
     historyView.showWaitingMessage();
 
     CompletableFuture.runAsync(() -> {
+      long startMillis = System.currentTimeMillis();
       try {
         ChatMessage response = model.getResponse(userText);
+        LOG.info("Help chat response received in {}ms", System.currentTimeMillis() - startMillis);
         Platform.runLater(() -> historyView.appendMessage(response));
       } catch (RuntimeException exception) {
         LOG.error(PROPS.getString("requestFailureLogMessage"), exception);

@@ -16,6 +16,8 @@ import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Coordinates the authoring environment: composes input handlers and services, exposes the
@@ -26,12 +28,15 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
  */
 public class AuthoringControllerImpl implements AuthoringController {
 
+  private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
+
   private final World world;
   private final ToolSelector toolSelector;
   private final AuthoringCanvas canvas;
   private final CanvasActionHistory history;
   private final SplineDraftController splineDraft;
   private final SpawnPointService spawnPointService;
+  private final GoalLineService goalLineService;
   private final AuthoringPersistenceService persistence;
 
   private AuthoringPlaceable selectedPlaceable;
@@ -45,6 +50,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.history = new CanvasActionHistory();
     this.splineDraft = new SplineDraftController(world, canvas);
     this.spawnPointService = new SpawnPointService(world);
+    this.goalLineService = new GoalLineService(world);
     this.persistence = new AuthoringPersistenceService(
         loader, saver, gameLoader, world, levelAttributes, spawnPointService, history, canvas);
     spawnPointService.getSpawnPoint();
@@ -60,6 +66,7 @@ public class AuthoringControllerImpl implements AuthoringController {
       splineDraft.cancelIfDrafting();
     }
     toolSelector.setActiveTool(type);
+    LOG.debug("Active tool set to {}", type);
   }
 
   public void setSelectedPlaceable(AuthoringPlaceable placeable) {
@@ -79,6 +86,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void initializeCanvasHandlers() {
     Node root = canvas.getVisualRoot();
     new SpawnDragInputHandler(canvas, spawnPointService, toolSelector).register(root);
+    new GoalLineDragInputHandler(canvas, goalLineService).register(root);
     new SplineInputHandler(canvas, toolSelector, splineDraft).register(root);
     new HoverPreviewInputHandler(canvas, toolSelector).register(root);
     new PaletteDropInputHandler(canvas, (col, row) -> placeFromPaletteDrop(col, row)).register(root);
@@ -105,6 +113,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     if (committed != null) {
       history.record(CanvasAction.place(committed));
       canvas.refreshGrid();
+      LOG.debug("Committed spline '{}'", committed.getDisplayName());
     }
   }
 
@@ -120,6 +129,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         applyInverse(batch.get(i));
       }
       canvas.refreshGrid();
+      LOG.debug("Undo applied: {} action(s)", batch.size());
     });
   }
 
@@ -130,12 +140,14 @@ public class AuthoringControllerImpl implements AuthoringController {
         applyAction(action);
       }
       canvas.refreshGrid();
+      LOG.debug("Redo applied: {} action(s)", batch.size());
     });
   }
 
   @Override
   public void clearHistory() {
     history.clear();
+    LOG.debug("Undo/redo history cleared");
   }
 
   @Override
@@ -144,6 +156,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     history.clear();
     spawnPointService.getSpawnPoint();
     canvas.refreshGrid();
+    LOG.info("Level cleared");
   }
 
   GameObject placeSelectedObject(int col, int row) {
@@ -154,6 +167,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
     world.addObject((GameObject) placedObject);
     history.record(CanvasAction.place(placedObject));
+    LOG.debug("Placed '{}' at col={} row={}", placedObject.getDisplayName(), col, row);
     return (GameObject) placedObject;
   }
 

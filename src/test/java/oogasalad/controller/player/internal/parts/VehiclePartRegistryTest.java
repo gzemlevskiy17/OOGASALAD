@@ -38,13 +38,6 @@ class VehiclePartRegistryTest {
   }
 
   @Test
-  void Get_UnknownComponent_ThrowsIllegalArgumentException() {
-    VehiclePartRegistry registry = new VehiclePartRegistry();
-
-    assertThrows(IllegalArgumentException.class, () -> registry.get("MissingPart"));
-  }
-
-  @Test
   void RegisterFromConfig_FanCatalogComponentMatchesBuiltIn_PreservesBuiltInFanThrust()
       throws IOException {
     VehiclePartRegistry registry = new VehiclePartRegistry();
@@ -62,7 +55,14 @@ class VehiclePartRegistryTest {
     registry.registerFromConfig(new GameConfigImpl(gameFile.toString()));
     DriveComponent fan = (DriveComponent) registry.get("Fan").create(0, 0);
 
-    assertEquals(10000.0, fan.getThrustForce(), 1e-6);
+    assertEquals(8000.0, fan.getThrustForce(), 1e-6);
     assertEquals(1.0, fan.getThrustDirection().x(), 1e-6);
+  }
+
+  @Test
+  void Get_UnknownComponent_ThrowsIllegalArgumentException() {
+    VehiclePartRegistry registry = new VehiclePartRegistry();
+
+    assertThrows(IllegalArgumentException.class, () -> registry.get("MissingPart"));
   }
 }

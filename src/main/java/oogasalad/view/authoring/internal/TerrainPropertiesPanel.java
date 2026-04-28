@@ -47,6 +47,8 @@ public class TerrainPropertiesPanel {
     textureValue = fieldLabel();
     frictionField = editableField(this::onFrictionCommit);
     restitutionField = editableField(this::onRestitutionCommit);
+    AuthoringValueHints.attach(frictionField, "inspector.terrain.friction");
+    AuthoringValueHints.attach(restitutionField, "inspector.terrain.restitution");
 
     root = new VBox(FIELD_SPACING,
         titleLabel,

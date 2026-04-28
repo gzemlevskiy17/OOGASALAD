@@ -26,7 +26,7 @@ class LevelAttributesTest {
     assertEquals(60, attrs.getGridSize(), 0.001);
     assertEquals(5, attrs.getMaxSelectable());
     assertEquals(100, attrs.getMaxHP(), 0.001);
-    assertTrue(attrs.getElementsAllowed().isEmpty());
+    assertTrue(attrs.getMainCharacterElementsAllowed().isEmpty());
   }
 
   @Test
@@ -54,17 +54,17 @@ class LevelAttributesTest {
   }
 
   @Test
-  void setElementsAllowed_storesDefensiveCopy() {
+  void setMainCharacterElementsAllowed_storesDefensiveCopy() {
     List<String> ids = new java.util.ArrayList<>(List.of("body", "wheel"));
-    attrs.setElementsAllowed(ids);
+    attrs.setMainCharacterElementsAllowed(ids);
     ids.add("motor");
-    assertEquals(2, attrs.getElementsAllowed().size());
+    assertEquals(2, attrs.getMainCharacterElementsAllowed().size());
   }
 
   @Test
   void setElementsAllowed_null_treatedAsEmpty() {
-    attrs.setElementsAllowed(null);
-    assertTrue(attrs.getElementsAllowed().isEmpty());
+    attrs.setMainCharacterElementsAllowed(null);
+    assertTrue(attrs.getMainCharacterElementsAllowed().isEmpty());
   }
 
   @Test
@@ -82,26 +82,26 @@ class LevelAttributesTest {
   // ── Deprecated alias compatibility ───────────────────────────────────────
 
   @Test
-  void deprecatedAlias_getAllowedVehicleComponents_delegatesToElementsAllowed() {
-    attrs.setElementsAllowed(List.of("body", "wheel"));
-    assertEquals(List.of("body", "wheel"), attrs.getAllowedVehicleComponents());
+  void getAllowedMainCharacterVehicleComponents_delegatesToElementsAllowed() {
+    attrs.setMainCharacterElementsAllowed(List.of("body", "wheel"));
+    assertEquals(List.of("body", "wheel"), attrs.getMainCharacterElementsAllowed());
   }
 
   @Test
-  void deprecatedAlias_setAllowedVehicleComponents_delegatesToElementsAllowed() {
-    attrs.setAllowedVehicleComponents(List.of("fan"));
-    assertEquals(List.of("fan"), attrs.getElementsAllowed());
+  void setAllowedMainCharacterVehicleComponents_delegatesToElementsAllowed() {
+    attrs.setMainCharacterElementsAllowed(List.of("fan"));
+    assertEquals(List.of("fan"), attrs.getMainCharacterElementsAllowed());
   }
 
   @Test
-  void deprecatedAlias_getMaxSelectableVehicleItems_delegatesToMaxSelectable() {
+  void getMaxSelectableVehicleItems_delegatesToMaxSelectable() {
     attrs.setMaxSelectable(7);
-    assertEquals(7, attrs.getMaxSelectableVehicleItems());
+    assertEquals(7, attrs.getMaxSelectable());
   }
 
   @Test
-  void deprecatedAlias_setMaxSelectableVehicleItems_delegatesToMaxSelectable() {
-    attrs.setMaxSelectableVehicleItems(9);
+  void setMaxSelectableVehicleItems_delegatesToMaxSelectable() {
+    attrs.setMaxSelectable(9);
     assertEquals(9, attrs.getMaxSelectable());
   }
 }

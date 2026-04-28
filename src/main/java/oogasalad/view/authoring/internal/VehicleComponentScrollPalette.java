@@ -173,16 +173,8 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     cell.setPrefHeight(Double.parseDouble(PALETTE_CONFIG.getString("cellPrefHeight")));
     cell.setPadding(new Insets(Double.parseDouble(PALETTE_CONFIG.getString("cellInset"))));
     updateCellStyle(cell, false);
-    cell.setOnMouseClicked(event -> {
-      try {
-        toggleSelection(cell, new SelectedVehicleComponent(componentId, componentName));
-      } catch (VehicleSelectionLimitException e) {
-        LOG.warn("{}", e.getMessage());
-        alertService.showWarning(
-            PALETTE_CONFIG.getString("selectionLimitTitle"),
-            e.getMessage());
-      }
-    });
+    cell.setOnMouseClicked(event ->
+        toggleSelection(cell, new SelectedVehicleComponent(componentId, componentName)));
     HBox.setHgrow(cell, Priority.NEVER);
     return cell;
   }
@@ -194,18 +186,9 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
       notifySelectionSummaryChanged();
       return;
     }
-    validateSelectionCapacity();
     selectedCells.put(cell, component);
     updateCellStyle(cell, true);
     notifySelectionSummaryChanged();
-  }
-
-  private void validateSelectionCapacity() {
-    int maxSelectable = Integer.parseInt(PALETTE_CONFIG.getString("maxSelectableItems"));
-    if (selectedCells.size() >= maxSelectable) {
-      throw new VehicleSelectionLimitException(
-          PALETTE_CONFIG.getString("selectionLimitMessage"));
-    }
   }
 
   private void notifySelectionSummaryChanged() {

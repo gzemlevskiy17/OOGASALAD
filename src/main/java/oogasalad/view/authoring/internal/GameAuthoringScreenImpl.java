@@ -20,8 +20,10 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -30,6 +32,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import oogasalad.controller.core.api.Outcome;
@@ -43,6 +46,7 @@ import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.data.api.TerrainInfo;
+import oogasalad.data.internal.BuiltInVehicleCatalog;
 import oogasalad.data.internal.GameCatalogSaver;
 import oogasalad.data.internal.GameConfigImpl;
 import oogasalad.view.core.internal.AbstractAppScreen;
@@ -51,13 +55,36 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Game catalog editor screen. Authors can define terrain types, static objects (pickups/hazards),
- * and movable components with their on-screen buttons. The catalog is saved to {@code game.json}
- * and then used to drive the level editor and vehicle builder.
+ * movable components with on-screen buttons, and reusable cheat definitions. The catalog is saved
+ * to {@code game.json} and then used to drive the level editor and vehicle builder.
  *
  * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 public class GameAuthoringScreenImpl extends AbstractAppScreen {
+
+  private static final double DEFAULT_WIDTH = 220;
+  private static final double FORM_ROW_WIDTH = 120;
+  private static final double ACTION_BUTTON_WIDTH = 120;
+  private static final double ACTION_BUTTON_HEIGHT = 30;
+  private static final double BUTTON_BAR_SPACING = 8;
+  private static final double HEADER_SPACING = 8;
+  private static final double FORM_ROW_SPACING = 6;
+  private static final double FORM_ROW_PADDING = 8;
+  private static final double CONTENT_PADDING = 8;
+  private static final double SPRITE_ROW_SPACING = 8;
+  private static final double BUTTON_LIST_HEIGHT = 80;
+  private static final double META_ROW_SPACING = 12;
+  private static final double TOP_ROW_SPACING = 16;
+  private static final double DEFAULT_FRICTION = 0.5;
+  private static final double FORM_SPACING = 6;
+  private static final double FOOTER_SPACING = 12;
+  private static final double DEFAULT_MASS = 1.0;
+  private static final double DEFAULT_POWER_UP_MASS = 0;
+  private static final double LIST_WIDTH = 260;
+  private static final double TAB_CONTENT_SPACING = 12;
+  private static final double DEFAULT_HP_CHANGE = 0;
 
   private static final Logger LOG = LogManager.getLogger(GameAuthoringScreenImpl.class);
   private static final ResourceBundle PROPS =
@@ -82,11 +109,12 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private final List<CheatInfo> cheats = new ArrayList<>();
   private TextField gameIdField;
   private TextField mainCharacterIdField;
+  private String saveFilePath = "data/games/untitled/game.json";
   private ListView<String> terrainListView;
   private ListView<String> staticListView;
   private ListView<String> componentListView;
+  private ListView<String> builtinPickerListView;
   private ListView<String> cheatListView;
-  private String saveFilePath = "data/games/untitled/game.json";
 
   public GameAuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler,
       Consumer<GameConfig> onGameConfigReady) {
@@ -101,10 +129,10 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     this.loadLevelHandler = Objects.requireNonNull(loadLevelHandler);
     this.onGameConfigReady = onGameConfigReady != null ? onGameConfigReady : cfg -> {
     };
-    this.catalogSaver = catalogSaver;
-    this.gamesDir = gamesDir;
-    this.levelsDir = levelsDir;
-    this.fileChooserService = fileChooserService;
+    this.catalogSaver = Objects.requireNonNull(catalogSaver);
+    this.gamesDir = Objects.requireNonNull(gamesDir);
+    this.levelsDir = Objects.requireNonNull(levelsDir);
+    this.fileChooserService = Objects.requireNonNull(fileChooserService);
   }
 
   public void loadCatalogFromPath(String path) {
@@ -165,14 +193,16 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     title.getStyleClass().add("authoring-entry-title");
 
     gameIdField = new TextField();
-    gameIdField.setPromptText("game id, e.g. badpiggies");
-    gameIdField.setPrefWidth(200);
+    gameIdField.setPrefWidth(DEFAULT_WIDTH);
+    AuthoringValueHints.configure(gameIdField, "catalog.meta.gameId");
 
     mainCharacterIdField = new TextField();
-    mainCharacterIdField.setPromptText("main character id");
-    mainCharacterIdField.setPrefWidth(200);
+    mainCharacterIdField.setPrefWidth(DEFAULT_WIDTH);
+    AuthoringValueHints.configure(mainCharacterIdField, "catalog.meta.mainCharacter");
+    mainCharacterIdField.setEditable(false);
+    mainCharacterIdField.setStyle("-fx-opacity: 1.0;");
 
-    HBox metaRow = new HBox(12,
+    HBox metaRow = new HBox(META_ROW_SPACING,
         new Label("Game ID:"), gameIdField,
         new Label("Main Character:"), mainCharacterIdField);
     metaRow.setAlignment(Pos.CENTER_LEFT);
@@ -181,10 +211,10 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     loadCatalogButton.getStyleClass().add("authoring-entry-action");
     loadCatalogButton.setOnAction(e -> handleLoadCatalog(loadCatalogButton));
 
-    HBox topRow = new HBox(16, metaRow, loadCatalogButton);
+    HBox topRow = new HBox(TOP_ROW_SPACING, metaRow, loadCatalogButton);
     topRow.setAlignment(Pos.CENTER_LEFT);
 
-    VBox header = new VBox(8, title, topRow);
+    VBox header = new VBox(HEADER_SPACING, title, topRow);
     header.getStyleClass().add("authoring-entry-center");
     return header;
   }
@@ -203,42 +233,48 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Tab buildTerrainTab() {
-    terrainListView = new ListView<>();
-    terrainListView.setId("terrain-list");
-    refreshTerrainList(terrainListView);
+    ListView<String> list = new ListView<>();
+    terrainListView = list;
+    refreshTerrainList(list);
 
-    TextField idF = field("id");
-    TextField spriteF = field("spriteUrl");
-    TextField colorF = field("visualColor, e.g. #8B4513");
-    TextField frictionF = field("friction, e.g. 0.6");
+    TextField idF = AuthoringValueHints.newTextField("catalog.terrain.id");
+    TextField spriteF = AuthoringValueHints.newTextField("catalog.terrain.spriteUrl");
+    ColorPicker colorF = new ColorPicker(Color.WHITE);
+    colorF.setPrefWidth(DEFAULT_WIDTH);
+    spriteF.textProperty().addListener((obs, oldVal, newVal) ->
+        colorF.setDisable(!newVal.isBlank()));
+    TextField frictionF = AuthoringValueHints.newTextField("catalog.terrain.friction");
 
     Button add = new Button("Add");
     add.setOnAction(e -> {
+      String color = null;
+      if (spriteF.getText().isBlank()) {
+        Color c = colorF.getValue();
+        color = String.format("#%02x%02x%02x",
+            (int) (c.getRed() * 255),
+            (int) (c.getGreen() * 255),
+            (int) (c.getBlue() * 255));
+      }
       terrainTypes.add(new TerrainInfo(
           idF.getText().strip(),
           nullIfBlank(spriteF.getText()),
-          nullIfBlank(colorF.getText()),
-          parseDouble(frictionF.getText(), 0.5)));
-      refreshTerrainList(terrainListView);
-      clearFields(idF, spriteF, colorF, frictionF);
+          color,
+          parseDouble(frictionF.getText(), DEFAULT_FRICTION)));
+      refreshTerrainList(list);
+      colorF.setValue(Color.WHITE);
+      clearFields(idF, spriteF, frictionF);
     });
 
     Button remove = new Button("Remove");
-    remove.setOnAction(e -> {
-      int idx = terrainListView.getSelectionModel().getSelectedIndex();
-      if (idx >= 0) {
-        terrainTypes.remove(idx);
-        refreshTerrainList(terrainListView);
-      }
-    });
+    remove.setOnAction(e -> selectedIndex(list, terrainTypes.size()).ifPresent(index -> {
+      terrainTypes.remove(index.intValue());
+      refreshTerrainList(list);
+    }));
 
-    VBox form = tabForm(
-        List.of(
-            formRow("ID", idF), spriteRow(spriteF),
-            formRow("Color", colorF), formRow("Friction", frictionF)),
-        buttonBar(add, remove));
-
-    return new Tab("Terrain", buildTabContent(terrainListView, form));
+    return new Tab("Terrain", buildTabContent(list,
+        formRow("ID", idF), spriteRow(spriteF),
+        formRow("Color", colorF, FORM_ROW_WIDTH), formRow("Friction", frictionF),
+        buttonBar(add, remove)));
   }
 
   private void refreshTerrainList(ListView<String> list) {
@@ -250,47 +286,78 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Tab buildStaticTab() {
-    staticListView = new ListView<>();
-    staticListView.setId("static-component-list");
-    refreshStaticList(staticListView);
+    ListView<String> list = new ListView<>();
+    staticListView = list;
+    refreshStaticList(list);
 
-    TextField idF = field("id");
-    TextField spriteF = field("spriteUrl");
-    TextField massF = field("mass, e.g. 0");
+    TextField idF = AuthoringValueHints.newTextField("catalog.static.id");
+    TextField spriteF = AuthoringValueHints.newTextField("catalog.static.spriteUrl");
+    TextField massF = AuthoringValueHints.newTextField("catalog.static.mass");
+    TextField hpChangeF = AuthoringValueHints.newTextField("catalog.static.hpDelta");
     TextField actionTypeF = field("action type: heal / damage / score / finish");
     TextField actionAmountF = field("action amount, e.g. 25");
 
-    Button add = new Button("Add");
-    add.setOnAction(e -> {
-      String aType = actionTypeF.getText().strip();
-      CollisionAction action = aType.isBlank() ? null
-          : new CollisionAction(aType, parseDouble(actionAmountF.getText(), 0));
+    Button addStaticObject = new Button("Add Static Object");
+    addStaticObject.setOnAction(e -> {
+      String type = actionTypeF.getText().strip();
+      CollisionAction action = type.isBlank() ? null
+          : new CollisionAction(type, parseDouble(actionAmountF.getText(), DEFAULT_HP_CHANGE));
       staticComponents.add(new StaticComponentInfo(
           idF.getText().strip(),
           spriteF.getText().strip(),
-          parseDouble(massF.getText(), 0),
+          parseDouble(massF.getText(), DEFAULT_MASS),
           action));
-      refreshStaticList(staticListView);
-      clearFields(idF, spriteF, massF, actionTypeF, actionAmountF);
+      refreshStaticList(list);
+      clearFields(idF, spriteF, massF, hpChangeF, actionTypeF, actionAmountF);
+    });
+
+    Button addHpObject = new Button("Add HP Object");
+    addHpObject.setOnAction(e -> {
+      double hpChange = parseDouble(hpChangeF.getText(), DEFAULT_HP_CHANGE);
+      if (hpChange == DEFAULT_HP_CHANGE) {
+        new AuthoringAlertService().showError("Invalid HP",
+            "HP change must be nonzero. Use positive to heal, negative to damage.");
+        return;
+      }
+      staticComponents.add(new StaticComponentInfo(
+          idF.getText().strip(),
+          spriteF.getText().strip(),
+          parseDouble(massF.getText(), DEFAULT_MASS),
+          buildHpAction(hpChange)));
+      refreshStaticList(list);
+      clearFields(idF, spriteF, massF, hpChangeF, actionTypeF, actionAmountF);
+    });
+
+    Button addFinishLine = new Button("Add Finish Line");
+    addFinishLine.setOnAction(e -> {
+      String finishId = idF.getText().strip().isBlank() ? "GoalLine" : idF.getText().strip();
+      staticComponents.add(new StaticComponentInfo(
+          finishId,
+          spriteF.getText().strip(),
+          DEFAULT_POWER_UP_MASS,
+          new CollisionAction("finish", 0)));
+      refreshStaticList(list);
+      clearFields(idF, spriteF, massF, hpChangeF, actionTypeF, actionAmountF);
     });
 
     Button remove = new Button("Remove");
-    remove.setOnAction(e -> {
-      int idx = staticListView.getSelectionModel().getSelectedIndex();
-      if (idx >= 0) {
-        staticComponents.remove(idx);
-        refreshStaticList(staticListView);
-      }
-    });
+    remove.setOnAction(e -> selectedIndex(list, staticComponents.size()).ifPresent(index -> {
+      staticComponents.remove(index.intValue());
+      refreshStaticList(list);
+    }));
 
-    VBox form = tabForm(
-        List.of(
-            formRow("ID", idF), spriteRow(spriteF),
-            formRow("Mass", massF), formRow("Action Type", actionTypeF),
-            formRow("Action Amount", actionAmountF)),
-        buttonBar(add, remove));
+    return new Tab("Static Objects", buildTabContent(list,
+        formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
+        formRow("HP Change", hpChangeF), formRow("Action Type", actionTypeF),
+        formRow("Action Amount", actionAmountF),
+        buttonBar(addStaticObject, addHpObject, addFinishLine, remove)));
+  }
 
-    return new Tab("Static Objects", buildTabContent(staticListView, form));
+  private CollisionAction buildHpAction(double hpChange) {
+    if (hpChange > DEFAULT_HP_CHANGE) {
+      return new CollisionAction("heal", hpChange);
+    }
+    return new CollisionAction("damage", Math.abs(hpChange));
   }
 
   private void refreshStaticList(ListView<String> list) {
@@ -298,25 +365,47 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       return;
     }
     list.getItems().setAll(staticComponents.stream()
-        .map(s -> s.id() + (s.onCollisionAction() != null
-            ? "  [" + s.onCollisionAction().type() + "]" : "  [inert]")).toList());
+        .map(s -> s.id() + formatHpChange(s.onCollisionAction())).toList());
   }
 
   private Tab buildComponentsTab() {
-    componentListView = new ListView<>();
-    componentListView.setId("component-list");
-    refreshComponentList(componentListView);
+    ListView<String> list = new ListView<>();
+    componentListView = list;
+    refreshComponentList(list);
 
-    TextField idF = field("id");
-    TextField spriteF = field("spriteUrl");
-    TextField massF = field("mass, e.g. 1.0");
-    TextField btnNameF = field("button name, e.g. go right");
-    TextField btnDxF = field("direction x, e.g. 1");
-    TextField btnDyF = field("direction y, e.g. 0");
+    TextField idF = AuthoringValueHints.newTextField("catalog.component.id");
+    TextField spriteF = AuthoringValueHints.newTextField("catalog.component.spriteUrl");
+    TextField massF = AuthoringValueHints.newTextField("catalog.component.mass");
+    TextField btnNameF = AuthoringValueHints.newTextField("catalog.component.buttonLabel");
+    TextField btnDxF = AuthoringValueHints.newTextField("catalog.component.directionX");
+    TextField btnDyF = AuthoringValueHints.newTextField("catalog.component.directionY");
+
+    ListView<String> presetPicker = new ListView<>();
+    presetPicker.setPrefHeight(100);
+    presetPicker.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+    builtinPickerListView = presetPicker;
+
+    Label presetLabel = new Label("Preset parts (add to catalog):");
+    Button addSelectedPresets = new Button("Add selected presets");
+    addSelectedPresets.setOnAction(e -> {
+      for (String id : new ArrayList<>(presetPicker.getSelectionModel().getSelectedItems())) {
+        BuiltInVehicleCatalog.templateById(id)
+            .ifPresent(template -> {
+              if (components.stream().noneMatch(c -> c.id().equals(template.id()))) {
+                components.add(template);
+              }
+            });
+      }
+      refreshComponentList(list);
+      refreshBuiltinPicker();
+    });
+    VBox presetBlock = new VBox(FORM_SPACING, presetLabel, presetPicker,
+        new HBox(BUTTON_BAR_SPACING, addSelectedPresets));
+    refreshBuiltinPicker();
 
     List<ButtonInfo> pendingButtons = new ArrayList<>();
     ListView<String> btnList = new ListView<>();
-    btnList.setPrefHeight(80);
+    btnList.setPrefHeight(BUTTON_LIST_HEIGHT);
 
     Button addBtn = new Button("Add Button");
     addBtn.setOnAction(e -> {
@@ -335,33 +424,38 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       components.add(new ComponentInfo(
           idF.getText().strip(),
           spriteF.getText().strip(),
-          parseDouble(massF.getText(), 1.0),
+          parseDouble(massF.getText(), DEFAULT_MASS),
           new ArrayList<>(pendingButtons)));
       pendingButtons.clear();
       btnList.getItems().clear();
-      refreshComponentList(componentListView);
+      refreshComponentList(list);
+      refreshBuiltinPicker();
       clearFields(idF, spriteF, massF);
     });
 
     Button useAsMainCharacter = new Button("Use as Main Character");
-    useAsMainCharacter.setOnAction(e -> selectedComponentId(componentListView)
-        .ifPresent(mainCharacterIdField::setText));
+    useAsMainCharacter.setOnAction(e -> selectedComponentId(list)
+        .ifPresent(id -> {
+          mainCharacterIdField.setText(id);
+          new AuthoringAlertService().showInfo(
+              "Main Character Set", "Main character set to: " + id);
+        }));
 
     Button remove = new Button("Remove");
-    remove.setOnAction(e -> {
-      int idx = componentListView.getSelectionModel().getSelectedIndex();
-      if (idx >= 0) {
-        String removedId = components.get(idx).id();
-        components.remove(idx);
-        if (removedId.equals(mainCharacterIdField.getText().strip())) {
-          mainCharacterIdField.clear();
-        }
-        refreshComponentList(componentListView);
+    remove.setOnAction(e -> selectedIndex(list, components.size()).ifPresent(index -> {
+      String removedId = components.get(index).id();
+      components.remove(index.intValue());
+      if (removedId.equals(mainCharacterIdField.getText().strip())) {
+        mainCharacterIdField.clear();
       }
-    });
+      refreshComponentList(list);
+      refreshBuiltinPicker();
+    }));
 
     VBox form = tabForm(
         List.of(
+            presetBlock,
+            new Label("Custom component"),
             formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
             new Label("Buttons:"), btnList,
             formRow("Button Name", btnNameF), formRow("Dir X", btnDxF),
@@ -369,7 +463,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
         buttonBar(addBtn),
         buttonBar(add, useAsMainCharacter, remove));
 
-    return new Tab("Components", buildTabContent(componentListView, form));
+    return new Tab("Components", buildTabContent(list, form));
   }
 
   private Optional<String> selectedComponentId(ListView<String> list) {
@@ -561,18 +655,26 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     return index >= 0 && index < size ? Optional.of(index) : Optional.empty();
   }
 
+  private void refreshCatalogLists() {
+    Optional.ofNullable(terrainListView).ifPresent(this::refreshTerrainList);
+    Optional.ofNullable(staticListView).ifPresent(this::refreshStaticList);
+    Optional.ofNullable(componentListView).ifPresent(this::refreshComponentList);
+    refreshBuiltinPicker();
+    refreshCheatList();
+  }
+
+  private void refreshBuiltinPicker() {
+    if (builtinPickerListView != null && components != null) {
+      builtinPickerListView.getItems().setAll(
+          BuiltInVehicleCatalog.idsNotYetInCatalog(components));
+    }
+  }
+
   private void refreshCheatList() {
     Optional.ofNullable(cheatListView)
         .ifPresent(list -> list.getItems().setAll(currentCheats().stream()
             .map(this::formatCheat)
             .toList()));
-  }
-
-  private void refreshCatalogLists() {
-    Optional.ofNullable(terrainListView).ifPresent(this::refreshTerrainList);
-    Optional.ofNullable(staticListView).ifPresent(this::refreshStaticList);
-    Optional.ofNullable(componentListView).ifPresent(this::refreshComponentList);
-    refreshCheatList();
   }
 
   private void refreshPendingEffectList(List<CheatEffectInfo> pendingEffects,
@@ -627,7 +729,8 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     backButton.getStyleClass().add("authoring-entry-back");
     backButton.setOnAction(e -> onOutcome.accept(Outcome.BACK_TO_AUTHORING_ENTRY));
 
-    HBox footer = new HBox(12, backButton, saveButton, createLevelButton, loadLevelButton);
+    HBox footer = new HBox(FOOTER_SPACING, backButton, saveButton,
+        createLevelButton, loadLevelButton);
     footer.setAlignment(Pos.CENTER_LEFT);
     footer.setPadding(new Insets(d("buttonRegionPadding"), 0, 0, 0));
     footer.getStyleClass().add("authoring-entry-button-row");
@@ -717,23 +820,33 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     return saveAndLoadCurrentConfig();
   }
 
-  private Node buildTabContent(ListView<String> list, VBox form) {
-    list.setPrefWidth(260);
-    list.setMaxHeight(Double.MAX_VALUE);
-    form.setPadding(new Insets(8));
-    form.setMaxHeight(Double.MAX_VALUE);
-    HBox content = new HBox(12, list, form);
+  private Node buildTabContent(ListView<String> list, Node... formNodes) {
+    list.setPrefWidth(LIST_WIDTH);
+    VBox form = new VBox(FORM_ROW_SPACING, formNodes);
+    form.setPadding(new Insets(FORM_ROW_PADDING));
+    HBox content = new HBox(TAB_CONTENT_SPACING, list, form);
     HBox.setHgrow(form, Priority.ALWAYS);
-    content.setPadding(new Insets(8, 8, 16, 8));
+    content.setPadding(new Insets(CONTENT_PADDING));
+    return content;
+  }
+
+  private Node buildTabContent(ListView<String> list, VBox form) {
+    list.setPrefWidth(LIST_WIDTH);
+    list.setMaxHeight(Double.MAX_VALUE);
+    form.setPadding(new Insets(FORM_ROW_PADDING));
+    form.setMaxHeight(Double.MAX_VALUE);
+    HBox content = new HBox(TAB_CONTENT_SPACING, list, form);
+    HBox.setHgrow(form, Priority.ALWAYS);
+    content.setPadding(new Insets(CONTENT_PADDING, CONTENT_PADDING, 16, CONTENT_PADDING));
     return content;
   }
 
   private VBox tabForm(List<Node> fields, Node... actionRows) {
-    VBox form = new VBox(6);
+    VBox form = new VBox(FORM_ROW_SPACING);
     form.getChildren().addAll(fields);
     Region spacer = new Region();
     VBox.setVgrow(spacer, Priority.ALWAYS);
-    VBox actions = new VBox(8, actionRows);
+    VBox actions = new VBox(BUTTON_BAR_SPACING, actionRows);
     actions.setAlignment(Pos.BOTTOM_RIGHT);
     actions.getStyleClass().add("game-authoring-action-area");
     form.getChildren().addAll(spacer, actions);
@@ -741,12 +854,12 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private HBox spriteRow(TextField spriteField) {
-    Button browse = new Button("Browse…");
+    Button browse = new Button("Browse...");
     browse.setOnAction(e -> browseSprite(browse, spriteField));
     Label lbl = new Label("Sprite:");
-    lbl.setPrefWidth(120);
+    lbl.setPrefWidth(DEFAULT_WIDTH);
     HBox.setHgrow(spriteField, Priority.ALWAYS);
-    return new HBox(8, lbl, spriteField, browse);
+    return new HBox(SPRITE_ROW_SPACING, lbl, spriteField, browse);
   }
 
   private void browseSprite(Node owner, TextField target) {
@@ -771,19 +884,25 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
   private HBox formRow(String label, TextField field) {
     Label lbl = new Label(label + ":");
-    lbl.setPrefWidth(120);
-    return new HBox(8, lbl, field);
+    lbl.setPrefWidth(DEFAULT_WIDTH);
+    return new HBox(FORM_ROW_WIDTH, lbl, field);
+  }
+
+  private HBox formRow(String label, Node control, double labelWidth) {
+    Label lbl = new Label(label + ":");
+    lbl.setPrefWidth(labelWidth);
+    return new HBox(BUTTON_BAR_SPACING, lbl, control);
   }
 
   private HBox buttonBar(Button... buttons) {
-    HBox bar = new HBox(8, buttons);
+    HBox bar = new HBox(BUTTON_BAR_SPACING, buttons);
     bar.setAlignment(Pos.CENTER_RIGHT);
     bar.getStyleClass().add("game-authoring-action-row");
     return bar;
   }
 
   private HBox inlineButtonBar(Button... buttons) {
-    HBox bar = new HBox(8, buttons);
+    HBox bar = new HBox(BUTTON_BAR_SPACING, buttons);
     bar.setAlignment(Pos.CENTER_LEFT);
     bar.getStyleClass().add("game-authoring-inline-action-row");
     return bar;
@@ -792,7 +911,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private TextField field(String prompt) {
     TextField f = new TextField();
     f.setPromptText(prompt);
-    f.setPrefWidth(220);
+    f.setPrefWidth(DEFAULT_WIDTH);
     return f;
   }
 
@@ -806,6 +925,22 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     for (TextField f : fields) {
       f.clear();
     }
+  }
+
+  private String formatHpChange(CollisionAction action) {
+    if (action == null) {
+      return "  [inert]";
+    }
+    if ("finish".equals(action.type())) {
+      return "  [finish line]";
+    }
+    if ("heal".equals(action.type())) {
+      return "  [+" + (int) action.amount() + " HP]";
+    }
+    if ("damage".equals(action.type())) {
+      return "  [-" + (int) action.amount() + " HP]";
+    }
+    return "  [" + action.type() + "]";
   }
 
   private String nullIfBlank(String s) {
@@ -822,7 +957,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
   private void configureActionButton(Button button) {
     button.setFont(Font.font(d("actionFontSize")));
-    button.setPrefSize(d("actionButtonWidth"), d("actionButtonHeight"));
+    button.setPrefSize(ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
     button.setWrapText(true);
     button.getStyleClass().add("authoring-entry-action");
   }

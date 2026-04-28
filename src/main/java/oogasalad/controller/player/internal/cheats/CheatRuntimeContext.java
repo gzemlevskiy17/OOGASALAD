@@ -16,7 +16,6 @@ public record CheatRuntimeContext(
     GameConfig gameConfig,
     String mainCharacterId,
     Consumer<Outcome> terminalOutcome,
-    Consumer<Double> gravitySetter,
     ScoreService scoreService) {
 
 }

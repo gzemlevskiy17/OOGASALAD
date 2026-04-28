@@ -166,8 +166,8 @@ public interface World {
   }
 
   /**
-   *
-   * @return Drag coefficient.
+   * Returns the per-level physics constants (gravity vector and drag coefficient) that the engine
+   * applies on every simulation step.
    */
-  double getDragCoefficient();
+  PhysicsEnvironment getPhysicsEnvironment();
 }

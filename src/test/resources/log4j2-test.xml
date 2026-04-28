@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test-only log4j2 config. Log4j2 picks log4j2-test.xml off the test classpath
+  before log4j2.xml, so this is what runs during `mvn test`.
+  Kept quiet on purpose: WARN for our code, ERROR for everything else, so test
+  output stays readable. Bump a logger to DEBUG locally when investigating a
+  specific failure.
+-->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%-5level %logger{1.} - %msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger additivity="false" level="warn" name="oogasalad">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Root level="error">
+      <AppenderRef ref="Console"/>
+    </Root>
+  </Loggers>
+</Configuration>

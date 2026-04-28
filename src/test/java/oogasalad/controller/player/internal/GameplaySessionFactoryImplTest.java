@@ -2,14 +2,18 @@ package oogasalad.controller.player.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
+import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.GameLoader;
+import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.WorldImpl;
-import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.StructuralComponent;
-import oogasalad.model.engine.internal.components.TerrainSpline;
-import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.view.core.api.Renderable;
@@ -20,7 +24,8 @@ import org.junit.jupiter.api.Test;
  */
 class GameplaySessionFactoryImplTest {
 
-  private static final double ASSERTION_DELTA = 1e-6;
+  private static final double FALLBACK_WORLD_WIDTH = 2600.0;
+  private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
 
   @Test
   void WheelConnectorRotationSources_WheelConnectedToFrame_MapsWheelToConnectedFrame() {
@@ -40,53 +45,48 @@ class GameplaySessionFactoryImplTest {
   }
 
   @Test
-  void AdjustedSpawnYForVehicleGrounding_VehicleWouldIntersectTerrain_MovesSpawnAboveSurface() {
-    VehicleLayout layout = new VehicleLayout(List.of(new PlacedComponent(4, 0, "Frame")));
-    WorldImpl world = worldWithFlatTerrain(800.0);
+  void buildWithoutLevelPathCreatesEmptyFallbackWorld() {
+    GameplayWorldBuilder builder = new GameplayWorldBuilder(
+        new ThrowingLevelLoader(), new ThrowingGameLoader(), () -> null);
 
-    double adjusted = GameplaySessionFactoryImpl.adjustedSpawnYForVehicleGrounding(
-        layout, world, 100.0, 780.0);
+    GameplayWorldBuilder.BuiltWorld built = builder.build(new VehicleLayout(List.of()));
 
-    assertEquals(490.0, adjusted, ASSERTION_DELTA);
-  }
-
-  @Test
-  void AdjustedSpawnYForVehicleGrounding_SpawnAlreadyClearsTerrain_KeepsSpawnY() {
-    VehicleLayout layout = new VehicleLayout(List.of(new PlacedComponent(4, 0, "Frame")));
-    WorldImpl world = worldWithFlatTerrain(800.0);
-
-    double adjusted = GameplaySessionFactoryImpl.adjustedSpawnYForVehicleGrounding(
-        layout, world, 100.0, 400.0);
-
-    assertEquals(400.0, adjusted, ASSERTION_DELTA);
-  }
-
-  @Test
-  void AdjustedSpawnYForVehicleGrounding_NoTerrainUnderSpawnX_KeepsSpawnY() {
-    VehicleLayout layout = new VehicleLayout(List.of(new PlacedComponent(4, 0, "Frame")));
-    WorldImpl world = worldWithFlatTerrain(800.0);
-
-    double adjusted = GameplaySessionFactoryImpl.adjustedSpawnYForVehicleGrounding(
-        layout, world, 1200.0, 780.0);
-
-    assertEquals(780.0, adjusted, ASSERTION_DELTA);
+    assertTrue(built.world().getObjects().isEmpty());
+    assertTrue(built.placements().isEmpty());
+    assertEquals(FALLBACK_WORLD_WIDTH, built.bounds().width());
+    assertEquals(FALLBACK_WORLD_HEIGHT, built.bounds().height());
   }
 
   private StructuralComponent component(WorldImpl world, String displayName) {
-    return world.getComponents().stream()
-        .filter(StructuralComponent.class::isInstance)
-        .map(StructuralComponent.class::cast)
-        .filter(component -> displayName.equals(component.getDisplayName()))
-        .findFirst()
-        .orElseThrow();
+    for (GameComponent component : world.getComponents()) {
+      if (component instanceof StructuralComponent structuralComponent) {
+        if (displayName.equals(structuralComponent.getDisplayName())) {
+          return structuralComponent;
+        }
+      }
+    }
+    throw new IllegalStateException("Missing component: " + displayName);
   }
 
-  private WorldImpl worldWithFlatTerrain(double surfaceY) {
-    WorldImpl world = new WorldImpl();
-    world.addComponent(new TerrainSpline(
-        new ParabolaSpline(List.of(
-            new Vector(0.0, surfaceY),
-            new Vector(1000.0, surfaceY)), surfaceY + 200.0), 0.5));
-    return world;
+  private static final class ThrowingLevelLoader implements LevelLoader {
+
+    @Override
+    public void loadLevel(String fileName, GameConfig game, World world,
+        LevelAttributes levelAttributes) {
+      throw new IllegalStateException("Level loader should not be called");
+    }
+
+    @Override
+    public LevelAttributes loadAttributes(String fileName) {
+      throw new IllegalStateException("Level attributes should not be called");
+    }
+  }
+
+  private static final class ThrowingGameLoader implements GameLoader {
+
+    @Override
+    public GameConfig loadGame(String fileName) {
+      throw new IllegalStateException("Game loader should not be called");
+    }
   }
 }

@@ -29,6 +29,7 @@ import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.ValidationResult;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.internal.PlacementValidator;
+import oogasalad.view.core.api.SingleSprite;
 import oogasalad.view.core.internal.AbstractAppScreen;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.SpriteCache;
@@ -159,6 +160,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   public void setAllowedComponentIds(List<String> componentIds) {
     ensureAvailableComponentNames();
     availableComponentNames.clear();
+
+    // TODO: maybe remove the check
     if (componentIds == null || componentIds.isEmpty()) {
       availableComponentNames.addAll(defaultComponentNames());
     } else {
@@ -174,6 +177,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     if (componentFlow != null) {
       rebuildComponentPalette();
     }
+    clearError();
   }
 
   private static List<String> defaultComponentNames() {
@@ -222,7 +226,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
    * Reads the current grid state and returns it as a VehicleLayout. Called by the gameplay factory
    * just before the session starts. Each stacked component becomes its own {@link PlacedComponent}.
    */
-  public VehicleLayout getVehicleLayout() {return getRawVehicleLayout();}
+  public VehicleLayout getVehicleLayout() {
+    return getRawVehicleLayout();
+  }
+
   private VehicleLayout getRawVehicleLayout() {
     List<PlacedComponent> placements = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry : gridState.entrySet()) {
@@ -230,12 +237,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       for (String type : entry.getValue()) {
         placements.add(new PlacedComponent(rc[0], rc[1], type));
       }
-    }return new VehicleLayout(placements);
+    }
+    return new VehicleLayout(placements);
   }
 
-  /**
-   * Clears stale builder state every time the shared screen instance is shown again.
-   */
   @Override
   public void onEnter() {
     resetWorkspace();
@@ -283,7 +288,12 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   }
 
   private Node buildSpritePreview(String componentName) {
-    return spriteRegistry.resolveByType(componentName).renderPreview(spriteCache);
+    try {
+      return spriteRegistry.resolveByType(componentName).renderPreview(spriteCache);
+    } catch (IllegalArgumentException e) {
+      LOG.warn("Using placeholder preview for unresolved vehicle component '{}'", componentName, e);
+      return new SingleSprite("", CELL_SIZE, CELL_SIZE).renderPreview(spriteCache);
+    }
   }
 
   private Node createGridRegion() {

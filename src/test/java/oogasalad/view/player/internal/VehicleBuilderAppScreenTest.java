@@ -119,6 +119,15 @@ class VehicleBuilderAppScreenTest extends DukeApplicationTest {
     assertTrue(cell.getChildren().isEmpty());
   }
 
+  @Test
+  void setAllowedComponentIds_unknownSpriteId_keepsPaletteVisible() {
+    runAsJFXAction(() -> screen.setAllowedComponentIds(List.of("block")));
+
+    Label label = lookup("block").queryAs(Label.class);
+
+    assertEquals("block", label.getText());
+  }
+
   private void dragComponentToFirstGridCell(String componentName) {
     drag(componentCell(componentName)).dropTo(firstGridCell());
     WaitForAsyncUtils.waitForFxEvents();

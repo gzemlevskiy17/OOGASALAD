@@ -3,10 +3,10 @@ package oogasalad.view.authoring.internal;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.scene.Node;
-import javafx.scene.image.Image;
+import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.ClosePath;
 import javafx.scene.shape.Line;
@@ -15,18 +15,19 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.AuthoringStaticComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import oogasalad.view.core.internal.TerrainPaints;
 
 /**
  * JavaFX grid canvas for the level editor.
@@ -45,11 +46,9 @@ import org.apache.logging.log4j.Logger;
  */
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 
-  private static final Logger LOG = LogManager.getLogger(AuthoringCanvasImpl.class);
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringCanvas");
 
-  private static final Color TERRAIN_FALLBACK_COLOR = Color.SADDLEBROWN;
   private static final Color TERRAIN_STROKE_COLOR = Color.BLACK;
   private static final double ZOOM_MIN = 0.25;
   private static final double ZOOM_MAX = 4.0;
@@ -61,7 +60,6 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private int gridCols;
   private int gridRows;
   private final int gridLineSpacing;
-  private final Color defaultFill;
   private final Color gridStroke;
   private final double gridStrokeWidth;
 
@@ -90,7 +88,6 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     this.gridRows = Integer.parseInt(PROPS.getString("rows"));
     this.cellSize = Double.parseDouble(PROPS.getString("cellSize"));
     this.gridLineSpacing = Integer.parseInt(PROPS.getString("gridLineSpacing"));
-    this.defaultFill = Color.web(PROPS.getString("defaultFill"));
     this.gridStroke = Color.web(PROPS.getString("gridStroke"));
     this.gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
     this.selectedPlaceable = null;
@@ -272,10 +269,18 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     return zoomFactor;
   }
 
+  private static final String GOAL_LINE_TYPE = "GoalLine";
+  private static final Color GOAL_LINE_COLOR = Color.web("#FFD700", 0.55);
+  private static final Color GOAL_LINE_STROKE = Color.web("#FFD700");
+  private static final double GOAL_LINE_WIDTH_PX = 8.0;
+
   private void drawObjects() {
     for (GameObject obj : world.getObjects()) {
-      if (obj instanceof TerrainSpline spline) {
-        root.getChildren().add(drawSplineObject(spline));
+      if (obj instanceof TerrainSpline) {
+        root.getChildren().add(drawSplineObject((TerrainSpline) obj));
+      } else if (obj instanceof AuthoringStaticComponent asc
+          && GOAL_LINE_TYPE.equals(asc.getComponentType())) {
+        root.getChildren().add(drawGoalLineStripe(asc));
       } else if (obj instanceof AuthoringPlaceable placeable) {
         root.getChildren().add(drawObject(placeable));
       }
@@ -311,13 +316,42 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     path.getElements().add(new LineTo(firstKnot.x() * cellSize, baselinePx));
     path.getElements().add(new ClosePath());
 
-    path.setFill(parseColor(terrainSpline.getColor()));
+    TerrainPaints.applyTerrainFill(path, terrainSpline.getSprite(), terrainSpline.getColor(),
+        terrainSpline.getWidth() * cellSize, terrainSpline.getHeight() * cellSize,
+        terrainSpline.isTiled());
     path.setStroke(TERRAIN_STROKE_COLOR);
     path.setStrokeWidth(1.0);
     path.setOnMousePressed(e -> onObjectSelected.accept(terrainSpline));
     path.setOnMouseEntered(e -> onTerrainHoverEnter.accept(terrainSpline));
     path.setOnMouseExited(e -> onTerrainHoverExit.run());
     return path;
+  }
+
+  private Node drawGoalLineStripe(AuthoringStaticComponent asc) {
+    double px = asc.x() * cellSize;
+    double totalHeight = gridRows * cellSize;
+
+    Rectangle stripe = new Rectangle(px - GOAL_LINE_WIDTH_PX / 2, 0,
+        GOAL_LINE_WIDTH_PX, totalHeight);
+    stripe.setFill(GOAL_LINE_COLOR);
+    stripe.setStroke(GOAL_LINE_STROKE);
+    stripe.setStrokeWidth(1.5);
+
+    Label label = new Label("FINISH");
+    label.setFont(Font.font(10));
+    label.setTextFill(GOAL_LINE_STROKE);
+    label.setRotate(-90);
+    label.setMouseTransparent(true);
+    label.setLayoutX(px - 20);
+    label.setLayoutY(totalHeight / 2 - 6);
+
+    stripe.setOnMousePressed(e -> onObjectSelected.accept(asc));
+    stripe.setOnMouseEntered(e -> onTerrainHoverEnter.accept(asc));
+    stripe.setOnMouseExited(e -> onTerrainHoverExit.run());
+
+    Pane group = new Pane(stripe, label);
+    group.setMouseTransparent(false);
+    return group;
   }
 
   private Rectangle drawObject(AuthoringPlaceable placeable) {
@@ -344,14 +378,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   private Color parseColor(String css) {
-    if (css == null || css.isBlank()) {
-      return TERRAIN_FALLBACK_COLOR;
-    }
-    try {
-      return Color.web(css);
-    } catch (IllegalArgumentException e) {
-      return TERRAIN_FALLBACK_COLOR;
-    }
+    return TerrainPaints.parseColor(css);
   }
 
   /**
@@ -359,12 +386,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
    * Falls back to the block's color if the image file cannot be loaded.
    */
   private void applyTiledTexture(Rectangle rect, String spritePath, Color fallback) {
-    Image img = tryLoadImage(spritePath);
-    if (img != null) {
-      rect.setFill(new ImagePattern(img, rect.getX(), rect.getY(), cellSize, cellSize, false));
-    } else {
-      rect.setFill(fallback);
-    }
+    TerrainPaints.applyTerrainFill(rect, spritePath, toCss(fallback), cellSize, cellSize, true);
   }
 
   /**
@@ -372,34 +394,15 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
    * Falls back to the block's color if the image file cannot be loaded.
    */
   private void applySprite(Rectangle rect, String spritePath, Color fallback) {
-    Image img = tryLoadImage(spritePath);
-    if (img != null) {
-      double w = rect.getWidth();
-      double h = rect.getHeight();
-      rect.setFill(new ImagePattern(img, rect.getX(), rect.getY(), w, h, false));
-    } else {
-      rect.setFill(fallback);
-    }
+    TerrainPaints.applyTerrainFill(rect, spritePath, toCss(fallback), rect.getWidth(),
+        rect.getHeight(), false);
   }
 
-  private Image tryLoadImage(String spritePath) {
-    if (spritePath == null || spritePath.isBlank()) {
-      return null;
-    }
-    try {
-      java.io.File file = new java.io.File(spritePath);
-      if (file.isFile()) {
-        return new Image(file.toURI().toString());
-      }
-      String normalized = spritePath.startsWith("/") ? spritePath.substring(1) : spritePath;
-      java.net.URL resource = getClass().getClassLoader().getResource(normalized);
-      if (resource != null) {
-        return new Image(resource.toExternalForm());
-      }
-    } catch (Exception e) {
-      LOG.warn("Could not load sprite: {}", spritePath);
-    }
-    return null;
+  private String toCss(Color color) {
+    return String.format("#%02X%02X%02X",
+        (int) Math.round(color.getRed() * 255),
+        (int) Math.round(color.getGreen() * 255),
+        (int) Math.round(color.getBlue() * 255));
   }
 
   /**

@@ -1,0 +1,69 @@
+{
+  "gameId" : "iurii's blissful planet",
+  "mainCharacterId" : "bob",
+  "components" : [ {
+    "id" : "baloon",
+    "spriteUrl" : "data/assets/bp_balloon.png",
+    "mass" : 10.0,
+    "buttons" : [ {
+      "name" : "right",
+      "direction" : {
+        "x" : 10.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "up",
+      "direction" : {
+        "x" : 0.0,
+        "y" : -100000.0
+      }
+    } ]
+  }, {
+    "id" : "bob",
+    "spriteUrl" : "data/assets/bp_bigPig.png",
+    "mass" : 1.0,
+    "buttons" : [ {
+      "name" : "right",
+      "direction" : {
+        "x" : 1000.0,
+        "y" : 0.0
+      }
+    } ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "star",
+    "spriteUrl" : "data/assets/star.png",
+    "mass" : 1000.0,
+    "onCollisionAction" : {
+      "type" : "heal",
+      "amount" : 1000.0
+    }
+  }, {
+    "id" : "bomb",
+    "spriteUrl" : "data/assets/bp_bomb.png",
+    "mass" : 1000000.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 20000.0
+    }
+  }, {
+    "id" : "finish line",
+    "spriteUrl" : "data/assets/Screenshot 2026-04-21 at 11.18.40 AM.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "finish",
+      "amount" : 0.0
+    }
+  } ],
+  "terrainTypes" : [ {
+    "id" : "lava",
+    "spriteUrl" : null,
+    "visualColor" : "#ff0000",
+    "friction" : 0.1
+  }, {
+    "id" : "snow",
+    "spriteUrl" : null,
+    "visualColor" : "#ffffff",
+    "friction" : 0.9
+  } ]
+}

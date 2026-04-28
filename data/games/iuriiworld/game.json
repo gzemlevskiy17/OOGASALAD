@@ -1,0 +1,22 @@
+{
+  "gameId": "iuriiworld",
+  "mainCharacterId": "Wheel",
+  "components": [
+    {
+      "id": "Wheel",
+      "spriteUrl": "data/assets/bp_fan.png",
+      "mass": 5.0,
+      "buttons": [
+        {
+          "name": "Activate Fan",
+          "direction": {
+            "x": 10.0,
+            "y": 0.0
+          }
+        }
+      ]
+    }
+  ],
+  "staticComponents": [],
+  "terrainTypes": []
+}

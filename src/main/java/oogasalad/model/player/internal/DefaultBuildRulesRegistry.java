@@ -105,8 +105,9 @@ public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
   }
 
   private boolean isPigComponent(String componentId, String mainCharacterId) {
-    return componentId.equals(mainCharacterId)
-        || componentId.toLowerCase(Locale.ROOT).contains("pig");
+    return componentId != null
+        && (componentId.equals(mainCharacterId)
+            || componentId.toLowerCase(Locale.ROOT).contains("pig"));
   }
 
   private BuildRules lookupIfPresent(String componentType) {

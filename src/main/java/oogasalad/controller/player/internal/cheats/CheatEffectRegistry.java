@@ -53,7 +53,6 @@ public class CheatEffectRegistry {
         .register("teleport", registry::teleportEffect)
         .register("finishRun", registry::finishRunEffect)
         .register("loseRun", registry::loseRunEffect)
-        .register("setGravity", registry::setGravityEffect)
         .register("spawnPowerup", registry::spawnPowerupEffect);
   }
 
@@ -119,11 +118,6 @@ public class CheatEffectRegistry {
 
   private CheatEffect loseRunEffect(CheatEffectInfo info, CheatTargetResolver resolver) {
     return context -> context.terminalOutcome().accept(Outcome.GAME_LOST);
-  }
-
-  private CheatEffect setGravityEffect(CheatEffectInfo info, CheatTargetResolver resolver) {
-    double gravity = requiredDouble(info, "value");
-    return context -> context.gravitySetter().accept(gravity);
   }
 
   private CheatEffect spawnPowerupEffect(CheatEffectInfo info, CheatTargetResolver resolver) {

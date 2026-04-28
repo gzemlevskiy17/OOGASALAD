@@ -2,6 +2,7 @@ package oogasalad.controller.core.internal;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
@@ -11,11 +12,14 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
+import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelId;
+import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
+import oogasalad.data.internal.GameAttributes;
 import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelPaths;
@@ -35,6 +39,7 @@ import oogasalad.view.accounts.internal.CreateAccountScreen;
 import oogasalad.view.accounts.internal.LoginScreen;
 import oogasalad.view.accounts.internal.ProfileScreen;
 import oogasalad.view.accounts.internal.UpdateProfileScreen;
+import oogasalad.view.authoring.internal.AuthoringAlertService;
 import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
 import oogasalad.view.authoring.internal.GameAuthoringScreenImpl;
@@ -43,6 +48,8 @@ import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
 import oogasalad.view.player.internal.WinAppScreen;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Creates and registers all application screens with the ScreenManager.
@@ -65,6 +72,8 @@ public class ScreenFactory {
   public static final String CREATE_ACCOUNT_SCREEN_KEY = "CREATE_ACCOUNT";
   public static final String PROFILE_SCREEN_KEY = "PROFILE";
   public static final String UPDATE_PROFILE_SCREEN_KEY = "UPDATE_PROFILE";
+
+  private static final Logger LOG = LogManager.getLogger(ScreenFactory.class);
 
   private final ScreenManager screenManager;
   private final AuthService authService = AuthFactory.createService();
@@ -203,8 +212,14 @@ public class ScreenFactory {
             authService.session()::isLoggedIn));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
         new AuthoringEntryScreenImpl(this::guardedOutcome, this::scanLevels,
-            worldKey -> configureAuthoringForWorld(authoringScreen, worldKey),
+            worldKey -> {
+              configureAuthoringForWorld(authoringScreen, worldKey);
+              configureGameAuthoringForWorld(worldKey);
+            },
             path -> {
+              // If validation rejects the level, alerts fire inside the helpers and the world
+              // stays untouched (validator runs before any mutation). We still let the user
+              // progress into the authoring screen so they can fix the file or start fresh.
               configureAuthoringForLevel(authoringScreen, path);
               authoringScreen.loadLevelFromPath(path);
             },
@@ -254,6 +269,8 @@ public class ScreenFactory {
       authoringScreen.setGameConfig(
           gameLoader.loadGame(LevelPaths.gameFileForLevel(representativeLevelPath, worldKey)));
     } catch (RuntimeException e) {
+      LOG.warn("Could not load game config for world '{}'; authoring will run without catalog",
+          worldKey, e);
       authoringScreen.setGameConfig(null);
     }
   }
@@ -275,11 +292,22 @@ public class ScreenFactory {
   }
 
   private void configureAuthoringForLevel(AuthoringScreenImpl authoringScreen, String levelPath) {
+    LevelAttributes attrs;
     try {
-      LevelAttributes attrs = levelLoader.loadAttributes(levelPath);
+      attrs = levelLoader.loadAttributes(levelPath);
+    } catch (LevelLoadException e) {
+      // The callback below also calls loadLevelFromPath which alerts on the same validation
+      // failure. Logging here is enough — alerting twice would show two popups for one bad file.
+      LOG.warn("Cannot resolve game config for invalid level '{}': {}", levelPath, e.getMessage());
+      authoringScreen.setGameConfig(null);
+      return;
+    }
+    try {
       authoringScreen.setGameConfig(
           gameLoader.loadGame(LevelPaths.gameFileForLevel(levelPath, attrs.getGameType())));
     } catch (RuntimeException e) {
+      LOG.warn("Could not load game config for level '{}'; authoring will run without catalog",
+          levelPath, e);
       authoringScreen.setGameConfig(null);
     }
   }
@@ -326,8 +354,9 @@ public class ScreenFactory {
       advanceToNextLevelAndRoute();
       return;
     }
-    if (outcome == Outcome.OPEN_VEHICLE_BUILDER) {
-      configureVehicleBuilderForSelectedLevel();
+    if (outcome == Outcome.OPEN_VEHICLE_BUILDER && !configureVehicleBuilderForSelectedLevel()) {
+      // Validation rejected the level; the alert has been shown, stay on the current screen.
+      return;
     }
     if (outcome == Outcome.SKIP_LOGIN) {
       screenManager.onOutcome(Outcome.BACK_TO_MENU);
@@ -340,25 +369,48 @@ public class ScreenFactory {
     }
   }
 
-  private void configureVehicleBuilderForSelectedLevel() {
+  private static List<String> resolvedVehiclePaletteIds(GameConfig gameConfig) {
+    return new GameAttributes(gameConfig).movableComponentIds();
+  }
+
+  /**
+   * Returns true if the vehicle builder is ready to open for the selected level. Returns false
+   * when level-file validation rejected the level (in which case an alert has been shown and the
+   * caller should NOT transition to the vehicle builder screen).
+   */
+  private boolean configureVehicleBuilderForSelectedLevel() {
     if (vehicleBuilderScreen == null) {
-      return;
+      return true;
     }
+
     String levelPath = pathForSelectedLevel();
     if (levelPath == null || levelPath.isBlank()) {
       vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
       vehicleBuilderScreen.setGameConfig(null);
-      return;
+      return true;
     }
-    LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+    LevelAttributes attributes;
     try {
-      oogasalad.data.api.GameConfig config = gameLoader.loadGame(
-          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
-      vehicleBuilderScreen.setGameConfig(config);
-    } catch (RuntimeException e) {
-      vehicleBuilderScreen.setGameConfig(null);
+      attributes = levelLoader.loadAttributes(levelPath);
+    } catch (LevelLoadException e) {
+      LOG.error("Cannot launch level '{}': {}", levelPath, e.getMessage(), e);
+      new AuthoringAlertService().showError(
+          "Cannot Launch Level", "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+      return false;
     }
-    vehicleBuilderScreen.setAllowedComponentIds(attributes.getElementsAllowed());
+    try {
+      GameConfig gameConfig = gameLoader.loadGame(
+          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
+      vehicleBuilderScreen.setGameConfig(gameConfig);
+      vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig));
+    } catch (RuntimeException e) {
+      LOG.warn(
+          "Could not load game config for level '{}'; vehicle builder will run without catalog",
+          levelPath, e);
+      vehicleBuilderScreen.setGameConfig(null);
+      vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
+    }
+    return true;
   }
 
   /**
@@ -373,7 +425,11 @@ public class ScreenFactory {
         current != null ? progression.nextAfter(current) : java.util.Optional.empty();
     if (next.isPresent()) {
       selectedLevel.set(next.get());
-      configureVehicleBuilderForSelectedLevel();
+      if (!configureVehicleBuilderForSelectedLevel()) {
+        // Validation rejected the next level; alert was shown, fall back to the entry screen.
+        screenManager.onOutcome(Outcome.OPEN_PLAYER_ENTRY);
+        return;
+      }
       screenManager.onOutcome(Outcome.OPEN_VEHICLE_BUILDER);
     } else {
       screenManager.onOutcome(Outcome.OPEN_PLAYER_ENTRY);

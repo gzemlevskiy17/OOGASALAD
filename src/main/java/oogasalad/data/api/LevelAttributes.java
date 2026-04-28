@@ -26,7 +26,7 @@ public class LevelAttributes {
 
   // mainCharacter
   private double gridSize = 60;
-  private List<String> elementsAllowed = new ArrayList<>();
+  private List<String> mainCharacterElementsAllowed = new ArrayList<>();
   private int maxSelectable = 5;
   private double maxHP = 100;
   private String cameraFollows = "vehicle";
@@ -87,13 +87,14 @@ public class LevelAttributes {
     this.gridSize = gridSize;
   }
 
-  public List<String> getElementsAllowed() {
-    return List.copyOf(elementsAllowed);
+  public List<String> getMainCharacterElementsAllowed() {
+    return List.copyOf(mainCharacterElementsAllowed);
   }
 
-  public void setElementsAllowed(List<String> elementsAllowed) {
-    this.elementsAllowed =
-        elementsAllowed == null ? new ArrayList<>() : new ArrayList<>(elementsAllowed);
+  public void setMainCharacterElementsAllowed(List<String> mainCharacterElementsAllowed) {
+    this.mainCharacterElementsAllowed =
+        mainCharacterElementsAllowed == null ? new ArrayList<>()
+            : new ArrayList<>(mainCharacterElementsAllowed);
   }
 
   public int getMaxSelectable() {
@@ -117,26 +118,30 @@ public class LevelAttributes {
   }
 
   public void setCameraFollows(String cameraFollows) {
-    this.cameraFollows = cameraFollows == null || cameraFollows.isBlank()
-        ? "vehicle" : cameraFollows;
+    if (cameraFollows == null || cameraFollows.isBlank()) {
+      this.cameraFollows = "vehicle";
+      return;
+    }
+    this.cameraFollows = cameraFollows;
   }
 
-  // ── Legacy aliases kept so existing callers compile without changes ──
+  // Legacy aliases kept so existing callers compile without changes
 
   /**
-   * @deprecated use {@link #getElementsAllowed()}
+   * @deprecated
    */
   @Deprecated
   public List<String> getAllowedVehicleComponents() {
-    return getElementsAllowed();
+    return getMainCharacterElementsAllowed(); // before it was returning main components in place of VehicleComponents
   }
 
   /**
-   * @deprecated use {@link #setElementsAllowed(List)}
+   * @deprecated
    */
   @Deprecated
   public void setAllowedVehicleComponents(List<String> components) {
-    setElementsAllowed(components);
+    setMainCharacterElementsAllowed(
+        components); // before it was returning main components in place of VehicleComponents
   }
 
   /**

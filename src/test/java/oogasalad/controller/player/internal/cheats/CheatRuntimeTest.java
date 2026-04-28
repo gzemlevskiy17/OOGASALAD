@@ -44,8 +44,7 @@ class CheatRuntimeTest {
         List.of(
             context -> executionOrder.add("repair"),
             context -> executionOrder.add("spawn")),
-        context(new WorldImpl(), TestGameConfig.badPiggies(), new ArrayList<>(),
-            new ArrayList<>()));
+        context(new WorldImpl(), TestGameConfig.badPiggies(), new ArrayList<>()));
 
     action.execute();
 
@@ -67,8 +66,7 @@ class CheatRuntimeTest {
     List<String> effectTypes = CheatEffectRegistry.defaults().registeredTypes();
 
     assertTrue(effectTypes.containsAll(List.of(
-            "repair", "damage", "teleport", "finishRun", "loseRun", "setGravity",
-            "spawnPowerup")),
+            "repair", "damage", "teleport", "finishRun", "loseRun", "spawnPowerup")),
         "Authoring help should list every default primitive effect available at runtime.");
   }
 
@@ -81,7 +79,7 @@ class CheatRuntimeTest {
     CheatEffect repair = CheatEffectRegistry.defaults().create(
         effect("repair", mainCharacterTarget(), Map.of("amount", "25")));
 
-    repair.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>(), new ArrayList<>()));
+    repair.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
 
     assertEquals(65.0, pig.getCurrentHp(), ASSERTION_DELTA,
         "Repair should add HP to the resolved main character without exceeding max HP.");
@@ -95,7 +93,7 @@ class CheatRuntimeTest {
     CheatEffect damage = CheatEffectRegistry.defaults().create(
         effect("damage", mainCharacterTarget(), Map.of("amount", "30")));
 
-    damage.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>(), new ArrayList<>()));
+    damage.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
 
     assertEquals(70.0, pig.getCurrentHp(), ASSERTION_DELTA,
         "Damage should subtract HP from the resolved main character.");
@@ -109,7 +107,7 @@ class CheatRuntimeTest {
     CheatEffect teleport = CheatEffectRegistry.defaults().create(
         effect("teleport", componentTypeTarget("Frame"), Map.of("x", "400", "y", "275")));
 
-    teleport.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>(), new ArrayList<>()));
+    teleport.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
 
     assertEquals(400.0, frame.x(), ASSERTION_DELTA,
         "Teleport should update the target component x position.");
@@ -123,8 +121,7 @@ class CheatRuntimeTest {
     CheatEffect finishRun = CheatEffectRegistry.defaults().create(
         effect("finishRun", worldTarget(), Map.of()));
 
-    finishRun.apply(context(new WorldImpl(), TestGameConfig.badPiggies(), outcomes,
-        new ArrayList<>()));
+    finishRun.apply(context(new WorldImpl(), TestGameConfig.badPiggies(), outcomes));
 
     assertEquals(List.of(Outcome.GAME_WON), outcomes,
         "finishRun should emit the same terminal win outcome used by normal gameplay.");
@@ -136,24 +133,10 @@ class CheatRuntimeTest {
     CheatEffect loseRun = CheatEffectRegistry.defaults().create(
         effect("loseRun", worldTarget(), Map.of()));
 
-    loseRun.apply(context(new WorldImpl(), TestGameConfig.badPiggies(), outcomes,
-        new ArrayList<>()));
+    loseRun.apply(context(new WorldImpl(), TestGameConfig.badPiggies(), outcomes));
 
     assertEquals(List.of(Outcome.GAME_LOST), outcomes,
         "loseRun should emit the same terminal loss outcome used by normal gameplay.");
-  }
-
-  @Test
-  void CheatEffectRegistry_SetGravityEffect_ForwardsGravityValue() {
-    List<Double> gravityValues = new ArrayList<>();
-    CheatEffect setGravity = CheatEffectRegistry.defaults().create(
-        effect("setGravity", worldTarget(), Map.of("value", "1.25")));
-
-    setGravity.apply(context(new WorldImpl(), TestGameConfig.badPiggies(), new ArrayList<>(),
-        gravityValues));
-
-    assertEquals(List.of(1.25), gravityValues,
-        "setGravity should forward the author-provided gravity value to the gameplay hook.");
   }
 
   @Test
@@ -165,7 +148,7 @@ class CheatRuntimeTest {
         effect("spawnPowerup", worldTarget(),
             Map.of("componentId", "Heart", "x", "420", "y", "315")));
 
-    spawnPowerup.apply(context(world, config, new ArrayList<>(), new ArrayList<>()));
+    spawnPowerup.apply(context(world, config, new ArrayList<>()));
 
     PickupComponent pickup = world.getObjects().stream()
         .filter(PickupComponent.class::isInstance)
@@ -190,7 +173,7 @@ class CheatRuntimeTest {
     CheatEffect spawnPowerup = CheatEffectRegistry.defaults().create(
         effect("spawnPowerup", mainCharacterTarget(), Map.of("componentId", "Heart")));
 
-    spawnPowerup.apply(context(world, config, new ArrayList<>(), new ArrayList<>()));
+    spawnPowerup.apply(context(world, config, new ArrayList<>()));
 
     PickupComponent pickup = world.getObjects().stream()
         .filter(PickupComponent.class::isInstance)
@@ -212,7 +195,7 @@ class CheatRuntimeTest {
         effect("spawnPowerup", worldTarget(), Map.of("componentId", "Heart")));
 
     assertThrows(CheatConfigurationException.class,
-        () -> spawnPowerup.apply(context(world, config, new ArrayList<>(), new ArrayList<>())),
+        () -> spawnPowerup.apply(context(world, config, new ArrayList<>())),
         "spawnPowerup without x/y should fail if its target resolves no in-world position.");
   }
 
@@ -223,7 +206,7 @@ class CheatRuntimeTest {
     world.addObject(pig);
 
     List<?> targets = CheatTargetResolver.defaults().resolve(mainCharacterTarget(),
-        context(world, TestGameConfig.badPiggies(), new ArrayList<>(), new ArrayList<>()));
+        context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
 
     assertEquals(1, targets.size(), "Main character targeting should find exactly the BigPig.");
     assertSame(pig, targets.getFirst(),
@@ -240,7 +223,7 @@ class CheatRuntimeTest {
 
     List<?> targets = CheatTargetResolver.defaults().resolve(
         new CheatTargetInfo("allDamageable", ""),
-        context(world, TestGameConfig.badPiggies(), new ArrayList<>(), new ArrayList<>()));
+        context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
 
     assertTrue(targets.containsAll(List.of(pig, frame)),
         "allDamageable should include every active component that supports HP changes.");
@@ -278,7 +261,7 @@ class CheatRuntimeTest {
     CheatInfo disabledCheat = cheat(false, "finishRun", worldTarget(), Map.of(), "SHIFT", "W");
     CheatInputHandler handler = CheatKeyBinder.defaults().bind(
         configWithCheats(List.of(disabledCheat)),
-        context(world, configWithCheats(List.of(disabledCheat)), outcomes, new ArrayList<>()));
+        context(world, configWithCheats(List.of(disabledCheat)), outcomes));
 
     handler.handleKeyPressed(KeyCode.SHIFT);
     handler.handleKeyPressed(KeyCode.W);
@@ -293,8 +276,7 @@ class CheatRuntimeTest {
 
     assertThrows(CheatConfigurationException.class,
         () -> CheatKeyBinder.defaults().bind(configWithCheats(List.of(cheat)),
-            context(new WorldImpl(), configWithCheats(List.of(cheat)), new ArrayList<>(),
-                new ArrayList<>())),
+            context(new WorldImpl(), configWithCheats(List.of(cheat)), new ArrayList<>())),
         "Invalid JavaFX key names should fail while binding the author configuration.");
   }
 
@@ -306,7 +288,7 @@ class CheatRuntimeTest {
     GameConfig config = configWithCheatsAndStaticPowerup(List.of(spawnCheat),
         new StaticComponentInfo("Heart", "", 0, new CollisionAction("heal", 25)));
     CheatInputHandler handler = CheatKeyBinder.defaults().bind(config,
-        context(world, config, new ArrayList<>(), new ArrayList<>()));
+        context(world, config, new ArrayList<>()));
 
     handler.handleKeyPressed(KeyCode.SHIFT);
     handler.handleKeyPressed(KeyCode.P);
@@ -318,10 +300,9 @@ class CheatRuntimeTest {
         "An enabled spawnPowerup cheat should create a runtime key binding that spawns one pickup.");
   }
 
-  private CheatRuntimeContext context(World world, GameConfig config, List<Outcome> outcomes,
-      List<Double> gravityValues) {
+  private CheatRuntimeContext context(World world, GameConfig config, List<Outcome> outcomes) {
     return new CheatRuntimeContext(world, config, config.mainCharacterId(), outcomes::add,
-        gravityValues::add, new ScoreServiceImpl());
+        new ScoreServiceImpl());
   }
 
   private CheatEffectInfo effect(String type, CheatTargetInfo target,

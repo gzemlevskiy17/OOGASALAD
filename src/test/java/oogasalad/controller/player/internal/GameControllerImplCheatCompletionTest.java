@@ -10,7 +10,6 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.internal.GameConfigImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.GameEngine;
-import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.player.api.GameplayScore;
 import oogasalad.model.player.api.GameplayStatsTracker;
@@ -97,10 +96,6 @@ class GameControllerImplCheatCompletionTest {
 
     @Override
     public void step(double elapsedTime) {
-    }
-
-    @Override
-    public void setGravity(Vector gravityVector) {
     }
   }
 
