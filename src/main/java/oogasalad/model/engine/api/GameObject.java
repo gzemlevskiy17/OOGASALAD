@@ -40,17 +40,6 @@ public interface GameObject extends Renderable {
 
   boolean isTrigger();
 
-  default int getCollisionCategoryBits() {
-    return 0x0001;
-  }
-
-  default int getCollisionMaskBits() {
-    return 0xFFFF_FFFF;
-  }
-
-  default void setCollisionFilter(int categoryBits, int maskBits) {
-  }
-
   void addForce(Vector force);
 
   default void updatePolygon() {
