@@ -117,11 +117,32 @@ public class VehicleFactory {
       RigidBody pig = registry.get(p.componentType()).create(worldX, worldY);
       world.addComponent(pig);
       placementToComponent.put(p, pig);
-      RigidBody host = placed.get(toKey(p.row(), p.col()));
+      RigidBody host = resolvePigHost(p, placed);
+      if (host == null) {
+        throw new IllegalStateException(
+            "No vehicle part to attach pig part '%s' at grid (%d,%d); layout is invalid"
+                .formatted(p.componentType(), p.row(), p.col()));
+      }
+      world.addJoint(new RigidJoint(pig, host));
+    }
+  }
+
+  /**
+   * Same-cell structural host first; else first cardinal neighbor with a part (N, E, S, W).
+   */
+  private RigidBody resolvePigHost(PlacedComponent p, Map<String, RigidBody> placed) {
+    RigidBody host = placed.get(toKey(p.row(), p.col()));
+    if (host != null) {
+      return host;
+    }
+    int[][] deltas = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+    for (int[] d : deltas) {
+      host = placed.get(toKey(p.row() + d[0], p.col() + d[1]));
       if (host != null) {
-        world.addJoint(new RigidJoint(pig, host));
+        return host;
       }
     }
+    return null;
   }
 
   private Joint buildJoint(RigidBody a, RigidBody b,
