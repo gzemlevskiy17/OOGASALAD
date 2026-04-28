@@ -1,14 +1,11 @@
 package oogasalad.controller.player.internal.parts;
 
 import oogasalad.model.engine.api.Vector;
-import oogasalad.model.engine.internal.components.DriveComponent;
-import oogasalad.model.engine.internal.components.GameComponent;
-import oogasalad.model.engine.internal.components.RigidBody;
 
 /**
  * @author Paulina Vvedenskaya
  */
-public final class DrivePartSpec extends AbstractVehiclePartSpec {
+public abstract class DrivePartSpec extends AbstractVehiclePartSpec {
 
   private static final double DEFAULT_MASS = 5.0;
   private static final double FRICTION = 0.3;
@@ -24,20 +21,31 @@ public final class DrivePartSpec extends AbstractVehiclePartSpec {
     this.thrustForce = thrustForce;
   }
 
+  public double getMass() {
+    return mass;
+  }
+
+  public Vector getThrustDirection() {
+    return thrustDirection;
+  }
+
+  public double getThrustForce() {
+    return thrustForce;
+  }
+
+  public double getFriction() {
+    return FRICTION;
+  }
+
+  public double getMaxHP() {
+    return MAX_HP;
+  }
+
   public DrivePartSpec(String paletteName, Vector thrustDirection, double thrustForce,
       double mass, double width, double height) {
     super(paletteName, JointStyle.STRUCTURAL, width, height);
     this.mass = mass;
     this.thrustDirection = thrustDirection;
     this.thrustForce = thrustForce;
-  }
-
-  @Override
-  public RigidBody create(double x, double y) {
-    DriveComponent drive = new DriveComponent(
-        x, y, 0, mass, FRICTION, MAX_HP, paletteName(), bodyWidth(), bodyHeight());
-    drive.setThrustDirection(thrustDirection);
-    drive.setThrustForce(thrustForce);
-    return drive;
   }
 }

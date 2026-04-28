@@ -18,7 +18,7 @@ import oogasalad.model.engine.api.Vector;
  */
 public final class VehiclePartRegistry {
 
-  private static final double DEFAULT_SIZE = 60.0;
+  private static final double DEFAULT_SIZE = 60.0; //TODO: properties
   private static final double DEFAULT_THRUST = 3000.0;
 
   private final Map<String, VehiclePartSpec> byName = new HashMap<>();
@@ -31,9 +31,9 @@ public final class VehiclePartRegistry {
     register(new StructuralPartSpec("Metal Wheel", JointStyle.WHEEL));
     register(new PigPartSpec("Pig"));
     register(new PigPartSpec("Small Pig"));
-    register(new DrivePartSpec("Engine", new Vector(1, 0), 3000.0)); //TODO: make vectors point in direction of motion
-    register(new DrivePartSpec("Fan", new Vector(1, 0), 10000.0));
-    register(new DrivePartSpec("Balloon", new Vector(0, -1), 8000.0));
+    register(new RelativeDirectionDrivePartSpec("Engine", new Vector(1, 0), DEFAULT_THRUST));
+    register(new RelativeDirectionDrivePartSpec("Fan", new Vector(1, 0), 8000.0)); //TODO: properties
+    register(new FixedDirectionDrivePartSpec("Balloon", new Vector(0, -1), DEFAULT_THRUST));
   }
 
   /**
@@ -68,7 +68,7 @@ public final class VehiclePartRegistry {
           Math.sqrt(first.directionX() * first.directionX()
               + first.directionY() * first.directionY()),
           DEFAULT_THRUST);
-      return new DrivePartSpec(id, direction, force, mass, w, h);
+      return new FixedDirectionDrivePartSpec(id, direction, force, mass, w, h);
     }
     return new StructuralPartSpec(id, JointStyle.STRUCTURAL, mass, w, h);
   }
