@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
  * correction.
  *
  * @author Paulina Vvedenskaya
+ * @author Georgiy Zemlevskiy
  */
 class CollisionPhase {
 
@@ -44,43 +45,6 @@ class CollisionPhase {
     this.impulseCache = new HashMap<>();
   }
 
-  private static void applyDynamicDynamicCorrection(DynamicComponent objectA,
-      DynamicComponent objectB, Collision collision) {
-    if (objectA == collision.getIncidentObject()) {
-      collision.setPenetration(collision.getPenetration().multiply(-1));
-    }
-    ImpulseSolverUtilities.applyPositionalCorrection(collision, objectA, objectB);
-  }
-
-  private static void applyDynamicStaticCorrection(DynamicComponent dynamicObject,
-      StaticComponent staticObject, Collision collision) {
-    if (dynamicObject == collision.getReferenceObject()) {
-      collision.setPenetration(collision.getPenetration().multiply(-1));
-    }
-    ImpulseSolverUtilities.applyPositionalCorrection(collision, staticObject, dynamicObject);
-  }
-
-  private static boolean isDynamicDynamicPair(CollisionPair pair, GameObject objectA,
-      GameObject objectB) {
-    return pair.objectA().isAssignableFrom(objectA.getClass())
-        && pair.objectB().isAssignableFrom(objectB.getClass())
-        && DynamicComponent.class.isAssignableFrom(pair.objectA())
-        && DynamicComponent.class.isAssignableFrom(pair.objectB());
-  }
-
-  private static boolean isDynamicStaticPair(CollisionPair pair, GameObject objectA,
-      GameObject objectB) {
-    if (!pair.objectA().isAssignableFrom(objectA.getClass())
-        || !pair.objectB().isAssignableFrom(objectB.getClass())) {
-      return false;
-    }
-    if (PassThroughComponent.class.isAssignableFrom(pair.objectB())) {
-      return false;
-    }
-    return DynamicComponent.class.isAssignableFrom(pair.objectA())
-        && StaticComponent.class.isAssignableFrom(pair.objectB());
-  }
-
   private static boolean aabbsOverlap(GameObject objectA, GameObject objectB) {
     return SweptCollisionResolver.BoundingBox.from(objectA)
         .overlaps(SweptCollisionResolver.BoundingBox.from(objectB));
@@ -97,7 +61,7 @@ class CollisionPhase {
     return canonicalPair(collision.getReferenceObject(), collision.getIncidentObject());
   }
 
-  void solve(double elapsedTime) {
+  public void solve(double elapsedTime) {
     List<Collision> collisions = detectCollisions();
     warmStartCollisions(collisions);
     solveVelocityIterations(collisions);
@@ -149,16 +113,13 @@ class CollisionPhase {
 
     for (DynamicComponent objectA : world.getActiveDynamicComponents()) {
       for (GameObject objectB : world.getObjects()) {
-        if (objectA == objectB) {
-          continue;
-        }
+        //check if the objects are the same, or have been seen before in reverse order. Let joints resolve their own rules.
         List<GameObject> pairKey = canonicalPair(objectA, objectB);
-        if (!seenPairs.add(pairKey)) {
+        if (objectA == objectB || !seenPairs.add(pairKey) || jointedPairs.contains(pairKey)) {
           continue;
         }
-        if (jointedPairs.contains(pairKey)) {
-          continue;
-        }
+
+        //this broadphase check is less expensive than the detector's narrowphase check
         if (aabbsOverlap(objectA, objectB)) {
           collisionDetector.detectCollision(objectA, objectB).ifPresent(collisions::add);
         }
@@ -195,25 +156,8 @@ class CollisionPhase {
       objectB = temp;
     }
 
-    if (applyImpulse) {
-      CollisionSolver solver = collisionDispatcher.getSolverMap().get(collisionPair);
-      solver.solve(objectA, objectB, collision, isFirstIteration);
-    } else {
-      solvePositionOnly(collisionPair, objectA, objectB, collision);
-    }
-  }
-
-  private void solvePositionOnly(CollisionPair pair, GameObject objectA, GameObject objectB,
-      Collision collision) {
-    if (isDynamicDynamicPair(pair, objectA, objectB)) {
-      applyDynamicDynamicCorrection((DynamicComponent) objectA, (DynamicComponent) objectB,
-          collision);
-      return;
-    }
-    if (isDynamicStaticPair(pair, objectA, objectB)) {
-      applyDynamicStaticCorrection((DynamicComponent) objectA, (StaticComponent) objectB,
-          collision);
-    }
+    CollisionSolver solver = collisionDispatcher.getSolverMap().get(collisionPair);
+    solver.solve(objectA, objectB, collision, isFirstIteration, applyImpulse);
   }
 
   private CollisionPair findSuperClassPair(CollisionPair pair) {

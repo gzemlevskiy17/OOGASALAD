@@ -81,7 +81,7 @@ public class DynamicDynamicSolver {
    *                  information
    */
   public void solve(DynamicComponent objectA, DynamicComponent objectB,
-      Collision collision, boolean isFirstIteration) {
+      Collision collision, boolean isFirstIteration, boolean solveImpulse) {
     // TODO: move this into the dispatcher. document the convention
     if (objectA == collision.getIncidentObject()) {
       collision.setPenetration(collision.getPenetration().multiply(-1));
@@ -91,6 +91,9 @@ public class DynamicDynamicSolver {
     // TODO: a and b technically are no longer incident and reference
 
     resolveImpulseAtContacts(collision, isFirstIteration);
+    if (solveImpulse) {
+      ImpulseSolverUtilities.applyPositionalCorrection(collision, referenceObject, incidentObject);
+    }
   }
 
   /**

@@ -43,6 +43,6 @@ public interface CollisionSolver {
    *
    * @param collision collision data for one object pair at the current simulation step
    */
-  void solve(GameObject objectA, GameObject objectB, Collision collision, boolean isFirstIteration);
+  void solve(GameObject objectA, GameObject objectB, Collision collision, boolean isFirstIteration, boolean solveImpulse);
   //TODO: is it best that this mutates, or returns new object state?
 }

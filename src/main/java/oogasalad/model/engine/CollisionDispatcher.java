@@ -43,8 +43,6 @@ public class CollisionDispatcher {
 
   private Map<CollisionPair, CollisionSolver> solverMap;
 
-  //  Map<CollisionPair, CollisionDetector> collisionDetectors;
-
   public CollisionDispatcher() {
     initializeSolverMap();
   }
@@ -52,18 +50,18 @@ public class CollisionDispatcher {
   private void initializeSolverMap() {
     solverMap = new HashMap<>();
     solverMap.put(new CollisionPair(DynamicComponent.class, DynamicComponent.class),
-        (objectA, objectB, collision, isFirstIteration) -> {
-          impulseSolver.solve((DynamicComponent) objectA, (DynamicComponent) objectB, collision, isFirstIteration);
+        (objectA, objectB, collision, isFirstIteration, solveImpulse) -> {
+          impulseSolver.solve((DynamicComponent) objectA, (DynamicComponent) objectB, collision, isFirstIteration, solveImpulse);
         });
     solverMap.put(new CollisionPair(DynamicComponent.class, StaticComponent.class),
-        (objectA, objectB, collision, isFirstIteration) -> {
+        (objectA, objectB, collision, isFirstIteration, solveImpulse) -> {
           dynamicStaticSolver.solve((DynamicComponent) objectA, (StaticComponent) objectB,
-              collision, isFirstIteration);
+              collision, isFirstIteration, solveImpulse);
         });
     solverMap.put(new CollisionPair(DynamicComponent.class, PassThroughComponent.class),
-        (objectA, objectB, collision, isFirstIteration) -> {
+        (objectA, objectB, collision, isFirstIteration, solveImpulse) -> {
           dynamicPassthroughSolver.solve((DynamicComponent) objectA, (PassThroughComponent) objectB,
-              collision, isFirstIteration);
+              collision, isFirstIteration, solveImpulse);
         });
   }
 
