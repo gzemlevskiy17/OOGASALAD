@@ -184,7 +184,9 @@ public class LevelLoaderImpl implements LevelLoader {
         return info;
       }
     }
-    throw new LevelLoadException("Unknown terrain option: '" + firstId + "'");
+    LOG.warn("Unknown terrain option '{}'; loading spline without catalog terrain styling",
+        firstId);
+    return null;
   }
 
   private double baselineFor(List<Vector> knots) {

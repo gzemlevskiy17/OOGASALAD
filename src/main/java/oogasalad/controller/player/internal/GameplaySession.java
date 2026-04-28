@@ -90,6 +90,13 @@ public class GameplaySession {
     controller.handleButtonPress(buttonId);
   }
 
+  /**
+   * Forwards a tool button release to the controller's input router.
+   */
+  public void handleButtonRelease(String buttonId) {
+    controller.handleButtonRelease(buttonId);
+  }
+
   int currentScore() {
     return scoreService.getPoints();
   }

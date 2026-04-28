@@ -75,7 +75,7 @@ public class GamePlayScreenCoordinator implements AppScreen {
     });
     view.setOnToolDeactivated(buttonId -> {
       if (session != null) {
-        session.handleButtonPress(buttonId);
+        session.handleButtonRelease(buttonId);
       }
     });
   }

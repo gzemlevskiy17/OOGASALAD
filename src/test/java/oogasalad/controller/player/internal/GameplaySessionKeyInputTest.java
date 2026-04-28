@@ -136,6 +136,10 @@ class GameplaySessionKeyInputTest {
     }
 
     @Override
+    public void handleButtonRelease(String buttonId) {
+    }
+
+    @Override
     public void handleKeyPress(KeyCode key) {
       pressedKeys.add(key);
     }

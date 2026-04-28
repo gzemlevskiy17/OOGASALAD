@@ -55,7 +55,8 @@ final class DriveActionBinder {
       drivesById.computeIfAbsent(driveButtonId(obj), ignored -> new ArrayList<>()).add(driveable);
     }
     for (Map.Entry<String, List<Driveable>> entry : drivesById.entrySet()) {
-      inputRouter.bind(entry.getKey(), driveGroupAction(entry.getValue()));
+      inputRouter.bind(entry.getKey(), activateAction(entry.getValue()));
+      inputRouter.bindRelease(entry.getKey(), deactivateAction(entry.getValue()));
     }
   }
 
@@ -63,16 +64,18 @@ final class DriveActionBinder {
     return obj instanceof Driveable driveable && driveable.isPlayerControllable();
   }
 
-  private Action driveGroupAction(List<Driveable> driveables) {
+  private Action activateAction(List<Driveable> driveables) {
     return () -> {
-      boolean shouldActivate =
-          driveables.stream().anyMatch(driveable -> !driveable.isDriveEnabled());
       for (Driveable driveable : driveables) {
-        if (shouldActivate) {
-          driveable.activateDrive();
-        } else {
-          driveable.deactivateDrive();
-        }
+        driveable.activateDrive();
+      }
+    };
+  }
+
+  private Action deactivateAction(List<Driveable> driveables) {
+    return () -> {
+      for (Driveable driveable : driveables) {
+        driveable.deactivateDrive();
       }
     };
   }

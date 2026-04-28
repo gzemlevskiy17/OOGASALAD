@@ -31,6 +31,7 @@ final class GameCatalogPersistenceController {
   private final Path levelsDir;
   private final CheatAuthoringValidator cheatValidator;
   private final AuthoringAlertService alertService;
+  private final GameCatalogValidator catalogValidator = new GameCatalogValidator();
 
   GameCatalogPersistenceController(GameCatalogDraft draft, GameCatalogSaver catalogSaver,
       Path gamesDir, Path levelsDir, CheatAuthoringValidator cheatValidator,
@@ -74,35 +75,19 @@ final class GameCatalogPersistenceController {
     } catch (IOException | RuntimeException e) {
       LOG.warn("Could not prepare current game config", e);
       alertService.showError("Save Error", e.getMessage());
-      return GameConfigImpl.empty();
+      throw new IllegalStateException("Current game catalog is invalid.", e);
     }
   }
 
   private Path saveCatalogForGameId(String gameId, String mainCharacterId) throws IOException {
-    if (gameId.isBlank()) {
-      throw new IllegalArgumentException("Game ID is required before saving a game catalog.");
-    }
+    catalogValidator.validate(gameId, mainCharacterId, draft);
     Path catalogPath = catalogPathFor(gameId);
     Files.createDirectories(catalogPath.getParent());
     Files.createDirectories(levelsDir.resolve(gameId));
-    validateMainCharacterId(mainCharacterId);
     cheatValidator.validateCheats(draft.cheats(), draft.staticComponents());
     catalogSaver.save(catalogPath.toString(), gameId, mainCharacterId,
         draft.components(), draft.staticComponents(), draft.terrainTypes(), draft.cheats());
     return catalogPath;
-  }
-
-  private void validateMainCharacterId(String mainCharacterId) {
-    if (mainCharacterId.isBlank()) {
-      throw new IllegalArgumentException(
-          "Main Character is required before saving a game catalog.");
-    }
-    boolean exists = draft.components().stream()
-        .anyMatch(component -> mainCharacterId.equals(component.id()));
-    if (!exists) {
-      throw new IllegalArgumentException(
-          "Main Character must be one of the vehicle components.");
-    }
   }
 
   private Path catalogPathFor(String gameId) {

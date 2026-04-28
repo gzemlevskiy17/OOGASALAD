@@ -45,11 +45,15 @@ final class SpriteImportService {
       Files.createDirectories(assetsDir);
       Path dest = assetsDir.resolve(selected.getName());
       Files.copy(selected.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
-      target.setText(dest.toString());
+      target.setText(normalizeSpritePath(dest));
       LOG.info("Copied sprite to {}", dest);
     } catch (IOException e) {
       LOG.warn("Could not import sprite {}", selected, e);
       alertService.showError("Sprite Import Error", e.getMessage());
     }
+  }
+
+  static String normalizeSpritePath(Path path) {
+    return path.toString().replace(File.separatorChar, '/');
   }
 }

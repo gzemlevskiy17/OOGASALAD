@@ -115,12 +115,19 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private void navigateToLevelEditor() {
-    onGameConfigReady.accept(buildCurrentConfig());
-    onOutcome.accept(Outcome.OPEN_AUTHORING);
+    buildCurrentConfig().ifPresent(config -> {
+      onGameConfigReady.accept(config);
+      onOutcome.accept(Outcome.OPEN_AUTHORING);
+    });
   }
 
-  private GameConfig buildCurrentConfig() {
-    return persistenceController.saveAndLoadCurrentConfig(gameId(), mainCharacterId());
+  private Optional<GameConfig> buildCurrentConfig() {
+    try {
+      return Optional.of(
+          persistenceController.saveAndLoadCurrentConfig(gameId(), mainCharacterId()));
+    } catch (IllegalStateException e) {
+      return Optional.empty();
+    }
   }
 
   private void refreshCatalogTabs() {
