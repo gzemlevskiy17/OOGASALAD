@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
-import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -13,8 +12,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -27,13 +24,13 @@ import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.data.api.TerrainInfo;
 import oogasalad.data.internal.GameAttributes;
 import oogasalad.data.internal.GameLoaderImpl;
-import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
@@ -224,8 +221,11 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     canvasScrollPane.setFitToHeight(false);
     canvasScrollPane.setPannable(false);
     canvasScrollPane.getStyleClass().add("authoring-canvas-scroll");
-    wireEdgePan(canvasScrollPane);
-    wireZoomScroll(canvasScrollPane);
+    CanvasZoomPanHandler.Settings zoomPanSettings = new CanvasZoomPanHandler.Settings(
+        d("edgePanThreshold"),
+        d("edgePanSpeed"),
+        d("zoomStep"));
+    new CanvasZoomPanHandler(canvas, canvasScrollPane, zoomPanSettings).wireHandlers();
     canvasHost = new StackPane(canvasScrollPane);
 
     vehiclePalette = new VehicleComponentScrollPalette();
@@ -276,64 +276,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   private void subscribePalette(ComponentPaletteImpl palette) {
     palette.subscribe(canvas::setSelectedPlaceable);
     palette.subscribe(controller::setSelectedPlaceable);
-  }
-
-  private void wireEdgePan(ScrollPane scroll) {
-    double threshold = d("edgePanThreshold");
-    double speed = d("edgePanSpeed");
-    double[] vel = {0, 0};
-
-    javafx.event.EventHandler<MouseEvent> edgeDetect = e -> {
-      double vw = scroll.getViewportBounds().getWidth();
-      double vh = scroll.getViewportBounds().getHeight();
-      vel[0] = edgeVelocity(e.getX(), vw, threshold, speed);
-      vel[1] = edgeVelocity(e.getY(), vh, threshold, speed);
-    };
-    scroll.addEventFilter(MouseEvent.MOUSE_MOVED, edgeDetect);
-    scroll.addEventFilter(MouseEvent.MOUSE_DRAGGED, edgeDetect);
-    scroll.addEventFilter(MouseEvent.MOUSE_EXITED, e -> {
-      vel[0] = 0;
-      vel[1] = 0;
-    });
-
-    new AnimationTimer() {
-      @Override
-      public void handle(long now) {
-        if (vel[0] != 0) {
-          scroll.setHvalue(clamp01(scroll.getHvalue() + vel[0]));
-        }
-        if (vel[1] != 0) {
-          scroll.setVvalue(clamp01(scroll.getVvalue() + vel[1]));
-        }
-      }
-    }.start();
-  }
-
-  private void wireZoomScroll(ScrollPane scroll) {
-    scroll.addEventFilter(ScrollEvent.SCROLL, e -> {
-      if (e.isControlDown()) {
-        double step = d("zoomStep");
-        double next = e.getDeltaY() > 0
-            ? canvas.getZoom() * step
-            : canvas.getZoom() / step;
-        canvas.setZoom(next);
-        e.consume();
-      }
-    });
-  }
-
-  private static double edgeVelocity(double pos, double size, double threshold, double speed) {
-    if (pos < threshold && threshold > 0) {
-      return -speed * (1 - pos / threshold);
-    }
-    if (pos > size - threshold && threshold > 0) {
-      return speed * (1 - (size - pos) / threshold);
-    }
-    return 0;
-  }
-
-  private static double clamp01(double value) {
-    return Math.max(0, Math.min(1, value));
   }
 
   private void fitCanvasToViewport() {

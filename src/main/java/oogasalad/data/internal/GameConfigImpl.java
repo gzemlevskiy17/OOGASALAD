@@ -40,6 +40,7 @@ public class GameConfigImpl implements GameConfig {
     } catch (IOException e) {
       throw new LevelLoadException("Failed to read game config: " + filePath, e);
     }
+    validateRoot(root);
     gameId = root.path("gameId").asText("");
     mainCharacterId = root.path("mainCharacterId").asText("");
     components = parseComponents(root.path("components"));
@@ -122,6 +123,124 @@ public class GameConfigImpl implements GameConfig {
     return current;
   }
 
+  private void validateRoot(JsonNode node) {
+    requireObject(node, "game");
+    requireText(node, "gameId", "gameId");
+    requireText(node, "mainCharacterId", "mainCharacterId");
+    requireArray(node, "components", "components");
+    requireArray(node, "staticComponents", "staticComponents");
+    requireArray(node, "terrainTypes", "terrainTypes");
+    validateComponents(node.path("components"));
+    validateStaticComponents(node.path("staticComponents"));
+    validateTerrainTypes(node.path("terrainTypes"));
+    validateMainCharacterReference(node);
+  }
+
+  private void validateMainCharacterReference(JsonNode node) {
+    JsonNode componentsNode = node.path("components");
+    if (componentsNode.size() == 0) {
+      return;
+    }
+    String mainCharacter = node.path("mainCharacterId").asText();
+    for (JsonNode component : componentsNode) {
+      if (mainCharacter.equals(component.path("id").asText())) {
+        return;
+      }
+    }
+    throw new LevelLoadException("mainCharacterId must match an id in components");
+  }
+
+  private void validateComponents(JsonNode componentsNode) {
+    for (int index = 0; index < componentsNode.size(); index++) {
+      JsonNode component = componentsNode.get(index);
+      String path = "components[" + index + "]";
+      requireObject(component, path);
+      requireText(component, "id", path + ".id");
+      requireText(component, "spriteUrl", path + ".spriteUrl");
+      requireNumber(component, "mass", path + ".mass");
+      if (component.has("buttons")) {
+        requireArray(component, "buttons", path + ".buttons");
+        validateButtons(component.path("buttons"), path + ".buttons");
+      }
+    }
+  }
+
+  private void validateButtons(JsonNode buttonsNode, String path) {
+    for (int index = 0; index < buttonsNode.size(); index++) {
+      JsonNode button = buttonsNode.get(index);
+      String buttonPath = path + "[" + index + "]";
+      requireObject(button, buttonPath);
+      requireText(button, "name", buttonPath + ".name");
+      validatePoint(button.path("direction"), buttonPath + ".direction");
+    }
+  }
+
+  private void validateStaticComponents(JsonNode staticComponentsNode) {
+    for (int index = 0; index < staticComponentsNode.size(); index++) {
+      JsonNode component = staticComponentsNode.get(index);
+      String path = "staticComponents[" + index + "]";
+      requireObject(component, path);
+      requireText(component, "id", path + ".id");
+      requireText(component, "spriteUrl", path + ".spriteUrl");
+      requireNumber(component, "mass", path + ".mass");
+      validateCollisionAction(component.path("onCollisionAction"), path + ".onCollisionAction");
+    }
+  }
+
+  private void validateCollisionAction(JsonNode action, String path) {
+    if (action.isMissingNode() || action.isNull()) {
+      return;
+    }
+    requireObject(action, path);
+    requireText(action, "type", path + ".type");
+    if (action.has("amount")) {
+      requireNumber(action, "amount", path + ".amount");
+    }
+  }
+
+  private void validateTerrainTypes(JsonNode terrainTypesNode) {
+    for (int index = 0; index < terrainTypesNode.size(); index++) {
+      JsonNode terrain = terrainTypesNode.get(index);
+      String path = "terrainTypes[" + index + "]";
+      requireObject(terrain, path);
+      requireText(terrain, "id", path + ".id");
+      requireNumber(terrain, "friction", path + ".friction");
+    }
+  }
+
+  private void validatePoint(JsonNode point, String path) {
+    requireObject(point, path);
+    requireNumber(point, "x", path + ".x");
+    requireNumber(point, "y", path + ".y");
+  }
+
+  private void requireObject(JsonNode node, String path) {
+    if (node == null || node.isMissingNode() || !node.isObject()) {
+      throw new LevelLoadException("Game config missing required object: '" + path + "'");
+    }
+  }
+
+  private void requireArray(JsonNode node, String key, String path) {
+    JsonNode field = node.path(key);
+    if (field.isMissingNode() || !field.isArray()) {
+      throw new LevelLoadException("Game config missing required array: '" + path + "'");
+    }
+  }
+
+  private void requireText(JsonNode node, String key, String path) {
+    JsonNode field = node.path(key);
+    if (field.isMissingNode() || !field.isTextual() || field.asText().isBlank()) {
+      throw new LevelLoadException("Game config missing required string: '" + path + "'");
+    }
+  }
+
+  private void requireNumber(JsonNode node, String key, String path) {
+    JsonNode field = node.path(key);
+    if (field.isMissingNode() || !field.isNumber()) {
+      throw new LevelLoadException("Game config missing required number: '" + path + "'");
+    }
+  }
+
   private List<ComponentInfo> parseComponents(JsonNode array) {
     List<ComponentInfo> result = new ArrayList<>();
     if (!array.isArray()) {
@@ -190,13 +309,18 @@ public class GameConfigImpl implements GameConfig {
     }
     for (JsonNode entry : array) {
       String id = entry.path("id").asText("");
-      String spriteUrl =
-          entry.path("spriteUrl").isNull() ? null : entry.path("spriteUrl").asText(null);
-      String visualColor =
-          entry.path("visualColor").isNull() ? null : entry.path("visualColor").asText(null);
+      String spriteUrl = nullableText(entry.path("spriteUrl"));
+      String visualColor = nullableText(entry.path("visualColor"));
       double friction = entry.path("friction").asDouble(0);
       result.add(new TerrainInfo(id, spriteUrl, visualColor, friction));
     }
     return result;
+  }
+
+  private String nullableText(JsonNode node) {
+    if (node.isMissingNode() || node.isNull()) {
+      return null;
+    }
+    return node.asText(null);
   }
 }

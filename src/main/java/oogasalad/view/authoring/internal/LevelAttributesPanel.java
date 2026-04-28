@@ -9,7 +9,7 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import oogasalad.data.internal.LevelAttributes;
+import oogasalad.data.api.LevelAttributes;
 
 /**
  * Side panel for editing global level attributes (name, gravity, drag, maxHP).

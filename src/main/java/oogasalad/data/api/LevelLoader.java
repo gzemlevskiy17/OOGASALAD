@@ -1,6 +1,5 @@
 package oogasalad.data.api;
 
-import oogasalad.data.internal.LevelAttributes;
 import oogasalad.model.engine.api.World;
 
 /**

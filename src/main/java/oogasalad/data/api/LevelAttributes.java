@@ -1,4 +1,4 @@
-package oogasalad.data.internal;
+package oogasalad.data.api;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,8 +118,11 @@ public class LevelAttributes {
   }
 
   public void setCameraFollows(String cameraFollows) {
-    this.cameraFollows = cameraFollows == null || cameraFollows.isBlank()
-        ? "vehicle" : cameraFollows;
+    if (cameraFollows == null || cameraFollows.isBlank()) {
+      this.cameraFollows = "vehicle";
+      return;
+    }
+    this.cameraFollows = cameraFollows;
   }
 
   // Legacy aliases kept so existing callers compile without changes

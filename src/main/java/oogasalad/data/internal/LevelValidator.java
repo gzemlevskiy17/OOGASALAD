@@ -32,6 +32,9 @@ public class LevelValidator {
 
   public void validate(JsonNode root) {
     List<String> errors = new ArrayList<>();
+    if (!isObject(root, "root", errors)) {
+      throw new LevelLoadException(formatErrors(errors));
+    }
     validateGameMetadata(root.path("gameMetadata"), errors);
     validateMap(root.path("map"), errors);
     validateMainCharacter(root.path("mainCharacter"), errors);
@@ -41,16 +44,20 @@ public class LevelValidator {
   }
 
   private static String formatErrors(List<String> errors) {
+    String problemLabel = " problems:";
+    if (errors.size() == 1) {
+      problemLabel = " problem:";
+    }
     StringBuilder sb = new StringBuilder("Level file has ")
         .append(errors.size())
-        .append(errors.size() == 1 ? " problem:" : " problems:");
+        .append(problemLabel);
     for (String error : errors) {
       sb.append("\n  - ").append(error);
     }
     return sb.toString();
   }
 
-  // ── Section validators ──
+  // Section validators
 
   private void validateGameMetadata(JsonNode meta, List<String> errors) {
     if (!isObject(meta, "gameMetadata", errors)) {
@@ -121,10 +128,10 @@ public class LevelValidator {
     }
   }
 
-  // ── Field-level helpers ──
+  // Field-level helpers
 
   private boolean isObject(JsonNode node, String path, List<String> errors) {
-    if (node.isMissingNode() || !node.isObject()) {
+    if (node == null || node.isMissingNode() || !node.isObject()) {
       errors.add("missing required object: '" + path + "'");
       return false;
     }
@@ -132,7 +139,7 @@ public class LevelValidator {
   }
 
   private boolean isArray(JsonNode node, String path, List<String> errors) {
-    if (node.isMissingNode() || !node.isArray()) {
+    if (node == null || node.isMissingNode() || !node.isArray()) {
       errors.add("missing required array: '" + path + "'");
       return false;
     }
@@ -141,7 +148,7 @@ public class LevelValidator {
 
   private void requireText(JsonNode node, String key, String path, List<String> errors) {
     JsonNode field = node.path(key);
-    if (field.isMissingNode() || !field.isTextual()) {
+    if (field.isMissingNode() || !field.isTextual() || field.asText().isBlank()) {
       errors.add("missing required string: '" + path + "'");
     }
   }

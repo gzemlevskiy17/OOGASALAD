@@ -1,6 +1,7 @@
 package oogasalad.data.internal;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,13 +15,12 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 import oogasalad.data.api.LevelLoadException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class LevelValidatorTest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private LevelValidator validator;
+  private final LevelValidator validator = new LevelValidator();
 
   private static final String VALID_LEVEL = """
       {
@@ -41,13 +41,14 @@ class LevelValidatorTest {
       }
       """;
 
-  @BeforeEach
-  void setUp() {
-    validator = new LevelValidator();
-  }
-
   private JsonNode parse(String json) throws JsonProcessingException {
     return MAPPER.readTree(json);
+  }
+
+  private void assertInvalid(JsonNode root) {
+    LevelLoadException exception = assertThrows(LevelLoadException.class,
+        () -> validator.validate(root));
+    assertNotNull(exception);
   }
 
   // ── Positive cases ───────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ class LevelValidatorTest {
         { "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
           "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
   }
 
   @Test
@@ -76,7 +77,7 @@ class LevelValidatorTest {
           "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
           "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
   }
 
   @Test
@@ -87,7 +88,7 @@ class LevelValidatorTest {
           "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
           "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
   }
 
   // ── Missing map fields ───────────────────────────────────────────────────
@@ -99,7 +100,7 @@ class LevelValidatorTest {
             "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
           "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
   }
 
   @Test
@@ -110,7 +111,7 @@ class LevelValidatorTest {
           "map": { "spawnPoint": {"x":0,"y":0}, "objects": [] },
           "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
   }
 
   @Test
@@ -121,7 +122,7 @@ class LevelValidatorTest {
           "map": { "knotLocations": [], "objects": [] },
           "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
   }
 
   // ── Missing mainCharacter fields ─────────────────────────────────────────
@@ -133,7 +134,7 @@ class LevelValidatorTest {
             "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
           "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
   }
 
   @Test
@@ -144,7 +145,7 @@ class LevelValidatorTest {
           "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
           "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5 } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
   }
 
   @Test
@@ -155,7 +156,80 @@ class LevelValidatorTest {
           "map": { "knotLocations": [], "spawnPoint": {"x":0,"y":0}, "objects": [] },
           "mainCharacter": { "elementsAllowed": [], "maxSelectable": 5, "maxHP": 100 } }
         """);
-    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+    assertInvalid(root);
+  }
+
+  @Test
+  void validate_nullRoot_throws() {
+    assertInvalid(null);
+  }
+
+  @Test
+  void validate_nullSpawnPoint_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": null, "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5,
+            "maxHP": 100 } }
+        """);
+
+    assertInvalid(root);
+  }
+
+  @Test
+  void validate_spawnPointMissingX_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": {"y": 10}, "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5,
+            "maxHP": 100 } }
+        """);
+
+    assertInvalid(root);
+  }
+
+  @Test
+  void validate_mapObjectMissingType_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": {"x": 0, "y": 0},
+            "objects": [{ "position": {"x": 20, "y": 30} }] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5,
+            "maxHP": 100 } }
+        """);
+
+    assertInvalid(root);
+  }
+
+  @Test
+  void validate_mapObjectMissingPosition_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [], "spawnPoint": {"x": 0, "y": 0},
+            "objects": [{ "type": "GoalLine" }] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5,
+            "maxHP": 100 } }
+        """);
+
+    assertInvalid(root);
+  }
+
+  @Test
+  void validate_knotMissingCoordinate_throws() throws JsonProcessingException {
+    JsonNode root = parse("""
+        { "gameMetadata": { "levelName": "T", "gameType": "g",
+            "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
+          "map": { "knotLocations": [{ "x": 0 }], "spawnPoint": {"x": 0, "y": 0},
+            "objects": [] },
+          "mainCharacter": { "gridSize": 60, "elementsAllowed": [], "maxSelectable": 5,
+            "maxHP": 100 } }
+        """);
+
+    assertInvalid(root);
   }
 
   // ── Range checks ─────────────────────────────────────────────────────────

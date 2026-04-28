@@ -14,12 +14,12 @@ import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelId;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.internal.GameAttributes;
 import oogasalad.data.internal.GameLoaderImpl;
-import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.data.internal.LevelProgression;
@@ -392,9 +392,8 @@ public class ScreenFactory {
           "Cannot Launch Level", "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
       return false;
     }
-    GameConfig gameConfig = null;
     try {
-      gameConfig = gameLoader.loadGame(
+      GameConfig gameConfig = gameLoader.loadGame(
           LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
       vehicleBuilderScreen.setGameConfig(gameConfig);
       vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig));

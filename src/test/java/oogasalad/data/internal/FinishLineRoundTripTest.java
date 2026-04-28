@@ -12,6 +12,7 @@ import java.util.List;
 import oogasalad.data.api.CollisionAction;
 import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
