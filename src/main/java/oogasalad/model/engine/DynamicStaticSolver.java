@@ -55,11 +55,11 @@ public class DynamicStaticSolver {
    * <strong>Assumptions:</strong> {@code collision} is non-null and contains
    * enough contact and normal information for response calculations.
    *
-   * @param objectA dynamic object in the collision
-   * @param objectB static object in the collision
-   * @param collision collision data containing manifold and penetration information
+   * @param objectA          dynamic object in the collision
+   * @param objectB          static object in the collision
+   * @param collision        collision data containing manifold and penetration information
    * @param isFirstIteration true only on the first solver iteration for the collision set
-   * @param solveImpulse true when the current pass should also apply positional correction
+   * @param solveImpulse     true when the current pass should also apply positional correction
    */
   public void solve(DynamicComponent objectA, StaticComponent objectB,
       Collision collision, boolean isFirstIteration, boolean solveImpulse) {
@@ -71,12 +71,12 @@ public class DynamicStaticSolver {
     this.incidentObject = objectA;
     // TODO: a and b are no longer technically incident and reference
 
-    resolveImpulseAtContacts(collision, isFirstIteration);
-    if (isFirstIteration) {
-      applyCollisionEffect(objectB, objectA);
-    }
-
     if (solveImpulse) {
+      resolveImpulseAtContacts(collision, isFirstIteration);
+      if (isFirstIteration) {
+        applyCollisionEffect(objectB, objectA);
+      }
+    } else {
       ImpulseSolverUtilities.applyPositionalCorrection(collision, referenceObject, incidentObject);
     }
   }
