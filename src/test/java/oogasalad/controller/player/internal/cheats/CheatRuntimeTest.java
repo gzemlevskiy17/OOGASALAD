@@ -63,6 +63,16 @@ class CheatRuntimeTest {
   }
 
   @Test
+  void CheatEffectRegistry_DefaultRegistry_ReportsRegisteredEffectTypes() {
+    List<String> effectTypes = CheatEffectRegistry.defaults().registeredTypes();
+
+    assertTrue(effectTypes.containsAll(List.of(
+            "repair", "damage", "teleport", "finishRun", "loseRun", "setGravity",
+            "spawnPowerup")),
+        "Authoring help should list every default primitive effect available at runtime.");
+  }
+
+  @Test
   void CheatEffectRegistry_RepairEffect_RepairsTargetDamageable() {
     WorldImpl world = new WorldImpl();
     PigComponent pig = pig("BigPig", 100, 100);
@@ -171,6 +181,42 @@ class CheatRuntimeTest {
   }
 
   @Test
+  void CheatEffectRegistry_SpawnPowerupEffectWithoutCoordinates_SpawnsAtResolvedTarget() {
+    WorldImpl world = new WorldImpl();
+    PigComponent pig = pig("BigPig", 125, 220);
+    world.addObject(pig);
+    GameConfig config = configWithStaticPowerup(new StaticComponentInfo(
+        "Heart", "", 0, new CollisionAction("heal", 25)));
+    CheatEffect spawnPowerup = CheatEffectRegistry.defaults().create(
+        effect("spawnPowerup", mainCharacterTarget(), Map.of("componentId", "Heart")));
+
+    spawnPowerup.apply(context(world, config, new ArrayList<>(), new ArrayList<>()));
+
+    PickupComponent pickup = world.getObjects().stream()
+        .filter(PickupComponent.class::isInstance)
+        .map(PickupComponent.class::cast)
+        .findFirst()
+        .orElseThrow();
+    assertEquals(pig.x(), pickup.x(), ASSERTION_DELTA,
+        "Spawned powerup without x/y should use the resolved target x position.");
+    assertEquals(pig.y(), pickup.y(), ASSERTION_DELTA,
+        "Spawned powerup without x/y should use the resolved target y position.");
+  }
+
+  @Test
+  void CheatEffectRegistry_SpawnPowerupEffectWithoutCoordinatesAndTarget_ThrowsException() {
+    WorldImpl world = new WorldImpl();
+    GameConfig config = configWithStaticPowerup(new StaticComponentInfo(
+        "Heart", "", 0, new CollisionAction("heal", 25)));
+    CheatEffect spawnPowerup = CheatEffectRegistry.defaults().create(
+        effect("spawnPowerup", worldTarget(), Map.of("componentId", "Heart")));
+
+    assertThrows(CheatConfigurationException.class,
+        () -> spawnPowerup.apply(context(world, config, new ArrayList<>(), new ArrayList<>())),
+        "spawnPowerup without x/y should fail if its target resolves no in-world position.");
+  }
+
+  @Test
   void CheatTargetResolver_MainCharacterTarget_FindsConfiguredTypedComponent() {
     WorldImpl world = new WorldImpl();
     PigComponent pig = pig("BigPig", 100, 100);
@@ -198,6 +244,15 @@ class CheatRuntimeTest {
 
     assertTrue(targets.containsAll(List.of(pig, frame)),
         "allDamageable should include every active component that supports HP changes.");
+  }
+
+  @Test
+  void CheatTargetResolver_DefaultResolver_ReportsRegisteredTargetKinds() {
+    List<String> targetKinds = CheatTargetResolver.defaults().registeredKinds();
+
+    assertTrue(targetKinds.containsAll(List.of(
+            "world", "tag", "vehicle", "mainCharacter", "allDamageable", "componentType")),
+        "Authoring help should list every default target selector available at runtime.");
   }
 
   @Test
