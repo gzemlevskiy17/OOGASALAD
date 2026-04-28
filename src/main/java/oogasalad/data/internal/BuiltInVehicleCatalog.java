@@ -13,11 +13,14 @@ import oogasalad.data.api.GameConfig;
  * Canonical Bad Piggies vehicle parts for UI palettes and empty game catalogs. Ids match
  * hardcoded build rules and VehiclePartRegistry (Wood Wheel, Metal Wheel)
  * so wheel revolute joints and round colliders keep working.
+ *
+ * @author Iurii Beliaev
  */
 public final class BuiltInVehicleCatalog {
 
   private BuiltInVehicleCatalog() {}
 
+  // TODO: Remove hardcoded values
   public static List<ComponentInfo> defaultComponents() {
     List<ComponentInfo> list = new ArrayList<>();
     list.add(new ComponentInfo("BigPig", "data/assets/vehicle/bp_bigPig.png", 10.0, List.of()));

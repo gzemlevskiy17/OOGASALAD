@@ -48,6 +48,7 @@ import org.apache.logging.log4j.Logger;
  * and then used to drive the level editor and vehicle builder.
  *
  * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
  */
 public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
