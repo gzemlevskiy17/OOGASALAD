@@ -82,6 +82,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private final List<CheatInfo> cheats = new ArrayList<>();
   private TextField gameIdField;
   private TextField mainCharacterIdField;
+  private ListView<String> terrainListView;
+  private ListView<String> staticListView;
+  private ListView<String> componentListView;
   private ListView<String> cheatListView;
   private String saveFilePath = "data/games/untitled/game.json";
 
@@ -118,10 +121,22 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       components.addAll(config.components());
       cheats.clear();
       cheats.addAll(config.cheats());
-      refreshCheatList();
+      refreshCatalogLists();
     } catch (Exception e) {
+      LOG.warn("Could not load game catalog from {}", path, e);
       new AuthoringAlertService().showError("Load Error", e.getMessage());
     }
+  }
+
+  public void resetForNewCatalog() {
+    saveFilePath = "data/games/untitled/game.json";
+    Optional.ofNullable(gameIdField).ifPresent(TextField::clear);
+    Optional.ofNullable(mainCharacterIdField).ifPresent(TextField::clear);
+    terrainTypes.clear();
+    staticComponents.clear();
+    components.clear();
+    cheats.clear();
+    refreshCatalogLists();
   }
 
   @Override
@@ -188,8 +203,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Tab buildTerrainTab() {
-    ListView<String> list = new ListView<>();
-    refreshTerrainList(list);
+    terrainListView = new ListView<>();
+    terrainListView.setId("terrain-list");
+    refreshTerrainList(terrainListView);
 
     TextField idF = field("id");
     TextField spriteF = field("spriteUrl");
@@ -203,16 +219,16 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
           nullIfBlank(spriteF.getText()),
           nullIfBlank(colorF.getText()),
           parseDouble(frictionF.getText(), 0.5)));
-      refreshTerrainList(list);
+      refreshTerrainList(terrainListView);
       clearFields(idF, spriteF, colorF, frictionF);
     });
 
     Button remove = new Button("Remove");
     remove.setOnAction(e -> {
-      int idx = list.getSelectionModel().getSelectedIndex();
+      int idx = terrainListView.getSelectionModel().getSelectedIndex();
       if (idx >= 0) {
         terrainTypes.remove(idx);
-        refreshTerrainList(list);
+        refreshTerrainList(terrainListView);
       }
     });
 
@@ -222,7 +238,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
             formRow("Color", colorF), formRow("Friction", frictionF)),
         buttonBar(add, remove));
 
-    return new Tab("Terrain", buildTabContent(list, form));
+    return new Tab("Terrain", buildTabContent(terrainListView, form));
   }
 
   private void refreshTerrainList(ListView<String> list) {
@@ -234,8 +250,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Tab buildStaticTab() {
-    ListView<String> list = new ListView<>();
-    refreshStaticList(list);
+    staticListView = new ListView<>();
+    staticListView.setId("static-component-list");
+    refreshStaticList(staticListView);
 
     TextField idF = field("id");
     TextField spriteF = field("spriteUrl");
@@ -253,16 +270,16 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
           spriteF.getText().strip(),
           parseDouble(massF.getText(), 0),
           action));
-      refreshStaticList(list);
+      refreshStaticList(staticListView);
       clearFields(idF, spriteF, massF, actionTypeF, actionAmountF);
     });
 
     Button remove = new Button("Remove");
     remove.setOnAction(e -> {
-      int idx = list.getSelectionModel().getSelectedIndex();
+      int idx = staticListView.getSelectionModel().getSelectedIndex();
       if (idx >= 0) {
         staticComponents.remove(idx);
-        refreshStaticList(list);
+        refreshStaticList(staticListView);
       }
     });
 
@@ -273,7 +290,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
             formRow("Action Amount", actionAmountF)),
         buttonBar(add, remove));
 
-    return new Tab("Static Objects", buildTabContent(list, form));
+    return new Tab("Static Objects", buildTabContent(staticListView, form));
   }
 
   private void refreshStaticList(ListView<String> list) {
@@ -286,8 +303,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Tab buildComponentsTab() {
-    ListView<String> list = new ListView<>();
-    refreshComponentList(list);
+    componentListView = new ListView<>();
+    componentListView.setId("component-list");
+    refreshComponentList(componentListView);
 
     TextField idF = field("id");
     TextField spriteF = field("spriteUrl");
@@ -321,24 +339,24 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
           new ArrayList<>(pendingButtons)));
       pendingButtons.clear();
       btnList.getItems().clear();
-      refreshComponentList(list);
+      refreshComponentList(componentListView);
       clearFields(idF, spriteF, massF);
     });
 
     Button useAsMainCharacter = new Button("Use as Main Character");
-    useAsMainCharacter.setOnAction(e -> selectedComponentId(list)
+    useAsMainCharacter.setOnAction(e -> selectedComponentId(componentListView)
         .ifPresent(mainCharacterIdField::setText));
 
     Button remove = new Button("Remove");
     remove.setOnAction(e -> {
-      int idx = list.getSelectionModel().getSelectedIndex();
+      int idx = componentListView.getSelectionModel().getSelectedIndex();
       if (idx >= 0) {
         String removedId = components.get(idx).id();
         components.remove(idx);
         if (removedId.equals(mainCharacterIdField.getText().strip())) {
           mainCharacterIdField.clear();
         }
-        refreshComponentList(list);
+        refreshComponentList(componentListView);
       }
     });
 
@@ -351,7 +369,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
         buttonBar(addBtn),
         buttonBar(add, useAsMainCharacter, remove));
 
-    return new Tab("Components", buildTabContent(list, form));
+    return new Tab("Components", buildTabContent(componentListView, form));
   }
 
   private Optional<String> selectedComponentId(ListView<String> list) {
@@ -547,6 +565,13 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
         .ifPresent(list -> list.getItems().setAll(currentCheats().stream()
             .map(this::formatCheat)
             .toList()));
+  }
+
+  private void refreshCatalogLists() {
+    Optional.ofNullable(terrainListView).ifPresent(this::refreshTerrainList);
+    Optional.ofNullable(staticListView).ifPresent(this::refreshStaticList);
+    Optional.ofNullable(componentListView).ifPresent(this::refreshComponentList);
+    refreshCheatList();
   }
 
   private void refreshPendingEffectList(List<CheatEffectInfo> pendingEffects,

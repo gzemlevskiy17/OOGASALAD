@@ -1,5 +1,6 @@
 package oogasalad.controller.core.internal;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -75,6 +76,7 @@ public class ScreenFactory {
   private final GameLoader gameLoader = new GameLoaderImpl();
 
   // Player screens stored as fields so the vehicle layout can be read before gameplay starts
+  private GameAuthoringScreenImpl gameAuthoringScreen;
   private VehicleBuilderAppScreen vehicleBuilderScreen;
 
   // Gameplay + result screens kept as fields so terminal stats can be pushed into Win/Lose screens
@@ -192,7 +194,10 @@ public class ScreenFactory {
   }
 
   private void registerNonAuthScreens() {
-    AuthoringScreenImpl authoringScreen = new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set);
+    AuthoringScreenImpl authoringScreen =
+        new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set);
+    gameAuthoringScreen = new GameAuthoringScreenImpl(this::guardedOutcome,
+        authoringScreen::loadLevelFromPath, authoringScreen::setGameConfig);
     screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authController::handle,
             authService.session()::isLoggedIn));
@@ -202,10 +207,10 @@ public class ScreenFactory {
             path -> {
               configureAuthoringForLevel(authoringScreen, path);
               authoringScreen.loadLevelFromPath(path);
-            }));
-    screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY,
-        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath,
-            authoringScreen::setGameConfig));
+            },
+            this::configureGameAuthoringForWorld,
+            gameAuthoringScreen::resetForNewCatalog));
+    screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY, gameAuthoringScreen);
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected,
@@ -250,6 +255,22 @@ public class ScreenFactory {
           gameLoader.loadGame(LevelPaths.gameFileForLevel(representativeLevelPath, worldKey)));
     } catch (RuntimeException e) {
       authoringScreen.setGameConfig(null);
+    }
+  }
+
+  private void configureGameAuthoringForWorld(String worldKey) {
+    if (gameAuthoringScreen == null) {
+      return;
+    }
+    gameAuthoringScreen.resetForNewCatalog();
+    if (worldKey == null || worldKey.isBlank()) {
+      return;
+    }
+    String representativeLevelPath =
+        Path.of("data", "levels", worldKey, "level.json").toString();
+    Path catalogPath = Path.of(LevelPaths.gameFileForLevel(representativeLevelPath, worldKey));
+    if (Files.exists(catalogPath)) {
+      gameAuthoringScreen.loadCatalogFromPath(catalogPath.toString());
     }
   }
 

@@ -47,6 +47,8 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
   private LevelScanner.ScanResult scanResult;
   private final Consumer<String> onWorldSelected;
   private final Consumer<String> onLevelSelected;
+  private final Consumer<String> onEditWorldSelected;
+  private final Runnable onNewWorldSelected;
 
   private VBox worldsList;
   private VBox levelsList;
@@ -72,11 +74,22 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
   public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome,
       Supplier<LevelScanner.ScanResult> scanResultSupplier, Consumer<String> onWorldSelected,
       Consumer<String> onLevelSelected) {
+    this(onOutcome, scanResultSupplier, onWorldSelected, onLevelSelected, worldKey -> {
+    }, () -> {
+    });
+  }
+
+  public AuthoringEntryScreenImpl(Consumer<Outcome> onOutcome,
+      Supplier<LevelScanner.ScanResult> scanResultSupplier, Consumer<String> onWorldSelected,
+      Consumer<String> onLevelSelected, Consumer<String> onEditWorldSelected,
+      Runnable onNewWorldSelected) {
     super(onOutcome);
     this.scanResultSupplier = Objects.requireNonNull(scanResultSupplier);
     this.scanResult = this.scanResultSupplier.get();
     this.onWorldSelected = Objects.requireNonNull(onWorldSelected);
     this.onLevelSelected = Objects.requireNonNull(onLevelSelected);
+    this.onEditWorldSelected = Objects.requireNonNull(onEditWorldSelected);
+    this.onNewWorldSelected = Objects.requireNonNull(onNewWorldSelected);
   }
 
   @Override
@@ -136,12 +149,12 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
     editExistingWorldButton = actionButton(
         s("editExistingWorldButtonText"),
-        event -> onOutcome.accept(Outcome.OPEN_GAME_AUTHORING));
+        event -> openSelectedWorldForEditing());
     editExistingWorldButton.setDisable(true);
 
     Button addNewWorldButton = actionButton(
         s("addNewWorldButtonText"),
-        event -> onOutcome.accept(Outcome.OPEN_GAME_AUTHORING));
+        event -> openNewWorldForAuthoring());
 
     VBox bottomActions = new VBox(d("paneSpacing"), editExistingWorldButton, addNewWorldButton);
     bottomActions.setAlignment(Pos.TOP_CENTER);
@@ -199,6 +212,19 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
     selectedWorldButton.getStyleClass().add("world-selected");
     populateLevelsForSelectedWorld();
     updateEditWorldButtonState();
+  }
+
+  private void openSelectedWorldForEditing() {
+    if (selectedWorldKey == null) {
+      return;
+    }
+    onEditWorldSelected.accept(selectedWorldKey);
+    onOutcome.accept(Outcome.OPEN_GAME_AUTHORING);
+  }
+
+  private void openNewWorldForAuthoring() {
+    onNewWorldSelected.run();
+    onOutcome.accept(Outcome.OPEN_GAME_AUTHORING);
   }
 
   private void populateLevelsForSelectedWorld() {
