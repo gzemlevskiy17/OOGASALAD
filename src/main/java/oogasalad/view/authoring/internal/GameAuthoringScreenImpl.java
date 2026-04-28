@@ -48,6 +48,27 @@ import org.apache.logging.log4j.Logger;
  * @author Paulina Vvedenskaya
  */
 public class GameAuthoringScreenImpl extends AbstractAppScreen {
+  private static final double DEFAULT_WIDTH = 220;
+  private static final double FORM_ROW_WIDTH = 120;
+  private static final double ACTION_BUTTON_WIDTH = 120;
+  private static final double ACTION_BUTTON_HEIGHT = 30;
+  private static final double BUTTON_BAR_SPACING = 8;
+  private static final double HEADER_SPACING = 8;
+  private static final double FORM_ROW_SPACING = 6;
+  private static final double FORM_ROW_PADDING = 8;
+  private static final double CONTENT_PADDING = 8;
+  private static final double SPRITE_ROW_SPACING = 8;
+  private static final double BUTTON_LIST_HEIGHT = 80;
+  private static final double META_ROW_SPACING = 12;
+  private static final double TOP_ROW_SPACING = 16;
+  private static final double DEFAULT_FRICTION = 0.5;
+  private static final double FORM_SPACING = 6;
+  private static final double FOOTER_SPACING = 12;
+  private static final double DEFAULT_MASS = 1.0;
+  private static final double DEFAULT_POWER_UP_MASS = 0;
+  private static final double LIST_WIDTH = 260;
+  private static final double TAB_CONTENT_SPACING = 12;
+  private static final double DEFAULT_HP_CHANGE = 0;
 
   private static final Logger LOG = LogManager.getLogger(GameAuthoringScreenImpl.class);
   private static final ResourceBundle PROPS =
@@ -119,16 +140,16 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     title.getStyleClass().add("authoring-entry-title");
 
     gameIdField = new TextField();
-    gameIdField.setPromptText("game id, e.g. badpiggies");
-    gameIdField.setPrefWidth(200);
+    gameIdField.setPrefWidth(DEFAULT_WIDTH);
+    AuthoringValueHints.configure(gameIdField, "catalog.meta.gameId");
 
     mainCharacterIdField = new TextField();
-    mainCharacterIdField.setPromptText("(set via button below)");
-    mainCharacterIdField.setPrefWidth(200);
+    mainCharacterIdField.setPrefWidth(DEFAULT_WIDTH);
+    AuthoringValueHints.configure(mainCharacterIdField, "catalog.meta.mainCharacter");
     mainCharacterIdField.setEditable(false);
     mainCharacterIdField.setStyle("-fx-opacity: 1.0;");
 
-    HBox metaRow = new HBox(12,
+    HBox metaRow = new HBox(META_ROW_SPACING,
         new Label("Game ID:"), gameIdField,
         new Label("Main Character:"), mainCharacterIdField);
     metaRow.setAlignment(Pos.CENTER_LEFT);
@@ -137,10 +158,10 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     loadCatalogButton.getStyleClass().add("authoring-entry-action");
     loadCatalogButton.setOnAction(e -> handleLoadCatalog(loadCatalogButton));
 
-    HBox topRow = new HBox(16, metaRow, loadCatalogButton);
+    HBox topRow = new HBox(TOP_ROW_SPACING, metaRow, loadCatalogButton);
     topRow.setAlignment(Pos.CENTER_LEFT);
 
-    VBox header = new VBox(8, title, topRow);
+    VBox header = new VBox(HEADER_SPACING, title, topRow);
     header.getStyleClass().add("authoring-entry-center");
     return header;
   }
@@ -161,10 +182,10 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     ListView<String> list = new ListView<>();
     refreshTerrainList(list);
 
-    TextField idF = field("id");
-    TextField spriteF = field("spriteUrl");
-    TextField colorF = field("visualColor, e.g. #8B4513");
-    TextField frictionF = field("friction, e.g. 0.6");
+    TextField idF = AuthoringValueHints.newTextField("catalog.terrain.id");
+    TextField spriteF = AuthoringValueHints.newTextField("catalog.terrain.spriteUrl");
+    TextField colorF = AuthoringValueHints.newTextField("catalog.terrain.color");
+    TextField frictionF = AuthoringValueHints.newTextField("catalog.terrain.friction");
 
     Button add = new Button("Add");
     add.setOnAction(e -> {
@@ -172,7 +193,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
           idF.getText().strip(),
           nullIfBlank(spriteF.getText()),
           nullIfBlank(colorF.getText()),
-          parseDouble(frictionF.getText(), 0.5)));
+          parseDouble(frictionF.getText(), DEFAULT_FRICTION)));
       refreshTerrainList(list);
       clearFields(idF, spriteF, colorF, frictionF);
     });
@@ -204,22 +225,22 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     ListView<String> list = new ListView<>();
     refreshStaticList(list);
 
-    TextField idF = field("id");
-    TextField spriteF = field("spriteUrl");
-    TextField massF = field("mass, e.g. 0");
-    TextField hpChangeF = field("+25 heals, -25 damages");
+    TextField idF = AuthoringValueHints.newTextField("catalog.static.id");
+    TextField spriteF = AuthoringValueHints.newTextField("catalog.static.spriteUrl");
+    TextField massF = AuthoringValueHints.newTextField("catalog.static.mass");
+    TextField hpChangeF = AuthoringValueHints.newTextField("catalog.static.hpDelta");
 
     Label hpLabel = new Label("HP Change:");
-    hpLabel.setPrefWidth(120);
-    HBox hpRow = new HBox(8, hpLabel, hpChangeF);
+    hpLabel.setPrefWidth(DEFAULT_WIDTH);
+    HBox hpRow = new HBox(SPRITE_ROW_SPACING, hpLabel, hpChangeF);
 
     Label massLabel = new Label("Mass:");
-    massLabel.setPrefWidth(120);
-    HBox massRow = new HBox(8, massLabel, massF);
+    massLabel.setPrefWidth(DEFAULT_WIDTH);
+    HBox massRow = new HBox(SPRITE_ROW_SPACING, massLabel, massF);
 
     Button addHpObject = new Button("Add HP Object");
     addHpObject.setOnAction(e -> {
-      double hpChange = parseDouble(hpChangeF.getText(), 0);
+      double hpChange = parseDouble(hpChangeF.getText(), DEFAULT_HP_CHANGE);
       if (hpChange == 0) {
         new AuthoringAlertService().showError("Invalid HP",
             "HP change must be nonzero. Use positive to heal, negative to damage.");
@@ -229,7 +250,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       staticComponents.add(new StaticComponentInfo(
           idF.getText().strip(),
           spriteF.getText().strip(),
-          parseDouble(massF.getText(), 0),
+          parseDouble(massF.getText(), DEFAULT_MASS),
           action));
       refreshStaticList(list);
       clearFields(idF, spriteF, massF, hpChangeF);
@@ -241,7 +262,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       staticComponents.add(new StaticComponentInfo(
           finishId,
           spriteF.getText().strip(),
-          0,
+          DEFAULT_POWER_UP_MASS,
           new CollisionAction("finish", 0)));
       refreshStaticList(list);
       clearFields(idF, spriteF, massF, hpChangeF);
@@ -263,10 +284,10 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private CollisionAction buildHpAction(double hpChange) {
-    if (hpChange == 0) {
+    if (hpChange == DEFAULT_HP_CHANGE) {
       return null;
     }
-    if (hpChange > 0) {
+    if (hpChange > DEFAULT_HP_CHANGE) {
       return new CollisionAction("heal", hpChange);
     }
     return new CollisionAction("damage", Math.abs(hpChange));
@@ -284,16 +305,16 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     ListView<String> list = new ListView<>();
     refreshComponentList(list);
 
-    TextField idF = field("id");
-    TextField spriteF = field("spriteUrl");
-    TextField massF = field("mass, e.g. 1.0");
-    TextField btnNameF = field("button name, e.g. go right");
-    TextField btnDxF = field("direction x, e.g. 1");
-    TextField btnDyF = field("direction y, e.g. 0");
+    TextField idF = AuthoringValueHints.newTextField("catalog.component.id");
+    TextField spriteF = AuthoringValueHints.newTextField("catalog.component.spriteUrl");
+    TextField massF = AuthoringValueHints.newTextField("catalog.component.mass");
+    TextField btnNameF = AuthoringValueHints.newTextField("catalog.component.buttonLabel");
+    TextField btnDxF = AuthoringValueHints.newTextField("catalog.component.directionX");
+    TextField btnDyF = AuthoringValueHints.newTextField("catalog.component.directionY");
 
     List<ButtonInfo> pendingButtons = new ArrayList<>();
     ListView<String> btnList = new ListView<>();
-    btnList.setPrefHeight(80);
+    btnList.setPrefHeight(BUTTON_LIST_HEIGHT);
 
     Button addBtn = new Button("Add Button");
     addBtn.setOnAction(e -> {
@@ -312,7 +333,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       components.add(new ComponentInfo(
           idF.getText().strip(),
           spriteF.getText().strip(),
-          parseDouble(massF.getText(), 1.0),
+          parseDouble(massF.getText(), DEFAULT_POWER_UP_MASS),
           new ArrayList<>(pendingButtons)));
       pendingButtons.clear();
       btnList.getItems().clear();
@@ -341,7 +362,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       }
     });
 
-    VBox form = new VBox(6,
+    VBox form = new VBox(FORM_SPACING,
         formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
         new Label("Buttons:"), btnList,
         formRow("Button Name", btnNameF), formRow("Dir X", btnDxF), formRow("Dir Y", btnDyF),
@@ -384,7 +405,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     backButton.getStyleClass().add("authoring-entry-back");
     backButton.setOnAction(e -> onOutcome.accept(Outcome.BACK_TO_AUTHORING_ENTRY));
 
-    HBox footer = new HBox(12, backButton, saveButton, createLevelButton, loadLevelButton);
+    HBox footer = new HBox(FOOTER_SPACING, backButton, saveButton, createLevelButton, loadLevelButton);
     footer.setAlignment(Pos.CENTER_LEFT);
     footer.setPadding(new Insets(d("buttonRegionPadding"), 0, 0, 0));
     footer.getStyleClass().add("authoring-entry-button-row");
@@ -472,21 +493,21 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Node buildTabContent(ListView<String> list, Node... formNodes) {
-    list.setPrefWidth(260);
-    VBox form = new VBox(6, formNodes);
-    form.setPadding(new Insets(8));
-    HBox content = new HBox(12, list, form);
+    list.setPrefWidth(LIST_WIDTH);
+    VBox form = new VBox(FORM_ROW_SPACING, formNodes);
+    form.setPadding(new Insets(FORM_ROW_PADDING));
+    HBox content = new HBox(TAB_CONTENT_SPACING, list, form);
     HBox.setHgrow(form, Priority.ALWAYS);
-    content.setPadding(new Insets(8));
+    content.setPadding(new Insets(CONTENT_PADDING));
     return content;
   }
 
   private Node buildTabContent(ListView<String> list, VBox form) {
-    list.setPrefWidth(260);
-    form.setPadding(new Insets(8));
-    HBox content = new HBox(12, list, form);
+    list.setPrefWidth(LIST_WIDTH);
+    form.setPadding(new Insets(FORM_ROW_PADDING));
+    HBox content = new HBox(TAB_CONTENT_SPACING, list, form);
     HBox.setHgrow(form, Priority.ALWAYS);
-    content.setPadding(new Insets(8));
+    content.setPadding(new Insets(CONTENT_PADDING));
     return content;
   }
 
@@ -494,9 +515,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     Button browse = new Button("Browse…");
     browse.setOnAction(e -> browseSprite(browse, spriteField));
     Label lbl = new Label("Sprite:");
-    lbl.setPrefWidth(120);
+    lbl.setPrefWidth(DEFAULT_WIDTH);
     HBox.setHgrow(spriteField, Priority.ALWAYS);
-    return new HBox(8, lbl, spriteField, browse);
+    return new HBox(SPRITE_ROW_SPACING, lbl, spriteField, browse);
   }
 
   private void browseSprite(Node owner, TextField target) {
@@ -521,21 +542,14 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
   private HBox formRow(String label, TextField field) {
     Label lbl = new Label(label + ":");
-    lbl.setPrefWidth(120);
-    return new HBox(8, lbl, field);
+    lbl.setPrefWidth(DEFAULT_WIDTH);
+    return new HBox(FORM_ROW_WIDTH, lbl, field);
   }
 
   private HBox buttonBar(Button... buttons) {
-    HBox bar = new HBox(8, buttons);
+    HBox bar = new HBox(BUTTON_BAR_SPACING, buttons);
     bar.setAlignment(Pos.CENTER_LEFT);
     return bar;
-  }
-
-  private TextField field(String prompt) {
-    TextField f = new TextField();
-    f.setPromptText(prompt);
-    f.setPrefWidth(220);
-    return f;
   }
 
   private void clearFields(TextField... fields) {
@@ -574,7 +588,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
   private void configureActionButton(Button button) {
     button.setFont(Font.font(d("actionFontSize")));
-    button.setPrefSize(d("actionButtonWidth"), d("actionButtonHeight"));
+    button.setPrefSize(ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
     button.setWrapText(true);
     button.getStyleClass().add("authoring-entry-action");
   }
