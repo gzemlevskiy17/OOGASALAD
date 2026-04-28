@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DriveComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
+import oogasalad.model.engine.internal.components.RelativeDirectionDriveComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +32,7 @@ class BindDriveActionsTest {
   }
 
   private DriveComponent newDrive(String displayName) {
-    return new DriveComponent(0, 0, 0, 10.0, 0.3, 100.0, displayName, 60.0, 60.0);
+    return new RelativeDirectionDriveComponent(0, 0, 0, 10.0, 0.3, 100.0, displayName, 60.0, 60.0, new Vector(1, 0));
   }
 
   @Test
