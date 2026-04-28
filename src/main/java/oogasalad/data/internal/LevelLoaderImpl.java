@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import oogasalad.data.api.CollisionAction;
 import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.StaticComponentInfo;
@@ -111,7 +110,7 @@ public class LevelLoaderImpl implements LevelLoader {
       for (JsonNode entry : allowed) {
         ids.add(entry.asText());
       }
-      attrs.setElementsAllowed(ids);
+      attrs.setMainCharacterElementsAllowed(ids);
     }
   }
 

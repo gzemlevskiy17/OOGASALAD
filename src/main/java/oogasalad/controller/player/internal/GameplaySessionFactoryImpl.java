@@ -1,8 +1,8 @@
 package oogasalad.controller.player.internal;
 
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
@@ -20,16 +20,14 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
@@ -71,6 +69,8 @@ import oogasalad.view.core.internal.SpriteCache;
 import oogasalad.view.core.internal.TerrainPaints;
 import oogasalad.view.player.internal.GamePlayAppScreen;
 import oogasalad.view.player.internal.VehicleHpHud;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Default factory that assembles the full gameplay runtime graph (world, engine, camera,
