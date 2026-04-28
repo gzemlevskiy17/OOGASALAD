@@ -1,5 +1,7 @@
 package oogasalad.model.engine.internal.joints;
 
+import java.util.Optional;
+import oogasalad.model.engine.StaticState;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.internal.components.DynamicComponent;
@@ -58,12 +60,49 @@ public abstract class AbstractJoint implements Joint {
     return new Vector(0, 0);
   }
 
-  //TODO: make fake state to get rid of
   protected static double angularVelocity(RigidBody component) {
     if (component instanceof DynamicComponent dynamic) {
       return dynamic.getDynamicState().getAngularVelocity();
     }
     return 0.0;
+  }
+
+  /**
+   * Solves the 2×2 effective-mass system for a point-to-point correction impulse.
+   *
+   * <p>Given inverse masses and inverse inertias for two bodies and the lever arms {@code rA}
+   * and {@code rB} from their centers to the contact/anchor, this computes the world-space
+   * impulse vector that produces the requested relative velocity change {@code relVel} at the
+   * contact point. The linear system arises from combining linear and angular response terms
+   * for both bodies and inverting the resulting 2×2 matrix.
+   *
+   * <p>Returns {@link Optional#empty()} when the effective-mass matrix is singular (det ≈ 0),
+   * indicating no reliable impulse can be computed.
+   *
+   * @param invMA inverse mass of body A
+   * @param invMB inverse mass of body B
+   * @param rA world-space vector from A's center to the anchor
+   * @param invIA inverse moment of inertia for body A
+   * @param rB world-space vector from B's center to the anchor
+   * @param invIB inverse moment of inertia for body B
+   * @param relVel desired relative velocity vector at the contact point (v_B - v_A)
+   * @return optional world-space impulse vector that accomplishes {@code relVel} when applied
+   *     with equal-and-opposite sign to the two bodies, or empty if the system is singular
+   */
+  private static Optional<Vector> computeCorrectionalImpulse(double invMA, double invMB, Vector rA,
+      double invIA, Vector rB,
+      double invIB, Vector relVel) {
+    double k00 = invMA + invMB + rA.y() * rA.y() * invIA + rB.y() * rB.y() * invIB;
+    double k11 = invMA + invMB + rA.x() * rA.x() * invIA + rB.x() * rB.x() * invIB;
+    double k01 = -rA.x() * rA.y() * invIA - rB.x() * rB.y() * invIB;
+    double det = k00 * k11 - k01 * k01;
+    if (Math.abs(det) < 1e-12) {
+      return Optional.empty();
+    }
+    double invDet = 1.0 / det;
+    double px = -invDet * (k11 * relVel.x() - k01 * relVel.y());
+    double py = -invDet * (-k01 * relVel.x() + k00 * relVel.y());
+    return Optional.of(new Vector(px, py));
   }
 
   @Override
@@ -160,20 +199,23 @@ public abstract class AbstractJoint implements Joint {
    * <p>Bodies with non-positive mass receive zero motion, which makes static endpoints stay fixed
    * without type-specific branching in concrete joint implementations.
    */
-  protected void applyLinearCorrection(Vector correctionA, Vector correctionB) {
+  private void applyLinearCorrection(Vector correctionA, Vector correctionB) {
     double inverseMassA = objectA.getInverseMass();
     double inverseMassB = objectB.getInverseMass();
     double totalInverseMass = inverseMassA + inverseMassB;
+
+    StaticState aStaticState = objectA.getStaticState();
+    StaticState bStaticState = objectB.getStaticState();
 
     if (totalInverseMass == 0.0) {
       return;
     }
     if (inverseMassA > 0.0) {
-      objectA.getStaticState().setLinearPosition(objectA.getStaticState().getLinearPosition()
+      aStaticState.setLinearPosition(aStaticState.getLinearPosition()
           .add(correctionA.multiply(inverseMassA / totalInverseMass)));
     }
     if (inverseMassB > 0.0) {
-      objectB.getStaticState().setLinearPosition(objectB.getStaticState().getLinearPosition()
+      bStaticState.setLinearPosition(bStaticState.getLinearPosition()
           .add(correctionB.multiply(inverseMassB / totalInverseMass)));
     }
   }
@@ -225,25 +267,21 @@ public abstract class AbstractJoint implements Joint {
       return;
     }
 
-    double k00 = invMA + invMB + rA.y() * rA.y() * invIA + rB.y() * rB.y() * invIB;
-    double k11 = invMA + invMB + rA.x() * rA.x() * invIA + rB.x() * rB.x() * invIB;
-    double k01 = -rA.x() * rA.y() * invIA - rB.x() * rB.y() * invIB;
-    double det = k00 * k11 - k01 * k01;
-    if (Math.abs(det) < 1e-12) {
-      return;
-    }
-    double invDet = 1.0 / det;
-    double px = -invDet * (k11 * relVel.x() - k01 * relVel.y());
-    double py = -invDet * (-k01 * relVel.x() + k00 * relVel.y());
-    Vector impulse = new Vector(px, py);
+    Optional<Vector> impulse = computeCorrectionalImpulse(invMA, invMB, rA, invIA, rB, invIB,
+        relVel);
 
-    if (objectA instanceof DynamicComponent dA) {
-      dA.getDynamicState().setLinearVelocity(vA.subtract(impulse.multiply(invMA)));
-      dA.getDynamicState().setAngularVelocity(wA - rA.crossWithVector(impulse) * invIA);
-    }
-    if (objectB instanceof DynamicComponent dB) {
-      dB.getDynamicState().setLinearVelocity(vB.add(impulse.multiply(invMB)));
-      dB.getDynamicState().setAngularVelocity(wB + rB.crossWithVector(impulse) * invIB);
+    if (impulse.isPresent()) {
+      Vector correctionalImpulse = impulse.get();
+      if (objectA instanceof DynamicComponent dA) {
+        dA.getDynamicState().setLinearVelocity(vA.subtract(correctionalImpulse.multiply(invMA)));
+        dA.getDynamicState()
+            .setAngularVelocity(wA - rA.crossWithVector(correctionalImpulse) * invIA);
+      }
+      if (objectB instanceof DynamicComponent dB) {
+        dB.getDynamicState().setLinearVelocity(vB.add(correctionalImpulse.multiply(invMB)));
+        dB.getDynamicState()
+            .setAngularVelocity(wB + rB.crossWithVector(correctionalImpulse) * invIB);
+      }
     }
   }
 
@@ -273,31 +311,73 @@ public abstract class AbstractJoint implements Joint {
     Vector rB =
         getWorldAnchorB().subtract(objectB.getStaticState().getLinearPosition());
 
-    //TODO: deduplicate
-    double k00 = invMA + invMB + rA.y() * rA.y() * invIA + rB.y() * rB.y() * invIB;
-    double k11 = invMA + invMB + rA.x() * rA.x() * invIA + rB.x() * rB.x() * invIB;
-    double k01 = -rA.x() * rA.y() * invIA - rB.x() * rB.y() * invIB;
-    double det = k00 * k11 - k01 * k01;
-    if (Math.abs(det) < 1e-12) {
+    Optional<Vector> impulse = computeCorrectionalImpulse(invMA, invMB, rA, invIA, rB,
+        invIB, constraintError);
+
+    if (impulse.isPresent()) {
+      Vector correctionalImpulse = impulse.get();
+      if (objectA instanceof DynamicComponent) {
+        anchorPositionalCorrectionHelper(objectA, correctionalImpulse.multiply(-1), rA);
+      }
+      if (objectB instanceof DynamicComponent) {
+        anchorPositionalCorrectionHelper(objectB, correctionalImpulse, rB);
+      }
+    }
+  }
+
+  /**
+   * Applies a single body's share of an anchor-based positional correction.
+   *
+   * <p><strong>Purpose:</strong> Reuses the same position and rotation update pattern for callers
+   * that already solved a correction impulse for the joint.
+   *
+   * <p><strong>Assumptions:</strong> {@code correctionalImpulse} is the signed correction vector
+   * for {@code body}, and {@code relativePosition} is the world-space offset from the body center
+   * to the anchor point.
+   *
+   * @param body body to update
+   * @param correctionalImpulse correction vector for that body
+   * @param relativePosition world-space anchor offset from the body center
+   */
+  protected void anchorPositionalCorrectionHelper(RigidBody body, Vector correctionalImpulse,
+      Vector relativePosition) {
+    body.getStaticState().setLinearPosition(body.getStaticState().getLinearPosition()
+        .add(correctionalImpulse.multiply(body.getInverseMass())));
+    body.getStaticState().setAngularPosition(body.rotation()
+        + relativePosition.crossWithVector(correctionalImpulse)
+        * body.getInverseMomentOfInertia());
+  }
+
+  /**
+   * Applies angular correction when connected bodies drift out of alignment.
+   *
+   * <p><strong>Purpose:</strong> Distributes signed angular error by inverse moment of inertia so
+   * the joint can restore relative orientation without moving bodies that cannot rotate.
+   *
+   * <p><strong>Assumptions:</strong> {@code error} is the signed angular difference in radians,
+   * and {@code ANGULAR_SLOP} is the tolerance below which no correction is needed.
+   *
+   * @param error signed angular error to correct
+   * @param ANGULAR_SLOP angular tolerance for skipping tiny corrections
+   */
+  protected void angularHelper(double error, double ANGULAR_SLOP) {
+    if (Math.abs(error) <= ANGULAR_SLOP) {
       return;
     }
-    double invDet = 1.0 / det;
-    double px = -invDet * (k11 * constraintError.x() - k01 * constraintError.y());
-    double py = -invDet * (-k01 * constraintError.x() + k00 * constraintError.y());
-    Vector impulse = new Vector(px, py);
 
-    //TODO: remove ifs
-    if (objectA instanceof DynamicComponent dA) {
-      dA.getStaticState().setLinearPosition(dA.getStaticState().getLinearPosition()
-          .subtract(impulse.multiply(invMA)));
-      dA.getStaticState().setAngularPosition(dA.rotation()
-          - rA.crossWithVector(impulse) * invIA);
+    double inverseInertiaA = getComponentA().getInverseMomentOfInertia();
+    double inverseInertiaB = getComponentB().getInverseMomentOfInertia();
+    double totalInverseInertia = inverseInertiaA + inverseInertiaB;
+    if (totalInverseInertia == 0.0) {
+      return;
     }
-    if (objectB instanceof DynamicComponent dB) {
-      dB.getStaticState().setLinearPosition(dB.getStaticState().getLinearPosition()
-          .add(impulse.multiply(invMB)));
-      dB.getStaticState().setAngularPosition(dB.rotation()
-          + rB.crossWithVector(impulse) * invIB);
+    if (getComponentA() instanceof DynamicComponent) {
+      getComponentA().getStaticState().setAngularPosition(getComponentA().rotation()
+          + error * inverseInertiaA / totalInverseInertia);
+    }
+    if (getComponentB() instanceof DynamicComponent) {
+      getComponentB().getStaticState().setAngularPosition(getComponentB().rotation()
+          - error * inverseInertiaB / totalInverseInertia);
     }
   }
 }

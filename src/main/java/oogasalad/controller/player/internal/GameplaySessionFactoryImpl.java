@@ -1,10 +1,16 @@
 package oogasalad.controller.player.internal;
 
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
@@ -33,6 +39,7 @@ import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.model.player.internal.FallOffWorldLossChecker;
 import oogasalad.model.player.internal.FinishLineWinChecker;
 import oogasalad.model.player.internal.GameplayStatsTrackerImpl;
+import oogasalad.model.player.internal.MainCharacterDestroyedLossChecker;
 import oogasalad.model.player.internal.ScoreServiceImpl;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
@@ -63,6 +70,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private final Supplier<String> levelPathSupplier;
   private final CameraTargetResolver cameraTargetResolver = new CameraTargetResolver();
   private final DriveActionBinder driveActionBinder = new DriveActionBinder();
+  private final ButtonForceController buttonForceController = new ButtonForceController();
   private final VehicleHudAttacher vehicleHudAttacher = new VehicleHudAttacher();
   private final GameplayCameraViewportController cameraViewportController =
       new GameplayCameraViewportController();
@@ -103,7 +111,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     GameplayWorldBuilder.BuiltWorld built = worldBuilder.build(layout);
     World world = built.world();
     InputRouter inputRouter = buildInputRouter();
-    configureInputControls(screen, inputRouter, world);
+    configureInputControls(screen, inputRouter, world, built.gameConfig());
+    showForceWarningsIfNeeded(screen, built);
     GameController controller = buildController(screen, built, inputRouter);
     controller.setOnOutcome(onOutcome);
 
@@ -163,11 +172,44 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private void configureInputControls(GamePlayAppScreen screen, InputRouter inputRouter,
-      World world) {
+      World world, GameConfig gameConfig) {
     driveActionBinder.bind(inputRouter, world);
+    buttonForceController.bind(inputRouter, gameConfig, world);
+    Set<String> toolIds = new LinkedHashSet<>();
+    toolIds.addAll(driveActionBinder.collectToolIds(world));
+    toolIds.addAll(buttonForceController.collectButtonIds(gameConfig, world));
+    screen.setAvailableTools(toolIds);
     screen.setOnToolActivated(toolId -> inputRouter.handleButtonPress(toolId));
     screen.setOnToolDeactivated(toolId -> inputRouter.handleButtonRelease(toolId));
-    screen.setAvailableTools(driveActionBinder.collectToolIds(world));
+  }
+
+  private void showForceWarningsIfNeeded(GamePlayAppScreen screen,
+      GameplayWorldBuilder.BuiltWorld built) {
+    List<String> warnings = ForceViabilityChecker.check(
+        built.gameConfig(), built.world().getPhysicsEnvironment().gravity());
+    if (warnings.isEmpty()) {
+      return;
+    }
+    VBox warningBox = new VBox(4);
+    warningBox.setStyle("-fx-background-color: rgba(180,40,40,0.85); -fx-padding: 10; "
+        + "-fx-background-radius: 8;");
+    warningBox.setMaxWidth(500);
+    warningBox.setMouseTransparent(true);
+    Label header = new Label("Warning: button forces may be too weak to move the vehicle");
+    header.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13;");
+    warningBox.getChildren().add(header);
+    for (String warning : warnings) {
+      Label line = new Label(warning);
+      line.setStyle("-fx-text-fill: white; -fx-font-size: 11;");
+      line.setWrapText(true);
+      warningBox.getChildren().add(line);
+    }
+    VBox.setMargin(header, new Insets(0, 0, 4, 0));
+    screen.attachOverlay(warningBox, Pos.TOP_CENTER);
+    javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+        javafx.util.Duration.seconds(10));
+    pause.setOnFinished(e -> warningBox.setVisible(false));
+    pause.play();
   }
 
   private Camera buildCamera(GamePlayAppScreen screen) {
@@ -202,7 +244,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     if (tracked.isEmpty() && mainCharacterId != null && !mainCharacterId.isBlank()) {
       tracked = List.of(mainCharacterId);
     }
-    return new FallOffWorldLossChecker(worldHeight, tracked);
+    LossConditionChecker fallOff = new FallOffWorldLossChecker(worldHeight, tracked);
+    LossConditionChecker hpDestroyed =
+        new MainCharacterDestroyedLossChecker(mainCharacterId);
+    return world -> fallOff.hasLost(world) || hpDestroyed.hasLost(world);
   }
 
   private String mainCharacterId(GameConfig config) {

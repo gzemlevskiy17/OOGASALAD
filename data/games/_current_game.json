@@ -11,13 +11,13 @@
           "name": "pig button",
           "direction": {
             "x": 0.0,
-            "y": 100.0
+            "y": -15000.0
           }
         },
         {
           "name": "go right",
           "direction": {
-            "x": 100.0,
+            "x": 5000.0,
             "y": 0.0
           }
         }
