@@ -1,7 +1,6 @@
 package oogasalad.controller.player.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -13,7 +12,6 @@ import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.RelativeDirectionDriveComponent;
 import oogasalad.support.TestGameConfig;
@@ -163,6 +161,57 @@ class ButtonForceControllerTest {
     Set<String> ids = controller.collectButtonIds(null, world);
 
     assertTrue(ids.isEmpty());
+  }
+
+  @Test
+  void bind_threeButtonsOnSameComponent_allForcesSum() {
+    GameConfig config = new TestGameConfig("test", "BigPig",
+        List.of(new ComponentInfo("BigPig", "", 10.0,
+            List.of(
+                new ButtonInfo("Move Right", 300, 0),
+                new ButtonInfo("Jump", 0, 400),
+                new ButtonInfo("Diagonal Boost", 100, 100)))),
+        List.of(), List.of());
+
+    PigComponent pig = newPig("BigPig");
+    world.addComponent(pig);
+
+    ButtonForceController controller = new ButtonForceController();
+    controller.bind(router, config, world);
+    router.handleButtonPress("move right");
+    router.handleButtonPress("jump");
+    router.handleButtonPress("diagonal boost");
+
+    Vector externalForce = pig.getExternalForceTotal();
+    assertEquals(400, externalForce.x(), EPS,
+        "x-forces should sum: 300 + 0 + 100 = 400");
+    assertEquals(500, externalForce.y(), EPS,
+        "y-forces should sum: 0 + 400 + 100 = 500");
+  }
+
+  @Test
+  void bind_releasingOneButtonKeepsOthersActive() {
+    GameConfig config = new TestGameConfig("test", "BigPig",
+        List.of(new ComponentInfo("BigPig", "", 10.0,
+            List.of(
+                new ButtonInfo("Move Right", 300, 0),
+                new ButtonInfo("Jump", 0, 400)))),
+        List.of(), List.of());
+
+    PigComponent pig = newPig("BigPig");
+    world.addComponent(pig);
+
+    ButtonForceController controller = new ButtonForceController();
+    controller.bind(router, config, world);
+    router.handleButtonPress("move right");
+    router.handleButtonPress("jump");
+    router.handleButtonRelease("move right");
+
+    Vector externalForce = pig.getExternalForceTotal();
+    assertEquals(0, externalForce.x(), EPS,
+        "Released force should be removed.");
+    assertEquals(400, externalForce.y(), EPS,
+        "Un-released force should still be active.");
   }
 
   @Test
