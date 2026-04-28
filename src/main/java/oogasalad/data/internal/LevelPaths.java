@@ -1,5 +1,8 @@
 package oogasalad.data.internal;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
@@ -14,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 public final class LevelPaths {
 
   private static final Logger LOG = LogManager.getLogger(LevelPaths.class);
+  private static final ObjectMapper MAPPER = new ObjectMapper();
   public static final String GAME_FILE_NAME = "game.json";
   public static final String AI_GENERATION_CATALOG_FILE_NAME = "ai-generation-catalog.json";
   private static final String GAMES_DIR = "data/games";
@@ -45,15 +49,44 @@ public final class LevelPaths {
    * @return path to the matching {@code game.json}
    */
   public static String gameFileForLevel(String levelPath, String gameType) {
+    return gameFileForLevel(levelPath, gameType, Path.of(GAMES_DIR));
+  }
+
+  static String gameFileForLevel(String levelPath, String gameType, Path gamesDir) {
     if (gameType == null || gameType.isBlank()) {
       return siblingGameFile(levelPath);
     }
-    Path generatedCatalog = Path.of(GAMES_DIR, gameType, AI_GENERATION_CATALOG_FILE_NAME);
+    Path centralCatalog = gamesDir.resolve(gameType).resolve(GAME_FILE_NAME);
+    if (hasCatalogContent(centralCatalog)) {
+      LOG.debug("Resolved game catalog for '{}' through {}", gameType, centralCatalog);
+      return centralCatalog.toString();
+    }
+    Path generatedCatalog = gamesDir.resolve(gameType).resolve(AI_GENERATION_CATALOG_FILE_NAME);
     if (Files.exists(generatedCatalog)) {
       LOG.debug("Resolved game catalog for '{}' through {}", gameType, generatedCatalog);
       return generatedCatalog.toString();
     }
-    Path centralCatalog = Path.of(GAMES_DIR, gameType, GAME_FILE_NAME);
     return Files.exists(centralCatalog) ? centralCatalog.toString() : siblingGameFile(levelPath);
+  }
+
+  private static boolean hasCatalogContent(Path catalogPath) {
+    if (!Files.exists(catalogPath)) {
+      return false;
+    }
+    try {
+      JsonNode root = MAPPER.readTree(catalogPath.toFile());
+      return hasEntries(root, "components")
+          || hasEntries(root, "staticComponents")
+          || hasEntries(root, "terrainTypes");
+    } catch (IOException e) {
+      LOG.warn("Could not inspect game catalog {}; falling back to alternate resolution",
+          catalogPath, e);
+      return false;
+    }
+  }
+
+  private static boolean hasEntries(JsonNode root, String fieldName) {
+    JsonNode field = root.path(fieldName);
+    return field.isArray() && field.size() > 0;
   }
 }
