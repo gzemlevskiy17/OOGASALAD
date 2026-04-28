@@ -110,7 +110,7 @@ public class LevelLoaderImpl implements LevelLoader {
       for (JsonNode entry : allowed) {
         ids.add(entry.asText());
       }
-      attrs.setElementsAllowed(ids);
+      attrs.setMainCharacterElementsAllowed(ids);
     }
   }
 

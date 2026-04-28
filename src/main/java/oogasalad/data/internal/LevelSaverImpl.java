@@ -124,7 +124,7 @@ public class LevelSaverImpl implements LevelSaver {
     ObjectNode mc = MAPPER.createObjectNode();
     mc.put("gridSize", attrs.getGridSize());
     ArrayNode allowed = mc.putArray("elementsAllowed");
-    for (String id : attrs.getElementsAllowed()) {
+    for (String id : attrs.getMainCharacterElementsAllowed()) {
       allowed.add(id);
     }
     mc.put("maxSelectable", attrs.getMaxSelectable());

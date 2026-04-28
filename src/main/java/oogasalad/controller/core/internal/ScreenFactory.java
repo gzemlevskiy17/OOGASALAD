@@ -42,6 +42,9 @@ import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
 import oogasalad.view.player.internal.WinAppScreen;
+import java.util.List;
+import oogasalad.data.api.GameConfig;
+import oogasalad.data.internal.GameAttributes;
 
 /**
  * Creates and registers all application screens with the ScreenManager.
@@ -332,15 +335,21 @@ public class ScreenFactory {
 
     LevelAttributes levelAttributes = levelLoader.loadAttributes(levelPath);
 
+    //TODO: Remove null handling
+    GameConfig gameConfig = null;
     try {
-      oogasalad.data.api.GameConfig config = gameLoader.loadGame(
+      gameConfig = gameLoader.loadGame(
           LevelPaths.gameFileForLevel(levelPath, levelAttributes.getGameType()));
-      vehicleBuilderScreen.setGameConfig(config);
+      vehicleBuilderScreen.setGameConfig(gameConfig);
     } catch (RuntimeException e) {
       vehicleBuilderScreen.setGameConfig(null);
     }
 
-    vehicleBuilderScreen.setAllowedComponentIds(levelAttributes.getElementsAllowed());
+    vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig));
+  }
+
+  private static List<String> resolvedVehiclePaletteIds(GameConfig gameConfig) {
+    return new GameAttributes(gameConfig).movableComponentIds();
   }
 
   /**

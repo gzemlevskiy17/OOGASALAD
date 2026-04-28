@@ -121,22 +121,22 @@ public class LevelAttributes {
         ? "vehicle" : cameraFollows;
   }
 
-  // ── Legacy aliases kept so existing callers compile without changes ──
+  // Legacy aliases kept so existing callers compile without changes
 
   /**
-   * @deprecated use {@link #getElementsAllowed()}
+   * @deprecated
    */
   @Deprecated
   public List<String> getAllowedVehicleComponents() {
-    return getElementsAllowed();
+    return getMainCharacterElementsAllowed(); // before it was returning main components in place of VehicleComponents
   }
 
   /**
-   * @deprecated use {@link #setElementsAllowed(List)}
+   * @deprecated
    */
   @Deprecated
   public void setAllowedVehicleComponents(List<String> components) {
-    setElementsAllowed(components);
+    setMainCharacterElementsAllowed(components); // before it was returning main components in place of VehicleComponents
   }
 
   /**
