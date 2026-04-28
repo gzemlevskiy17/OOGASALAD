@@ -51,6 +51,7 @@ public class ComponentPaletteImpl implements ComponentPallete {
   private final List<Consumer<AuthoringPlaceable>> subscribers = new ArrayList<>();
   private final HBox paletteContent = new HBox();
   private final ScrollPane root = new ScrollPane();
+  private boolean dragEnabled = true;
 
   public ComponentPaletteImpl() {
     this.sampleSize = d("sampleSize");
@@ -96,6 +97,16 @@ public class ComponentPaletteImpl implements ComponentPallete {
     subscribers.add(listener);
   }
 
+  /**
+   * Controls whether palette samples can be dragged onto the canvas.
+   *
+   * @param dragEnabled true for placeable object palettes, false for style-only palettes
+   */
+  public void setDragEnabled(boolean dragEnabled) {
+    this.dragEnabled = dragEnabled;
+    buildSamples();
+  }
+
   @Override
   public Node getVisualRoot() {
     return root;
@@ -107,23 +118,25 @@ public class ComponentPaletteImpl implements ComponentPallete {
       sample.getStyleClass().add("authoring-palette-sample");
       drawSample(sample, entry, false);
       sample.setOnMouseClicked(e -> select(entry.name()));
-      sample.setOnDragDetected(e -> {
-        select(entry.name());
-        Dragboard db = sample.startDragAndDrop(TransferMode.COPY);
-        ClipboardContent cc = new ClipboardContent();
-        cc.putString(entry.name());
-        double targetWidth = entry.blockCols() * cellSize;
-        double targetHeight = entry.blockRows() * cellSize;
-        SnapshotParameters params = new SnapshotParameters();
-        params.setTransform(new Scale(targetWidth / sampleSize, targetHeight / sampleSize));
-        WritableImage scaledImage = new WritableImage(
-            Math.max(1, (int) Math.round(targetWidth)),
-            Math.max(1, (int) Math.round(targetHeight)));
-        sample.snapshot(params, scaledImage);
-        db.setDragView(scaledImage, targetWidth / 2, targetHeight / 2);
-        db.setContent(cc);
-        e.consume();
-      });
+      if (dragEnabled) {
+        sample.setOnDragDetected(e -> {
+          select(entry.name());
+          Dragboard db = sample.startDragAndDrop(TransferMode.COPY);
+          ClipboardContent cc = new ClipboardContent();
+          cc.putString(entry.name());
+          double targetWidth = entry.blockCols() * cellSize;
+          double targetHeight = entry.blockRows() * cellSize;
+          SnapshotParameters params = new SnapshotParameters();
+          params.setTransform(new Scale(targetWidth / sampleSize, targetHeight / sampleSize));
+          WritableImage scaledImage = new WritableImage(
+              Math.max(1, (int) Math.round(targetWidth)),
+              Math.max(1, (int) Math.round(targetHeight)));
+          sample.snapshot(params, scaledImage);
+          db.setDragView(scaledImage, targetWidth / 2, targetHeight / 2);
+          db.setContent(cc);
+          e.consume();
+        });
+      }
       paletteContent.getChildren().add(sample);
     }
   }

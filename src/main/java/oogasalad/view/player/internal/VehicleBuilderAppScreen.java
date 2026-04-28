@@ -158,6 +158,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   public void setAllowedComponentIds(List<String> componentIds) {
     ensureAvailableComponentNames();
     availableComponentNames.clear();
+
+    // TODO: maybe remove the check
     if (componentIds == null || componentIds.isEmpty()) {
       availableComponentNames.addAll(defaultComponentNames());
     } else {
@@ -168,6 +170,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
         }
       }
     }
+
     ensureMainCharacterAvailable();
     gridState.clear();
     resetWorkspace();

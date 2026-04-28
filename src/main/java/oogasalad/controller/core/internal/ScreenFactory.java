@@ -11,7 +11,7 @@ import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
@@ -42,6 +42,9 @@ import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
 import oogasalad.view.player.internal.WinAppScreen;
+import java.util.List;
+import oogasalad.data.api.GameConfig;
+import oogasalad.data.internal.GameAttributes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -349,24 +352,34 @@ public class ScreenFactory {
     if (vehicleBuilderScreen == null) {
       return;
     }
+
     String levelPath = pathForSelectedLevel();
     if (levelPath == null || levelPath.isBlank()) {
       vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
       vehicleBuilderScreen.setGameConfig(null);
       return;
     }
-    LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+
+    LevelAttributes levelAttributes = levelLoader.loadAttributes(levelPath);
+
+    //TODO: Remove null handling
+    GameConfig gameConfig = null;
     try {
-      oogasalad.data.api.GameConfig config = gameLoader.loadGame(
-          LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
-      vehicleBuilderScreen.setGameConfig(config);
+      gameConfig = gameLoader.loadGame(
+          LevelPaths.gameFileForLevel(levelPath, levelAttributes.getGameType()));
+      vehicleBuilderScreen.setGameConfig(gameConfig);
     } catch (RuntimeException e) {
       LOG.warn(
           "Could not load game config for level '{}'; vehicle builder will run without catalog",
           levelPath, e);
       vehicleBuilderScreen.setGameConfig(null);
     }
-    vehicleBuilderScreen.setAllowedComponentIds(attributes.getElementsAllowed());
+
+    vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig));
+  }
+
+  private static List<String> resolvedVehiclePaletteIds(GameConfig gameConfig) {
+    return new GameAttributes(gameConfig).movableComponentIds();
   }
 
   /**

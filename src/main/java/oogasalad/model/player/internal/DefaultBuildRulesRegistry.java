@@ -82,7 +82,10 @@ public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
   }
 
   private BuildRules inferredRules(String componentId, String primaryComponentId) {
-    return isPigComponent(componentId, primaryComponentId) ? PIG_RULES : FRAME_RULES;
+    if (isPigComponent(componentId, primaryComponentId)) {
+      return new BuildRules(Set.of(), Set.of(), Set.of(), Containment.NONE, PositionConstraint.NONE);
+    }
+    return FRAME_RULES;
   }
 
   private boolean isPigComponent(String componentId, String primaryComponentId) {

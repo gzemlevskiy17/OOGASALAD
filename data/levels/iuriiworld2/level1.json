@@ -1,0 +1,59 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Untitled Level",
+    "gameType" : "iuriiworld2",
+    "screenWidth" : 3200.0,
+    "screenHeight" : 1600.0,
+    "gravity" : -9.8,
+    "drag" : 0.01
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 14.0,
+      "y" : 308.5
+    }, {
+      "x" : 262.0,
+      "y" : 127.5
+    }, {
+      "x" : 442.0,
+      "y" : 295.5
+    }, {
+      "x" : 629.0,
+      "y" : 128.5
+    }, {
+      "x" : 792.0,
+      "y" : 199.5
+    }, {
+      "x" : 944.0,
+      "y" : 142.5
+    }, {
+      "x" : 1127.5,
+      "y" : 273.5
+    }, {
+      "x" : 1334.5,
+      "y" : 144.5
+    }, {
+      "x" : 1594.5,
+      "y" : 236.5
+    }, {
+      "x" : 1671.5,
+      "y" : 161.5
+    }, {
+      "x" : 1889.5,
+      "y" : 220.5
+    } ],
+    "objects" : [ ],
+    "terrainOptions" : [ "Spline Terrain" ],
+    "spawnPoint" : {
+      "x" : 100.0,
+      "y" : 100.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 60.0,
+    "elementsAllowed" : [ ],
+    "maxSelectable" : 5,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}
