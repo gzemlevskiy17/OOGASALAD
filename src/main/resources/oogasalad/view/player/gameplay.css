@@ -86,6 +86,13 @@
   -fx-padding: 20 0 0 0;
 }
 
+.hud-score-label {
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #222222;
+}
+
 .hud-time-label {
   -fx-font-family: "SansSerif";
   -fx-font-size: 16px;
