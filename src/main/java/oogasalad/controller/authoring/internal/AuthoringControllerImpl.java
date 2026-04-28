@@ -36,6 +36,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final CanvasActionHistory history;
   private final SplineDraftController splineDraft;
   private final SpawnPointService spawnPointService;
+  private final GoalLineService goalLineService;
   private final AuthoringPersistenceService persistence;
 
   private AuthoringPlaceable selectedPlaceable;
@@ -49,6 +50,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.history = new CanvasActionHistory();
     this.splineDraft = new SplineDraftController(world, canvas);
     this.spawnPointService = new SpawnPointService(world);
+    this.goalLineService = new GoalLineService(world);
     this.persistence = new AuthoringPersistenceService(
         loader, saver, gameLoader, world, levelAttributes, spawnPointService, history, canvas);
     spawnPointService.getSpawnPoint();
@@ -84,6 +86,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void initializeCanvasHandlers() {
     Node root = canvas.getVisualRoot();
     new SpawnDragInputHandler(canvas, spawnPointService, toolSelector).register(root);
+    new GoalLineDragInputHandler(canvas, goalLineService).register(root);
     new SplineInputHandler(canvas, toolSelector, splineDraft).register(root);
     new HoverPreviewInputHandler(canvas, toolSelector).register(root);
     new PaletteDropInputHandler(canvas, (col, row) -> placeFromPaletteDrop(col, row)).register(root);

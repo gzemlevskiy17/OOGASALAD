@@ -3,7 +3,9 @@ package oogasalad.view.authoring.internal;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.ClosePath;
@@ -13,11 +15,13 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.AuthoringStaticComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
@@ -265,10 +269,18 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     return zoomFactor;
   }
 
+  private static final String GOAL_LINE_TYPE = "GoalLine";
+  private static final Color GOAL_LINE_COLOR = Color.web("#FFD700", 0.55);
+  private static final Color GOAL_LINE_STROKE = Color.web("#FFD700");
+  private static final double GOAL_LINE_WIDTH_PX = 8.0;
+
   private void drawObjects() {
     for (GameObject obj : world.getObjects()) {
       if (obj instanceof TerrainSpline) {
         root.getChildren().add(drawSplineObject((TerrainSpline) obj));
+      } else if (obj instanceof AuthoringStaticComponent asc
+          && GOAL_LINE_TYPE.equals(asc.getComponentType())) {
+        root.getChildren().add(drawGoalLineStripe(asc));
       } else if (obj instanceof AuthoringPlaceable placeable) {
         root.getChildren().add(drawObject(placeable));
       }
@@ -313,6 +325,33 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     path.setOnMouseEntered(e -> onTerrainHoverEnter.accept(terrainSpline));
     path.setOnMouseExited(e -> onTerrainHoverExit.run());
     return path;
+  }
+
+  private Node drawGoalLineStripe(AuthoringStaticComponent asc) {
+    double px = asc.x() * cellSize;
+    double totalHeight = gridRows * cellSize;
+
+    Rectangle stripe = new Rectangle(px - GOAL_LINE_WIDTH_PX / 2, 0,
+        GOAL_LINE_WIDTH_PX, totalHeight);
+    stripe.setFill(GOAL_LINE_COLOR);
+    stripe.setStroke(GOAL_LINE_STROKE);
+    stripe.setStrokeWidth(1.5);
+
+    Label label = new Label("FINISH");
+    label.setFont(Font.font(10));
+    label.setTextFill(GOAL_LINE_STROKE);
+    label.setRotate(-90);
+    label.setMouseTransparent(true);
+    label.setLayoutX(px - 20);
+    label.setLayoutY(totalHeight / 2 - 6);
+
+    stripe.setOnMousePressed(e -> onObjectSelected.accept(asc));
+    stripe.setOnMouseEntered(e -> onTerrainHoverEnter.accept(asc));
+    stripe.setOnMouseExited(e -> onTerrainHoverExit.run());
+
+    Pane group = new Pane(stripe, label);
+    group.setMouseTransparent(false);
+    return group;
   }
 
   private Rectangle drawObject(AuthoringPlaceable placeable) {
