@@ -37,6 +37,7 @@ final class StaticObjectCatalogTab {
   private static final double LIST_WIDTH = 260;
   private static final double TAB_CONTENT_SPACING = 12;
   private static final double DEFAULT_HP_CHANGE = 0;
+  private static final double DEFAULT_SCORE_AMOUNT = 0;
 
   private final GameCatalogDraft draft;
   private final SpriteImportService spriteImportService;
@@ -60,21 +61,17 @@ final class StaticObjectCatalogTab {
     TextField spriteF = AuthoringValueHints.newTextField("catalog.static.spriteUrl");
     TextField massF = AuthoringValueHints.newTextField("catalog.static.mass");
     TextField hpChangeF = AuthoringValueHints.newTextField("catalog.static.hpDelta");
-    TextField actionTypeF = field("action type: heal / damage / score / finish");
-    TextField actionAmountF = field("action amount, e.g. 25");
+    TextField scoreAmountF = AuthoringValueHints.newTextField("catalog.static.scoreAmount");
 
-    Button addStaticObject = new Button("Add Static Object");
+    Button addStaticObject = new Button("Add Decoration");
     addStaticObject.setOnAction(e -> {
-      String type = actionTypeF.getText().strip();
-      CollisionAction action = type.isBlank() ? null
-          : new CollisionAction(type, parseDouble(actionAmountF.getText(), DEFAULT_HP_CHANGE));
       draft.staticComponents().add(new StaticComponentInfo(
           idF.getText().strip(),
           spriteF.getText().strip(),
           parseDouble(massF.getText(), DEFAULT_MASS),
-          action));
+          null));
       refresh();
-      clearFields(idF, spriteF, massF, hpChangeF, actionTypeF, actionAmountF);
+      clearFields(idF, spriteF, massF, hpChangeF, scoreAmountF);
     });
 
     Button addHpObject = new Button("Add HP Object");
@@ -91,7 +88,24 @@ final class StaticObjectCatalogTab {
           parseDouble(massF.getText(), DEFAULT_MASS),
           buildHpAction(hpChange)));
       refresh();
-      clearFields(idF, spriteF, massF, hpChangeF, actionTypeF, actionAmountF);
+      clearFields(idF, spriteF, massF, hpChangeF, scoreAmountF);
+    });
+
+    Button addScoreObject = new Button("Add Score Object");
+    addScoreObject.setOnAction(e -> {
+      double scoreAmount = parseDouble(scoreAmountF.getText(), DEFAULT_SCORE_AMOUNT);
+      if (scoreAmount <= DEFAULT_SCORE_AMOUNT) {
+        alertService.showError("Invalid Score",
+            "Score amount must be greater than zero.");
+        return;
+      }
+      draft.staticComponents().add(new StaticComponentInfo(
+          idF.getText().strip(),
+          spriteF.getText().strip(),
+          parseDouble(massF.getText(), DEFAULT_MASS),
+          new CollisionAction("score", scoreAmount)));
+      refresh();
+      clearFields(idF, spriteF, massF, hpChangeF, scoreAmountF);
     });
 
     Button addFinishLine = new Button("Add Finish Line");
@@ -103,7 +117,7 @@ final class StaticObjectCatalogTab {
           DEFAULT_POWER_UP_MASS,
           new CollisionAction("finish", 0)));
       refresh();
-      clearFields(idF, spriteF, massF, hpChangeF, actionTypeF, actionAmountF);
+      clearFields(idF, spriteF, massF, hpChangeF, scoreAmountF);
     });
 
     Button remove = new Button("Remove");
@@ -115,9 +129,8 @@ final class StaticObjectCatalogTab {
 
     return new Tab("Static Objects", buildTabContent(staticListView,
         formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
-        formRow("HP Change", hpChangeF), formRow("Action Type", actionTypeF),
-        formRow("Action Amount", actionAmountF),
-        buttonBar(addStaticObject, addHpObject, addFinishLine, remove)));
+        formRow("HP Change", hpChangeF), formRow("Score Amount", scoreAmountF),
+        buttonBar(addStaticObject, addHpObject, addScoreObject, addFinishLine, remove)));
   }
 
   void refresh() {
@@ -148,6 +161,9 @@ final class StaticObjectCatalogTab {
     }
     if ("damage".equals(action.type())) {
       return "  [-" + (int) action.amount() + " HP]";
+    }
+    if ("score".equals(action.type())) {
+      return "  [+" + (int) action.amount() + " score]";
     }
     return "  [" + action.type() + "]";
   }
@@ -182,13 +198,6 @@ final class StaticObjectCatalogTab {
     HBox.setHgrow(form, Priority.ALWAYS);
     content.setPadding(new Insets(CONTENT_PADDING));
     return content;
-  }
-
-  private TextField field(String prompt) {
-    TextField field = new TextField();
-    field.setPromptText(prompt);
-    field.setPrefWidth(DEFAULT_WIDTH);
-    return field;
   }
 
   private double parseDouble(String text, double fallback) {
