@@ -19,7 +19,7 @@ final class GeneratedLevelFixtures {
     TestGameConfig config = TestGameConfig.badPiggies();
     return new GoodPiggiesCatalog(
         config.gameId(),
-        config.primaryComponentId(),
+        config.mainCharacterId(),
         config.components(),
         config.staticComponents(),
         config.terrainTypes());

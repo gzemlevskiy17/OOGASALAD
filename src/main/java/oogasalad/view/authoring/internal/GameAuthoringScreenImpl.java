@@ -8,6 +8,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
@@ -65,7 +66,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private final List<StaticComponentInfo> staticComponents = new ArrayList<>();
   private final List<ComponentInfo> components = new ArrayList<>();
   private TextField gameIdField;
-  private TextField primaryComponentIdField;
+  private TextField mainCharacterIdField;
   private String saveFilePath = "data/games/untitled/game.json";
 
   public GameAuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler,
@@ -82,7 +83,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       GameConfig config = new GameConfigImpl(path);
       saveFilePath = path;
       gameIdField.setText(config.gameId());
-      primaryComponentIdField.setText(config.primaryComponentId());
+      mainCharacterIdField.setText(config.mainCharacterId());
       terrainTypes.clear();
       terrainTypes.addAll(config.terrainTypes());
       staticComponents.clear();
@@ -121,13 +122,13 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     gameIdField.setPromptText("game id, e.g. badpiggies");
     gameIdField.setPrefWidth(200);
 
-    primaryComponentIdField = new TextField();
-    primaryComponentIdField.setPromptText("primary component id");
-    primaryComponentIdField.setPrefWidth(200);
+    mainCharacterIdField = new TextField();
+    mainCharacterIdField.setPromptText("main character id");
+    mainCharacterIdField.setPrefWidth(200);
 
     HBox metaRow = new HBox(12,
         new Label("Game ID:"), gameIdField,
-        new Label("Primary Component:"), primaryComponentIdField);
+        new Label("Main Character:"), mainCharacterIdField);
     metaRow.setAlignment(Pos.CENTER_LEFT);
 
     Button loadCatalogButton = new Button(s("loadCatalogButtonText"));
@@ -286,11 +287,19 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       clearFields(idF, spriteF, massF);
     });
 
+    Button useAsMainCharacter = new Button("Use as Main Character");
+    useAsMainCharacter.setOnAction(e -> selectedComponentId(list)
+        .ifPresent(mainCharacterIdField::setText));
+
     Button remove = new Button("Remove");
     remove.setOnAction(e -> {
       int idx = list.getSelectionModel().getSelectedIndex();
       if (idx >= 0) {
+        String removedId = components.get(idx).id();
         components.remove(idx);
+        if (removedId.equals(mainCharacterIdField.getText().strip())) {
+          mainCharacterIdField.clear();
+        }
         refreshComponentList(list);
       }
     });
@@ -300,9 +309,17 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
         new Label("Buttons:"), btnList,
         formRow("Button Name", btnNameF), formRow("Dir X", btnDxF), formRow("Dir Y", btnDyF),
         buttonBar(addBtn),
-        buttonBar(add, remove));
+        buttonBar(add, useAsMainCharacter, remove));
 
     return new Tab("Components", buildTabContent(list, form));
+  }
+
+  private Optional<String> selectedComponentId(ListView<String> list) {
+    int idx = list.getSelectionModel().getSelectedIndex();
+    if (idx < 0 || idx >= components.size()) {
+      return Optional.empty();
+    }
+    return Optional.of(components.get(idx).id());
   }
 
   private void refreshComponentList(ListView<String> list) {
@@ -359,11 +376,24 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     Path catalogPath = catalogPathFor(gameId);
     Files.createDirectories(catalogPath.getParent());
     Files.createDirectories(LEVELS_DIR.resolve(gameId));
+    String mainCharacterId = mainCharacterIdField.getText().strip();
+    validateMainCharacterId(mainCharacterId);
     catalogSaver.save(catalogPath.toString(),
         gameId,
-        primaryComponentIdField.getText().strip(),
+        mainCharacterId,
         components, staticComponents, terrainTypes);
     return catalogPath;
+  }
+
+  private void validateMainCharacterId(String mainCharacterId) {
+    if (mainCharacterId.isBlank()) {
+      throw new IllegalArgumentException("Main Character is required before saving a game catalog.");
+    }
+    boolean exists = components.stream().anyMatch(component -> mainCharacterId.equals(component.id()));
+    if (!exists) {
+      throw new IllegalArgumentException(
+          "Main Character must be one of the vehicle components.");
+    }
   }
 
   private Path catalogPathFor(String gameId) {

@@ -58,9 +58,9 @@ final class MainCharacterSpecValidator {
     if (cameraFollows == null || cameraFollows.isBlank()) {
       return;
     }
-    if (!cameraFollows.equals(catalog.primaryComponentId())
+    if (!cameraFollows.equals(catalog.mainCharacterId())
         && !cameraFollows.equals(support.s("defaultCameraFollows"))) {
-      support.fail("cameraFollowsInvalidError", cameraFollows, catalog.primaryComponentId(),
+      support.fail("cameraFollowsInvalidError", cameraFollows, catalog.mainCharacterId(),
           support.s("defaultCameraFollows"));
     }
   }
