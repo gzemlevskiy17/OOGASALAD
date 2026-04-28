@@ -25,7 +25,7 @@ import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.data.internal.LevelProgression;
 import oogasalad.data.internal.LevelScanner;
-import oogasalad.model.auth.api.AuthFactory;
+import oogasalad.model.auth.internal.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
 import oogasalad.model.player.api.PlayHistoryRepository;
