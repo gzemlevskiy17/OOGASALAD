@@ -58,6 +58,10 @@ public final class BuiltInVehicleCatalog {
 
   /** Preset ids not already present. */
   public static List<String> idsNotYetInCatalog(List<ComponentInfo> current) {
+    if (current == null) {
+      current = List.of(); // TODO: Refactor this simple fallback in the future
+    }
+
     Set<String> have = new HashSet<>();
     for (ComponentInfo c : current) {
       if (c.id() != null && !c.id().isBlank()) {
