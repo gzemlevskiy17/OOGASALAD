@@ -25,7 +25,7 @@ import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.internal.GameAttributes;
-import oogasalad.data.internal.LevelAttributes;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.StaticComponentInfo;
@@ -36,6 +36,8 @@ import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
 import oogasalad.view.core.internal.AbstractAppScreen;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Layout shell for the authoring environment.
@@ -45,6 +47,7 @@ import oogasalad.view.core.internal.AbstractAppScreen;
  */
 public class AuthoringScreenImpl extends AbstractAppScreen {
 
+  private static final Logger LOG = LogManager.getLogger(AuthoringScreenImpl.class);
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringScreen");
   private static final String DEFAULT_TERRAIN_COLOR = "#8B4513";
@@ -179,6 +182,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
       controller.loadLevel(path);
       preserveLoadedLevelOnNextEnter = true;
     } catch (LevelLoadException e) {
+      LOG.error("Level load rejected for '{}': {}", path, e.getMessage(), e);
       alertService.showError(PROPS.getString("loadErrorTitle"), e.getMessage());
     }
   }
@@ -541,6 +545,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
       try {
         controller.saveLevel(file.getAbsolutePath());
       } catch (LevelSaveException e) {
+        LOG.error("Level save rejected for '{}': {}", file.getAbsolutePath(), e.getMessage(), e);
         alertService.showError(PROPS.getString("saveErrorTitle"), e.getMessage());
       }
     });
@@ -555,6 +560,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     try {
       controller.saveLevel(RUN_PREVIEW_PATH);
     } catch (LevelSaveException e) {
+      LOG.error("Run-preview save rejected for '{}': {}", RUN_PREVIEW_PATH, e.getMessage(), e);
       alertService.showError(PROPS.getString("saveErrorTitle"), e.getMessage());
       return;
     }

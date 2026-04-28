@@ -79,11 +79,20 @@ class VehicleBuilderAppScreenTest extends DukeApplicationTest {
 
   @Test
   void dragComponentFromPaletteToGrid_recordsPlacement() {
-    Node source = lookup(".component-cell").nth(0).query();
+    Node source = lookup(".component-cell").nth(2).query();
     Node target = lookup(".grid-cell").nth(0).query();
     drag(source).dropTo(target);
     assertEquals(
-        "Pig",
+        "Frame",
         screen.getVehicleLayout().getComponentAtIndex(0, 0).orElseThrow());
+  }
+
+  @Test
+  void setAllowedComponentIds_unknownSpriteId_keepsPaletteVisible() {
+    interact(() -> screen.setAllowedComponentIds(List.of("block")));
+
+    Label label = lookup("block").queryAs(Label.class);
+
+    assertEquals("block", label.getText());
   }
 }

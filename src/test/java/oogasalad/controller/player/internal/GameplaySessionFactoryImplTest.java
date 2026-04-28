@@ -9,7 +9,7 @@ import java.util.Map;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelLoader;
-import oogasalad.data.internal.LevelAttributes;
+import oogasalad.data.api.LevelAttributes;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.internal.components.GameComponent;

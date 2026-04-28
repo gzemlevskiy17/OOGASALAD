@@ -9,7 +9,7 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import oogasalad.data.internal.LevelAttributes;
+import oogasalad.data.api.LevelAttributes;
 
 /**
  * Side panel for editing global level attributes (name, gravity, drag, maxHP).
@@ -63,6 +63,7 @@ public class LevelAttributesPanel {
   private HBox buildNameRow() {
     TextField field = new TextField(model.getLevelName());
     field.setPrefWidth(FIELD_WIDTH);
+    AuthoringValueHints.configure(field, "level.name");
     field.textProperty().addListener((obs, oldVal, newVal) -> model.setLevelName(newVal));
     return labeledRow("Level Name", field);
   }
@@ -74,6 +75,7 @@ public class LevelAttributesPanel {
     Spinner<Double> spinner = new Spinner<>(factory);
     spinner.setEditable(true);
     spinner.setPrefWidth(FIELD_WIDTH);
+    AuthoringValueHints.attach(spinner, "level.gravity");
     spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal != null) {
         model.setGravity(newVal);
@@ -88,6 +90,7 @@ public class LevelAttributesPanel {
             model.getDrag(), DRAG_STEP));
     spinner.setEditable(true);
     spinner.setPrefWidth(FIELD_WIDTH);
+    AuthoringValueHints.attach(spinner, "level.drag");
     spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal != null) {
         model.setDrag(newVal);
@@ -102,6 +105,7 @@ public class LevelAttributesPanel {
             model.getMaxHP(), HP_STEP));
     spinner.setEditable(true);
     spinner.setPrefWidth(FIELD_WIDTH);
+    AuthoringValueHints.attach(spinner, "level.maxHp");
     spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
       if (newVal != null) {
         model.setMaxHP(newVal);

@@ -6,10 +6,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
+import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
-import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.PhysicsEnvironment;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
@@ -19,6 +22,7 @@ import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
+import oogasalad.view.authoring.internal.AuthoringAlertService;
 
 /**
  * Builds the loaded gameplay world and inserts the player vehicle at the level spawn point.
@@ -35,6 +39,7 @@ final class GameplayWorldBuilder {
   private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
   private static final double DEFAULT_SPAWN_X = 380.0;
   private static final double DEFAULT_SPAWN_Y = 330.0;
+  private static final double GRAVITY_SCALE = 100.0;
 
   // Keep the world at least one viewport plus padding so camera clamping and fall-loss checks
   // still behave when an authored level has only a few blocks.
@@ -54,8 +59,9 @@ final class GameplayWorldBuilder {
   }
 
   BuiltWorld build(VehicleLayout layout) {
-    World world = new WorldImpl();
-    LoadedLevel loadedLevel = loadLevelInto(world);
+    LoadedLevel loadedLevel = loadLevel();
+    World world = new WorldImpl(physicsEnvironment(loadedLevel.attributes()));
+    populateLevel(world, loadedLevel);
     LevelBounds bounds = computeLevelBounds(world);
     SpawnPointComponent spawn = findSpawnPoint(world);
     Map<PlacedComponent, RigidBody> placements = vehicleFactory.buildVehicle(
@@ -64,18 +70,43 @@ final class GameplayWorldBuilder {
         loadedLevel.attributes());
   }
 
-  private LoadedLevel loadLevelInto(World world) {
+  private LoadedLevel loadLevel() {
     String levelPath = levelPathSupplier.get();
     if (levelPath == null || levelPath.isBlank()) {
-      return new LoadedLevel(null, new LevelAttributes());
+      return new LoadedLevel(null, null, new LevelAttributes());
     }
-    LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+    LevelAttributes attributes = loadAttributes(levelPath);
     GameConfig gameConfig = loadGameConfig(levelPath, attributes);
-    levelLoader.loadLevel(levelPath, gameConfig, world);
+    return new LoadedLevel(levelPath, gameConfig, attributes);
+  }
+
+  private LevelAttributes loadAttributes(String levelPath) {
+    try {
+      return levelLoader.loadAttributes(levelPath);
+    } catch (LevelLoadException e) {
+      showLevelLoadError(levelPath, e);
+      throw e;
+    }
+  }
+
+  private void populateLevel(World world, LoadedLevel loadedLevel) {
+    String levelPath = loadedLevel.levelPath();
+    if (levelPath == null || levelPath.isBlank()) {
+      return;
+    }
+    try {
+      levelLoader.loadLevel(levelPath, loadedLevel.gameConfig(), world, loadedLevel.attributes());
+    } catch (LevelLoadException e) {
+      showLevelLoadError(levelPath, e);
+      throw e;
+    }
+    registerGameConfig(loadedLevel.gameConfig());
+  }
+
+  private void registerGameConfig(GameConfig gameConfig) {
     if (gameConfig != null) {
       vehicleFactory.getRegistry().registerFromConfig(gameConfig);
     }
-    return new LoadedLevel(gameConfig, attributes);
   }
 
   private GameConfig loadGameConfig(String levelPath, LevelAttributes attributes) {
@@ -86,6 +117,19 @@ final class GameplayWorldBuilder {
           e.getMessage());
       return null;
     }
+  }
+
+  private static PhysicsEnvironment physicsEnvironment(LevelAttributes attributes) {
+    Vector gravity = new Vector(0, -attributes.getGravity() * GRAVITY_SCALE);
+    return new PhysicsEnvironment(gravity, attributes.getDrag());
+  }
+
+  private void showLevelLoadError(String levelPath, LevelLoadException exception) {
+    LOG.error("Cannot start gameplay session for level '{}': {}", levelPath, exception.getMessage(),
+        exception);
+    new AuthoringAlertService().showError(
+        "Cannot Start Level",
+        "Level file '" + levelPath + "' is invalid:\n\n" + exception.getMessage());
   }
 
   private SpawnPointComponent findSpawnPoint(World world) {
@@ -152,7 +196,7 @@ final class GameplayWorldBuilder {
   record LevelBounds(double width, double height) {
   }
 
-  private record LoadedLevel(GameConfig gameConfig, LevelAttributes attributes) {
+  private record LoadedLevel(String levelPath, GameConfig gameConfig, LevelAttributes attributes) {
   }
 
   record BuiltWorld(World world, LevelBounds bounds, Map<PlacedComponent, RigidBody> placements,
