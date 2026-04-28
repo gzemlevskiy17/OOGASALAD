@@ -111,6 +111,11 @@ public class GameControllerImpl implements GameController {
   }
 
   @Override
+  public void handleButtonRelease(String buttonId) {
+    inputRouter.handleButtonRelease(buttonId);
+  }
+
+  @Override
   public void handleKeyPress(KeyCode key) {
     inputRouter.handleKeyPress(key);
   }

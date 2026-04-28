@@ -2,12 +2,10 @@ package oogasalad.view.player.internal;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -125,7 +123,11 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     gameLayer.prefHeightProperty().bind(root.heightProperty());
 
     HBox topControls = createTopControlsRegion();
-    bottomControls = createBottomControlsRegion(null);
+    bottomControls = new HBox(d("bottom.controls.spacing"));
+    bottomControls.getStyleClass().add("controlbuttons-bottom");
+    bottomControls.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE,
+        javafx.scene.layout.Region.USE_PREF_SIZE);
+    bottomControls.setPickOnBounds(false);
     hud = new GameHudDisplay();
 
     Node backButton = createBackButtonRegion();
@@ -252,11 +254,47 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     if (bottomControls == null) {
       return;
     }
-    Set<String> filter = toolIds == null
-        ? null
-        : toolIds.stream().map(String::toLowerCase).collect(Collectors.toCollection(HashSet::new));
-    HBox rebuilt = createBottomControlsRegion(filter);
+    if (toolIds == null || toolIds.isEmpty()) {
+      bottomControls.getChildren().clear();
+      return;
+    }
+    HBox rebuilt = createToolButtonsFromIds(toolIds);
     bottomControls.getChildren().setAll(rebuilt.getChildren());
+  }
+
+  private HBox createToolButtonsFromIds(Collection<String> toolIds) {
+    HBox container = new HBox(d("bottom.controls.spacing"));
+    container.getStyleClass().add("controlbuttons-bottom");
+    container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE,
+        javafx.scene.layout.Region.USE_PREF_SIZE);
+    container.setPickOnBounds(false);
+
+    for (String toolId : toolIds) {
+      String label = toolLabel(toolId);
+      ToggleButton toolBtn = new ToggleButton(label);
+      toolBtn.getStyleClass().add("tool-button");
+      toolBtn.setOnAction(e -> {
+        if (toolBtn.isSelected()) {
+          onToolActivated.accept(toolId);
+        } else {
+          onToolDeactivated.accept(toolId);
+        }
+      });
+      container.getChildren().add(toolBtn);
+    }
+    return container;
+  }
+
+  private String toolLabel(String toolId) {
+    String key = "tool." + toolId;
+    try {
+      return PROPS.getString(key);
+    } catch (java.util.MissingResourceException e) {
+      if (toolId.isEmpty()) {
+        return toolId;
+      }
+      return Character.toUpperCase(toolId.charAt(0)) + toolId.substring(1);
+    }
   }
 
   private List<String> getList(String key) { return Arrays.asList(s(key).split(",")); }

@@ -48,9 +48,14 @@ public interface GameController {
   void setOnTerminalScore(Consumer<GameplayScore> callback);
 
   /**
-   * Forwards a tool button press to the InputRouter to activate/deactivate the bound action.
+   * Forwards a tool button press to the InputRouter to activate the bound action.
    */
   void handleButtonPress(String buttonId);
+
+  /**
+   * Forwards a tool button release to the InputRouter to deactivate the bound action.
+   */
+  void handleButtonRelease(String buttonId);
 
   /**
    * Forwards a keyboard press to the InputRouter.
