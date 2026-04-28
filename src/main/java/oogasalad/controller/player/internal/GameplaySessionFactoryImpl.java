@@ -68,6 +68,7 @@ import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.RendererImpl;
 import oogasalad.view.core.internal.SpriteCache;
+import oogasalad.view.core.internal.TerrainPaints;
 import oogasalad.view.player.internal.GamePlayAppScreen;
 import oogasalad.view.player.internal.VehicleHpHud;
 
@@ -128,11 +129,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     path.getElements().add(new LineTo(firstKnot.x() - originX, localBaselineY));
     path.getElements().add(new ClosePath());
 
-    try {
-      path.setFill(Paint.valueOf(ts.getColor()));
-    } catch (IllegalArgumentException e) {
-      path.setFill(Color.SADDLEBROWN);
-    }
+    TerrainPaints.applyTerrainFill(path, ts.getSprite(), ts.getColor(), ts.getWidth(),
+        ts.getHeight(), ts.isTiled());
     path.setStroke(Color.BLACK);
     path.setStrokeWidth(1.0);
     return path;

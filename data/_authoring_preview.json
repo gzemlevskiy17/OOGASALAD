@@ -1,7 +1,7 @@
 {
   "gameMetadata" : {
     "levelName" : "Untitled Level",
-    "gameType" : "badpiggies",
+    "gameType" : "bob's planet",
     "screenWidth" : 3200.0,
     "screenHeight" : 1600.0,
     "gravity" : -9.8,
@@ -9,17 +9,26 @@
   },
   "map" : {
     "knotLocations" : [ {
-      "x" : 10.0,
-      "y" : 333.0
+      "x" : 40.0,
+      "y" : 1194.0
     }, {
-      "x" : 590.0,
-      "y" : 333.0
+      "x" : 306.0,
+      "y" : 1175.5
     }, {
-      "x" : 755.0,
-      "y" : 301.0
+      "x" : 494.0,
+      "y" : 1255.5
+    }, {
+      "x" : 908.0,
+      "y" : 1254.5
+    }, {
+      "x" : 32.0,
+      "y" : 1091.5
+    }, {
+      "x" : 1039.0,
+      "y" : 1211.5
     } ],
     "objects" : [ ],
-    "terrainOptions" : [ "Spline Terrain" ],
+    "terrainOptions" : [ "high fritction ground", "ground" ],
     "spawnPoint" : {
       "x" : 100.0,
       "y" : 100.0
@@ -27,7 +36,7 @@
   },
   "mainCharacter" : {
     "gridSize" : 60.0,
-    "elementsAllowed" : [ "Frame", "Wood Wheel", "BigPig", "Fan" ],
+    "elementsAllowed" : [ ],
     "maxSelectable" : 5,
     "maxHP" : 100.0,
     "cameraFollows" : "vehicle"
