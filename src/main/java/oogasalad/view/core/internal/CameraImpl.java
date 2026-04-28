@@ -1,5 +1,6 @@
 package oogasalad.view.core.internal;
 
+import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
@@ -70,25 +71,33 @@ public class CameraImpl implements Camera {
 
   @Override
   public boolean isVisible(Renderable object) {
-    if (object == null) return false;
-
-    double left = x;
-    double right = x + viewWidth;
-    double top = y;
-    double bottom = y + viewHeight;
-
-    if (object instanceof TerrainBlock tb) {
-      double objLeft = tb.x();
-      double objRight = tb.x() + tb.getWidth();
-      double objTop = tb.y();
-      double objBottom = tb.y() + tb.getHeight();
-
-      return objRight >= left && objLeft <= right
-          && objBottom >= top && objTop <= bottom;
+    if (object == null) {
+      return false;
     }
 
-    double objectX = object.x();
-    double objectY = object.y();
-    return objectX >= left && objectX <= right && objectY >= top && objectY <= bottom;
+    double viewLeft = x;
+    double viewRight = x + viewWidth;
+    double viewTop = y;
+    double viewBottom = y + viewHeight;
+
+    if (object instanceof GameObject gameObject) {
+      CollisionPolygonBounds.UnionAabb aabb =
+          CollisionPolygonBounds.unionAabb(gameObject);
+      if (!aabb.defined()) {
+        return pointInsideViewport(viewLeft, viewTop, viewRight, viewBottom,
+            object.x(), object.y());
+      }
+      return CollisionPolygonBounds.rectsOverlap(
+          aabb.minX(), aabb.minY(), aabb.maxX(), aabb.maxY(),
+          viewLeft, viewTop, viewRight, viewBottom);
+    }
+
+    return pointInsideViewport(viewLeft, viewTop, viewRight, viewBottom,
+        object.x(), object.y());
+  }
+
+  private static boolean pointInsideViewport(double viewLeft, double viewTop,
+      double viewRight, double viewBottom, double px, double py) {
+    return px >= viewLeft && px <= viewRight && py >= viewTop && py <= viewBottom;
   }
 }
