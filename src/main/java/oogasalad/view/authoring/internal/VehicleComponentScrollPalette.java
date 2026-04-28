@@ -108,6 +108,24 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
     notifySelectionSummaryChanged();
   }
 
+  public void setSelectedComponentIds(List<String> componentIds) {
+    selectedCells.clear();
+    List<String> selectedIds = sanitizedIds(componentIds);
+    for (int i = 0; i < paletteContent.getChildren().size(); i++) {
+      Node node = paletteContent.getChildren().get(i);
+      if (!(node instanceof StackPane cell)) {
+        continue;
+      }
+      String componentName = componentNames.get(i);
+      boolean selected = selectedIds.contains(componentName);
+      if (selected) {
+        selectedCells.put(cell, new SelectedVehicleComponent(componentName, componentName));
+      }
+      updateCellStyle(cell, selected);
+    }
+    notifySelectionSummaryChanged();
+  }
+
   /**
    * Registers a listener that is notified whenever the selected vehicle item summary changes.
    *
@@ -186,6 +204,13 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
       notifySelectionSummaryChanged();
       return;
     }
+    if (selectedCells.size() >= getMaxSelectableItems()) {
+      LOG.debug("Rejected vehicle component selection '{}' because the palette limit was reached",
+          component.id());
+      alertService.showWarning(PALETTE_CONFIG.getString("selectionLimitTitle"),
+          PALETTE_CONFIG.getString("selectionLimitMessage"));
+      return;
+    }
     selectedCells.put(cell, component);
     updateCellStyle(cell, true);
     notifySelectionSummaryChanged();
@@ -219,6 +244,17 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
       }
     }
     return result;
+  }
+
+  private List<String> sanitizedIds(List<String> componentIds) {
+    if (componentIds == null) {
+      return List.of();
+    }
+    return componentIds.stream()
+        .map(id -> id == null ? "" : id.trim())
+        .filter(id -> !id.isBlank())
+        .filter(componentNames::contains)
+        .toList();
   }
 
   private record SelectedVehicleComponent(String id, String displayName) {

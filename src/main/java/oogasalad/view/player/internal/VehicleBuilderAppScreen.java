@@ -161,8 +161,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     ensureAvailableComponentNames();
     availableComponentNames.clear();
 
-    // TODO: maybe remove the check
-    if (componentIds == null || componentIds.isEmpty()) {
+    if (componentIds == null) {
       availableComponentNames.addAll(defaultComponentNames());
     } else {
       for (String componentName : componentIds) {

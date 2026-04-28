@@ -369,8 +369,17 @@ public class ScreenFactory {
     }
   }
 
-  private static List<String> resolvedVehiclePaletteIds(GameConfig gameConfig) {
-    return new GameAttributes(gameConfig).movableComponentIds();
+  static List<String> resolvedVehiclePaletteIds(GameConfig gameConfig,
+      LevelAttributes attributes) {
+    List<String> movableIds = new GameAttributes(gameConfig).movableComponentIds();
+    if (attributes == null || attributes.getMainCharacterElementsAllowed().isEmpty()) {
+      return movableIds;
+    }
+    return attributes.getMainCharacterElementsAllowed().stream()
+        .map(id -> id == null ? "" : id.trim())
+        .filter(id -> !id.isBlank())
+        .filter(movableIds::contains)
+        .toList();
   }
 
   /**
@@ -385,7 +394,7 @@ public class ScreenFactory {
 
     String levelPath = pathForSelectedLevel();
     if (levelPath == null || levelPath.isBlank()) {
-      vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
+      vehicleBuilderScreen.setAllowedComponentIds(null);
       vehicleBuilderScreen.setGameConfig(null);
       return true;
     }
@@ -402,13 +411,14 @@ public class ScreenFactory {
       GameConfig gameConfig = gameLoader.loadGame(
           LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
       vehicleBuilderScreen.setGameConfig(gameConfig);
-      vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig));
+      vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig,
+          attributes));
     } catch (RuntimeException e) {
       LOG.warn(
           "Could not load game config for level '{}'; vehicle builder will run without catalog",
           levelPath, e);
       vehicleBuilderScreen.setGameConfig(null);
-      vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
+      vehicleBuilderScreen.setAllowedComponentIds(null);
     }
     return true;
   }

@@ -177,6 +177,7 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
   public void loadLevelFromPath(String path) {
     try {
       controller.loadLevel(path);
+      syncVehiclePaletteSelection();
       preserveLoadedLevelOnNextEnter = true;
     } catch (LevelLoadException e) {
       LOG.error("Level load rejected for '{}': {}", path, e.getMessage(), e);
@@ -457,6 +458,12 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     levelItemsPalette.setItems(gameConfig.staticComponents().stream()
         .map(this::staticEntry)
         .toList());
+  }
+
+  private void syncVehiclePaletteSelection() {
+    if (vehiclePalette != null && levelAttributes != null) {
+      vehiclePalette.setSelectedComponentIds(levelAttributes.getMainCharacterElementsAllowed());
+    }
   }
 
   private ComponentPaletteImpl.PaletteEntry terrainEntry(TerrainInfo info) {
