@@ -101,6 +101,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     screen.getGameLayer().getChildren().clear();
 
     GameplayWorldBuilder.BuiltWorld built = worldBuilder.build(layout);
+    screen.setBackgroundImagePath(built.levelAttributes().getBackgroundImage());
     World world = built.world();
     InputRouter inputRouter = buildInputRouter();
     configureInputControls(screen, inputRouter, world);
