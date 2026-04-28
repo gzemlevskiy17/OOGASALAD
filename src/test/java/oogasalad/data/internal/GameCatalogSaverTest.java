@@ -107,6 +107,17 @@ class GameCatalogSaverTest {
   }
 
   @Test
+  void save_writesTerrainVisualColor() throws IOException {
+    File out = savedFile("game.json");
+    saver.save(out.getAbsolutePath(), "g", "body", List.of(), List.of(),
+        List.of(new TerrainInfo("grass", null, "#00AA00", 0.6)));
+
+    JsonNode t = new ObjectMapper().readTree(out).path("terrainTypes").get(0);
+    assertTrue(t.path("spriteUrl").isNull());
+    assertEquals("#00AA00", t.path("visualColor").asText());
+  }
+
+  @Test
   void Save_CheatWithSpawnPowerupEffect_WritesCheatArray() throws IOException {
     File out = savedFile("game.json");
     CheatInfo cheat = new CheatInfo(
@@ -178,6 +189,20 @@ class GameCatalogSaverTest {
     JsonNode s = new ObjectMapper().readTree(out).path("staticComponents").get(0);
     assertEquals("damage", s.path("onCollisionAction").path("type").asText());
     assertEquals(30.0, s.path("onCollisionAction").path("amount").asDouble(), 0.001);
+  }
+
+  @Test
+  void save_scoreStaticComponent_writesCorrectAction() throws IOException {
+    File out = savedFile("game.json");
+    var action = new CollisionAction("score", 15.0);
+    var coin = new StaticComponentInfo("Coin", "coin.png", 0, action);
+    saver.save(out.getAbsolutePath(), "g", "body",
+        List.of(new ComponentInfo("body", "b.png", 1.0, List.of())),
+        List.of(coin), List.of());
+
+    JsonNode s = new ObjectMapper().readTree(out).path("staticComponents").get(0);
+    assertEquals("score", s.path("onCollisionAction").path("type").asText());
+    assertEquals(15.0, s.path("onCollisionAction").path("amount").asDouble(), 0.001);
   }
 
   @Test

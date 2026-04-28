@@ -1,0 +1,216 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Untitled Level",
+    "gameType" : "xy",
+    "screenWidth" : 3200.0,
+    "screenHeight" : 1600.0,
+    "gravity" : -9.8,
+    "drag" : 0.01
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 154.0,
+      "y" : 797.0
+    }, {
+      "x" : 389.0,
+      "y" : 797.0
+    }, {
+      "x" : 666.0,
+      "y" : 822.0
+    }, {
+      "x" : 894.0,
+      "y" : 907.0
+    }, {
+      "x" : 1079.0,
+      "y" : 985.5
+    }, {
+      "x" : 1312.0,
+      "y" : 1020.0
+    }, {
+      "x" : 1427.0,
+      "y" : 1012.0
+    }, {
+      "x" : 1636.5,
+      "y" : 977.0
+    }, {
+      "x" : 16.0,
+      "y" : 796.5
+    }, {
+      "x" : 154.0,
+      "y" : 796.5
+    }, {
+      "x" : 1687.0,
+      "y" : 1033.0
+    }, {
+      "x" : 2038.0,
+      "y" : 1073.0
+    }, {
+      "x" : 2249.0,
+      "y" : 1044.0
+    }, {
+      "x" : 2442.0,
+      "y" : 1017.0
+    }, {
+      "x" : 2710.0,
+      "y" : 1042.0
+    } ],
+    "blocks" : [ ],
+    "objects" : [ {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2690.0,
+        "y" : 1010.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2690.0,
+        "y" : 990.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2690.0,
+        "y" : 970.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2690.0,
+        "y" : 950.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2690.0,
+        "y" : 930.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2690.0,
+        "y" : 890.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2690.0,
+        "y" : 910.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 890.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 910.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 930.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 950.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 970.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 990.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 1030.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 1010.0
+      }
+    }, {
+      "type" : "Goal",
+      "position" : {
+        "x" : 2690.0,
+        "y" : 1030.0
+      }
+    }, {
+      "type" : "damage",
+      "position" : {
+        "x" : 1690.0,
+        "y" : 1030.0
+      }
+    }, {
+      "type" : "damage",
+      "position" : {
+        "x" : 1710.0,
+        "y" : 1030.0
+      }
+    }, {
+      "type" : "damage",
+      "position" : {
+        "x" : 1730.0,
+        "y" : 1030.0
+      }
+    }, {
+      "type" : "damage",
+      "position" : {
+        "x" : 1750.0,
+        "y" : 1030.0
+      }
+    }, {
+      "type" : "damage",
+      "position" : {
+        "x" : 2370.0,
+        "y" : 950.0
+      }
+    }, {
+      "type" : "damage",
+      "position" : {
+        "x" : 2390.0,
+        "y" : 950.0
+      }
+    }, {
+      "type" : "damage",
+      "position" : {
+        "x" : 2410.0,
+        "y" : 970.0
+      }
+    }, {
+      "type" : "heart",
+      "position" : {
+        "x" : 2550.0,
+        "y" : 1010.0
+      }
+    } ],
+    "terrainOptions" : [ "grass", "grass", "grass" ],
+    "spawnPoint" : {
+      "x" : 100.0,
+      "y" : 100.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 60.0,
+    "elementsAllowed" : [ "Fan", "Frame", "Metal Wheel", "bomb_mc" ],
+    "maxSelectable" : 5,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}
