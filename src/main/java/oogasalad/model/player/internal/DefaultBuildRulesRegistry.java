@@ -95,6 +95,9 @@ public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
       return existing;
     }
     String id = component.id();
+    if (isWheelComponent(id)) {
+      return WHEEL_RULE;
+    }
     if (isPigComponent(id, mainCharacterId)) {
       return PIG_RULE;
     }
@@ -108,6 +111,10 @@ public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
     return componentId != null
         && (componentId.equals(mainCharacterId)
             || componentId.toLowerCase(Locale.ROOT).contains("pig"));
+  }
+
+  private boolean isWheelComponent(String componentId) {
+    return componentId != null && componentId.toLowerCase(Locale.ROOT).contains("wheel");
   }
 
   private BuildRules lookupIfPresent(String componentType) {

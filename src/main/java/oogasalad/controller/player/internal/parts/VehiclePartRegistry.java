@@ -58,12 +58,15 @@ public final class VehiclePartRegistry {
     double w = DEFAULT_SIZE;
     double h = DEFAULT_SIZE;
 
-    if (isPigPart(id, mainCharacterId)) {
-      return new PigPartSpec(id, mass, w, h);
-    }
     VehiclePartSpec existing = getIfPresent(id);
     if (existing != null) {
       return existing;
+    }
+    if (isWheelPart(id)) {
+      return new StructuralPartSpec(id, JointStyle.WHEEL, mass, w, h);
+    }
+    if (isPigPart(id, mainCharacterId)) {
+      return new PigPartSpec(id, mass, w, h);
     }
     if (!ci.buttons().isEmpty()) {
       double maxMagnitude = ci.buttons().stream()
@@ -93,6 +96,10 @@ public final class VehiclePartRegistry {
   private boolean isPigPart(String id, String mainCharacterId) {
     return id != null
         && (id.equals(mainCharacterId) || id.toLowerCase(Locale.ROOT).contains("pig"));
+  }
+
+  private boolean isWheelPart(String id) {
+    return id != null && id.toLowerCase(Locale.ROOT).contains("wheel");
   }
 
   private VehiclePartSpec getIfPresent(String paletteName) {

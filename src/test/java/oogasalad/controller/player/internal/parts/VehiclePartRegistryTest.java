@@ -38,6 +38,39 @@ class VehiclePartRegistryTest {
   }
 
   @Test
+  void RegisterFromConfig_WoodWheelMainCharacter_PreservesWheelJointStyle() throws IOException {
+    VehiclePartRegistry registry = new VehiclePartRegistry();
+    Path gameFile = tempDir.resolve("wheel-main-character.json");
+    Files.writeString(gameFile, """
+        {"gameId":"test","mainCharacterId":"Wood Wheel",
+         "components":[{"id":"Wood Wheel","spriteUrl":"","mass":2,"buttons":[]}],
+         "staticComponents":[],"terrainTypes":[]}
+        """);
+
+    registry.registerFromConfig(new GameConfigImpl(gameFile.toString()));
+
+    assertEquals(JointStyle.WHEEL, registry.get("Wood Wheel").jointStyle());
+  }
+
+  @Test
+  void RegisterFromConfig_GenericWheelId_InfersWheelJointStyle() throws IOException {
+    VehiclePartRegistry registry = new VehiclePartRegistry();
+    Path gameFile = tempDir.resolve("generic-wheel.json");
+    Files.writeString(gameFile, """
+        {"gameId":"test","mainCharacterId":"body",
+         "components":[
+           {"id":"body","spriteUrl":"","mass":1,"buttons":[]},
+           {"id":"Wheel","spriteUrl":"","mass":2,"buttons":[]}
+         ],
+         "staticComponents":[],"terrainTypes":[]}
+        """);
+
+    registry.registerFromConfig(new GameConfigImpl(gameFile.toString()));
+
+    assertEquals(JointStyle.WHEEL, registry.get("Wheel").jointStyle());
+  }
+
+  @Test
   void RegisterFromConfig_FanCatalogComponentMatchesBuiltIn_PreservesBuiltInFanThrust()
       throws IOException {
     VehiclePartRegistry registry = new VehiclePartRegistry();
