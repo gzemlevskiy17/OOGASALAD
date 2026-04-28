@@ -1,7 +1,7 @@
 {
   "gameMetadata" : {
-    "levelName" : "Rolling Hills",
-    "gameType" : "badpiggies",
+    "levelName" : "Untitled Level",
+    "gameType": "iuriiworld2",
     "screenWidth" : 3200.0,
     "screenHeight" : 1600.0,
     "gravity" : -9.8,
@@ -9,86 +9,51 @@
   },
   "map" : {
     "knotLocations" : [ {
-      "x" : 0.0,
-      "y" : 1100.0
+      "x": 14.0,
+      "y": 308.5
+    },
+      {
+        "x": 262.0,
+        "y": 127.5
     }, {
-      "x" : 400.0,
-      "y" : 1080.0
+        "x": 442.0,
+        "y": 295.5
     }, {
-      "x" : 800.0,
-      "y" : 1040.0
+        "x": 629.0,
+        "y": 128.5
     }, {
-      "x" : 1200.0,
-      "y" : 1060.0
+        "x": 792.0,
+        "y": 199.5
     }, {
-      "x" : 1600.0,
-      "y" : 1020.0
+        "x": 944.0,
+        "y": 142.5
     }, {
-      "x" : 2000.0,
-      "y" : 1050.0
-    }, {
-      "x" : 2400.0,
-      "y" : 1070.0
-    }, {
-      "x" : 2800.0,
-      "y" : 1040.0
-    }, {
-      "x" : 3200.0,
-      "y" : 1060.0
-    }, {
-      "x" : 7.0,
-      "y" : 405.0
-    }, {
-      "x" : 1047.0,
-      "y" : 394.0
+        "x": 1127.5,
+        "y": 273.5
+      },
+      {
+        "x": 1334.5,
+        "y": 144.5
+      },
+      {
+        "x": 1594.5,
+        "y": 236.5
+      },
+      {
+        "x": 1671.5,
+        "y": 161.5
+      },
+      {
+        "x": 1889.5,
+        "y": 220.5
     } ],
-    "objects" : [ {
-      "type" : "Coin",
-      "position" : {
-        "x" : 600.0,
-        "y" : 1000.0
-      }
-    }, {
-      "type" : "Heart",
-      "position" : {
-        "x" : 1000.0,
-        "y" : 980.0
-      }
-    }, {
-      "type" : "Coin",
-      "position" : {
-        "x" : 1400.0,
-        "y" : 1000.0
-      }
-    }, {
-      "type" : "Bomb",
-      "position" : {
-        "x" : 1800.0,
-        "y" : 990.0
-      }
-    }, {
-      "type" : "XPBoost",
-      "position" : {
-        "x" : 2200.0,
-        "y" : 1010.0
-      }
-    }, {
-      "type" : "Coin",
-      "position" : {
-        "x" : 2600.0,
-        "y" : 990.0
-      }
-    }, {
-      "type" : "GoalLine",
-      "position" : {
-        "x" : 3100.0,
-        "y" : 900.0
-      }
-    } ],
-    "terrainOptions" : [ "GrassHills", "Spline Terrain" ],
+    "objects" : [ ],
+    "terrainOptions": [
+      "Spline Terrain"
+    ],
     "spawnPoint" : {
-      "x" : 350.0,
-      "y" : 300.0
+      "x" : 100.0,
+      "y" : 100.0
     }
   },
   "mainCharacter" : {

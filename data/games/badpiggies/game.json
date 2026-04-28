@@ -98,12 +98,12 @@
     "buttons" : [ ]
   }, {
     "id" : "Wood Wheel",
-    "spriteUrl" : "",
+    "spriteUrl" : "data/assets/vehicle/bp_woodWheelWheel.png",
     "mass" : 2.0,
     "buttons" : [ ]
   }, {
     "id" : "Metal Wheel",
-    "spriteUrl" : "",
+    "spriteUrl" : "data/assets/vehicle/bp_metalWheelWheel.png",
     "mass" : 3.0,
     "buttons" : [ ]
   } ],
