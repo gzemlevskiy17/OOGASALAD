@@ -26,6 +26,8 @@ final class AuthoringScreenLayoutFactory {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.AuthoringScreen");
+  private static final double SPLINE_COMMIT_WIDTH_RATIO = 0.7;
+  private static final double FIT_BUTTON_WIDTH_RATIO = 1.5;
 
   private final Node canvasHost;
   private final Node terrainPropertiesRoot;
@@ -112,44 +114,11 @@ final class AuthoringScreenLayoutFactory {
     double actionWidth = d("topActionButtonWidth");
     double actionHeight = d("topActionButtonHeight");
 
-    Button selectButton = createActionButton(s("selectButtonText"), actionWidth, actionHeight);
-    Button splineButton = createActionButton(s("splineButtonText"), actionWidth, actionHeight);
-    Button splineCommitButton = createActionButton(
-        s("splineCommitButtonText"), actionWidth * 0.7, actionHeight);
-    splineCommitButton.setOnAction(event -> commitSplineHandler.run());
+    HBox toolButtonBox = buildToolButtons(actionWidth, actionHeight);
+    HBox rightButtons = buildRightButtons(actionWidth, actionHeight);
 
-    Button undoButton = createActionButton(s("undoButtonText"), actionWidth, actionHeight);
-    Button redoButton = createActionButton(s("redoButtonText"), actionWidth, actionHeight);
-    undoButton.setOnAction(event -> undoHandler.run());
-    redoButton.setOnAction(event -> redoHandler.run());
-
-    Button clearButton = createActionButton(s("clearButtonText"), actionWidth, actionHeight);
-    clearButton.setOnAction(event -> clearHandler.run());
-
-    double zoomButtonWidth = d("zoomButtonWidth");
-    Button zoomInButton = createActionButton(s("zoomInButtonText"), zoomButtonWidth, actionHeight);
-    Button zoomOutButton = createActionButton(s("zoomOutButtonText"), zoomButtonWidth,
-        actionHeight);
-    Button fitButton = createActionButton(s("fitButtonText"), zoomButtonWidth * 1.5,
-        actionHeight);
-    zoomInButton.setOnAction(event -> zoomInHandler.run());
-    zoomOutButton.setOnAction(event -> zoomOutHandler.run());
-    fitButton.setOnAction(event -> fitCanvasHandler.run());
-
-    Button saveButton = createActionButton(s("saveButtonText"), actionWidth, actionHeight);
-    Button runButton = createActionButton(s("runButtonText"), actionWidth, actionHeight);
-    Button loadButton = createActionButton(s("loadButtonText"), actionWidth, actionHeight);
-    saveButton.setOnAction(event -> saveHandler.accept(saveButton.getScene().getWindow()));
-    runButton.setOnAction(event -> runHandler.run());
-    loadButton.setOnAction(event -> loadHandler.accept(loadButton.getScene().getWindow()));
-
-    HBox toolButtonBox = new HBox(d("topBarSpacing"),
-        selectButton, splineButton, splineCommitButton, zoomOutButton, zoomInButton, fitButton);
-    toolButtonBox.setAlignment(Pos.CENTER_LEFT);
-
-    HBox rightButtons = new HBox(
-        d("topBarSpacing"), undoButton, redoButton, clearButton, saveButton, runButton, loadButton);
-    rightButtons.setAlignment(Pos.CENTER_RIGHT);
+    Button selectButton = (Button) toolButtonBox.getChildren().get(0);
+    Button splineButton = (Button) toolButtonBox.getChildren().get(1);
 
     Region spacer = new Region();
     HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -158,6 +127,51 @@ final class AuthoringScreenLayoutFactory {
     topBar.setAlignment(Pos.CENTER_LEFT);
     topBar.getStyleClass().add("authoring-top-bar");
     return new TopBarParts(topBar, selectButton, splineButton);
+  }
+
+  private HBox buildToolButtons(double actionWidth, double actionHeight) {
+    Button selectButton = createActionButton(s("selectButtonText"), actionWidth, actionHeight);
+    Button splineButton = createActionButton(s("splineButtonText"), actionWidth, actionHeight);
+    Button splineCommitButton = createActionButton(
+        s("splineCommitButtonText"), actionWidth * SPLINE_COMMIT_WIDTH_RATIO, actionHeight);
+    splineCommitButton.setOnAction(event -> commitSplineHandler.run());
+
+    double zoomButtonWidth = d("zoomButtonWidth");
+    Button zoomInButton = createActionButton(s("zoomInButtonText"), zoomButtonWidth, actionHeight);
+    Button zoomOutButton = createActionButton(s("zoomOutButtonText"), zoomButtonWidth,
+        actionHeight);
+    Button fitButton = createActionButton(s("fitButtonText"),
+        zoomButtonWidth * FIT_BUTTON_WIDTH_RATIO, actionHeight);
+    zoomInButton.setOnAction(event -> zoomInHandler.run());
+    zoomOutButton.setOnAction(event -> zoomOutHandler.run());
+    fitButton.setOnAction(event -> fitCanvasHandler.run());
+
+    HBox toolButtonBox = new HBox(d("topBarSpacing"),
+        selectButton, splineButton, splineCommitButton, zoomOutButton, zoomInButton, fitButton);
+    toolButtonBox.setAlignment(Pos.CENTER_LEFT);
+    return toolButtonBox;
+  }
+
+  private HBox buildRightButtons(double actionWidth, double actionHeight) {
+    Button undoButton = createActionButton(s("undoButtonText"), actionWidth, actionHeight);
+    Button redoButton = createActionButton(s("redoButtonText"), actionWidth, actionHeight);
+    undoButton.setOnAction(event -> undoHandler.run());
+    redoButton.setOnAction(event -> redoHandler.run());
+
+    Button clearButton = createActionButton(s("clearButtonText"), actionWidth, actionHeight);
+    clearButton.setOnAction(event -> clearHandler.run());
+
+    Button saveButton = createActionButton(s("saveButtonText"), actionWidth, actionHeight);
+    Button runButton = createActionButton(s("runButtonText"), actionWidth, actionHeight);
+    Button loadButton = createActionButton(s("loadButtonText"), actionWidth, actionHeight);
+    saveButton.setOnAction(event -> saveHandler.accept(saveButton.getScene().getWindow()));
+    runButton.setOnAction(event -> runHandler.run());
+    loadButton.setOnAction(event -> loadHandler.accept(loadButton.getScene().getWindow()));
+
+    HBox rightButtons = new HBox(
+        d("topBarSpacing"), undoButton, redoButton, clearButton, saveButton, runButton, loadButton);
+    rightButtons.setAlignment(Pos.CENTER_RIGHT);
+    return rightButtons;
   }
 
   private HBox buildScreenModeRow(Button levelModeButton, Button vehicleModeButton) {

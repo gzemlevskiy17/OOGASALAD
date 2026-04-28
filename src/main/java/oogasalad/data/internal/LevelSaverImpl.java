@@ -77,6 +77,7 @@ public class LevelSaverImpl implements LevelSaver {
     meta.put("screenHeight", attrs.getScreenHeight());
     meta.put("gravity", attrs.getGravity());
     meta.put("drag", attrs.getDrag());
+    meta.put("backgroundImage", attrs.getBackgroundImage());
     return meta;
   }
 

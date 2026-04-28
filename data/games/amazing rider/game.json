@@ -1,0 +1,56 @@
+{
+  "gameId" : "amazing rider",
+  "mainCharacterId" : "bike2",
+  "components" : [ {
+    "id" : "bike1",
+    "spriteUrl" : "data/assets/rider_bike_1.png",
+    "mass" : 10.0,
+    "buttons" : [ {
+      "name" : "right",
+      "direction" : {
+        "x" : 1.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "up",
+      "direction" : {
+        "x" : 0.0,
+        "y" : 0.5
+      }
+    } ]
+  }, {
+    "id" : "bike2",
+    "spriteUrl" : "data/assets/rider_bike_2.png",
+    "mass" : 10.0,
+    "buttons" : [ {
+      "name" : "right",
+      "direction" : {
+        "x" : 1.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "up",
+      "direction" : {
+        "x" : 0.0,
+        "y" : 0.5
+      }
+    } ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "GoalLine",
+    "spriteUrl" : "",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "finish",
+      "amount" : 0.0
+    }
+  } ],
+  "terrainTypes" : [ {
+    "id" : "main track",
+    "spriteUrl" : "data/assets/neon_world_background.png.jpg",
+    "visualColor" : null,
+    "trackColor" : "#ffffff",
+    "friction" : 0.5
+  } ],
+  "cheats" : [ ]
+}

@@ -39,8 +39,9 @@ class TerrainSplineTest {
 
   @Test
   void constructor_nullSpline_throws() {
-    assertThrows(NullPointerException.class,
+    NullPointerException exception = assertThrows(NullPointerException.class,
         () -> new TerrainSpline(null, "", false, 0.5, "#fff"));
+    assertNotNull(exception);
   }
 
   @Test
@@ -110,11 +111,13 @@ class TerrainSplineTest {
 
   @Test
   void explicitAttributes_roundTripThroughGetters() {
-    TerrainSpline terrain = new TerrainSpline(spline, "assets/dirt.png", true, 0.7, "#00ff00");
+    TerrainSpline terrain = new TerrainSpline("dirt", spline, "assets/dirt.png", true, 0.7,
+        "#00ff00", "#123456");
 
     assertEquals("assets/dirt.png", terrain.getSprite());
     assertTrue(terrain.isTiled());
     assertEquals("#00ff00", terrain.getColor());
+    assertEquals("#123456", terrain.getTrackColor());
     assertEquals(0.7, terrain.getFriction(), TOLERANCE);
   }
 

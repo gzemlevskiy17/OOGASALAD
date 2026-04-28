@@ -14,8 +14,8 @@ import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
@@ -207,6 +207,12 @@ public class ScreenFactory {
         new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set);
     gameAuthoringScreen = new GameAuthoringScreenImpl(this::guardedOutcome,
         authoringScreen::loadLevelFromPath, authoringScreen::setGameConfig);
+    registerAuthoringScreens(authoringScreen);
+    registerPlayerScreens();
+    registerGameplayScreens();
+  }
+
+  private void registerAuthoringScreens(AuthoringScreenImpl authoringScreen) {
     screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authController::handle,
             authService.session()::isLoggedIn));
@@ -227,6 +233,9 @@ public class ScreenFactory {
             gameAuthoringScreen::resetForNewCatalog));
     screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY, gameAuthoringScreen);
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
+  }
+
+  private void registerPlayerScreens() {
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected,
             this::scanLevels));
@@ -236,7 +245,9 @@ public class ScreenFactory {
         new oogasalad.view.core.internal.PaletteSpriteRegistry(),
         new oogasalad.model.player.internal.DefaultBuildRulesRegistry());
     screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);
+  }
 
+  private void registerGameplayScreens() {
     GameplaySessionFactoryImpl sessionFactory = new GameplaySessionFactoryImpl(
         levelLoader,
         gameLoader,
