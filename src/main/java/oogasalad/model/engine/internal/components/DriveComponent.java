@@ -9,50 +9,48 @@ import oogasalad.model.engine.api.Vector;
  * engine can apply its force each frame when the player activates it.
  *
  * @author Paulina Vvedenskaya
+ * @author Georgiy Zemlevskiy
  */
-public class DriveComponent extends VehicleComponent implements Driveable {
+public abstract class DriveComponent extends VehicleComponent implements Driveable {
 
-  private static final double DEFAULT_THRUST_FORCE = 3000.0;
+  private static final double DEFAULT_THRUST_FORCE = 3000.0; //TODO: properties
+  private static final double DEFAULT_RESTITUTION = 0.5;
 
-  private Vector thrustDirection;
   private double thrustForce;
   private boolean driveEnabled;
   private boolean playerControllable;
 
-  private static final double DEFAULT_RESTITUTION = 0.5;
-
   public DriveComponent(double x, double y, double rotation, double mass, double friction,
       double maxHp, String displayName, double bodyWidth, double bodyHeight) {
+    double momentOfInertia = mass * (bodyWidth * bodyWidth + bodyHeight * bodyHeight) / 12.0;
+    ConvexPolygon polygon = ConvexPolygon.rotatedBox(x, y, bodyWidth, bodyHeight, rotation);
     super(
         x,
         y,
         rotation,
-        ConvexPolygon.rotatedBox(x, y, bodyWidth, bodyHeight, rotation),
+        polygon,
         "",
         friction,
         mass,
-        mass * (bodyWidth * bodyWidth + bodyHeight * bodyHeight) / 12.0,
+        momentOfInertia,
         DEFAULT_RESTITUTION,
         true,
         maxHp,
         displayName,
         bodyWidth,
         bodyHeight);
-    this.thrustDirection = new Vector(1, 0);
     this.thrustForce = DEFAULT_THRUST_FORCE;
     this.driveEnabled = false;
     this.playerControllable = true;
   }
 
-  @Override
-  public Vector getThrustDirection() {
-    return thrustDirection;
-  }
+//  @Override
+//  public void setThrustDirection(Vector thrustDirection) {
+//    this.thrustDirection = thrustDirection;
+//  }
 
   @Override
-  public void setThrustDirection(Vector thrustDirection) {
-    this.thrustDirection = thrustDirection;
-  }
+  public abstract Vector getThrustDirection();
 
   @Override
   public double getThrustForce() {
@@ -82,10 +80,5 @@ public class DriveComponent extends VehicleComponent implements Driveable {
   @Override
   public void setPlayerControllable(boolean playerControllable) {
     this.playerControllable = playerControllable;
-  }
-
-  @Override
-  public boolean isTrigger() {
-    return false;
   }
 }
