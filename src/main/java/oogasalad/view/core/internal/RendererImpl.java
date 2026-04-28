@@ -16,6 +16,16 @@ import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
 import oogasalad.view.core.api.Sprite;
 
+/**
+ * Default renderer: keeps one JavaFX node per renderable instance, reuses it across frames,
+ * sets layout from world position minus camera position, applies rotation when the node allows
+ * it (see Sprite.USES_RENDERABLE_ROTATION_KEY on the node’s properties), runs an optional
+ * per-frame callback to sync visuals, and removes nodes whose renderables were not passed in
+ * this frame. Uses identity, not equals, to match renderables to nodes.
+ *
+ * @author Iurii Beliaev
+ */
+
 public class RendererImpl implements Renderer {
 
   private static final double DEFAULT_MARKER_RADIUS = 4.0;
