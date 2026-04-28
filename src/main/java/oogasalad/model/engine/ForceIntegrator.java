@@ -1,6 +1,7 @@
 package oogasalad.model.engine;
 
 import java.util.Collection;
+import java.util.List;
 import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.PhysicsEnvironment;
@@ -21,38 +22,30 @@ class ForceIntegrator {
     this.world = world;
   }
 
-  void resetForces(Collection<GameObject> objects) {
-    for (GameObject object : objects) {
-      if (object instanceof DynamicComponent dynamicComponent) {
-        dynamicComponent.resetForces();
-      }
+  void resetForces(List<DynamicComponent> dynamicComponents) {
+    for (DynamicComponent dynamicComponent : dynamicComponents) {
+      dynamicComponent.resetForces();
     }
   }
 
-  void applyForces(Collection<GameObject> objects) {
+  void applyForces(List<DynamicComponent> dynamicComponents) {
     PhysicsEnvironment physics = world.getPhysicsEnvironment();
     Vector gravity = physics.gravity();
     double drag = physics.drag();
-    for (GameObject object : objects) {
-      if (object instanceof DynamicComponent dynamicComponent) {
-        applyForcesToComponent(dynamicComponent, gravity, drag);
-      }
+    for (DynamicComponent dynamicComponent : dynamicComponents) {
+      applyForcesToComponent(dynamicComponent, gravity, drag);
     }
   }
 
-  void applyForcesToAcceleration(Collection<GameObject> objects) {
-    for (GameObject object : objects) {
-      if (object instanceof DynamicComponent dynamicComponent) {
-        dynamicComponent.applyForceToAcceleration();
-      }
+  void applyForcesToAcceleration(List<DynamicComponent> dynamicComponents) {
+    for (DynamicComponent dynamicComponent : dynamicComponents) {
+      dynamicComponent.applyForceToAcceleration();
     }
   }
 
-  void updateSleepStates(Collection<GameObject> objects, double elapsedTime) {
-    for (GameObject object : objects) {
-      if (object instanceof DynamicComponent dynamicComponent) {
-        dynamicComponent.updateSleepState(elapsedTime);
-      }
+  void updateSleepStates(List<DynamicComponent> dynamicComponents, double elapsedTime) {
+    for (DynamicComponent dynamicComponent : dynamicComponents) {
+      dynamicComponent.updateSleepState(elapsedTime);
     }
   }
 
