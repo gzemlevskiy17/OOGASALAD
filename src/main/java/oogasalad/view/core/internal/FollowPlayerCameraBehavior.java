@@ -1,6 +1,7 @@
 package oogasalad.view.core.internal;
 
 import java.util.function.Supplier;
+import oogasalad.view.core.api.AbstractCameraBehavior;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.Renderable;
 

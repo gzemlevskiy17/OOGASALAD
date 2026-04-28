@@ -1,7 +1,4 @@
-package oogasalad.view.core.internal;
-
-import oogasalad.view.core.api.Camera;
-import oogasalad.view.core.api.CameraBehavior;
+package oogasalad.view.core.api;
 
 /**
  * Default structure for camera motion: each update reads a desired position from subclasses,

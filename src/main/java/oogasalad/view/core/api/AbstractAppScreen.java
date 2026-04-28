@@ -1,9 +1,8 @@
-package oogasalad.view.core.internal;
+package oogasalad.view.core.api;
 
 import java.util.function.Consumer;
 import javafx.scene.Parent;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.view.core.api.AppScreen;
 
 /**
  * Base AppScreen wiring: subclasses build the JavaFX subtree once via createRoot(), and expose

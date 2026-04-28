@@ -24,7 +24,7 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.internal.LevelScanner;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
 
 /**
  * Screen on which the player chooses the world and the level they want to play
