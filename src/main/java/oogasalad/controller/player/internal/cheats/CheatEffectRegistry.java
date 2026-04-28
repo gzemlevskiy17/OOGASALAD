@@ -1,9 +1,11 @@
 package oogasalad.controller.player.internal.cheats;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.function.BiFunction;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.CheatEffectInfo;
@@ -31,6 +33,7 @@ public class CheatEffectRegistry {
 
   private final CheatTargetResolver targetResolver;
   private final Map<String, CheatEffectFactory> factories = new LinkedHashMap<>();
+  private final Map<String, String> registeredTypeNames = new LinkedHashMap<>();
   private final Map<String, BiFunction<CollisionAction, CheatRuntimeContext, CollisionEffect>>
       collisionEffects = new LinkedHashMap<>();
 
@@ -58,9 +61,18 @@ public class CheatEffectRegistry {
    * Adds or replaces a primitive cheat effect factory.
    */
   public CheatEffectRegistry register(String type, CheatEffectFactory factory) {
-    factories.put(normalize(type), factory);
+    String effectType = normalize(type);
+    factories.put(effectType, factory);
+    registeredTypeNames.put(effectType, type);
     LOG.debug("Registered cheat effect primitive '{}'", type);
     return this;
+  }
+
+  /**
+   * Returns the registered primitive effect type names in registration order.
+   */
+  public List<String> registeredTypes() {
+    return List.copyOf(registeredTypeNames.values());
   }
 
   /**
@@ -116,15 +128,34 @@ public class CheatEffectRegistry {
 
   private CheatEffect spawnPowerupEffect(CheatEffectInfo info, CheatTargetResolver resolver) {
     String componentId = requiredParameter(info, "componentId");
-    double x = requiredDouble(info, "x");
-    double y = requiredDouble(info, "y");
     return context -> {
+      SpawnLocation location = spawnLocation(info, resolver, context);
       StaticComponentInfo componentInfo = lookupStaticComponent(context, componentId);
-      PickupComponent pickup = buildPickup(componentInfo, x, y, context);
+      PickupComponent pickup = buildPickup(componentInfo, location.x(), location.y(), context);
       pickup.setOnDestroyHook(() -> context.world().destroyObject(pickup));
       context.world().addObject(pickup);
-      LOG.info("Spawned cheat powerup '{}' at ({}, {})", componentInfo.id(), x, y);
+      LOG.info("Spawned cheat powerup '{}' at ({}, {})", componentInfo.id(), location.x(),
+          location.y());
     };
+  }
+
+  private SpawnLocation spawnLocation(CheatEffectInfo info, CheatTargetResolver resolver,
+      CheatRuntimeContext context) {
+    OptionalDouble x = optionalDouble(info, "x");
+    OptionalDouble y = optionalDouble(info, "y");
+    if (x.isPresent() && y.isPresent()) {
+      return new SpawnLocation(x.getAsDouble(), y.getAsDouble());
+    }
+    if (x.isPresent() || y.isPresent()) {
+      throw new CheatConfigurationException(
+          "Cheat effect '" + info.type() + "' must define both x and y or neither.");
+    }
+    return resolver.resolve(info.target(), context).stream()
+        .findFirst()
+        .map(target -> new SpawnLocation(target.x(), target.y()))
+        .orElseThrow(() -> new CheatConfigurationException(
+            "Cheat effect '" + info.type()
+                + "' requires x/y parameters or a target that resolves to an object."));
   }
 
   private void registerCollisionEffects() {
@@ -179,6 +210,19 @@ public class CheatEffectRegistry {
 
   private double requiredDouble(CheatEffectInfo info, String parameterName) {
     String rawValue = requiredParameter(info, parameterName);
+    return parseDouble(info, parameterName, rawValue);
+  }
+
+  private OptionalDouble optionalDouble(CheatEffectInfo info, String parameterName) {
+    Optional<String> rawValue = Optional.ofNullable(info.parameters().get(parameterName))
+        .filter(value -> !value.isBlank());
+    if (rawValue.isEmpty()) {
+      return OptionalDouble.empty();
+    }
+    return OptionalDouble.of(parseDouble(info, parameterName, rawValue.get()));
+  }
+
+  private double parseDouble(CheatEffectInfo info, String parameterName, String rawValue) {
     try {
       return Double.parseDouble(rawValue);
     } catch (NumberFormatException e) {
@@ -200,5 +244,8 @@ public class CheatEffectRegistry {
         .orElse("")
         .trim()
         .toLowerCase(Locale.ROOT);
+  }
+
+  private record SpawnLocation(double x, double y) {
   }
 }

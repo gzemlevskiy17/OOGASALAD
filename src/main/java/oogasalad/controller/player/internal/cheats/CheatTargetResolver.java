@@ -24,6 +24,7 @@ public class CheatTargetResolver {
   private static final CheatTargetInfo WORLD_TARGET = new CheatTargetInfo("world", "");
 
   private final Map<String, CheatTargetSelector> selectors = new LinkedHashMap<>();
+  private final Map<String, String> registeredKindNames = new LinkedHashMap<>();
 
   /**
    * Creates the default selector registry for gameplay cheats.
@@ -42,9 +43,18 @@ public class CheatTargetResolver {
    * Adds or replaces a target selector.
    */
   public CheatTargetResolver register(String kind, CheatTargetSelector selector) {
-    selectors.put(normalize(kind), selector);
+    String selectorKind = normalize(kind);
+    selectors.put(selectorKind, selector);
+    registeredKindNames.put(selectorKind, kind);
     LOG.debug("Registered cheat target selector '{}'", kind);
     return this;
+  }
+
+  /**
+   * Returns the registered target selector kind names in registration order.
+   */
+  public List<String> registeredKinds() {
+    return List.copyOf(registeredKindNames.values());
   }
 
   /**
