@@ -15,6 +15,8 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -260,8 +262,8 @@ class FinishLineRoundTripTest {
     }
 
     @Override
-    public double getDragCoefficient() {
-      return 0.0;
+    public PhysicsEnvironment getPhysicsEnvironment() {
+      return new PhysicsEnvironment(new Vector(0, -9.8), 0.0);
     }
   }
 }

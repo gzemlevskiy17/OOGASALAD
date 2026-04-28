@@ -28,9 +28,10 @@ class AuthoringEntryScreenImplNavigationTest extends DukeApplicationTest {
   public void start(Stage stage) {
     Map<String, List<String>> worlds = new LinkedHashMap<>();
     worlds.put("forest", List.of("level1"));
+    LevelScanner.ScanResult scanResult = new LevelScanner.ScanResult(worlds, List.of());
     screen = new AuthoringEntryScreenImpl(
         outcome -> events.add("outcome:" + outcome),
-        new LevelScanner.ScanResult(worlds, List.of()),
+        () -> scanResult,
         world -> events.add("level-world:" + world),
         level -> events.add("level:" + level),
         world -> events.add("edit-world:" + world),
