@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
@@ -36,8 +37,7 @@ final class StaticObjectCatalogTab {
   private static final double DEFAULT_POWER_UP_MASS = 0;
   private static final double LIST_WIDTH = 260;
   private static final double TAB_CONTENT_SPACING = 12;
-  private static final double DEFAULT_HP_CHANGE = 0;
-  private static final double DEFAULT_SCORE_AMOUNT = 0;
+  private static final double DEFAULT_AMOUNT = 0;
 
   private final GameCatalogDraft draft;
   private final SpriteImportService spriteImportService;
@@ -60,64 +60,60 @@ final class StaticObjectCatalogTab {
     TextField idF = AuthoringValueHints.newTextField("catalog.static.id");
     TextField spriteF = AuthoringValueHints.newTextField("catalog.static.spriteUrl");
     TextField massF = AuthoringValueHints.newTextField("catalog.static.mass");
-    TextField hpChangeF = AuthoringValueHints.newTextField("catalog.static.hpDelta");
-    TextField scoreAmountF = AuthoringValueHints.newTextField("catalog.static.scoreAmount");
+    TextField amountF = AuthoringValueHints.newTextField("catalog.static.amount");
 
-    Button addStaticObject = new Button("Add Decoration");
-    addStaticObject.setOnAction(e -> {
-      draft.staticComponents().add(new StaticComponentInfo(
-          idF.getText().strip(),
-          spriteF.getText().strip(),
-          parseDouble(massF.getText(), DEFAULT_MASS),
-          null));
-      refresh();
-      clearFields(idF, spriteF, massF, hpChangeF, scoreAmountF);
-    });
+    ComboBox<String> typeDropdown = new ComboBox<>();
+    typeDropdown.getItems().addAll("Decoration", "HP Object", "Score Object", "Finish Line");
+    typeDropdown.setValue("Decoration");
+    typeDropdown.setId("static-type-dropdown");
 
-    Button addHpObject = new Button("Add HP Object");
-    addHpObject.setOnAction(e -> {
-      double hpChange = parseDouble(hpChangeF.getText(), DEFAULT_HP_CHANGE);
-      if (hpChange == DEFAULT_HP_CHANGE) {
-        alertService.showError("Invalid HP",
-            "HP change must be nonzero. Use positive to heal, negative to damage.");
+    Button addButton = new Button("Add");
+    addButton.setOnAction(e -> {
+      String selected = typeDropdown.getValue();
+      if (selected == null) {
+        alertService.showError("No Type", "Please select a type from the dropdown.");
         return;
       }
-      draft.staticComponents().add(new StaticComponentInfo(
-          idF.getText().strip(),
-          spriteF.getText().strip(),
-          parseDouble(massF.getText(), DEFAULT_MASS),
-          buildHpAction(hpChange)));
-      refresh();
-      clearFields(idF, spriteF, massF, hpChangeF, scoreAmountF);
-    });
-
-    Button addScoreObject = new Button("Add Score Object");
-    addScoreObject.setOnAction(e -> {
-      double scoreAmount = parseDouble(scoreAmountF.getText(), DEFAULT_SCORE_AMOUNT);
-      if (scoreAmount <= DEFAULT_SCORE_AMOUNT) {
-        alertService.showError("Invalid Score",
-            "Score amount must be greater than zero.");
-        return;
+      if ("Decoration".equals(selected)) {
+        draft.staticComponents().add(new StaticComponentInfo(
+            idF.getText().strip(),
+            spriteF.getText().strip(),
+            parseDouble(massF.getText(), DEFAULT_MASS),
+            null));
+      } else if ("HP Object".equals(selected)) {
+        double hpChange = parseDouble(amountF.getText(), DEFAULT_AMOUNT);
+        if (hpChange == DEFAULT_AMOUNT) {
+          alertService.showError("Invalid HP",
+              "HP change must be nonzero. Use positive to heal, negative to damage.");
+          return;
+        }
+        draft.staticComponents().add(new StaticComponentInfo(
+            idF.getText().strip(),
+            spriteF.getText().strip(),
+            parseDouble(massF.getText(), DEFAULT_MASS),
+            buildHpAction(hpChange)));
+      } else if ("Score Object".equals(selected)) {
+        double scoreAmount = parseDouble(amountF.getText(), DEFAULT_AMOUNT);
+        if (scoreAmount <= DEFAULT_AMOUNT) {
+          alertService.showError("Invalid Score",
+              "Score amount must be greater than zero.");
+          return;
+        }
+        draft.staticComponents().add(new StaticComponentInfo(
+            idF.getText().strip(),
+            spriteF.getText().strip(),
+            parseDouble(massF.getText(), DEFAULT_MASS),
+            new CollisionAction("score", scoreAmount)));
+      } else if ("Finish Line".equals(selected)) {
+        String finishId = idF.getText().strip().isBlank() ? "GoalLine" : idF.getText().strip();
+        draft.staticComponents().add(new StaticComponentInfo(
+            finishId,
+            spriteF.getText().strip(),
+            DEFAULT_POWER_UP_MASS,
+            new CollisionAction("finish", 0)));
       }
-      draft.staticComponents().add(new StaticComponentInfo(
-          idF.getText().strip(),
-          spriteF.getText().strip(),
-          parseDouble(massF.getText(), DEFAULT_MASS),
-          new CollisionAction("score", scoreAmount)));
       refresh();
-      clearFields(idF, spriteF, massF, hpChangeF, scoreAmountF);
-    });
-
-    Button addFinishLine = new Button("Add Finish Line");
-    addFinishLine.setOnAction(e -> {
-      String finishId = idF.getText().strip().isBlank() ? "GoalLine" : idF.getText().strip();
-      draft.staticComponents().add(new StaticComponentInfo(
-          finishId,
-          spriteF.getText().strip(),
-          DEFAULT_POWER_UP_MASS,
-          new CollisionAction("finish", 0)));
-      refresh();
-      clearFields(idF, spriteF, massF, hpChangeF, scoreAmountF);
+      clearFields(idF, spriteF, massF, amountF);
     });
 
     Button remove = new Button("Remove");
@@ -129,8 +125,8 @@ final class StaticObjectCatalogTab {
 
     return new Tab("Static Objects", buildTabContent(staticListView,
         formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
-        formRow("HP Change", hpChangeF), formRow("Score Amount", scoreAmountF),
-        buttonBar(addStaticObject, addHpObject, addScoreObject, addFinishLine, remove)));
+        formRow("Type", typeDropdown), formRow("Amount", amountF),
+        buttonBar(addButton, remove)));
   }
 
   void refresh() {
@@ -143,7 +139,7 @@ final class StaticObjectCatalogTab {
   }
 
   private CollisionAction buildHpAction(double hpChange) {
-    if (hpChange > DEFAULT_HP_CHANGE) {
+    if (hpChange > DEFAULT_AMOUNT) {
       return new CollisionAction("heal", hpChange);
     }
     return new CollisionAction("damage", Math.abs(hpChange));
@@ -181,6 +177,12 @@ final class StaticObjectCatalogTab {
     Label label = new Label(labelText + ":");
     label.setPrefWidth(DEFAULT_WIDTH);
     return new HBox(FORM_ROW_WIDTH, label, field);
+  }
+
+  private HBox formRow(String labelText, ComboBox<String> comboBox) {
+    Label label = new Label(labelText + ":");
+    label.setPrefWidth(DEFAULT_WIDTH);
+    return new HBox(FORM_ROW_WIDTH, label, comboBox);
   }
 
   private HBox buttonBar(Button... buttons) {
