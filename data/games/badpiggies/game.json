@@ -1,7 +1,188 @@
 {
   "gameId" : "badpiggies",
   "mainCharacterId" : "BigPig",
-  "components" : [ ],
-  "staticComponents" : [ ],
-  "terrainTypes" : [ ]
+  "components" : [ {
+    "id" : "BigPig",
+    "spriteUrl" : "data/assets/vehicle/bp_bigPig.png",
+    "mass" : 10.0,
+    "buttons" : [ {
+      "name" : "Move Left",
+      "direction" : {
+        "x" : -300.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Move Right",
+      "direction" : {
+        "x" : 300.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Jump",
+      "direction" : {
+        "x" : 0.0,
+        "y" : 400.0
+      }
+    } ]
+  }, {
+    "id" : "SmallPig",
+    "spriteUrl" : "data/assets/vehicle/bp_smallPig.png",
+    "mass" : 5.0,
+    "buttons" : [ {
+      "name" : "Move Left",
+      "direction" : {
+        "x" : -200.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Move Right",
+      "direction" : {
+        "x" : 200.0,
+        "y" : 0.0
+      }
+    } ]
+  }, {
+    "id" : "Balloon",
+    "spriteUrl" : "data/assets/vehicle/bp_balloon.png",
+    "mass" : 1.0,
+    "buttons" : [ {
+      "name" : "Inflate",
+      "direction" : {
+        "x" : 0.0,
+        "y" : 500.0
+      }
+    } ]
+  }, {
+    "id" : "Fan",
+    "spriteUrl" : "data/assets/vehicle/bp_fan.png",
+    "mass" : 3.0,
+    "buttons" : [ {
+      "name" : "Thrust Left",
+      "direction" : {
+        "x" : -400.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Thrust Right",
+      "direction" : {
+        "x" : 400.0,
+        "y" : 0.0
+      }
+    } ]
+  }, {
+    "id" : "Engine",
+    "spriteUrl" : "data/assets/vehicle/bp_engine.png",
+    "mass" : 8.0,
+    "buttons" : [ {
+      "name" : "Drive Left",
+      "direction" : {
+        "x" : -500.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Drive Right",
+      "direction" : {
+        "x" : 500.0,
+        "y" : 0.0
+      }
+    } ]
+  }, {
+    "id" : "Frame",
+    "spriteUrl" : "data/assets/vehicle/bp_frame.png",
+    "mass" : 6.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Sled",
+    "spriteUrl" : "data/assets/vehicle/bp_sled.png",
+    "mass" : 4.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Wood Wheel",
+    "spriteUrl" : "",
+    "mass" : 2.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Metal Wheel",
+    "spriteUrl" : "",
+    "mass" : 3.0,
+    "buttons" : [ ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "Rock",
+    "spriteUrl" : "data/assets/bp_rock.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 25.0
+    }
+  }, {
+    "id" : "Coin",
+    "spriteUrl" : "data/assets/bp_coin.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "score",
+      "amount" : 10.0
+    }
+  }, {
+    "id" : "Heart",
+    "spriteUrl" : "data/assets/bp_heart.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "heal",
+      "amount" : 25.0
+    }
+  }, {
+    "id" : "Bomb",
+    "spriteUrl" : "data/assets/bp_bomb.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 50.0
+    }
+  }, {
+    "id" : "XPBoost",
+    "spriteUrl" : "data/assets/bp_xp.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "score",
+      "amount" : 50.0
+    }
+  }, {
+    "id" : "GoalLine",
+    "spriteUrl" : "data/assets/bp_goalLine.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "finish",
+      "amount" : 0.0
+    }
+  } ],
+  "terrainTypes" : [ {
+    "id" : "GrassHills",
+    "spriteUrl" : null,
+    "visualColor" : "#4A7C59",
+    "friction" : 0.6
+  }, {
+    "id" : "DirtPath",
+    "spriteUrl" : "data/assets/back.png",
+    "visualColor" : "#8B5E3C",
+    "friction" : 0.4
+  } ],
+  "cheats" : [ {
+    "id" : "test",
+    "name" : "spawnheart",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "SHIFT", "P" ]
+    },
+    "effects" : [ {
+      "type" : "spawnPowerup",
+      "target" : {
+        "kind" : "mainCharacter",
+        "id" : ""
+      },
+      "parameters" : {
+        "componentId" : "heart"
+      }
+    } ]
+  } ]
 }
