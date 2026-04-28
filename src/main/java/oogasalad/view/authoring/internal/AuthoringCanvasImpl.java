@@ -3,46 +3,18 @@ package oogasalad.view.authoring.internal;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.ClosePath;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.Path;
-import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
-import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
-import oogasalad.model.engine.internal.components.AuthoringStaticComponent;
-import oogasalad.model.engine.internal.components.SpawnPointComponent;
-import oogasalad.model.engine.internal.components.TerrainSpline;
-import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
-import oogasalad.view.core.internal.TerrainPaints;
 
 /**
  * JavaFX grid canvas for the level editor.
  *
- * Rendering rules:
- *   TerrainBlock with tiled=true  → repeat texture across the block's bounds (tiled rendering).
- *   TerrainBlock with tiled=false → single scaled sprite, or fallback color if not found.
- *   Grid lines are always drawn on top of placed objects.
- *
- * All grid settings (columns, rows, cellSize, colors, etc.) are read from
- * the AuthoringCanvas.properties resource bundle.
- *
- * Collaborators: AuthoringControllerImpl (calls refreshGrid after model changes,
- *                registers mouse handlers on getVisualRoot()),
- *                WorldImpl (source of objects to render).
+ * <p>All grid settings are read from the AuthoringCanvas.properties resource bundle.
  */
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 
@@ -52,28 +24,26 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private static final Color TERRAIN_STROKE_COLOR = Color.BLACK;
   private static final double ZOOM_MIN = 0.25;
   private static final double ZOOM_MAX = 4.0;
+  private static final double HOVER_PREVIEW_OPACITY = 0.5;
 
   private final Scale zoomTransform = new Scale(1, 1, 0, 0);
-  private double zoomFactor = 1.0;
-
+  private final java.util.List<Node> transientOverlays = new java.util.ArrayList<>();
   private final double cellSize;
-  private int gridCols;
-  private int gridRows;
-  private final int gridLineSpacing;
-  private final Color gridStroke;
-  private final double gridStrokeWidth;
-
   private final Pane root;
   private final World world;
+  private final AuthoringCanvasGridRenderer gridRenderer;
+  private final SpawnGuideRenderer spawnGuideRenderer;
+
+  private double zoomFactor = 1.0;
+  private int gridCols;
+  private int gridRows;
   private AuthoringPlaceable selectedPlaceable;
   private Consumer<AuthoringPlaceable> onObjectSelected = obj -> {};
-  private Consumer<AuthoringPlaceable> onTerrainHoverEnter = p -> {};
+  private Consumer<AuthoringPlaceable> onTerrainHoverEnter = placeable -> {};
   private Runnable onTerrainHoverExit = () -> {};
-
   private Rectangle hoverOverlay;
   private int hoverCol = -1;
   private int hoverRow = -1;
-  private final java.util.List<Node> transientOverlays = new java.util.ArrayList<>();
 
   public AuthoringCanvasImpl() {
     this(null);
@@ -87,16 +57,16 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     this.gridCols = Integer.parseInt(PROPS.getString("columns"));
     this.gridRows = Integer.parseInt(PROPS.getString("rows"));
     this.cellSize = Double.parseDouble(PROPS.getString("cellSize"));
-    this.gridLineSpacing = Integer.parseInt(PROPS.getString("gridLineSpacing"));
-    this.gridStroke = Color.web(PROPS.getString("gridStroke"));
-    this.gridStrokeWidth = Double.parseDouble(PROPS.getString("gridStrokeWidth"));
-    this.selectedPlaceable = null;
+    this.gridRenderer = new AuthoringCanvasGridRenderer(
+        cellSize,
+        Integer.parseInt(PROPS.getString("gridLineSpacing")),
+        Color.web(PROPS.getString("gridStroke")),
+        Double.parseDouble(PROPS.getString("gridStrokeWidth")));
+    this.spawnGuideRenderer = new SpawnGuideRenderer(PROPS, cellSize);
     this.root = new Pane();
     root.getStyleClass().add("authoring-canvas");
     root.getTransforms().add(zoomTransform);
-    double totalWidth = gridCols * cellSize;
-    double totalHeight = gridRows * cellSize;
-    root.setPrefSize(totalWidth, totalHeight);
+    resizeRoot();
     root.setStyle("-fx-background-color: " + PROPS.getString("defaultFill") + ";");
     refreshGrid();
   }
@@ -109,7 +79,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     if (col >= gridCols || row >= gridRows) {
       gridCols = Math.max(gridCols, col + 1);
       gridRows = Math.max(gridRows, row + 1);
-      root.setPrefSize(gridCols * cellSize, gridRows * cellSize);
+      resizeRoot();
     }
     return true;
   }
@@ -135,22 +105,16 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   }
 
   /**
-   * Clears and redraws all authoring objects, grid lines, and spawn reference guides
-   * from the current World state. The spawn guide is drawn LAST so the draggable marker
-   * sits above both placed objects and the grid lines — otherwise grid lines intercept
-   * clicks on the marker and the event bubbles up to the root's paint/draw handler,
-   * making the marker effectively un-draggable while the active tool is DRAW or PAINT.
+   * Clears and redraws authoring objects, grid lines, and spawn reference guides.
    */
   @Override
   public void refreshGrid() {
     clearHoverPreview();
     clearOverlays();
     root.getChildren().clear();
-    if (world != null) {
-      drawObjects();
-    }
-    drawGridLines();
-    drawSpawnGuide();
+    objectRenderer().renderObjects(world, root, gridRows);
+    gridRenderer.drawGridLines(root, gridCols, gridRows);
+    spawnGuideRenderer.drawSpawnGuide(world, root, gridCols);
   }
 
   @Override
@@ -199,7 +163,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     rect.setFill(Color.web(selectedPlaceable.getColor()));
     rect.setStroke(TERRAIN_STROKE_COLOR);
     root.getChildren().add(rect);
-    drawGridLines();
+    gridRenderer.drawGridLines(root, gridCols, gridRows);
   }
 
   @Override
@@ -218,7 +182,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
     int spanCols = selectedPlaceable.colSpan(cellSize);
     int spanRows = selectedPlaceable.rowSpan(cellSize);
-    Color previewColor = Color.web(selectedPlaceable.getColor(), 0.5);
+    Color previewColor = Color.web(selectedPlaceable.getColor(), HOVER_PREVIEW_OPACITY);
 
     hoverOverlay = new Rectangle(
         col * cellSize, row * cellSize,
@@ -239,7 +203,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   @Override
   public void setOnTerrainHoverEnter(Consumer<AuthoringPlaceable> handler) {
-    this.onTerrainHoverEnter = handler != null ? handler : p -> {};
+    this.onTerrainHoverEnter = handler != null ? handler : placeable -> {};
   }
 
   @Override
@@ -269,214 +233,12 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     return zoomFactor;
   }
 
-  private static final String GOAL_LINE_TYPE = "GoalLine";
-  private static final Color GOAL_LINE_COLOR = Color.web("#FFD700", 0.55);
-  private static final Color GOAL_LINE_STROKE = Color.web("#FFD700");
-  private static final double GOAL_LINE_WIDTH_PX = 8.0;
-
-  private void drawObjects() {
-    for (GameObject obj : world.getObjects()) {
-      if (obj instanceof TerrainSpline) {
-        root.getChildren().add(drawSplineObject((TerrainSpline) obj));
-      } else if (obj instanceof AuthoringStaticComponent asc
-          && GOAL_LINE_TYPE.equals(asc.getComponentType())) {
-        root.getChildren().add(drawGoalLineStripe(asc));
-      } else if (obj instanceof AuthoringPlaceable placeable) {
-        root.getChildren().add(drawObject(placeable));
-      }
-      // Non-visual markers (e.g. SpawnPointComponent) live in the world for
-      // save/load and lookup but have no grid representation; drawSpawnGuide()
-      // renders them separately. Blind-casting here previously crashed
-      // refreshGrid(), which left the canvas frozen and un-clickable.
-    }
+  private AuthoringCanvasObjectRenderer objectRenderer() {
+    return new AuthoringCanvasObjectRenderer(cellSize, onObjectSelected, onTerrainHoverEnter,
+        onTerrainHoverExit);
   }
 
-  /**
-   * Draws a committed {@link TerrainSpline} as a quadratic-Bézier {@link Path} filled down to its
-   * baseline. Coordinates are scaled from the authoring grid-cell space into pixel space by
-   * {@link #cellSize}, so the committed curve sits in the canvas at the same location the
-   * designer drafted it.
-   */
-  private Path drawSplineObject(TerrainSpline terrainSpline) {
-    ParabolaSpline spline = terrainSpline.getSpline();
-    Path path = new Path();
-
-    Vector firstKnot = spline.knots().get(0);
-    path.getElements().add(new MoveTo(firstKnot.x() * cellSize, firstKnot.y() * cellSize));
-    for (int i = 0; i < spline.segmentCount(); i++) {
-      Vector control = spline.controls().get(i);
-      Vector next = spline.knots().get(i + 1);
-      path.getElements().add(new QuadCurveTo(
-          control.x() * cellSize, control.y() * cellSize,
-          next.x() * cellSize, next.y() * cellSize));
-    }
-    Vector lastKnot = spline.knots().get(spline.knots().size() - 1);
-    double baselinePx = spline.baselineY() * cellSize;
-    path.getElements().add(new LineTo(lastKnot.x() * cellSize, baselinePx));
-    path.getElements().add(new LineTo(firstKnot.x() * cellSize, baselinePx));
-    path.getElements().add(new ClosePath());
-
-    TerrainPaints.applyTerrainFill(path, terrainSpline.getSprite(), terrainSpline.getColor(),
-        terrainSpline.getWidth() * cellSize, terrainSpline.getHeight() * cellSize,
-        terrainSpline.isTiled());
-    path.setStroke(TERRAIN_STROKE_COLOR);
-    path.setStrokeWidth(1.0);
-    path.setOnMousePressed(e -> onObjectSelected.accept(terrainSpline));
-    path.setOnMouseEntered(e -> onTerrainHoverEnter.accept(terrainSpline));
-    path.setOnMouseExited(e -> onTerrainHoverExit.run());
-    return path;
-  }
-
-  private Node drawGoalLineStripe(AuthoringStaticComponent asc) {
-    double px = asc.x() * cellSize;
-    double totalHeight = gridRows * cellSize;
-
-    Rectangle stripe = new Rectangle(px - GOAL_LINE_WIDTH_PX / 2, 0,
-        GOAL_LINE_WIDTH_PX, totalHeight);
-    stripe.setFill(GOAL_LINE_COLOR);
-    stripe.setStroke(GOAL_LINE_STROKE);
-    stripe.setStrokeWidth(1.5);
-
-    Label label = new Label("FINISH");
-    label.setFont(Font.font(10));
-    label.setTextFill(GOAL_LINE_STROKE);
-    label.setRotate(-90);
-    label.setMouseTransparent(true);
-    label.setLayoutX(px - 20);
-    label.setLayoutY(totalHeight / 2 - 6);
-
-    stripe.setOnMousePressed(e -> onObjectSelected.accept(asc));
-    stripe.setOnMouseEntered(e -> onTerrainHoverEnter.accept(asc));
-    stripe.setOnMouseExited(e -> onTerrainHoverExit.run());
-
-    Pane group = new Pane(stripe, label);
-    group.setMouseTransparent(false);
-    return group;
-  }
-
-  private Rectangle drawObject(AuthoringPlaceable placeable) {
-    double px = placeable.x() * cellSize;
-    double py = placeable.y() * cellSize;
-    double pw = placeable.getWidth() * cellSize;
-    double ph = placeable.getHeight() * cellSize;
-
-    Rectangle rect = new Rectangle(px, py, pw, ph);
-    rect.setStroke(TERRAIN_STROKE_COLOR);
-
-    Color fallback = parseColor(placeable.getColor());
-    if (placeable.isTiled()) {
-      applyTiledTexture(rect, placeable.getSprite(), fallback);
-    } else {
-      applySprite(rect, placeable.getSprite(), fallback);
-    }
-
-    rect.setOnMousePressed(e -> onObjectSelected.accept(placeable));
-    rect.setOnMouseEntered(e -> onTerrainHoverEnter.accept(placeable));
-    rect.setOnMouseExited(e -> onTerrainHoverExit.run());
-
-    return rect;
-  }
-
-  private Color parseColor(String css) {
-    return TerrainPaints.parseColor(css);
-  }
-
-  /**
-   * Repeats the texture image in a tile pattern across the rectangle.
-   * Falls back to the block's color if the image file cannot be loaded.
-   */
-  private void applyTiledTexture(Rectangle rect, String spritePath, Color fallback) {
-    TerrainPaints.applyTerrainFill(rect, spritePath, toCss(fallback), cellSize, cellSize, true);
-  }
-
-  /**
-   * Scales a single image to fill the rectangle.
-   * Falls back to the block's color if the image file cannot be loaded.
-   */
-  private void applySprite(Rectangle rect, String spritePath, Color fallback) {
-    TerrainPaints.applyTerrainFill(rect, spritePath, toCss(fallback), rect.getWidth(),
-        rect.getHeight(), false);
-  }
-
-  private String toCss(Color color) {
-    return String.format("#%02X%02X%02X",
-        (int) Math.round(color.getRed() * 255),
-        (int) Math.round(color.getGreen() * 255),
-        (int) Math.round(color.getBlue() * 255));
-  }
-
-  /**
-   * Draws a draggable spawn marker. Position is read from the world's SpawnPointComponent so
-   * it persists across save/load. Dragging the marker updates the component directly and
-   * redraws the canvas.
-   */
-  private void drawSpawnGuide() {
-    SpawnPointComponent spawnComp = world == null ? null :
-        world.getAllComponents().stream()
-            .filter(SpawnPointComponent.class::isInstance)
-            .map(SpawnPointComponent.class::cast)
-            .findFirst().orElse(null);
-
-    // SpawnPointComponent stores grid-cell units (same as TerrainBlock); multiply by cellSize
-    // to get canvas pixel coordinates for rendering.
-    double spawnX = spawnComp != null ? spawnComp.x() * cellSize : d("spawnX");
-    double spawnY = spawnComp != null ? spawnComp.y() * cellSize : d("spawnY");
-    double markerRadius = d("spawnMarkerRadius");
-    double totalWidth = gridCols * cellSize;
-
-    Line ground = new Line(0, spawnY, totalWidth, spawnY);
-    ground.setStroke(Color.web(PROPS.getString("groundGuideColor")));
-    ground.setStrokeWidth(d("groundGuideStrokeWidth"));
-    ground.getStrokeDashArray().addAll(d("groundGuideDashOn"), d("groundGuideDashOff"));
-    ground.setMouseTransparent(true);
-    root.getChildren().add(ground);
-
-    Color markerColor = Color.web(PROPS.getString("spawnMarkerColor"));
-    Circle marker = new Circle(spawnX, spawnY, markerRadius, Color.TRANSPARENT);
-    marker.setStroke(markerColor);
-    marker.setStrokeWidth(2.0);
-    marker.setMouseTransparent(true);
-    root.getChildren().add(marker);
-
-    Circle markerDot = new Circle(spawnX, spawnY, markerRadius / 3.0, markerColor);
-    markerDot.setMouseTransparent(true);
-    root.getChildren().add(markerDot);
-
-    Text label = new Text(
-        spawnX + d("spawnLabelOffsetX"),
-        spawnY + d("spawnLabelOffsetY"),
-        "vehicle spawn");
-    label.setFill(markerColor);
-    label.setMouseTransparent(true);
-    root.getChildren().add(label);
-
-  }
-
-  private double d(String key) {
-    return Double.parseDouble(PROPS.getString(key));
-  }
-
-  private void drawGridLines() {
-    if (gridLineSpacing <= 0) {
-      return;
-    }
-    double totalWidth = gridCols * cellSize;
-    double totalHeight = gridRows * cellSize;
-
-    for (int col = 0; col <= gridCols; col += gridLineSpacing) {
-      double x = col * cellSize;
-      Line line = new Line(x, 0, x, totalHeight);
-      line.setStroke(gridStroke);
-      line.setStrokeWidth(gridStrokeWidth);
-      root.getChildren().add(line);
-    }
-
-    for (int row = 0; row <= gridRows; row += gridLineSpacing) {
-      double y = row * cellSize;
-      Line line = new Line(0, y, totalWidth, y);
-      line.setStroke(gridStroke);
-      line.setStrokeWidth(gridStrokeWidth);
-      root.getChildren().add(line);
-    }
+  private void resizeRoot() {
+    root.setPrefSize(gridCols * cellSize, gridRows * cellSize);
   }
 }
