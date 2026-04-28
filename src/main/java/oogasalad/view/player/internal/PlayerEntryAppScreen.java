@@ -14,9 +14,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -49,8 +48,8 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   // Wrapper HBox that gets cleared and re-populated when the world changes. Assigned inside
   // createLevelButtonRegion (called via the super constructor's createRoot, which runs BEFORE
   // subclass field initializers, so a field initializer here would still be null at use time).
-  private HBox worldBox;
-  private HBox levelButtonsContainer;
+  private FlowPane worldBox;
+  private FlowPane levelButtonsContainer;
   private Button selectedWorldButton;
   private Button selectedLevelButton;
   private Button startButton;
@@ -165,8 +164,8 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     return container;
   }
 
-  private HBox createWorldButtonRegion() {
-    worldBox = new HBox(d("world.region.spacing"));
+  private FlowPane createWorldButtonRegion() {
+    worldBox = new FlowPane(d("world.region.spacing"), d("world.region.spacing"));
     worldBox.setAlignment(Pos.CENTER);
     return worldBox;
   }
@@ -215,10 +214,9 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
     }
   }
 
-  private HBox createLevelButtonRegion() {
-    levelButtonsContainer = new HBox(d("level.region.spacing"));
+  private FlowPane createLevelButtonRegion() {
+    levelButtonsContainer = new FlowPane(d("level.region.spacing"), d("level.region.spacing"));
     levelButtonsContainer.setAlignment(Pos.CENTER);
-    // Empty until a world is picked — selectWorld populates it via refreshLevelButtons.
     return levelButtonsContainer;
   }
 
@@ -250,28 +248,13 @@ public class PlayerEntryAppScreen extends AbstractAppScreen {
   }
 
   private void populateOthersLevels() {
-    HBox row = new HBox(d("level.region.spacing"));
-    row.setAlignment(Pos.CENTER);
-    row.setPadding(new javafx.geometry.Insets(0, d("level.region.padding"), 0,
-        d("level.region.padding")));
     for (String filename : otherLevelFiles) {
       String basename = stripJsonExtension(filename);
       Button btn = new Button(basename);
       btn.getStyleClass().add("level-button");
       btn.setOnAction(e -> selectLevel(btn, basename));
-      row.getChildren().add(btn);
+      levelButtonsContainer.getChildren().add(btn);
     }
-    ScrollPane scroll = new ScrollPane(row);
-    scroll.getStyleClass().add("others-scroll");
-    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-    scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-    scroll.setFitToHeight(true);
-    scroll.setPannable(true);
-    scroll.setMaxWidth(d("level.region.others.width"));
-    // Make the ScrollPane visually transparent so the row of buttons doesn't sit on a grey
-    // panel — the rest of the level region has no background of its own.
-    scroll.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-    levelButtonsContainer.getChildren().add(scroll);
   }
 
   private static String stripJsonExtension(String filename) {

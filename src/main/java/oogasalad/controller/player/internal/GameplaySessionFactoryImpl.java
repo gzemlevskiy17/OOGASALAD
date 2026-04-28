@@ -206,6 +206,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     }
     VBox.setMargin(header, new Insets(0, 0, 4, 0));
     screen.attachOverlay(warningBox, Pos.TOP_CENTER);
+    javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+        javafx.util.Duration.seconds(10));
+    pause.setOnFinished(e -> warningBox.setVisible(false));
+    pause.play();
   }
 
   private Camera buildCamera(GamePlayAppScreen screen) {
