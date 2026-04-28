@@ -5,16 +5,23 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import oogasalad.data.internal.GameConfigImpl;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.view.core.api.SingleSprite;
 import oogasalad.view.core.api.Sprite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class PaletteSpriteRegistryTest {
 
   private PaletteSpriteRegistry registry;
+  @TempDir
+  Path tempDir;
 
   @BeforeEach
   void setUp() {
@@ -51,6 +58,14 @@ class PaletteSpriteRegistryTest {
   void resolveByType_pig_returnsSingleSprite() {
     Sprite sprite = registry.resolveByType("Pig");
     assertInstanceOf(SingleSprite.class, sprite);
+  }
+
+  @Test
+  void resolveByType_bigPig_returnsBigPigSprite() {
+    SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("BigPig"));
+    assertEquals("data/assets/vehicle/bp_bigPig.png", sprite.path());
+    assertEquals(40.0, sprite.width(), 1e-9);
+    assertEquals(40.0, sprite.height(), 1e-9);
   }
 
   @Test
@@ -93,5 +108,22 @@ class PaletteSpriteRegistryTest {
   void resolveByType_xpBoost_stripsSpaceAndResolvesToXpAsset() {
     SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("XP Boost"));
     assertEquals("data/assets/bp_xp.png", sprite.path());
+  }
+
+  @Test
+  void registerFromConfig_customBlockId_resolvesConfigSprite() throws IOException {
+    Path gameFile = tempDir.resolve("game.json");
+    Files.writeString(gameFile, """
+        {"gameId":"custom","mainCharacterId":"pig",
+         "components":[
+           {"id":"block","spriteUrl":"data/assets/bp_frame.png","mass":7,"buttons":[]}
+         ],
+         "staticComponents":[],"terrainTypes":[]}
+        """);
+
+    registry.registerFromConfig(new GameConfigImpl(gameFile.toString()));
+
+    SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("block"));
+    assertEquals("data/assets/bp_frame.png", sprite.path());
   }
 }
