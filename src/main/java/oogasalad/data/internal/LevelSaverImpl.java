@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.IOException;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;

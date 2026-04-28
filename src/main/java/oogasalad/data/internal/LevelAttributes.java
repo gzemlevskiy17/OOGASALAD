@@ -1,4 +1,4 @@
-package oogasalad.data.api;
+package oogasalad.data.internal;
 
 import java.util.ArrayList;
 import java.util.List;

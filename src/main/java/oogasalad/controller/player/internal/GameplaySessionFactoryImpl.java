@@ -28,7 +28,7 @@ import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.CollisionDetectorImpl;

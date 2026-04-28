@@ -11,7 +11,7 @@ import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;

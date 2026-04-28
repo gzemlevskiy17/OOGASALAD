@@ -7,7 +7,7 @@ import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;

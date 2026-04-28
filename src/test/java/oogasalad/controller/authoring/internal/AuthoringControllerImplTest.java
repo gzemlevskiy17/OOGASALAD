@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.Joint;

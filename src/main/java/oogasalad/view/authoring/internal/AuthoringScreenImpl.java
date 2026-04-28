@@ -26,7 +26,7 @@ import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.StaticComponentInfo;

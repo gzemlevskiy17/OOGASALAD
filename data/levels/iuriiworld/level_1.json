@@ -51,7 +51,7 @@
   },
   "mainCharacter" : {
     "gridSize" : 60.0,
-    "elementsAllowed" : [ ],
+    "elementsAllowed" : [ "Wheel" ],
     "maxSelectable" : 5,
     "maxHP" : 100.0,
     "cameraFollows" : "vehicle"
