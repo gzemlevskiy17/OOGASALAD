@@ -5,7 +5,6 @@ import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.ClosePath;
@@ -52,6 +51,12 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private static final Color TERRAIN_STROKE_COLOR = Color.BLACK;
   private static final double ZOOM_MIN = 0.25;
   private static final double ZOOM_MAX = 4.0;
+
+  private static final double SPAWN_MARKER_STROKE_WIDTH = 2.0;
+  private static final double MARKER_DOT_RADIUS_DIVISOR = 3.0;
+  private static final double TERRAIN_SPLINE_STROKE_WIDTH = 1.0;
+  private static final double PREVIEW_OPACITY = 0.5;
+  private static final int COLOR_CHANNEL_MAX = 255;
 
   private final Scale zoomTransform = new Scale(1, 1, 0, 0);
   private double zoomFactor = 1.0;
