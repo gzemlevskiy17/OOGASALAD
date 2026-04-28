@@ -53,7 +53,10 @@ public class CheatAuthoringValidator {
     switch (effectType) {
       case "repair", "damage" -> requireNumber(effect, "amount");
       case "teleport" -> requireNumbers(effect, "x", "y");
-      case "setgravity" -> requireNumber(effect, "value");
+      case "addscore" -> requireInteger(effect, "amount");
+      case "destroy" -> {
+      }
+      case "launch" -> requireNumbers(effect, "xVelocity", "yVelocity");
       case "spawnpowerup" -> validateSpawnPowerup(effect, staticComponents);
       case "finishrun", "loserun" -> {
       }
@@ -107,6 +110,19 @@ public class CheatAuthoringValidator {
   private void requireNumbers(CheatEffectInfo effect, String... parameterNames) {
     for (String parameterName : parameterNames) {
       requireNumber(effect, parameterName);
+    }
+  }
+
+  private void requireInteger(CheatEffectInfo effect, String parameterName) {
+    String rawValue = requireText(effect, parameterName);
+    try {
+      double value = Double.parseDouble(rawValue);
+      if (value != Math.rint(value) || value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+        throw new NumberFormatException(rawValue);
+      }
+    } catch (NumberFormatException e) {
+      fail("Cheat effect '" + effect.type() + "' parameter '" + parameterName
+          + "' must be an integer: " + rawValue);
     }
   }
 

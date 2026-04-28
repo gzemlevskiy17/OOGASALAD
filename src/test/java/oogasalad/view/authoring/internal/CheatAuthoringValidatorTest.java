@@ -72,6 +72,50 @@ class CheatAuthoringValidatorTest {
   }
 
   @Test
+  void ValidateEffect_AddScoreWithIntegerAmount_DoesNotThrow() {
+    CheatEffectInfo effect = effect("addScore", worldTarget(), Map.of("amount", "150.0"));
+
+    assertDoesNotThrow(() -> validator.validateEffect(effect, staticComponents()),
+        "addScore should accept integer-compatible score amounts.");
+  }
+
+  @Test
+  void ValidateEffect_AddScoreWithDecimalAmount_ThrowsCheatAuthoringException() {
+    CheatEffectInfo effect = effect("addScore", worldTarget(), Map.of("amount", "12.5"));
+
+    assertThrows(CheatAuthoringException.class,
+        () -> validator.validateEffect(effect, staticComponents()),
+        "addScore should reject non-integer score amounts.");
+  }
+
+  @Test
+  void ValidateEffect_DestroyWithSupportedTarget_DoesNotThrow() {
+    CheatEffectInfo effect = effect("destroy", componentTypeTarget("Frame"), Map.of());
+
+    assertDoesNotThrow(() -> validator.validateEffect(effect, staticComponents()),
+        "destroy should not require parameters beyond a supported target selector.");
+  }
+
+  @Test
+  void ValidateEffect_LaunchWithVelocity_DoesNotThrow() {
+    CheatEffectInfo effect = effect("launch", componentTypeTarget("Frame"),
+        Map.of("xVelocity", "250", "yVelocity", "-125"));
+
+    assertDoesNotThrow(() -> validator.validateEffect(effect, staticComponents()),
+        "launch should accept numeric velocity components.");
+  }
+
+  @Test
+  void ValidateEffect_LaunchMissingVelocity_ThrowsCheatAuthoringException() {
+    CheatEffectInfo effect = effect("launch", componentTypeTarget("Frame"),
+        Map.of("xVelocity", "250"));
+
+    assertThrows(CheatAuthoringException.class,
+        () -> validator.validateEffect(effect, staticComponents()),
+        "launch should require both velocity components.");
+  }
+
+  @Test
   void ValidateEffect_SpawnPowerupUnknownStaticComponent_ThrowsCheatAuthoringException() {
     CheatEffectInfo effect = effect("spawnPowerup", worldTarget(),
         Map.of("componentId", "Missing", "x", "400", "y", "600"));
