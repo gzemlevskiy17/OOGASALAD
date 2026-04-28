@@ -166,7 +166,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       World world) {
     driveActionBinder.bind(inputRouter, world);
     screen.setOnToolActivated(toolId -> inputRouter.handleButtonPress(toolId));
-    screen.setOnToolDeactivated(toolId -> inputRouter.handleButtonPress(toolId));
+    screen.setOnToolDeactivated(toolId -> inputRouter.handleButtonRelease(toolId));
     screen.setAvailableTools(driveActionBinder.collectToolIds(world));
   }
 
