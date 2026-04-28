@@ -19,7 +19,9 @@ import oogasalad.data.api.TerrainInfo;
 /**
  * Terrain material editor tab for the game catalog authoring screen.
  *
+ * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 final class TerrainCatalogTab {
 

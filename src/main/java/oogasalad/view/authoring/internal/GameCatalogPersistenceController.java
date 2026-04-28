@@ -14,7 +14,9 @@ import org.apache.logging.log4j.Logger;
 /**
  * Coordinates game catalog persistence for the game authoring screen.
  *
+ * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 final class GameCatalogPersistenceController {
 

@@ -26,7 +26,9 @@ import oogasalad.data.internal.BuiltInVehicleCatalog;
 /**
  * Vehicle component editor tab for the game catalog authoring screen.
  *
+ * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 final class ComponentCatalogTab {
 

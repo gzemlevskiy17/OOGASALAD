@@ -20,7 +20,9 @@ import javafx.scene.text.Font;
 /**
  * Builds the game authoring screen shell and wires its UI controls to screen callbacks.
  *
+ * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 final class GameAuthoringLayoutFactory {
 

@@ -11,7 +11,9 @@ import oogasalad.data.api.TerrainInfo;
 /**
  * Mutable in-progress game catalog edited by the game authoring screen.
  *
+ * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 final class GameCatalogDraft {
 

@@ -15,7 +15,9 @@ import org.apache.logging.log4j.Logger;
 /**
  * Imports selected sprite files into the shared authoring asset directory.
  *
+ * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 final class SpriteImportService {
 
