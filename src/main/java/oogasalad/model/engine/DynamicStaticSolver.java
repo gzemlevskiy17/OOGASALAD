@@ -63,7 +63,7 @@ public class DynamicStaticSolver {
    * @param collision collision data containing manifold and penetration information
    */
   public void solve(DynamicComponent objectA, StaticComponent objectB,
-      Collision collision, boolean isFirstIteration) {
+      Collision collision, boolean isFirstIteration, boolean solveImpulse) {
     // TODO: move this into the dispatcher. document the convention
     if (objectA == collision.getReferenceObject()) {
       collision.setPenetration(collision.getPenetration().multiply(-1));
@@ -75,6 +75,10 @@ public class DynamicStaticSolver {
     resolveImpulseAtContacts(collision, isFirstIteration);
     if (isFirstIteration) {
       applyCollisionEffect(objectB, objectA);
+    }
+
+    if (solveImpulse) {
+      ImpulseSolverUtilities.applyPositionalCorrection(collision, referenceObject, incidentObject);
     }
   }
 
