@@ -105,12 +105,13 @@ class GameAuthoringScreenImplTest extends DukeApplicationTest {
   }
 
   @Test
-  void catalogEditor_exposesTerrainStaticObjectsAndComponentsTabs() {
+  void catalogEditor_exposesTerrainStaticObjectsComponentsAndCheatsTabs() {
     TabPane pane = catalogTabPane();
-    assertEquals(3, pane.getTabs().size());
+    assertEquals(4, pane.getTabs().size());
     assertEquals("Terrain", pane.getTabs().get(0).getText());
     assertEquals("Static Objects", pane.getTabs().get(1).getText());
     assertEquals("Components", pane.getTabs().get(2).getText());
+    assertEquals("Cheats", pane.getTabs().get(3).getText());
   }
 
   @Test

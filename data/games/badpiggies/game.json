@@ -245,8 +245,8 @@
         "id" : ""
       },
       "parameters" : {
-        "yVelocity" : "20",
-        "xVelocity" : "20"
+        "xVelocity" : "20",
+        "yVelocity" : "20"
       }
     } ]
   }, {
@@ -263,8 +263,8 @@
         "id" : ""
       },
       "parameters" : {
-        "yVelocity" : "80",
-        "xVelocity" : "80"
+        "xVelocity" : "80",
+        "yVelocity" : "80"
       }
     } ]
   } ]
