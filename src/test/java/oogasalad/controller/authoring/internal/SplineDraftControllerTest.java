@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -232,8 +233,8 @@ class SplineDraftControllerTest {
     }
 
     @Override
-    public double getDragCoefficient() {
-      return 0.0;
+    public PhysicsEnvironment getPhysicsEnvironment() {
+      return PhysicsEnvironment.DEFAULT;
     }
   }
 

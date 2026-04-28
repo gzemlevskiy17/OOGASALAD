@@ -8,6 +8,7 @@ import java.util.List;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -169,8 +170,8 @@ class FallOffWorldLossCheckerTest {
     }
 
     @Override
-    public double getDragCoefficient() {
-      return 0.0;
+    public PhysicsEnvironment getPhysicsEnvironment() {
+      return PhysicsEnvironment.DEFAULT;
     }
   }
 }

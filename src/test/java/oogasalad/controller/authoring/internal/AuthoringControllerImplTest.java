@@ -15,6 +15,7 @@ import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.data.internal.GameLoaderImpl;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -391,8 +392,8 @@ class AuthoringControllerImplTest {
     @Override public void addJoint(Joint j) {}
     @Override public void removeJoint(Joint j) {}
     @Override
-    public double getDragCoefficient() {
-      return 0.0;
+    public PhysicsEnvironment getPhysicsEnvironment() {
+      return PhysicsEnvironment.DEFAULT;
     }
     /**
      * Counts placed editor objects only; ignores the spawn marker always present after

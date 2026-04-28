@@ -18,6 +18,7 @@ import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.data.api.TerrainInfo;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
@@ -419,8 +420,8 @@ class LevelLoaderImplTest {
     }
 
     @Override
-    public double getDragCoefficient() {
-      return 0.0;
+    public PhysicsEnvironment getPhysicsEnvironment() {
+      return PhysicsEnvironment.DEFAULT;
     }
 
     int objectCount() {
