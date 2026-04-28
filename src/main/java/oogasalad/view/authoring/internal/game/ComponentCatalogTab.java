@@ -78,6 +78,13 @@ final class ComponentCatalogTab {
     TextField btnDxF = AuthoringValueHints.newTextField("catalog.component.directionX");
     TextField btnDyF = AuthoringValueHints.newTextField("catalog.component.directionY");
 
+    Label forceHint = new Label();
+    forceHint.setStyle("-fx-text-fill: #666; -fx-font-size: 11;");
+    forceHint.setWrapText(true);
+    massF.textProperty().addListener((obs, oldVal, newVal) ->
+        updateForceHint(forceHint, newVal));
+    updateForceHint(forceHint, massF.getText());
+
     VBox presetBlock = buildPresetBlock();
     List<ButtonInfo> pendingButtons = new ArrayList<>();
     ListView<String> btnList = new ListView<>();
@@ -117,7 +124,7 @@ final class ComponentCatalogTab {
             formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
             new Label("Buttons:"), btnList,
             formRow("Button Name", btnNameF), formRow("Dir X", btnDxF),
-            formRow("Dir Y", btnDyF)),
+            formRow("Dir Y", btnDyF), forceHint),
         buttonBar(addBtn),
         buttonBar(add, useAsMainCharacter, remove));
 
@@ -254,5 +261,12 @@ final class ComponentCatalogTab {
   private Optional<Integer> selectedIndex(ListView<String> list, int size) {
     int index = list.getSelectionModel().getSelectedIndex();
     return index >= 0 && index < size ? Optional.of(index) : Optional.empty();
+  }
+
+  private void updateForceHint(Label hint, String massText) {
+    double mass = parseDouble(massText, DEFAULT_MASS);
+    int suggested = (int) (mass * 980 * 0.3);
+    hint.setText("Suggested min force magnitude: " + suggested
+        + " (for mass " + (int) mass + " with standard gravity)");
   }
 }

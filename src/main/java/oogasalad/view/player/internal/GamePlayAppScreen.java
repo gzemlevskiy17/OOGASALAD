@@ -1,10 +1,7 @@
 package oogasalad.view.player.internal;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -213,54 +210,14 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     return container;
   }
 
-  // availableToolIds == null means "show every tool in the properties file" (startup default).
-  private HBox createBottomControlsRegion(Set<String> availableToolIds) {
-    HBox container = new HBox(d("bottom.controls.spacing"));
-    container.getStyleClass().add("controlbuttons-bottom");
-
-    container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-    container.setPickOnBounds(false);
-
-    for (String tool : getList("tools")) {
-      if (availableToolIds != null && !availableToolIds.contains(tool)) {
-        continue;
-      }
-      ToggleButton toolBtn = new ToggleButton(s("tool." + tool));
-      toolBtn.getStyleClass().add("tool-button");
-
-      toolBtn.setOnAction(e -> {
-        if (toolBtn.isSelected()) {
-          onToolActivated.accept(tool);
-        } else {
-          onToolDeactivated.accept(tool);
-        }
-      });
-
-      container.getChildren().add(toolBtn);
-    }
-
-    return container;
-  }
-
   public void setAvailableTools(Collection<String> toolIds) {
     if (bottomControls == null) {
       return;
     }
+    bottomControls.getChildren().clear();
     if (toolIds == null || toolIds.isEmpty()) {
-      bottomControls.getChildren().clear();
       return;
     }
-    HBox rebuilt = createToolButtonsFromIds(toolIds);
-    bottomControls.getChildren().setAll(rebuilt.getChildren());
-  }
-
-  private HBox createToolButtonsFromIds(Collection<String> toolIds) {
-    HBox container = new HBox(d("bottom.controls.spacing"));
-    container.getStyleClass().add("controlbuttons-bottom");
-    container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE,
-        javafx.scene.layout.Region.USE_PREF_SIZE);
-    container.setPickOnBounds(false);
-
     for (String toolId : toolIds) {
       String label = toolLabel(toolId);
       ToggleButton toolBtn = new ToggleButton(label);
@@ -272,9 +229,8 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
           onToolDeactivated.accept(toolId);
         }
       });
-      container.getChildren().add(toolBtn);
+      bottomControls.getChildren().add(toolBtn);
     }
-    return container;
   }
 
   private String toolLabel(String toolId) {
@@ -289,7 +245,6 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
-  private List<String> getList(String key) { return Arrays.asList(s(key).split(",")); }
   private String s(String key) { return PROPS.getString(key); }
   private double d(String key) { return Double.parseDouble(PROPS.getString(key)); }
 }
