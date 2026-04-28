@@ -206,10 +206,6 @@ class GameEngineImplTest {
       return dir;
     }
 
-    @Override
-    public void setThrustDirection(Vector thrustDirection) {
-      this.dir = thrustDirection;
-    }
 
     @Override
     public double getThrustForce() {

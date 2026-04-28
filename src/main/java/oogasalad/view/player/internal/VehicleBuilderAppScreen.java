@@ -29,6 +29,7 @@ import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.ValidationResult;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.internal.PlacementValidator;
+import oogasalad.view.core.api.SingleSprite;
 import oogasalad.view.core.internal.AbstractAppScreen;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.SpriteCache;
@@ -158,6 +159,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   public void setAllowedComponentIds(List<String> componentIds) {
     ensureAvailableComponentNames();
     availableComponentNames.clear();
+
+    // TODO: maybe remove the check
     if (componentIds == null || componentIds.isEmpty()) {
       availableComponentNames.addAll(defaultComponentNames());
     } else {
@@ -168,6 +171,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
         }
       }
     }
+
     ensureMainCharacterAvailable();
     gridState.clear();
     resetWorkspace();
@@ -285,7 +289,12 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   }
 
   private Node buildSpritePreview(String componentName) {
-    return spriteRegistry.resolveByType(componentName).renderPreview(spriteCache);
+    try {
+      return spriteRegistry.resolveByType(componentName).renderPreview(spriteCache);
+    } catch (IllegalArgumentException e) {
+      LOG.warn("Using placeholder preview for unresolved vehicle component '{}'", componentName, e);
+      return new SingleSprite("", CELL_SIZE, CELL_SIZE).renderPreview(spriteCache);
+    }
   }
 
   private Node createGridRegion() {

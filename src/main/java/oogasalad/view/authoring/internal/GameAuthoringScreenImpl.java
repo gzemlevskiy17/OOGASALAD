@@ -89,6 +89,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private TextField gameIdField;
   private TextField mainCharacterIdField;
   private String saveFilePath = "data/games/untitled/game.json";
+  private ListView<String> terrainListView;
+  private ListView<String> staticListView;
+  private ListView<String> componentListView;
 
   public GameAuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler,
       Consumer<GameConfig> onGameConfigReady) {
@@ -111,8 +114,21 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       staticComponents.addAll(config.staticComponents());
       components.clear();
       components.addAll(config.components());
+      refreshAllLists();
     } catch (Exception e) {
       new AuthoringAlertService().showError("Load Error", e.getMessage());
+    }
+  }
+
+  private void refreshAllLists() {
+    if (terrainListView != null) {
+      refreshTerrainList(terrainListView);
+    }
+    if (staticListView != null) {
+      refreshStaticList(staticListView);
+    }
+    if (componentListView != null) {
+      refreshComponentList(componentListView);
     }
   }
 
@@ -180,6 +196,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
   private Tab buildTerrainTab() {
     ListView<String> list = new ListView<>();
+    terrainListView = list;
     refreshTerrainList(list);
 
     TextField idF = AuthoringValueHints.newTextField("catalog.terrain.id");
@@ -223,6 +240,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
   private Tab buildStaticTab() {
     ListView<String> list = new ListView<>();
+    staticListView = list;
     refreshStaticList(list);
 
     TextField idF = AuthoringValueHints.newTextField("catalog.static.id");
@@ -303,6 +321,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
   private Tab buildComponentsTab() {
     ListView<String> list = new ListView<>();
+    componentListView = list;
     refreshComponentList(list);
 
     TextField idF = AuthoringValueHints.newTextField("catalog.component.id");

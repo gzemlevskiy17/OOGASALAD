@@ -1,5 +1,6 @@
 package oogasalad.view.authoring.internal;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
@@ -26,7 +27,8 @@ import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.GameAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.StaticComponentInfo;
@@ -44,6 +46,7 @@ import org.apache.logging.log4j.Logger;
  * Layout shell for the authoring environment.
  *
  * @author Emilio Garcia
+ * @author Beliaev Iurii
  */
 public class AuthoringScreenImpl extends AbstractAppScreen {
 
@@ -226,15 +229,14 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     canvasHost = new StackPane(canvasScrollPane);
 
     vehiclePalette = new VehicleComponentScrollPalette();
-    vehiclePalette.setSelectedComponentsHandler(
-        ids -> levelAttributes.setElementsAllowed(ids));
+    vehiclePalette.setSelectedComponentsHandler(this::applyVehicleAllowedSelection);
     vehiclePalette.setSelectionSummaryHandler(this::updateSelectedItemsSummary);
     levelAttributes.setMaxSelectable(vehiclePalette.getMaxSelectableItems());
 
     terrainPalette = new ComponentPaletteImpl();
+    terrainPalette.setDragEnabled(false);
     pigsPalette = new ComponentPaletteImpl();
     levelItemsPalette = new ComponentPaletteImpl();
-    subscribePalette(terrainPalette);
     terrainPalette.subscribe(controller::setSplineTerrainStyle);
     subscribePalette(pigsPalette);
     subscribePalette(levelItemsPalette);
@@ -251,6 +253,24 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     currentMode = AuthoringMode.LEVEL;
     currentLevelPaletteMode = LevelPaletteMode.TERRAIN;
     refreshCatalogPalettes();
+  }
+
+  /**
+   * Persists the vehicle-palette multi-select to {@code mainCharacter.elementsAllowed}, restricted
+   * to movable component ids from the active game catalog when {@link #gameConfig} is set.
+   */
+  private void applyVehicleAllowedSelection(List<String> selectedIds) {
+    if (selectedIds == null) {
+      levelAttributes.setMainCharacterElementsAllowed(List.of());
+      return;
+    }
+    if (gameConfig == null) {
+      levelAttributes.setMainCharacterElementsAllowed(selectedIds);
+      return;
+    }
+    HashSet<String> movable = new HashSet<>(new GameAttributes(gameConfig).movableComponentIds());
+    List<String> filtered = selectedIds.stream().filter(movable::contains).toList();
+    levelAttributes.setMainCharacterElementsAllowed(filtered);
   }
 
   private void subscribePalette(ComponentPaletteImpl palette) {
