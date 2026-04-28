@@ -170,7 +170,6 @@ public class GameConfigImpl implements GameConfig {
       String path = "components[" + index + "]";
       requireObject(component, path);
       requireText(component, "id", path + ".id");
-      requireText(component, "spriteUrl", path + ".spriteUrl");
       requireNumber(component, "mass", path + ".mass");
       if (component.has("buttons")) {
         requireArray(component, "buttons", path + ".buttons");
@@ -195,7 +194,6 @@ public class GameConfigImpl implements GameConfig {
       String path = "staticComponents[" + index + "]";
       requireObject(component, path);
       requireText(component, "id", path + ".id");
-      requireText(component, "spriteUrl", path + ".spriteUrl");
       requireNumber(component, "mass", path + ".mass");
       validateCollisionAction(component.path("onCollisionAction"), path + ".onCollisionAction");
     }
