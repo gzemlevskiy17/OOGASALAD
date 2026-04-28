@@ -17,6 +17,7 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  *
  * @author Iurii Beliaev
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 
 // Keep GamePlayAppScreen view-only
@@ -58,6 +59,16 @@ public class GamePlayScreenCoordinator implements AppScreen {
     view.setOnReset(() -> {
       if (session != null) session.reset();
     });
+    view.setOnKeyPressed(key -> {
+      if (session != null) {
+        session.handleKeyPress(key);
+      }
+    });
+    view.setOnKeyReleased(key -> {
+      if (session != null) {
+        session.handleKeyRelease(key);
+      }
+    });
     view.setOnToolActivated(buttonId -> {
       if (session != null) {
         session.handleButtonPress(buttonId);
@@ -94,6 +105,7 @@ public class GamePlayScreenCoordinator implements AppScreen {
     });
     session.setOnTerminalScore(score -> lastGameplayScore = score);
     session.start();
+    view.requestKeyboardFocus();
   }
 
   /** Latest elapsed seconds reported by the stats tick; zero before any session runs. */
