@@ -16,7 +16,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
 import oogasalad.view.core.internal.TerrainPaints;
 import oogasalad.view.player.api.GameplayView;
 

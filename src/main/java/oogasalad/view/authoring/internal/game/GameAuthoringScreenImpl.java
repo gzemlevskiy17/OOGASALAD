@@ -10,9 +10,10 @@ import javafx.scene.control.TextField;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.internal.GameCatalogSaver;
+import oogasalad.view.core.api.AbstractAppScreen;
 import oogasalad.view.authoring.internal.common.AuthoringAlertService;
 import oogasalad.view.authoring.internal.common.FileChooserService;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
 
 /**
  * Game catalog editor screen. Authors can define terrain types, static objects (pickups/hazards),

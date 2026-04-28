@@ -20,7 +20,7 @@ import oogasalad.controller.player.internal.cheats.CheatKeyBinder;
 import oogasalad.controller.player.internal.cheats.CheatRuntimeContext;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.model.engine.CollisionDetectorImpl;

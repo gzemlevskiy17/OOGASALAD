@@ -1,13 +1,14 @@
-package oogasalad.view.core.internal;
+package oogasalad.view.core.api;
 
 import java.util.function.Consumer;
 import javafx.scene.Parent;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.view.core.api.AppScreen;
 
 /**
- * The abstract class which all AppScreens inherit from.
- * Children of this class override createRoot()
+ * Base AppScreen wiring: subclasses build the JavaFX subtree once via createRoot(), and expose
+ * the same Parent for the shared scene forever. Screens that need navigation or menu actions
+ * use the injected outcome consumer handed to subclasses through the protected field.
+ *
  * @author Iurii Beliaev
  */
 
@@ -21,6 +22,7 @@ public abstract class AbstractAppScreen implements AppScreen {
     this.root = createRoot();
   }
 
+  /** Builds the scene graph for this screen; called once from the constructor. */
   protected abstract Parent createRoot();
 
   @Override

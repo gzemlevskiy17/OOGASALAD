@@ -8,7 +8,7 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.view.authoring.internal.common.AuthoringAlertService;
 import oogasalad.view.authoring.internal.common.FileChooserService;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -34,7 +34,7 @@ public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
       Containment.NONE, PositionConstraint.BOTTOM_ROW_OF_GRID);
   private static final BuildRules PIG_RULE = new BuildRules(
       Set.of(), Set.of(), Set.of(),
-      Containment.INSIDE_FRAME, PositionConstraint.NONE);
+      Containment.INSIDE_OR_OUTSIDE_FRAME, PositionConstraint.NONE);
   private static final BuildRules DRIVE_RULE = new BuildRules(
       Set.of(RIGHT), Set.of(RIGHT), Set.of(LEFT),
       Containment.NONE, PositionConstraint.NONE);

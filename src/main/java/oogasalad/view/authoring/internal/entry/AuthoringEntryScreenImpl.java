@@ -26,7 +26,7 @@ import oogasalad.controller.authoring.internal.AiLevelGenerationCoordinator;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.internal.LevelScanner;
 import oogasalad.model.authoring.internal.GeneratedLevelModel;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
 
 /**
  * Hub screen for the authoring environment. The left pane lists existing worlds with

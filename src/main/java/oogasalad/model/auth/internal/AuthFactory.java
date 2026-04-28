@@ -1,7 +1,6 @@
-package oogasalad.model.auth.api;
+package oogasalad.model.auth.internal;
 
-import oogasalad.model.auth.internal.LocalAuthService;
-import oogasalad.model.auth.internal.RepoFactory;
+import oogasalad.model.auth.api.AuthService;
 
 /**
  * Creates {@link AuthService} instances.

@@ -5,7 +5,8 @@ package oogasalad.model.player.api;
  * frame). Extend as more container types appear.
  *
  * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
  */
 public enum Containment {
-  NONE, INSIDE_FRAME
+  NONE, INSIDE_FRAME, INSIDE_OR_OUTSIDE_FRAME
 }
