@@ -157,6 +157,10 @@
         "maxHP": {
           "type": "number",
           "minimum": 0
+        },
+        "cameraFollows": {
+          "type": "string",
+          "description": "Tag, display name, or component type the gameplay camera should follow."
         }
       }
     }

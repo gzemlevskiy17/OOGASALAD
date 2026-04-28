@@ -3,6 +3,8 @@ package oogasalad.model.engine.internal.effects;
 import oogasalad.model.engine.api.CollisionEffect;
 import oogasalad.model.engine.api.Damageable;
 import oogasalad.model.engine.api.GameObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Adjusts a {@link Damageable} target's HP by a fixed amount on contact. Positive amounts heal,
@@ -11,6 +13,8 @@ import oogasalad.model.engine.api.GameObject;
  * @author Paulina Vvedenskaya
  */
 public final class HPChangerEffect implements CollisionEffect {
+
+  private static final Logger LOG = LogManager.getLogger(HPChangerEffect.class);
 
   private final double amount;
 
@@ -28,5 +32,8 @@ public final class HPChangerEffect implements CollisionEffect {
     } else {
       damageable.damage(-amount);
     }
+    LOG.debug("{} {} HP applied to {} (now {}/{})",
+        amount >= 0 ? "Heal" : "Damage", Math.abs(amount),
+        target.getClass().getSimpleName(), damageable.getCurrentHp(), damageable.getMaxHp());
   }
 }

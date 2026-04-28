@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
  */
 class ImpulseSolverUtilitiesTest {
 
+  //TODO: if tests fail, check isFirstIteration parameter in resolveImpulseAtContactsHelper() calls
   private static final double EPS = 1e-6;
   private static final double BOX_SIZE = 40.0;
   private static final double MASS = 2.0;
@@ -97,9 +98,7 @@ class ImpulseSolverUtilitiesTest {
     Collision collision = landingCollisionFor(box, ground, 1.0);
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
-        collision, ground, box,
-        box.getStaticState(), ground.getStaticState(),
-        box.getDynamicState(), dummyDynamicState());
+        collision, ground, box, box.getDynamicState(), dummyDynamicState(), true);
 
     double vy = box.getDynamicState().getLinearVelocity().y();
     assertEquals(0.0, vy, 1e-3,
@@ -114,9 +113,7 @@ class ImpulseSolverUtilitiesTest {
     Collision collision = landingCollisionFor(box, ground, 1.0);
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
-        collision, ground, box,
-        box.getStaticState(), ground.getStaticState(),
-        box.getDynamicState(), dummyDynamicState());
+        collision, ground, box, box.getDynamicState(), dummyDynamicState(), true);
 
     double vy = box.getDynamicState().getLinearVelocity().y();
     assertEquals(-100.0, vy, 1e-3,
@@ -140,15 +137,11 @@ class ImpulseSolverUtilitiesTest {
     Collision collision = landingCollisionFor(box, ground, 1.0);
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
-        collision, ground, box,
-        box.getStaticState(), ground.getStaticState(),
-        box.getDynamicState(), dummyDynamicState());
+        collision, ground, box, box.getDynamicState(), dummyDynamicState(), true);
     Vector afterFirst = box.getDynamicState().getLinearVelocity();
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
-        collision, ground, box,
-        box.getStaticState(), ground.getStaticState(),
-        box.getDynamicState(), dummyDynamicState());
+        collision, ground, box, box.getDynamicState(), dummyDynamicState(), false);
     Vector afterSecond = box.getDynamicState().getLinearVelocity();
 
     assertEquals(afterFirst.y(), afterSecond.y(), 1e-3,
@@ -174,16 +167,12 @@ class ImpulseSolverUtilitiesTest {
     Collision collision = landingCollisionFor(box, ground, 1.0);
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
-        collision, ground, box,
-        box.getStaticState(), ground.getStaticState(),
-        box.getDynamicState(), dummyDynamicState());
+        collision, ground, box, box.getDynamicState(), dummyDynamicState(), true);
     double afterFirst = box.getDynamicState().getLinearVelocity().y();
 
     for (int i = 0; i < 8; i++) {
       ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
-          collision, ground, box,
-          box.getStaticState(), ground.getStaticState(),
-          box.getDynamicState(), dummyDynamicState());
+          collision, ground, box, box.getDynamicState(), dummyDynamicState(), false);
     }
     double afterNine = box.getDynamicState().getLinearVelocity().y();
 
@@ -201,9 +190,7 @@ class ImpulseSolverUtilitiesTest {
     collision.setCachedNormalImpulse(20.0);
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
-        collision, ground, box,
-        box.getStaticState(), ground.getStaticState(),
-        box.getDynamicState(), dummyDynamicState());
+        collision, ground, box, box.getDynamicState(), dummyDynamicState(), true);
 
     assertEquals(-10.0, box.getDynamicState().getLinearVelocity().y(), 1e-3);
     assertTrue(collision.getAppliedNormalImpulse() >= 20.0);
@@ -219,9 +206,7 @@ class ImpulseSolverUtilitiesTest {
     collision.setCachedFrictionImpulse(50.0);
 
     ImpulseSolverUtilities.resolveImpulseAtContactsHelper(
-        collision, ground, box,
-        box.getStaticState(), ground.getStaticState(),
-        box.getDynamicState(), dummyDynamicState());
+        collision, ground, box, box.getDynamicState(), dummyDynamicState(), true);
 
     assertEquals(0.0, box.getDynamicState().getLinearVelocity().x(), 1e-9);
   }

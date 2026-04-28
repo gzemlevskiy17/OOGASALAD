@@ -9,6 +9,7 @@ import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
+import oogasalad.model.engine.internal.components.StaticComponent;
 import oogasalad.model.player.api.GameplayScore;
 import oogasalad.model.player.api.GameplayStatsTracker;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,5 +126,27 @@ class GameplayStatsTrackerImplTest {
 
     assertEquals(0.0, score.elapsedSeconds());
     assertEquals(0.0, score.levelSpan());
+  }
+
+  @Test
+  void gameMainCharacterId_tracksNonPigMainCharacterToFinishLine() {
+    WorldImpl customWorld = new WorldImpl();
+    customWorld.addComponent(new TaggedBody("hero", 0, 0));
+    customWorld.addComponent(new GoalLineComponent(100, 0, 20, 100));
+    GameplayStatsTracker customTracker = new GameplayStatsTrackerImpl("x", "hero");
+
+    customTracker.sample(customWorld, DT);
+    ((TaggedBody) customWorld.getObjectsByTag("hero").get(0)).setPosition(50, 0, 0);
+    customTracker.sample(customWorld, DT);
+
+    GameplayScore score = customTracker.finish(true);
+
+    assertEquals(0.5, score.progressPercent(), 1e-6);
+  }
+
+  private static final class TaggedBody extends StaticComponent {
+    TaggedBody(String tag, double x, double y) {
+      super(x, y, 0, ConvexPolygon.axisAlignedBox(x - 20, y - 20, 40, 40), tag, 0, 0);
+    }
   }
 }

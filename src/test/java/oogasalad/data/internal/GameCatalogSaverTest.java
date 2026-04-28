@@ -36,14 +36,14 @@ class GameCatalogSaverTest {
   }
 
   @Test
-  void save_writesGameIdAndPrimaryComponentId() throws IOException {
+  void save_writesGameIdAndMainCharacterId() throws IOException {
     File out = savedFile("game.json");
     saver.save(out.getAbsolutePath(), "badpiggies", "body",
         List.of(), List.of(), List.of());
 
     JsonNode root = new ObjectMapper().readTree(out);
     assertEquals("badpiggies", root.path("gameId").asText());
-    assertEquals("body", root.path("primaryComponentId").asText());
+    assertEquals("body", root.path("mainCharacterId").asText());
   }
 
   @Test
@@ -99,6 +99,51 @@ class GameCatalogSaverTest {
   }
 
   @Test
+  void save_finishLineStaticComponent_writesFinishActionType() throws IOException {
+    File out = savedFile("game.json");
+    var finishAction = new CollisionAction("finish", 0);
+    var goalLine = new StaticComponentInfo("GoalLine", "goal.png", 0, finishAction);
+    saver.save(out.getAbsolutePath(), "g", "body",
+        List.of(new ComponentInfo("body", "b.png", 1.0, List.of())),
+        List.of(goalLine), List.of());
+
+    JsonNode s = new ObjectMapper().readTree(out).path("staticComponents").get(0);
+    assertEquals("GoalLine", s.path("id").asText());
+    assertEquals("finish", s.path("onCollisionAction").path("type").asText());
+    assertEquals(0.0, s.path("onCollisionAction").path("amount").asDouble(), 0.001);
+  }
+
+  @Test
+  void roundTrip_finishLineComponent_survivesReload() throws IOException {
+    File out = savedFile("game.json");
+    var finishAction = new CollisionAction("finish", 0);
+    var goalLine = new StaticComponentInfo("GoalLine", "goal.png", 0, finishAction);
+    var comp = new ComponentInfo("body", "body.png", 1.0, List.of());
+    saver.save(out.getAbsolutePath(), "testgame", "body",
+        List.of(comp), List.of(goalLine), List.of());
+
+    GameConfigImpl loaded = new GameConfigImpl(out.getAbsolutePath());
+    assertEquals(1, loaded.staticComponents().size());
+    StaticComponentInfo reloaded = loaded.staticComponents().get(0);
+    assertEquals("GoalLine", reloaded.id());
+    assertEquals("finish", reloaded.onCollisionAction().type());
+  }
+
+  @Test
+  void save_damageStaticComponent_writesCorrectAction() throws IOException {
+    File out = savedFile("game.json");
+    var action = new CollisionAction("damage", 30.0);
+    var bomb = new StaticComponentInfo("Bomb", "bomb.png", 0, action);
+    saver.save(out.getAbsolutePath(), "g", "body",
+        List.of(new ComponentInfo("body", "b.png", 1.0, List.of())),
+        List.of(bomb), List.of());
+
+    JsonNode s = new ObjectMapper().readTree(out).path("staticComponents").get(0);
+    assertEquals("damage", s.path("onCollisionAction").path("type").asText());
+    assertEquals(30.0, s.path("onCollisionAction").path("amount").asDouble(), 0.001);
+  }
+
+  @Test
   void roundTrip_savedCatalogCanBeReloadedByGameConfigImpl() throws IOException {
     File out = savedFile("game.json");
     var comp = new ComponentInfo("body", "body.png", 5.0, List.of());
@@ -108,7 +153,7 @@ class GameCatalogSaverTest {
 
     GameConfigImpl loaded = new GameConfigImpl(out.getAbsolutePath());
     assertEquals("badpiggies", loaded.gameId());
-    assertEquals("body", loaded.primaryComponentId());
+    assertEquals("body", loaded.mainCharacterId());
     assertEquals(1, loaded.components().size());
     assertEquals("body", loaded.components().get(0).id());
     assertEquals(1, loaded.terrainTypes().size());

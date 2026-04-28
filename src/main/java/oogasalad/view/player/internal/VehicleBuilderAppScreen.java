@@ -32,15 +32,19 @@ import oogasalad.model.player.internal.PlacementValidator;
 import oogasalad.view.core.internal.AbstractAppScreen;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.SpriteCache;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Screen on which the player builds a vehicle.
  *
  * @author Iurii Beliaev
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
+  private static final Logger LOG = LogManager.getLogger(VehicleBuilderAppScreen.class);
   private static final ResourceBundle PROPS = ResourceBundle.getBundle(
       "oogasalad.view.player.VehicleBuilderAppScreen");
   private static final ResourceBundle PALETTE_CONFIG = ResourceBundle.getBundle(
@@ -52,10 +56,13 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private final PaletteSpriteRegistry spriteRegistry;
   private final BuildRulesRegistry buildRules;
   private final Map<String, List<String>> gridState = new HashMap<>();
+  private final List<StackPane> gridCells;
   private List<String> availableComponentNames;
   private FlowPane componentFlow;
   private PlacementValidator validator;
   private Label errorLabel;
+  private String mainCharacterId = "";
+  private boolean hasGameConfig;
 
   public VehicleBuilderAppScreen(Consumer<Outcome> onOutcome,
       SpriteCache spriteCache, PaletteSpriteRegistry spriteRegistry,
@@ -63,6 +70,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     this.spriteCache = spriteCache;
     this.spriteRegistry = spriteRegistry;
     this.buildRules = buildRules;
+    this.gridCells = new ArrayList<>();
     // super() calls createRoot(), so the fields above must be assigned first.
     super(onOutcome);
   }
@@ -86,7 +94,13 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   private Node createStartLevelRegion() {
     Button startButton = new Button(s("start.button.text"));
     startButton.getStyleClass().add("start-button");
-    startButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_GAMEPLAY));
+    startButton.setOnAction(event -> {
+      if (!hasMainCharacterInBuild()) {
+        showError("not able to start the game");
+        return;
+      }
+      onOutcome.accept(Outcome.OPEN_GAMEPLAY);
+    });
 
     VBox container = new VBox(startButton);
     container.getStyleClass().add("selection-region");
@@ -124,8 +138,17 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
    * game.json instead of the hardcoded properties file.
    */
   public void setGameConfig(GameConfig config) {
+    hasGameConfig = config != null;
     if (config != null) {
+      mainCharacterId = config.mainCharacterId();
+      buildRules.registerFromConfig(config);
       spriteRegistry.registerFromConfig(config);
+    } else {
+      mainCharacterId = "";
+    }
+    ensureAvailableComponentNames();
+    if (componentFlow != null) {
+      rebuildComponentPalette();
     }
   }
 
@@ -135,6 +158,8 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
   public void setAllowedComponentIds(List<String> componentIds) {
     ensureAvailableComponentNames();
     availableComponentNames.clear();
+
+    // TODO: maybe remove the check
     if (componentIds == null || componentIds.isEmpty()) {
       availableComponentNames.addAll(defaultComponentNames());
     } else {
@@ -145,7 +170,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
         }
       }
     }
+
+    ensureMainCharacterAvailable();
     gridState.clear();
+    resetWorkspace();
     if (componentFlow != null) {
       rebuildComponentPalette();
     }
@@ -160,6 +188,24 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       }
     }
     return result;
+  }
+
+  private void ensureMainCharacterAvailable() {
+    if (mainCharacterId != null && !mainCharacterId.isBlank()
+        && !availableComponentNames.contains(mainCharacterId)) {
+      availableComponentNames.add(mainCharacterId);
+    }
+  }
+
+  private boolean hasMainCharacterInBuild() {
+    if (!hasGameConfig) {
+      return true;
+    }
+    if (mainCharacterId == null || mainCharacterId.isBlank()) {
+      return false;
+    }
+    return getRawVehicleLayout().placements().stream()
+        .anyMatch(component -> mainCharacterId.equals(component.componentType()));
   }
 
   private void rebuildComponentPalette() {
@@ -180,7 +226,10 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
    * Reads the current grid state and returns it as a VehicleLayout. Called by the gameplay factory
    * just before the session starts. Each stacked component becomes its own {@link PlacedComponent}.
    */
-  public VehicleLayout getVehicleLayout() {return getRawVehicleLayout();}
+  public VehicleLayout getVehicleLayout() {
+    return getRawVehicleLayout();
+  }
+
   private VehicleLayout getRawVehicleLayout() {
     List<PlacedComponent> placements = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry : gridState.entrySet()) {
@@ -188,7 +237,13 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
       for (String type : entry.getValue()) {
         placements.add(new PlacedComponent(rc[0], rc[1], type));
       }
-    }return new VehicleLayout(placements);
+    }
+    return new VehicleLayout(placements);
+  }
+
+  @Override
+  public void onEnter() {
+    resetWorkspace();
   }
 
   @Override
@@ -253,6 +308,7 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
         cell.setPrefSize(CELL_SIZE, CELL_SIZE);
         cell.setMaxSize(CELL_SIZE, CELL_SIZE);
         wireCellHandlers(cell, row, col);
+        gridCells.add(cell);
         grid.add(cell, col, row);
       }
     }
@@ -320,20 +376,27 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
   private boolean placeComponentInCell(StackPane cell, String componentName, int row, int col) {
     PlacedComponent candidate = new PlacedComponent(row, col, componentName);
-    ValidationResult result = validator.canPlace(getVehicleLayout(), candidate, 0);
-    if (!result.valid()) {
-      showError(result.reason());
+    try {
+      ValidationResult result = validator.canPlace(getVehicleLayout(), candidate, 0);
+      if (!result.valid()) {
+        showError(result.reason());
+        return false;
+      }
+      clearError();
+
+      List<String> stack = gridState.computeIfAbsent(key(row, col), k -> new ArrayList<>());
+      if (buildRules.lookup(componentName).containment() == Containment.NONE) {
+        stack.clear();
+      }
+      stack.add(componentName);
+      renderStack(cell, stack);
+      return true;
+    } catch (IllegalArgumentException exception) {
+      LOG.warn("Rejected vehicle component '{}' because placement rules are unavailable",
+          componentName, exception);
+      showError(exception.getMessage());
       return false;
     }
-    clearError();
-
-    List<String> stack = gridState.computeIfAbsent(key(row, col), k -> new ArrayList<>());
-    if (buildRules.lookup(componentName).containment() == Containment.NONE) {
-      stack.clear();
-    }
-    stack.add(componentName);
-    renderStack(cell, stack);
-    return true;
   }
 
   private void popTopComponent(StackPane cell, int row, int col) {
@@ -357,6 +420,16 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
     for (String type : stack) {
       cell.getChildren().add(buildSpritePreview(type));
     }
+  }
+
+  private void resetWorkspace() {
+    gridState.clear();
+    for (StackPane cell : gridCells) {
+      cell.getChildren().clear();
+      cell.getStyleClass().remove("grid-cell-drag-hover");
+    }
+    clearError();
+    LOG.debug("Reset vehicle builder workspace");
   }
 
   private void showError(String reason) {

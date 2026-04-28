@@ -3,41 +3,36 @@ package oogasalad.controller.player.internal;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.DriveComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
+import oogasalad.model.engine.internal.components.RelativeDirectionDriveComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Exercises {@link GameplaySessionFactoryImpl#bindDriveActions} against a real world, a real
+ * Exercises {@link DriveActionBinder} against a real world, a real
  * {@link InputRouterImpl}, and real {@link DriveComponent} instances. Verifies which objects get
  * bound, under what button IDs, and that pressing a button toggles only the intended target.
  */
 class BindDriveActionsTest {
 
-  private GameplaySessionFactoryImpl factory;
+  private DriveActionBinder binder;
   private InputRouterImpl router;
   private World world;
 
   @BeforeEach
   void setUp() {
-    factory = new GameplaySessionFactoryImpl(
-        (String fileName, World w, LevelAttributes levelAttributes, GameConfig config) -> {
-          /* no-op LevelLoader */
-        },
-        () -> null /* no level path */
-    );
+    binder = new DriveActionBinder();
     router = new InputRouterImpl();
     world = new WorldImpl();
   }
 
   private DriveComponent newDrive(String displayName) {
-    return new DriveComponent(0, 0, 0, 10.0, 0.3, 100.0, displayName, 60.0, 60.0);
+    return new RelativeDirectionDriveComponent(0, 0, 0, 10.0, 0.3, 100.0, displayName, 60.0, 60.0, new Vector(1, 0));
   }
 
   @Test
@@ -45,7 +40,7 @@ class BindDriveActionsTest {
     DriveComponent fan = newDrive("Fan");
     world.addComponent(fan);
 
-    factory.bindDriveActions(router, world);
+    binder.bind(router, world);
     router.handleButtonPress("fan");
 
     assertTrue(fan.isDriveEnabled(),
@@ -57,7 +52,7 @@ class BindDriveActionsTest {
     DriveComponent fan = newDrive("Fan");
     world.addComponent(fan);
 
-    factory.bindDriveActions(router, world);
+    binder.bind(router, world);
     router.handleButtonPress("fan");
     router.handleButtonPress("fan");
 
@@ -72,7 +67,7 @@ class BindDriveActionsTest {
     world.addComponent(fan);
     world.addComponent(balloon);
 
-    factory.bindDriveActions(router, world);
+    binder.bind(router, world);
     router.handleButtonPress("fan");
 
     assertTrue(fan.isDriveEnabled(), "fan should be on");
@@ -86,7 +81,7 @@ class BindDriveActionsTest {
         "", 0, 1.0, 1.0, 0.1, true, 100, "pig");
     world.addComponent(pig);
 
-    factory.bindDriveActions(router, world);
+    binder.bind(router, world);
     // Pressing a button id derived from the pig's tag should be a safe no-op.
     router.handleButtonPress("pigs");
     router.handleButtonPress("pig");
@@ -99,7 +94,7 @@ class BindDriveActionsTest {
     fan.setPlayerControllable(false);
     world.addComponent(fan);
 
-    factory.bindDriveActions(router, world);
+    binder.bind(router, world);
     router.handleButtonPress("fan");
 
     assertFalse(fan.isDriveEnabled(),
@@ -111,7 +106,7 @@ class BindDriveActionsTest {
     DriveComponent fan = newDrive("Fan");
     world.addComponent(fan);
 
-    factory.bindDriveActions(router, world);
+    binder.bind(router, world);
     router.handleButtonPress("FAN");
     router.handleButtonPress("Fan");
 
@@ -122,21 +117,32 @@ class BindDriveActionsTest {
   @Test
   void twoDrivesWithSameDisplayName_bothRespondToOnePress() {
     // Two fans on one vehicle share the same displayName → same button id.
-    // bindDriveActions registers them sequentially; the second bind REPLACES the first in
-    // InputRouterImpl (HashMap#put). This test pins the current behavior so a regression to
-    // "multi-fan support via list-of-actions" is an intentional choice, not silent drift.
+    // One control should toggle every matching drive, so multi-fan builds get the full thrust
+    // the player expects from the UI.
     DriveComponent fanA = newDrive("Fan");
     DriveComponent fanB = newDrive("Fan");
     world.addComponent(fanA);
     world.addComponent(fanB);
 
-    factory.bindDriveActions(router, world);
+    binder.bind(router, world);
     router.handleButtonPress("fan");
 
-    // Whichever one was bound last will be toggled; the other stays off.
-    boolean exactlyOneEnabled = fanA.isDriveEnabled() ^ fanB.isDriveEnabled();
-    assertTrue(exactlyOneEnabled,
-        "current InputRouterImpl binds one action per id — only the last-registered fan toggles. "
-            + "If you want both fans to share a button, change to a multimap and update this test.");
+    assertTrue(fanA.isDriveEnabled(), "first fan should turn on");
+    assertTrue(fanB.isDriveEnabled(), "second fan should turn on");
+  }
+
+  @Test
+  void twoDrivesWithSameDisplayName_secondPressTurnsBothOff() {
+    DriveComponent fanA = newDrive("Fan");
+    DriveComponent fanB = newDrive("Fan");
+    world.addComponent(fanA);
+    world.addComponent(fanB);
+
+    binder.bind(router, world);
+    router.handleButtonPress("fan");
+    router.handleButtonPress("fan");
+
+    assertFalse(fanA.isDriveEnabled(), "first fan should turn off");
+    assertFalse(fanB.isDriveEnabled(), "second fan should turn off");
   }
 }

@@ -9,6 +9,7 @@ import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 import org.junit.jupiter.api.Test;
@@ -103,6 +104,25 @@ class FallOffWorldLossCheckerTest {
     assertFalse(checker.hasLost(world));
   }
 
+  @Test
+  void hasLost_configuredTrackedTag_usesConfiguredObjectsInsteadOfPigs() {
+    FakeWorld world = new FakeWorld();
+    world.addComponent(new TaggedBody("hero", 0, WORLD_HEIGHT + 10));
+    FallOffWorldLossChecker checker = new FallOffWorldLossChecker(WORLD_HEIGHT, List.of("hero"));
+
+    assertTrue(checker.hasLost(world));
+  }
+
+  @Test
+  void hasLost_configuredTrackedTagIgnoresDefaultPig() {
+    FakeWorld world = new FakeWorld();
+    world.addComponent(new TaggedBody(DefaultTag.PIGS.value(), 0, WORLD_HEIGHT + 10));
+    world.addComponent(new TaggedBody("hero", 0, 100));
+    FallOffWorldLossChecker checker = new FallOffWorldLossChecker(WORLD_HEIGHT, List.of("hero"));
+
+    assertFalse(checker.hasLost(world));
+  }
+
   // --- Test doubles ---
 
   private static final class TaggedBody extends StaticComponent {
@@ -116,6 +136,7 @@ class FallOffWorldLossCheckerTest {
     @Override public List<GameComponent> getComponents() { return List.copyOf(components); }
     @Override public List<GameComponent> getAllComponents() { return List.copyOf(components); }
     @Override public List<GameComponent> getActiveComponents() { return List.copyOf(components); }
+    @Override public List<DynamicComponent> getActiveDynamicComponents() { return List.of(); }
     @Override public List<Joint> getJoints() { return List.of(); }
     @Override public void addComponent(GameComponent c) { components.add(c); }
     @Override public void removeComponent(GameComponent c) { components.remove(c); }

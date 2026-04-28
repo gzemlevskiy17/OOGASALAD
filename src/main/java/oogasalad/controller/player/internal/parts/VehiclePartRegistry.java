@@ -16,7 +16,7 @@ import oogasalad.model.engine.api.Vector;
  */
 public final class VehiclePartRegistry {
 
-  private static final double DEFAULT_SIZE = 60.0;
+  private static final double DEFAULT_SIZE = 60.0; //TODO: properties
   private static final double DEFAULT_THRUST = 3000.0;
 
   private final Map<String, VehiclePartSpec> byName = new HashMap<>();
@@ -29,33 +29,40 @@ public final class VehiclePartRegistry {
     register(new StructuralPartSpec("Metal Wheel", JointStyle.WHEEL));
     register(new PigPartSpec("Pig"));
     register(new PigPartSpec("Small Pig"));
-    register(new DrivePartSpec("Engine", new Vector(1, 0), 3000.0)); //TODO: make vectors point in direction of motion
-    register(new DrivePartSpec("Fan", new Vector(1, 0), 10000.0));
-    register(new DrivePartSpec("Balloon", new Vector(0, -1), 8000.0));
+    register(new RelativeDirectionDrivePartSpec("Engine", new Vector(1, 0), DEFAULT_THRUST));
+    register(new RelativeDirectionDrivePartSpec("Fan", new Vector(1, 0), 8000.0)); //TODO: properties
+    register(new FixedDirectionDrivePartSpec("Balloon", new Vector(0, -1), DEFAULT_THRUST));
   }
 
   /**
    * Overlays registrations from a game catalog. Config entries override hardcoded defaults when
-   * the component id matches. Components with buttons become drive parts; the primary component
+   * the component id matches. Components with buttons become drive parts; the main character
    * becomes a pig part; everything else becomes structural.
    */
   public void registerFromConfig(GameConfig config) {
     if (config == null) {
       return;
     }
-    String primaryId = config.primaryComponentId();
+    String mainCharacterId = config.mainCharacterId();
     for (ComponentInfo ci : config.components()) {
-      VehiclePartSpec spec = buildSpecFromConfig(ci, primaryId);
+      VehiclePartSpec spec = buildSpecFromConfig(ci, mainCharacterId);
       register(spec);
     }
   }
 
-  private VehiclePartSpec buildSpecFromConfig(ComponentInfo ci, String primaryId) {
+  private VehiclePartSpec buildSpecFromConfig(ComponentInfo ci, String mainCharacterId) {
     String id = ci.id();
     double mass = ci.mass();
     double w = DEFAULT_SIZE;
     double h = DEFAULT_SIZE;
 
+    if (id.equals(mainCharacterId)) {
+      return new PigPartSpec(id, mass, w, h);
+    }
+    VehiclePartSpec existing = getIfPresent(id);
+    if (existing != null) {
+      return existing;
+    }
     if (!ci.buttons().isEmpty()) {
       ButtonInfo first = ci.buttons().get(0);
       Vector direction = new Vector(first.directionX(), first.directionY()).normalize();
@@ -63,19 +70,21 @@ public final class VehiclePartRegistry {
           Math.sqrt(first.directionX() * first.directionX()
               + first.directionY() * first.directionY()),
           DEFAULT_THRUST);
-      return new DrivePartSpec(id, direction, force, mass, w, h);
-    }
-    if (id.equals(primaryId)) {
-      return new PigPartSpec(id, mass, w, h);
+      return new FixedDirectionDrivePartSpec(id, direction, force, mass, w, h);
     }
     return new StructuralPartSpec(id, JointStyle.STRUCTURAL, mass, w, h);
   }
 
-  public VehiclePartSpec get(String paletteName) {
-    VehiclePartSpec spec = byName.get(paletteName);
-    if (spec == null) {
-      spec = byCaseInsensitive.get(paletteName.toLowerCase());
+  private VehiclePartSpec getIfPresent(String paletteName) {
+    if (paletteName == null) {
+      return null;
     }
+    VehiclePartSpec spec = byName.get(paletteName);
+    return spec != null ? spec : byCaseInsensitive.get(paletteName.toLowerCase());
+  }
+
+  public VehiclePartSpec get(String paletteName) {
+    VehiclePartSpec spec = getIfPresent(paletteName);
     if (spec == null) {
       throw new IllegalArgumentException("Unknown vehicle part: " + paletteName);
     }

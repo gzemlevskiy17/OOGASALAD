@@ -1,11 +1,10 @@
 package oogasalad.controller.player.internal;
 
-import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.geometry.Insets;
@@ -29,16 +28,13 @@ import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
-import oogasalad.data.api.Settings;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
 import oogasalad.model.engine.WorldImpl;
 import oogasalad.model.engine.api.Damageable;
-import oogasalad.model.engine.api.DefaultTag;
-import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
@@ -72,6 +68,7 @@ import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.RendererImpl;
 import oogasalad.view.core.internal.SpriteCache;
+import oogasalad.view.core.internal.TerrainPaints;
 import oogasalad.view.player.internal.GamePlayAppScreen;
 import oogasalad.view.player.internal.VehicleHpHud;
 
@@ -132,11 +129,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     path.getElements().add(new LineTo(firstKnot.x() - originX, localBaselineY));
     path.getElements().add(new ClosePath());
 
-    try {
-      path.setFill(Paint.valueOf(ts.getColor()));
-    } catch (IllegalArgumentException e) {
-      path.setFill(Color.SADDLEBROWN);
-    }
+    TerrainPaints.applyTerrainFill(path, ts.getSprite(), ts.getColor(), ts.getWidth(),
+        ts.getHeight(), ts.isTiled());
     path.setStroke(Color.BLACK);
     path.setStrokeWidth(1.0);
     return path;
@@ -146,6 +140,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private final LevelLoader levelLoader;
   private final GameLoader gameLoader;
   private final Supplier<String> levelPathSupplier;
+  private final CameraTargetResolver cameraTargetResolver = new CameraTargetResolver();
+  private final DriveActionBinder driveActionBinder = new DriveActionBinder();
 
   public GameplaySessionFactoryImpl(
       LevelLoader levelLoader,
@@ -183,21 +179,22 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
       VehicleLayout layout) {
     screen.getGameLayer().getChildren().clear();
 
-    Settings config = buildConfig();
     BuiltWorld built = buildWorld(layout);
     World world = built.world();
     LevelBounds bounds = built.bounds();
     GameConfig loadedGameConfig = built.gameConfig();
+    GameplayConfigSettings gameplayConfig = new GameplayConfigSettings(loadedGameConfig);
+    LevelAttributes levelAttributes = built.levelAttributes();
     GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl());
 
-    WinConditionChecker winChecker = buildWinChecker();
-    LossConditionChecker lossChecker = buildLossChecker(bounds.height());
+    WinConditionChecker winChecker = buildWinChecker(loadedGameConfig);
+    LossConditionChecker lossChecker = buildLossChecker(gameplayConfig, bounds.height());
     InputRouter inputRouter = buildInputRouter();
 
-    bindDriveActions(inputRouter, world);
+    driveActionBinder.bind(inputRouter, world);
     screen.setOnToolActivated(inputRouter::handleButtonPress);
     screen.setOnToolDeactivated(inputRouter::handleButtonPress);
-    screen.setAvailableTools(collectDriveToolIds(world));
+    screen.setAvailableTools(driveActionBinder.collectToolIds(world));
 
     double viewWidth = screen.getGameLayer().getWidth();
     double viewHeight = screen.getGameLayer().getHeight();
@@ -205,7 +202,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     if (viewHeight <= 0) viewHeight = DEFAULT_VIEW_HEIGHT;
 
     Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
-    GameObject player = resolveControlledPlayer(world);
+    GameObject player = cameraTargetResolver.resolve(world, levelAttributes.getCameraFollows());
 
     CameraBehavior behavior = new FollowPlayerCameraBehavior(
         () -> player, 0, 0, 0.2, bounds.width(), bounds.height());
@@ -248,8 +245,8 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
             return sprite.render(spriteCache);
           }
           throw new IllegalStateException( //TODO: Refactor into the "properties" error
-              "No renderer for " + r.getClass().getName()
-                  + " — must be TerrainSpline, TerrainBlock, or TypedComponent");
+              "No renderer for " + (r == null ? "null" : r.getClass().getName())
+                  + " - must be TerrainSpline, TerrainBlock, or TypedComponent");
         },
         (r, node) -> {
           Sprite sprite = spritesByRenderable.get(r);
@@ -273,10 +270,11 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     };
 
-    GameplayStatsTracker tracker = new GameplayStatsTrackerImpl(levelPathSupplier.get());
+    GameplayStatsTracker tracker = new GameplayStatsTrackerImpl(
+        levelPathSupplier.get(), mainCharacterId(loadedGameConfig));
     GameController controller = new GameControllerImpl(
-        engine, world, renderer, camera, behavior, winChecker, lossChecker, inputRouter, config,
-        tracker
+        engine, world, renderer, camera, behavior, winChecker, lossChecker, inputRouter,
+        gameplayConfig.controllerSettings(), tracker
     );
     controller.setOnOutcome(onOutcome);
 
@@ -307,8 +305,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     GameConfig loadedConfig = null;
 
     String levelPath = levelPathSupplier.get();
+    LevelAttributes attributes = new LevelAttributes();
     if (levelPath != null && !levelPath.isBlank()) {
-      LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+      attributes = levelLoader.loadAttributes(levelPath);
       try {
         loadedConfig = gameLoader.loadGame(
             LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
@@ -331,7 +330,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     double spawnY = spawn != null ? spawn.y() : 330.0;
     Map<PlacedComponent, RigidBody> placements =
         vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
-    return new BuiltWorld(world, bounds, placements, loadedConfig);
+    return new BuiltWorld(world, bounds, placements, loadedConfig, attributes);
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
@@ -386,50 +385,9 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     }
   }
 
-  Set<String> collectDriveToolIds(World world) {
-    Set<String> ids = new HashSet<>();
-    for (GameObject obj : world.getObjects()) {
-      if (!(obj instanceof Driveable driveable)) {
-        continue;
-      }
-      if (!driveable.isPlayerControllable()) {
-        continue;
-      }
-      String id = obj.getTag();
-      if (obj instanceof VehicleComponent vc) {
-        id = vc.getDisplayName().toLowerCase();
-      }
-      ids.add(id);
-    }
-    return ids;
-  }
-
-  /**
-   * Binds the on-screen tool button IDs to actions that activate or deactivate all matching
-   * Driveable components in the world. A button whose ID matches a component's display name
-   * (case-insensitive) toggles that component's drive state.
-   */
-  // package-private so unit tests can drive it directly against a constructed World.
-  void bindDriveActions(InputRouter inputRouter, World world) {
-    for (GameObject obj : world.getObjects()) {
-      if (!(obj instanceof Driveable driveable)) {
-        continue;
-      }
-      if (!driveable.isPlayerControllable()) {
-        continue;
-      }
-
-      String id = obj.getTag();
-      if (obj instanceof VehicleComponent vc) {
-        id = vc.getDisplayName().toLowerCase();
-      }
-
-      inputRouter.bind(id, new DriveAction(driveable));
-    }
-  }
-
   private record BuiltWorld(World world, LevelBounds bounds,
-                            Map<PlacedComponent, RigidBody> placements, GameConfig gameConfig) {
+                            Map<PlacedComponent, RigidBody> placements, GameConfig gameConfig,
+                            LevelAttributes levelAttributes) {
 
   }
 
@@ -457,45 +415,24 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     return new LevelBounds(width, height);
   }
 
-  private Settings buildConfig() {
-    return new Settings() {
-      @Override
-      public String getSetting(String key) { return ""; }
-
-      @Override
-      public double getNumericSetting(String key) { return 0.0; }
-    };
+  private WinConditionChecker buildWinChecker(GameConfig config) {
+    return new FinishLineWinChecker(mainCharacterId(config));
   }
 
-  private WinConditionChecker buildWinChecker() { return new FinishLineWinChecker(); }
+  private LossConditionChecker buildLossChecker(GameplayConfigSettings settings,
+      double worldHeight) {
+    List<String> tracked = settings.lossTrackedTags();
+    String mainCharacterId = mainCharacterId(settings.gameConfig());
+    if (tracked.isEmpty() && mainCharacterId != null && !mainCharacterId.isBlank()) {
+      tracked = List.of(mainCharacterId);
+    }
+    return new FallOffWorldLossChecker(worldHeight, tracked);
+  }
 
-  private LossConditionChecker buildLossChecker(double worldHeight) {
-    return new FallOffWorldLossChecker(worldHeight);
+  private String mainCharacterId(GameConfig config) {
+    return config == null ? null : config.mainCharacterId();
   }
 
   private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
-
-  // Hierarchy of objects to follow
-  private GameObject resolveControlledPlayer(World world) {
-    GameObject pig = world.getObjectsByTag(DefaultTag.PIGS.value()).stream().findFirst()
-        .orElse(null);
-    if (pig != null) {
-      return pig;
-    }
-
-    GameObject vehicle = world.getObjectsByTag(DefaultTag.VEHICLE.value()).stream().findFirst()
-        .orElse(null);
-    if (vehicle != null) {
-      return vehicle;
-    }
-
-    GameObject dynamic = world.getObjectsByTag(DefaultTag.DYNAMIC.value()).stream().findFirst()
-        .orElse(null);
-    if (dynamic != null) {
-      return dynamic;
-    }
-
-    return world.getObjects().stream().findFirst().orElse(null);
-  }
 
 }

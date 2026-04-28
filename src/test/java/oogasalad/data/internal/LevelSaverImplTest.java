@@ -10,11 +10,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.SpawnPointComponent;
 import oogasalad.model.engine.internal.components.TerrainSpline;
@@ -122,7 +122,7 @@ class LevelSaverImplTest {
   void saveLevel_writesMainCharacterFromAttributes() throws IOException {
     LevelAttributes attrs = new LevelAttributes();
     attrs.setGridSize(60);
-    attrs.setElementsAllowed(List.of("body", "wheel", "motor"));
+    attrs.setMainCharacterElementsAllowed(List.of("body", "wheel", "motor"));
     attrs.setMaxSelectable(5);
     attrs.setMaxHP(100);
 
@@ -158,6 +158,7 @@ class LevelSaverImplTest {
   // ── Test doubles ─────────────────────────────────────────────────────────
 
   private static class FakeWorld implements World {
+
     private final List<GameComponent> components = new ArrayList<>();
 
     @Override
@@ -175,6 +176,17 @@ class LevelSaverImplTest {
       return List.copyOf(components);
     }
 
+    /**
+     * Returns all registered dynamic components in registration order.
+     */
+    @Override
+    public List<DynamicComponent> getActiveDynamicComponents() {
+      return getActiveComponents().stream()
+          .filter(DynamicComponent.class::isInstance)
+          .map(DynamicComponent.class::cast)
+          .toList();
+    }
+
     @Override
     public List<Joint> getJoints() {
       return List.of();
@@ -189,10 +201,27 @@ class LevelSaverImplTest {
     public void removeComponent(GameComponent c) {
       components.remove(c);
     }
-    @Override public void clear() { components.clear(); }
-    @Override public void addJoint(Joint j) {}
-    @Override public void removeJoint(Joint j) {}
-    @Override public double getDragCoefficient() { return 0.0; }
-    int objectCount() { return components.size(); }
+
+    @Override
+    public void clear() {
+      components.clear();
+    }
+
+    @Override
+    public void addJoint(Joint j) {
+    }
+
+    @Override
+    public void removeJoint(Joint j) {
+    }
+
+    @Override
+    public double getDragCoefficient() {
+      return 0.0;
+    }
+
+    int objectCount() {
+      return components.size();
+    }
   }
 }

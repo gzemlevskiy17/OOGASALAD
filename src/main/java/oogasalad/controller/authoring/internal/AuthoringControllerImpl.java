@@ -7,7 +7,7 @@ import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
@@ -16,6 +16,8 @@ import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Coordinates the authoring environment: composes input handlers and services, exposes the
@@ -25,6 +27,8 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
  * @author Paulina Vvedenskaya
  */
 public class AuthoringControllerImpl implements AuthoringController {
+
+  private static final Logger LOG = LogManager.getLogger(AuthoringControllerImpl.class);
 
   private final World world;
   private final ToolSelector toolSelector;
@@ -60,6 +64,7 @@ public class AuthoringControllerImpl implements AuthoringController {
       splineDraft.cancelIfDrafting();
     }
     toolSelector.setActiveTool(type);
+    LOG.debug("Active tool set to {}", type);
   }
 
   public void setSelectedPlaceable(AuthoringPlaceable placeable) {
@@ -105,6 +110,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     if (committed != null) {
       history.record(CanvasAction.place(committed));
       canvas.refreshGrid();
+      LOG.debug("Committed spline '{}'", committed.getDisplayName());
     }
   }
 
@@ -120,6 +126,7 @@ public class AuthoringControllerImpl implements AuthoringController {
         applyInverse(batch.get(i));
       }
       canvas.refreshGrid();
+      LOG.debug("Undo applied: {} action(s)", batch.size());
     });
   }
 
@@ -130,12 +137,14 @@ public class AuthoringControllerImpl implements AuthoringController {
         applyAction(action);
       }
       canvas.refreshGrid();
+      LOG.debug("Redo applied: {} action(s)", batch.size());
     });
   }
 
   @Override
   public void clearHistory() {
     history.clear();
+    LOG.debug("Undo/redo history cleared");
   }
 
   @Override
@@ -144,6 +153,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     history.clear();
     spawnPointService.getSpawnPoint();
     canvas.refreshGrid();
+    LOG.info("Level cleared");
   }
 
   GameObject placeSelectedObject(int col, int row) {
@@ -154,6 +164,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     AuthoringPlaceable placedObject = selectedPlaceable.createAt(col, row, cellSize);
     world.addObject((GameObject) placedObject);
     history.record(CanvasAction.place(placedObject));
+    LOG.debug("Placed '{}' at col={} row={}", placedObject.getDisplayName(), col, row);
     return (GameObject) placedObject;
   }
 

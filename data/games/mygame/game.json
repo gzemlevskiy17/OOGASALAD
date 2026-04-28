@@ -1,6 +1,6 @@
 {
   "gameId": "paulina's world",
-  "primaryComponentId": "pig",
+  "mainCharacterId": "pig",
   "components": [
     {
       "id": "pig",
