@@ -37,9 +37,13 @@ public final class BuiltInVehicleCatalog {
     return List.copyOf(list);
   }
 
-  public static Optional<ComponentInfo> templateById(String id) { /* lookup in defaultComponents */ }
+  public static Optional<ComponentInfo> templateById(String id) {
+    return Optional.empty();
+  };
 
-  public static List<String> idsNotYetInCatalog(List<ComponentInfo> current) { /* omit already-present ids */ }
+  public static List<String> idsNotYetInCatalog(List<ComponentInfo> current) {
+    return List.of();
+  }
 
   public static List<String> defaultComponentIds() {
     return defaultComponents().stream().map(ComponentInfo::id).toList();
