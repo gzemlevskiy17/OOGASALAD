@@ -107,11 +107,12 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     GameController controller = buildController(screen, built, inputRouter);
     controller.setOnOutcome(onOutcome);
 
+    ScoreService scoreService = scoreService();
     CheatInputHandler cheatInputHandler = buildCheatInputHandler(
-        built.gameConfig(), world, controller, scoreService());
+        built.gameConfig(), world, controller, scoreService);
     vehicleHudAttacher.attach(screen, built.placements());
 
-    return new GameplaySession(controller, cheatInputHandler);
+    return new GameplaySession(controller, cheatInputHandler, scoreService);
   }
 
   private GameController buildController(GamePlayAppScreen screen,

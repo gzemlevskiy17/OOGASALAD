@@ -65,6 +65,12 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  public void updateHud(double elapsedSeconds, int score, double progressPercent) {
+    if (hud != null) {
+      hud.update(elapsedSeconds, score, progressPercent);
+    }
+  }
+
   public void setOnPause(Runnable onPause) {
     if (onPause == null) {
       this.onPause = () -> { };

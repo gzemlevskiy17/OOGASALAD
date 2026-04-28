@@ -14,6 +14,7 @@ import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.internal.cheats.CheatInputHandler;
 import oogasalad.controller.player.internal.cheats.CheatKeyBinding;
 import oogasalad.model.player.api.GameplayScore;
+import oogasalad.model.player.internal.ScoreServiceImpl;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -75,6 +76,21 @@ class GameplaySessionKeyInputTest {
         "Pausing should still forward to the gameplay controller.");
     assertEquals(0, cheatExecutions[0],
         "Pausing should clear held cheat keys so stale key state does not complete a chord.");
+  }
+
+  @Test
+  void CurrentScore_SharedScoreServiceReflectsCheatAwards() {
+    RecordingController controller = new RecordingController();
+    ScoreServiceImpl scoreService = new ScoreServiceImpl();
+    GameplaySession session = new GameplaySession(controller,
+        new CheatInputHandler(List.of(
+            new CheatKeyBinding(Set.of(KeyCode.M), () -> scoreService.addPoints(10)))),
+        scoreService);
+
+    session.handleKeyPress(KeyCode.M);
+
+    assertEquals(10, session.currentScore(),
+        "Gameplay sessions should expose the same score service used by cheat actions.");
   }
 
   private static final class RecordingController implements GameController {

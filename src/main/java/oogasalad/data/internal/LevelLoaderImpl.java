@@ -46,7 +46,7 @@ public class LevelLoaderImpl implements LevelLoader {
   private static final double DEFAULT_OBJECT_SIZE = 60;
   private static final double SPLINE_BASELINE_MARGIN = 200;
 
-  private final ScoreService score = new ScoreServiceImpl();
+  private ScoreService score = new ScoreServiceImpl();
 
   public ScoreService getScore() {
     return score;
@@ -55,6 +55,7 @@ public class LevelLoaderImpl implements LevelLoader {
   @Override
   public void loadLevel(String fileName, GameConfig game, World world,
       LevelAttributes levelAttributes) {
+    score = new ScoreServiceImpl();
     JsonNode root = parseFile(fileName);
     LevelAttributes activeAttributes = levelAttributes;
     if (activeAttributes == null) {

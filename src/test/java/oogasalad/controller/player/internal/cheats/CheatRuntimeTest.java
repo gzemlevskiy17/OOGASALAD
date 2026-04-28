@@ -173,6 +173,20 @@ class CheatRuntimeTest {
   }
 
   @Test
+  void CheatEffectRegistry_DestroyEffect_ComponentTypeTargetIgnoresCase() {
+    WorldImpl world = new WorldImpl();
+    StructuralComponent bomb = frame("Bomb", 50, 75);
+    world.addObject(bomb);
+    CheatEffect destroy = CheatEffectRegistry.defaults().create(
+        effect("destroy", componentTypeTarget("bomb"), Map.of()));
+
+    destroy.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
+
+    assertFalse(world.getObjects().contains(bomb),
+        "componentType targeting should match catalog ids case-insensitively.");
+  }
+
+  @Test
   void CheatEffectRegistry_LaunchEffect_SetsTargetVelocity() {
     WorldImpl world = new WorldImpl();
     PigComponent pig = pig("BigPig", 100, 100);
@@ -188,6 +202,23 @@ class CheatRuntimeTest {
         "launch should set the resolved dynamic component's x velocity.");
     assertEquals(-140.25, velocity.y(), ASSERTION_DELTA,
         "launch should set the resolved dynamic component's y velocity.");
+  }
+
+  @Test
+  void CheatEffectRegistry_LaunchEffect_VehicleTargetIncludesPig() {
+    WorldImpl world = new WorldImpl();
+    PigComponent pig = pig("BigPig", 100, 100);
+    world.addObject(pig);
+    CheatEffect launch = CheatEffectRegistry.defaults().create(
+        effect("launch", vehicleTarget(), Map.of("xVelocity", "300", "yVelocity", "-500")));
+
+    launch.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
+
+    Vector velocity = pig.getDynamicState().getLinearVelocity();
+    assertEquals(300.0, velocity.x(), ASSERTION_DELTA,
+        "vehicle targeting should include pig components in the assembled vehicle.");
+    assertEquals(-500.0, velocity.y(), ASSERTION_DELTA,
+        "launch should apply to pig components when the vehicle target is used.");
   }
 
   @Test
@@ -372,6 +403,10 @@ class CheatRuntimeTest {
 
   private CheatTargetInfo mainCharacterTarget() {
     return new CheatTargetInfo("mainCharacter", "");
+  }
+
+  private CheatTargetInfo vehicleTarget() {
+    return new CheatTargetInfo("vehicle", "");
   }
 
   private CheatTargetInfo componentTypeTarget(String id) {

@@ -1,5 +1,6 @@
 package oogasalad.controller.player.internal.cheats;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -77,7 +78,10 @@ public class CheatTargetResolver {
 
   private static List<GameObject> vehicleTargets(CheatTargetInfo target,
       CheatRuntimeContext context) {
-    return context.world().getObjectsByTag(DefaultTag.VEHICLE.value());
+    List<GameObject> targets = new ArrayList<>(context.world().getObjectsByTag(
+        DefaultTag.VEHICLE.value()));
+    targets.addAll(context.world().getObjectsByTag(DefaultTag.PIGS.value()));
+    return List.copyOf(targets);
   }
 
   private static List<GameObject> mainCharacterTargets(CheatTargetInfo target,
@@ -107,9 +111,11 @@ public class CheatTargetResolver {
   }
 
   private static List<GameObject> typedTargets(CheatRuntimeContext context, String componentType) {
+    String normalizedComponentType = normalize(componentType);
     return context.world().getObjects().stream()
         .filter(TypedComponent.class::isInstance)
-        .filter(object -> ((TypedComponent) object).getComponentType().equals(componentType))
+        .filter(object -> normalize(((TypedComponent) object).getComponentType())
+            .equals(normalizedComponentType))
         .toList();
   }
 

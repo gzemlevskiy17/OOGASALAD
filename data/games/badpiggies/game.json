@@ -199,5 +199,73 @@
       },
       "parameters" : { }
     } ]
+  }, {
+    "id" : "testscore",
+    "name" : "score",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "M" ]
+    },
+    "effects" : [ {
+      "type" : "addScore",
+      "target" : {
+        "kind" : "world",
+        "id" : ""
+      },
+      "parameters" : {
+        "amount" : "10"
+      }
+    } ]
+  }, {
+    "id" : "testdestroy",
+    "name" : "testdestroy",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "D" ]
+    },
+    "effects" : [ {
+      "type" : "destroy",
+      "target" : {
+        "kind" : "componentType",
+        "id" : "bomb"
+      },
+      "parameters" : { }
+    } ]
+  }, {
+    "id" : "testlaunch",
+    "name" : "launch",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "L" ]
+    },
+    "effects" : [ {
+      "type" : "launch",
+      "target" : {
+        "kind" : "vehicle",
+        "id" : ""
+      },
+      "parameters" : {
+        "yVelocity" : "20",
+        "xVelocity" : "20"
+      }
+    } ]
+  }, {
+    "id" : "testlaunchagain",
+    "name" : "launch",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "K" ]
+    },
+    "effects" : [ {
+      "type" : "launch",
+      "target" : {
+        "kind" : "vehicle",
+        "id" : ""
+      },
+      "parameters" : {
+        "yVelocity" : "80",
+        "xVelocity" : "80"
+      }
+    } ]
   } ]
 }

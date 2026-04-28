@@ -100,7 +100,7 @@ public class GamePlayScreenCoordinator implements AppScreen {
     session.setOnStatsTick((elapsed, progress) -> {
       lastElapsedSeconds = elapsed;
       lastProgressPercent = progress;
-      view.updateHud(elapsed, progress);
+      view.updateHud(elapsed, session.currentScore(), progress);
     });
     session.setOnTerminalScore(score -> lastGameplayScore = score);
     session.start();

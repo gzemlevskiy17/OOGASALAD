@@ -7,6 +7,8 @@ import javafx.scene.input.KeyCode;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.internal.cheats.CheatInputHandler;
 import oogasalad.model.player.api.GameplayScore;
+import oogasalad.model.player.api.ScoreService;
+import oogasalad.model.player.internal.ScoreServiceImpl;
 
 /**
  * Lightweight lifecycle wrapper around a {@link GameController} for a single gameplay run.
@@ -17,6 +19,7 @@ import oogasalad.model.player.api.GameplayScore;
 public class GameplaySession {
   private final GameController controller;
   private final CheatInputHandler cheatInputHandler;
+  private final ScoreService scoreService;
 
   /**
    * Creates a session bound to a concrete controller.
@@ -34,8 +37,14 @@ public class GameplaySession {
    * @param cheatInputHandler receives key press/release state for configured cheat chords
    */
   public GameplaySession(GameController controller, CheatInputHandler cheatInputHandler) {
+    this(controller, cheatInputHandler, new ScoreServiceImpl());
+  }
+
+  GameplaySession(GameController controller, CheatInputHandler cheatInputHandler,
+      ScoreService scoreService) {
     this.controller = controller;
     this.cheatInputHandler = cheatInputHandler;
+    this.scoreService = scoreService == null ? new ScoreServiceImpl() : scoreService;
   }
 
   /** Starts or resumes simulation. */
@@ -79,6 +88,10 @@ public class GameplaySession {
    */
   public void handleButtonPress(String buttonId) {
     controller.handleButtonPress(buttonId);
+  }
+
+  int currentScore() {
+    return scoreService.getPoints();
   }
 
   /**
