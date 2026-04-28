@@ -281,7 +281,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "description": "Primitive effect type, e.g. repair, damage, teleport, finishRun, loseRun, spawnPowerup."
+          "description": "Primitive effect type, e.g. repair, damage, teleport, finishRun, loseRun, addScore, destroy, launch, spawnPowerup."
         },
         "target": {
           "$ref": "#/$defs/cheatTargetInfo"

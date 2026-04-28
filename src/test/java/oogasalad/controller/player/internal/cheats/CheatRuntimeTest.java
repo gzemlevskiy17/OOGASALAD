@@ -1,6 +1,7 @@
 package oogasalad.controller.player.internal.cheats;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,10 +21,12 @@ import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.WorldImpl;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.PickupComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
 import oogasalad.model.engine.internal.components.StructuralComponent;
+import oogasalad.model.player.api.ScoreService;
 import oogasalad.model.player.internal.ScoreServiceImpl;
 import oogasalad.support.TestGameConfig;
 import org.junit.jupiter.api.Test;
@@ -66,7 +69,8 @@ class CheatRuntimeTest {
     List<String> effectTypes = CheatEffectRegistry.defaults().registeredTypes();
 
     assertTrue(effectTypes.containsAll(List.of(
-            "repair", "damage", "teleport", "finishRun", "loseRun", "spawnPowerup")),
+            "repair", "damage", "teleport", "finishRun", "loseRun", "addScore", "destroy",
+            "launch", "spawnPowerup")),
         "Authoring help should list every default primitive effect available at runtime.");
   }
 
@@ -137,6 +141,53 @@ class CheatRuntimeTest {
 
     assertEquals(List.of(Outcome.GAME_LOST), outcomes,
         "loseRun should emit the same terminal loss outcome used by normal gameplay.");
+  }
+
+  @Test
+  void CheatEffectRegistry_AddScoreEffect_AddsConfiguredPoints() {
+    ScoreServiceImpl scoreService = new ScoreServiceImpl();
+    CheatEffect addScore = CheatEffectRegistry.defaults().create(
+        effect("addScore", worldTarget(), Map.of("amount", "150.0")));
+
+    addScore.apply(context(new WorldImpl(), TestGameConfig.badPiggies(), new ArrayList<>(),
+        scoreService));
+
+    assertEquals(150, scoreService.getPoints(),
+        "addScore should add the configured point amount to the gameplay score service.");
+  }
+
+  @Test
+  void CheatEffectRegistry_DestroyEffect_RemovesResolvedComponentFromWorld() {
+    WorldImpl world = new WorldImpl();
+    StructuralComponent frame = frame("Frame", 50, 75);
+    world.addObject(frame);
+    CheatEffect destroy = CheatEffectRegistry.defaults().create(
+        effect("destroy", componentTypeTarget("Frame"), Map.of()));
+
+    destroy.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
+
+    assertFalse(world.getObjects().contains(frame),
+        "destroy should remove the resolved component from the active world.");
+    assertFalse(world.getAllComponents().contains(frame),
+        "destroy should remove the resolved component from the registered world components.");
+  }
+
+  @Test
+  void CheatEffectRegistry_LaunchEffect_SetsTargetVelocity() {
+    WorldImpl world = new WorldImpl();
+    PigComponent pig = pig("BigPig", 100, 100);
+    world.addObject(pig);
+    CheatEffect launch = CheatEffectRegistry.defaults().create(
+        effect("launch", mainCharacterTarget(),
+            Map.of("xVelocity", "225.5", "yVelocity", "-140.25")));
+
+    launch.apply(context(world, TestGameConfig.badPiggies(), new ArrayList<>()));
+
+    Vector velocity = pig.getDynamicState().getLinearVelocity();
+    assertEquals(225.5, velocity.x(), ASSERTION_DELTA,
+        "launch should set the resolved dynamic component's x velocity.");
+    assertEquals(-140.25, velocity.y(), ASSERTION_DELTA,
+        "launch should set the resolved dynamic component's y velocity.");
   }
 
   @Test
@@ -301,8 +352,13 @@ class CheatRuntimeTest {
   }
 
   private CheatRuntimeContext context(World world, GameConfig config, List<Outcome> outcomes) {
+    return context(world, config, outcomes, new ScoreServiceImpl());
+  }
+
+  private CheatRuntimeContext context(World world, GameConfig config, List<Outcome> outcomes,
+      ScoreService scoreService) {
     return new CheatRuntimeContext(world, config, config.mainCharacterId(), outcomes::add,
-        new ScoreServiceImpl());
+        scoreService);
   }
 
   private CheatEffectInfo effect(String type, CheatTargetInfo target,

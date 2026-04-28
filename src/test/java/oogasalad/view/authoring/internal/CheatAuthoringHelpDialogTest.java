@@ -41,6 +41,12 @@ class CheatAuthoringHelpDialogTest {
 
     assertTrue(availableText.contains("- spawnPowerup"),
         "Help text should list registered effect types.");
+    assertTrue(availableText.contains("- addScore"),
+        "Help text should list score changes as an available primitive.");
+    assertTrue(availableText.contains("- destroy"),
+        "Help text should list destruction as an available primitive.");
+    assertTrue(availableText.contains("- launch"),
+        "Help text should list velocity launch as an available primitive.");
     assertTrue(availableText.contains("- mainCharacter"),
         "Help text should list registered target kinds.");
     assertTrue(availableText.contains("componentId=<static component id>; optional x=<number>"),

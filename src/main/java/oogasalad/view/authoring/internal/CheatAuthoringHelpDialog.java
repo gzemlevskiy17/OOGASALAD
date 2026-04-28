@@ -144,6 +144,9 @@ public class CheatAuthoringHelpDialog {
         - teleport: x=<number>,y=<number>
         - finishRun: no parameters
         - loseRun: no parameters
+        - addScore: amount=<integer>
+        - destroy: no parameters
+        - launch: xVelocity=<number>,yVelocity=<number>
         - spawnPowerup: componentId=<static component id>; optional x=<number>,y=<number>
         - spawnPowerup without x/y: spawns at the resolved Target Kind, e.g. mainCharacter
         """;

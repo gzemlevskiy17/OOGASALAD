@@ -8,8 +8,9 @@ import java.util.Map;
  * <p>The {@code type} is resolved by the runtime cheat effect registry. Parameters remain generic
  * so new primitive effects can be added without changing this data contract. Initial primitive
  * examples include {@code repair}, {@code damage}, {@code teleport}, {@code finishRun},
- * {@code loseRun}, and {@code spawnPowerup}. A spawn-powerup effect can use
- * parameters such as {@code componentId}, {@code x}, and {@code y}.
+ * {@code loseRun}, {@code addScore}, {@code destroy}, {@code launch}, and
+ * {@code spawnPowerup}. A spawn-powerup effect can use parameters such as {@code componentId},
+ * {@code x}, and {@code y}.
  *
  * @param type       primitive effect type interpreted by the runtime registry
  * @param target     target selector for effects that act on objects or the world
