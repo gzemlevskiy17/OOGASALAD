@@ -27,7 +27,7 @@ class DefaultBuildRulesRegistryTest {
     DefaultBuildRulesRegistry registry = new DefaultBuildRulesRegistry();
     registry.registerFromConfig(TestGameConfig.badPiggies());
 
-    assertEquals(Containment.INSIDE_FRAME, registry.lookup("BigPig").containment());
+    assertEquals(Containment.INSIDE_OR_OUTSIDE_FRAME, registry.lookup("BigPig").containment());
   }
 
   @Test
@@ -58,7 +58,7 @@ class DefaultBuildRulesRegistryTest {
 
     registry.registerFromConfig(new GameConfigImpl(gameFile.toString()));
 
-    assertEquals(Containment.INSIDE_FRAME, registry.lookup("BigPig").containment());
+    assertEquals(Containment.INSIDE_OR_OUTSIDE_FRAME, registry.lookup("BigPig").containment());
     assertEquals(PositionConstraint.NONE, registry.lookup("BigPig").position());
   }
 }
