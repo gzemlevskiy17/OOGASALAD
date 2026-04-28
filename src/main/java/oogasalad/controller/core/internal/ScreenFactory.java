@@ -15,7 +15,7 @@ import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelId;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
@@ -56,6 +56,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 public class ScreenFactory {
 

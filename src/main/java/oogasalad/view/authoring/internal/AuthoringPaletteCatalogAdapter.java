@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.data.api.TerrainInfo;
 import oogasalad.data.internal.GameAttributes;
