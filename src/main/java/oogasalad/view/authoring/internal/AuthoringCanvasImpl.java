@@ -223,7 +223,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
     int spanCols = selectedPlaceable.colSpan(cellSize);
     int spanRows = selectedPlaceable.rowSpan(cellSize);
-    Color previewColor = Color.web(selectedPlaceable.getColor(), 0.5);
+    Color previewColor = Color.web(selectedPlaceable.getColor(), PREVIEW_OPACITY);
 
     hoverOverlay = new Rectangle(
         col * cellSize, row * cellSize,
@@ -325,7 +325,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
         terrainSpline.getWidth() * cellSize, terrainSpline.getHeight() * cellSize,
         terrainSpline.isTiled());
     path.setStroke(TERRAIN_STROKE_COLOR);
-    path.setStrokeWidth(1.0);
+    path.setStrokeWidth(TERRAIN_SPLINE_STROKE_WIDTH);
     path.setOnMousePressed(e -> onObjectSelected.accept(terrainSpline));
     path.setOnMouseEntered(e -> onTerrainHoverEnter.accept(terrainSpline));
     path.setOnMouseExited(e -> onTerrainHoverExit.run());
@@ -405,9 +405,9 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
 
   private String toCss(Color color) {
     return String.format("#%02X%02X%02X",
-        (int) Math.round(color.getRed() * 255),
-        (int) Math.round(color.getGreen() * 255),
-        (int) Math.round(color.getBlue() * 255));
+        (int) Math.round(color.getRed() * COLOR_CHANNEL_MAX),
+        (int) Math.round(color.getGreen() * COLOR_CHANNEL_MAX),
+        (int) Math.round(color.getBlue() * COLOR_CHANNEL_MAX));
   }
 
   /**
@@ -416,34 +416,59 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
    * redraws the canvas.
    */
   private void drawSpawnGuide() {
-    SpawnPointComponent spawnComp = world == null ? null :
-        world.getAllComponents().stream()
-            .filter(SpawnPointComponent.class::isInstance)
-            .map(SpawnPointComponent.class::cast)
-            .findFirst().orElse(null);
+    SpawnPointComponent spawnComp = findSpawnComponent();
 
     // SpawnPointComponent stores grid-cell units (same as TerrainBlock); multiply by cellSize
     // to get canvas pixel coordinates for rendering.
     double spawnX = spawnComp != null ? spawnComp.x() * cellSize : d("spawnX");
     double spawnY = spawnComp != null ? spawnComp.y() * cellSize : d("spawnY");
-    double markerRadius = d("spawnMarkerRadius");
-    double totalWidth = gridCols * cellSize;
 
+    drawSpawnGroundLine(spawnY);
+    drawSpawnMarker(spawnX, spawnY);
+  }
+
+  /**
+   * Searches the world for a SpawnPointComponent, or returns null if the world is null or no spawn
+   * point exists.
+   */
+  private SpawnPointComponent findSpawnComponent() {
+    if (world == null) {
+      return null;
+    }
+    return world.getAllComponents().stream()
+        .filter(SpawnPointComponent.class::isInstance)
+        .map(SpawnPointComponent.class::cast)
+        .findFirst().orElse(null);
+  }
+
+  /**
+   * Draws the dashed horizontal reference line at the spawn's Y coordinate.
+   */
+  private void drawSpawnGroundLine(double spawnY) {
+    double totalWidth = gridCols * cellSize;
     Line ground = new Line(0, spawnY, totalWidth, spawnY);
     ground.setStroke(Color.web(PROPS.getString("groundGuideColor")));
     ground.setStrokeWidth(d("groundGuideStrokeWidth"));
     ground.getStrokeDashArray().addAll(d("groundGuideDashOn"), d("groundGuideDashOff"));
     ground.setMouseTransparent(true);
     root.getChildren().add(ground);
+  }
 
+  /**
+   * Draws the spawn marker circle, center dot, and "vehicle spawn" label.
+   */
+  private void drawSpawnMarker(double spawnX, double spawnY) {
+    double markerRadius = d("spawnMarkerRadius");
     Color markerColor = Color.web(PROPS.getString("spawnMarkerColor"));
+
     Circle marker = new Circle(spawnX, spawnY, markerRadius, Color.TRANSPARENT);
     marker.setStroke(markerColor);
-    marker.setStrokeWidth(2.0);
+    marker.setStrokeWidth(SPAWN_MARKER_STROKE_WIDTH);
     marker.setMouseTransparent(true);
     root.getChildren().add(marker);
 
-    Circle markerDot = new Circle(spawnX, spawnY, markerRadius / 3.0, markerColor);
+    Circle markerDot = new Circle(spawnX, spawnY, markerRadius / MARKER_DOT_RADIUS_DIVISOR,
+        markerColor);
     markerDot.setMouseTransparent(true);
     root.getChildren().add(markerDot);
 
@@ -454,7 +479,6 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     label.setFill(markerColor);
     label.setMouseTransparent(true);
     root.getChildren().add(label);
-
   }
 
   private double d(String key) {
