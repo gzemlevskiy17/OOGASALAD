@@ -33,9 +33,6 @@ import oogasalad.model.engine.api.Vector;
  */
 public class CollisionDetectorImpl implements CollisionDetector {
 
-  //TODO: test & refactor
-  //TODO: tolerances
-  //TODO: update javadoc once complete
   private static final double GEOMETRY_EPSILON = 1e-9;
 
   /**
@@ -151,7 +148,6 @@ public class CollisionDetectorImpl implements CollisionDetector {
    */
   private Optional<SatCandidate> buildCollision(GameObject referenceObject,
       GameObject incidentObject, ConvexPolygon referencePolygon, ConvexPolygon incidentPolygon) {
-    //TODO: rename method (setters in the end)
     double minPenetrationDepth = Double.MAX_VALUE;
     Vector normal = null;
     Vector[] minReferenceEdge = new Vector[2];
