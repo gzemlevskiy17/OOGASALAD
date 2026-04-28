@@ -6,7 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -16,6 +19,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
@@ -24,11 +28,16 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.api.ButtonInfo;
+import oogasalad.data.api.CheatEffectInfo;
+import oogasalad.data.api.CheatInfo;
+import oogasalad.data.api.CheatTargetInfo;
+import oogasalad.data.api.CheatTriggerInfo;
 import oogasalad.data.api.CollisionAction;
 import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
@@ -54,29 +63,44 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.authoring.GameAuthoring");
   private static final Path ASSETS_DIR = Path.of("data", "assets");
-  private static final Path GAMES_DIR = Path.of("data", "games");
-  private static final Path LEVELS_DIR = Path.of("data", "levels");
+  private static final Path DEFAULT_GAMES_DIR = Path.of("data", "games");
+  private static final Path DEFAULT_LEVELS_DIR = Path.of("data", "levels");
   private static final String GAME_FILE_NAME = "game.json";
+  private static final String DEFAULT_CHEAT_TARGET_KIND = "world";
 
   private final Consumer<String> loadLevelHandler;
   private final Consumer<GameConfig> onGameConfigReady;
   private final FileChooserService fileChooserService;
-  private final GameCatalogSaver catalogSaver = new GameCatalogSaver();
+  private final GameCatalogSaver catalogSaver;
+  private final Path gamesDir;
+  private final Path levelsDir;
 
   private final List<TerrainInfo> terrainTypes = new ArrayList<>();
   private final List<StaticComponentInfo> staticComponents = new ArrayList<>();
   private final List<ComponentInfo> components = new ArrayList<>();
+  private final List<CheatInfo> cheats = new ArrayList<>();
   private TextField gameIdField;
   private TextField mainCharacterIdField;
+  private ListView<String> cheatListView;
   private String saveFilePath = "data/games/untitled/game.json";
 
   public GameAuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler,
       Consumer<GameConfig> onGameConfigReady) {
+    this(onOutcome, loadLevelHandler, onGameConfigReady, new GameCatalogSaver(),
+        DEFAULT_GAMES_DIR, DEFAULT_LEVELS_DIR, new FileChooserService());
+  }
+
+  GameAuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler,
+      Consumer<GameConfig> onGameConfigReady, GameCatalogSaver catalogSaver, Path gamesDir,
+      Path levelsDir, FileChooserService fileChooserService) {
     super(onOutcome);
     this.loadLevelHandler = Objects.requireNonNull(loadLevelHandler);
     this.onGameConfigReady = onGameConfigReady != null ? onGameConfigReady : cfg -> {
     };
-    this.fileChooserService = new FileChooserService();
+    this.catalogSaver = catalogSaver;
+    this.gamesDir = gamesDir;
+    this.levelsDir = levelsDir;
+    this.fileChooserService = fileChooserService;
   }
 
   public void loadCatalogFromPath(String path) {
@@ -91,6 +115,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       staticComponents.addAll(config.staticComponents());
       components.clear();
       components.addAll(config.components());
+      cheats.clear();
+      cheats.addAll(config.cheats());
+      refreshCheatList();
     } catch (Exception e) {
       new AuthoringAlertService().showError("Load Error", e.getMessage());
     }
@@ -109,7 +136,9 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     BorderPane pane = new BorderPane();
     pane.getStylesheets().add(
         getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
-    pane.getStyleClass().add("screen-root");
+    pane.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/authoring/game-authoring.css").toExternalForm());
+    pane.getStyleClass().addAll("screen-root", "game-authoring-root");
     pane.setPadding(new Insets(d("rootPadding")));
     return pane;
   }
@@ -150,7 +179,8 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     tabs.getTabs().addAll(
         buildTerrainTab(),
         buildStaticTab(),
-        buildComponentsTab()
+        buildComponentsTab(),
+        buildCheatsTab()
     );
     VBox.setVgrow(tabs, Priority.ALWAYS);
     return tabs;
@@ -185,10 +215,13 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       }
     });
 
-    return new Tab("Terrain", buildTabContent(list,
-        formRow("ID", idF), spriteRow(spriteF),
-        formRow("Color", colorF), formRow("Friction", frictionF),
-        buttonBar(add, remove)));
+    VBox form = tabForm(
+        List.of(
+            formRow("ID", idF), spriteRow(spriteF),
+            formRow("Color", colorF), formRow("Friction", frictionF)),
+        buttonBar(add, remove));
+
+    return new Tab("Terrain", buildTabContent(list, form));
   }
 
   private void refreshTerrainList(ListView<String> list) {
@@ -232,11 +265,14 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       }
     });
 
-    return new Tab("Static Objects", buildTabContent(list,
-        formRow("ID", idF), spriteRow(spriteF),
-        formRow("Mass", massF), formRow("Action Type", actionTypeF),
-        formRow("Action Amount", actionAmountF),
-        buttonBar(add, remove)));
+    VBox form = tabForm(
+        List.of(
+            formRow("ID", idF), spriteRow(spriteF),
+            formRow("Mass", massF), formRow("Action Type", actionTypeF),
+            formRow("Action Amount", actionAmountF)),
+        buttonBar(add, remove));
+
+    return new Tab("Static Objects", buildTabContent(list, form));
   }
 
   private void refreshStaticList(ListView<String> list) {
@@ -305,10 +341,12 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       }
     });
 
-    VBox form = new VBox(6,
-        formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
-        new Label("Buttons:"), btnList,
-        formRow("Button Name", btnNameF), formRow("Dir X", btnDxF), formRow("Dir Y", btnDyF),
+    VBox form = tabForm(
+        List.of(
+            formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
+            new Label("Buttons:"), btnList,
+            formRow("Button Name", btnNameF), formRow("Dir X", btnDxF),
+            formRow("Dir Y", btnDyF)),
         buttonBar(addBtn),
         buttonBar(add, useAsMainCharacter, remove));
 
@@ -329,6 +367,217 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     }
     list.getItems().setAll(components.stream()
         .map(c -> c.id() + "  [" + c.buttons().size() + " buttons]").toList());
+  }
+
+  private Tab buildCheatsTab() {
+    cheatListView = new ListView<>();
+    cheatListView.setId("cheat-list");
+    refreshCheatList();
+
+    TextField idF = field("cheat id, e.g. spawn_heart", "cheat-id-field");
+    TextField nameF = field("display name, e.g. Spawn Heart", "cheat-name-field");
+    TextField keysF = field("key chord, e.g. SHIFT,P", "cheat-keys-field");
+    CheckBox enabledBox = new CheckBox("Enabled");
+    enabledBox.setId("cheat-enabled-checkbox");
+    enabledBox.setSelected(true);
+
+    TextField effectTypeF = field("effect type, e.g. spawnPowerup", "cheat-effect-type-field");
+    TextField targetKindF = field("target kind, e.g. world", "cheat-target-kind-field");
+    TextField targetIdF = field("target id, optional", "cheat-target-id-field");
+    TextField parametersF =
+        field("parameters, e.g. componentId=heart,x=400,y=600", "cheat-parameters-field");
+
+    List<CheatEffectInfo> pendingEffects = new ArrayList<>();
+    ListView<String> effectList = new ListView<>();
+    effectList.setId("cheat-effect-list");
+    effectList.setPrefHeight(95);
+
+    Button addEffect = new Button("Add Effect");
+    addEffect.setId("add-cheat-effect-button");
+    addEffect.setOnAction(e -> addPendingCheatEffect(pendingEffects, effectList,
+        effectTypeF, targetKindF, targetIdF, parametersF));
+
+    Button removeEffect = new Button("Remove Effect");
+    removeEffect.setId("remove-cheat-effect-button");
+    removeEffect.setOnAction(e -> removeSelectedPendingEffect(pendingEffects, effectList));
+
+    Button addCheat = new Button("Add Cheat");
+    addCheat.setId("add-cheat-button");
+    addCheat.setOnAction(e -> addAuthoredCheat(
+        idF, nameF, keysF, enabledBox, pendingEffects, effectList));
+
+    Button removeCheat = new Button("Remove Cheat");
+    removeCheat.setId("remove-cheat-button");
+    removeCheat.setOnAction(e -> removeSelectedCheat());
+
+    Button helpButton = new Button("Cheat Help");
+    helpButton.setId("cheat-help-button");
+    helpButton.setOnAction(e -> new CheatAuthoringHelpDialog(
+        mainCharacterIdField.getText().strip(), components, staticComponents, terrainTypes)
+        .show());
+
+    VBox form = tabForm(
+        List.of(
+            formRow("ID", idF), formRow("Name", nameF), formRow("Keys", keysF),
+            enabledBox,
+            new Label("Pending Effects:"), effectList,
+            formRow("Effect Type", effectTypeF), formRow("Target Kind", targetKindF),
+            formRow("Target ID", targetIdF), formRow("Parameters", parametersF)),
+        buttonBar(addEffect, removeEffect),
+        buttonBar(addCheat, removeCheat, helpButton));
+
+    return new Tab("Cheats", buildTabContent(cheatListView, form));
+  }
+
+  private void addPendingCheatEffect(List<CheatEffectInfo> pendingEffects,
+      ListView<String> effectList, TextField effectTypeF, TextField targetKindF,
+      TextField targetIdF, TextField parametersF) {
+    try {
+      CheatEffectInfo effect = new CheatEffectInfo(
+          requiredText(effectTypeF, "Effect Type"),
+          cheatTargetFrom(targetKindF, targetIdF),
+          parseParameterMap(parametersF.getText()));
+      pendingEffects.add(effect);
+      refreshPendingEffectList(pendingEffects, effectList);
+      clearFields(effectTypeF, targetKindF, targetIdF, parametersF);
+    } catch (CheatAuthoringException e) {
+      showCheatAuthoringError(e);
+    }
+  }
+
+  private void addAuthoredCheat(TextField idF, TextField nameF, TextField keysF,
+      CheckBox enabledBox, List<CheatEffectInfo> pendingEffects, ListView<String> effectList) {
+    try {
+      CheatInfo cheat = cheatFrom(idF, nameF, keysF, enabledBox, pendingEffects);
+      cheats.add(cheat);
+      pendingEffects.clear();
+      refreshPendingEffectList(pendingEffects, effectList);
+      refreshCheatList();
+      clearFields(idF, nameF, keysF);
+      enabledBox.setSelected(true);
+    } catch (CheatAuthoringException e) {
+      showCheatAuthoringError(e);
+    }
+  }
+
+  private CheatInfo cheatFrom(TextField idF, TextField nameF, TextField keysF,
+      CheckBox enabledBox, List<CheatEffectInfo> pendingEffects) {
+    String id = requiredText(idF, "Cheat ID");
+    List<String> keys = parseKeyChord(keysF.getText());
+    requireNonEmpty(keys, "Cheat key chord must include at least one key.");
+    requireNonEmpty(pendingEffects, "Cheat must include at least one effect.");
+    return new CheatInfo(
+        id,
+        Optional.of(nameF.getText().strip()).filter(value -> !value.isBlank()).orElse(id),
+        enabledBox.isSelected(),
+        new CheatTriggerInfo(keys),
+        List.copyOf(pendingEffects));
+  }
+
+  private CheatTargetInfo cheatTargetFrom(TextField targetKindF, TextField targetIdF) {
+    String kind = Optional.of(targetKindF.getText().strip())
+        .filter(value -> !value.isBlank())
+        .orElse(DEFAULT_CHEAT_TARGET_KIND);
+    return new CheatTargetInfo(kind, targetIdF.getText().strip());
+  }
+
+  private List<String> parseKeyChord(String rawKeys) {
+    return Arrays.stream(rawKeys.split(","))
+        .map(String::strip)
+        .filter(key -> !key.isBlank())
+        .toList();
+  }
+
+  private Map<String, String> parseParameterMap(String rawParameters) {
+    Map<String, String> parameters = new LinkedHashMap<>();
+    Arrays.stream(rawParameters.split(","))
+        .map(String::strip)
+        .filter(parameter -> !parameter.isBlank())
+        .forEach(parameter -> addParameter(parameters, parameter));
+    return parameters;
+  }
+
+  private void addParameter(Map<String, String> parameters, String rawParameter) {
+    String[] pair = rawParameter.split("=", 2);
+    if (pair.length != 2 || pair[0].isBlank()) {
+      throw new CheatAuthoringException(
+          "Cheat parameters must use key=value pairs separated by commas.");
+    }
+    parameters.put(pair[0].strip(), pair[1].strip());
+  }
+
+  private void requireNonEmpty(List<?> values, String message) {
+    if (values.isEmpty()) {
+      throw new CheatAuthoringException(message);
+    }
+  }
+
+  private String requiredText(TextField field, String label) {
+    return Optional.of(field.getText().strip())
+        .filter(value -> !value.isBlank())
+        .orElseThrow(() -> new CheatAuthoringException(label + " is required."));
+  }
+
+  private void removeSelectedPendingEffect(List<CheatEffectInfo> pendingEffects,
+      ListView<String> effectList) {
+    selectedIndex(effectList, pendingEffects.size()).ifPresent(index -> {
+      pendingEffects.remove(index.intValue());
+      refreshPendingEffectList(pendingEffects, effectList);
+    });
+  }
+
+  private void removeSelectedCheat() {
+    selectedIndex(cheatListView, currentCheats().size()).ifPresent(index -> {
+      cheats.remove(index.intValue());
+      refreshCheatList();
+    });
+  }
+
+  private Optional<Integer> selectedIndex(ListView<String> list, int size) {
+    int index = list.getSelectionModel().getSelectedIndex();
+    return index >= 0 && index < size ? Optional.of(index) : Optional.empty();
+  }
+
+  private void refreshCheatList() {
+    Optional.ofNullable(cheatListView)
+        .ifPresent(list -> list.getItems().setAll(currentCheats().stream()
+            .map(this::formatCheat)
+            .toList()));
+  }
+
+  private void refreshPendingEffectList(List<CheatEffectInfo> pendingEffects,
+      ListView<String> effectList) {
+    effectList.getItems().setAll(pendingEffects.stream()
+        .map(this::formatEffect)
+        .toList());
+  }
+
+  private List<CheatInfo> currentCheats() {
+    return Optional.ofNullable(cheats).orElse(List.of());
+  }
+
+  private String formatCheat(CheatInfo cheat) {
+    return cheat.id() + "  [" + String.join("+", cheat.trigger().keys()) + "]  "
+        + cheat.effects().size() + " effect(s)";
+  }
+
+  private String formatEffect(CheatEffectInfo effect) {
+    CheatTargetInfo target = Optional.ofNullable(effect.target())
+        .orElse(new CheatTargetInfo(DEFAULT_CHEAT_TARGET_KIND, ""));
+    return effect.type() + " -> " + target.kind() + targetSuffix(target)
+        + " " + effect.parameters();
+  }
+
+  private String targetSuffix(CheatTargetInfo target) {
+    return Optional.ofNullable(target.id())
+        .filter(value -> !value.isBlank())
+        .map(value -> ":" + value)
+        .orElse("");
+  }
+
+  private void showCheatAuthoringError(CheatAuthoringException e) {
+    LOG.warn("Invalid cheat authoring input: {}", e.getMessage());
+    new AuthoringAlertService().showError("Cheat Error", e.getMessage());
   }
 
   private HBox buildFooter() {
@@ -376,13 +625,13 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     }
     Path catalogPath = catalogPathFor(gameId);
     Files.createDirectories(catalogPath.getParent());
-    Files.createDirectories(LEVELS_DIR.resolve(gameId));
+    Files.createDirectories(levelsDir.resolve(gameId));
     String mainCharacterId = mainCharacterIdField.getText().strip();
     validateMainCharacterId(mainCharacterId);
     catalogSaver.save(catalogPath.toString(),
         gameId,
         mainCharacterId,
-        components, staticComponents, terrainTypes);
+        components, staticComponents, terrainTypes, cheats);
     return catalogPath;
   }
 
@@ -398,7 +647,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   }
 
   private Path catalogPathFor(String gameId) {
-    return GAMES_DIR.resolve(gameId).resolve(GAME_FILE_NAME);
+    return gamesDir.resolve(gameId).resolve(GAME_FILE_NAME);
   }
 
   private GameConfig saveAndLoadCurrentConfig() {
@@ -435,23 +684,27 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     return saveAndLoadCurrentConfig();
   }
 
-  private Node buildTabContent(ListView<String> list, Node... formNodes) {
+  private Node buildTabContent(ListView<String> list, VBox form) {
     list.setPrefWidth(260);
-    VBox form = new VBox(6, formNodes);
+    list.setMaxHeight(Double.MAX_VALUE);
     form.setPadding(new Insets(8));
+    form.setMaxHeight(Double.MAX_VALUE);
     HBox content = new HBox(12, list, form);
     HBox.setHgrow(form, Priority.ALWAYS);
     content.setPadding(new Insets(8));
     return content;
   }
 
-  private Node buildTabContent(ListView<String> list, VBox form) {
-    list.setPrefWidth(260);
-    form.setPadding(new Insets(8));
-    HBox content = new HBox(12, list, form);
-    HBox.setHgrow(form, Priority.ALWAYS);
-    content.setPadding(new Insets(8));
-    return content;
+  private VBox tabForm(List<Node> fields, Node... actionRows) {
+    VBox form = new VBox(6);
+    form.getChildren().addAll(fields);
+    Region spacer = new Region();
+    VBox.setVgrow(spacer, Priority.ALWAYS);
+    VBox actions = new VBox(8, actionRows);
+    actions.setAlignment(Pos.BOTTOM_RIGHT);
+    actions.getStyleClass().add("game-authoring-action-area");
+    form.getChildren().addAll(spacer, actions);
+    return form;
   }
 
   private HBox spriteRow(TextField spriteField) {
@@ -491,7 +744,8 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
   private HBox buttonBar(Button... buttons) {
     HBox bar = new HBox(8, buttons);
-    bar.setAlignment(Pos.CENTER_LEFT);
+    bar.setAlignment(Pos.CENTER_RIGHT);
+    bar.getStyleClass().add("game-authoring-action-row");
     return bar;
   }
 
@@ -499,6 +753,12 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     TextField f = new TextField();
     f.setPromptText(prompt);
     f.setPrefWidth(220);
+    return f;
+  }
+
+  private TextField field(String prompt, String id) {
+    TextField f = field(prompt);
+    f.setId(id);
     return f;
   }
 
