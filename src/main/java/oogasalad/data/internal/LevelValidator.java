@@ -17,6 +17,7 @@ import oogasalad.data.api.LevelLoadException;
 public class LevelValidator {
 
   public void validate(JsonNode root) {
+    requireObject(root, "root");
     validateGameMetadata(root.path("gameMetadata"));
     validateMap(root.path("map"));
     validateMainCharacter(root.path("mainCharacter"));
@@ -36,10 +37,9 @@ public class LevelValidator {
     requireObject(map, "map");
     requireArray(map, "knotLocations", "map.knotLocations");
     requireArray(map, "objects", "map.objects");
-    JsonNode spawn = map.path("spawnPoint");
-    if (spawn.isMissingNode() || !spawn.isObject()) {
-      throw new LevelLoadException("map.spawnPoint must be a {x, y} object");
-    }
+    validatePointArray(map.path("knotLocations"), "map.knotLocations");
+    validatePoint(map.path("spawnPoint"), "map.spawnPoint");
+    validateMapObjects(map.path("objects"));
   }
 
   private void validateMainCharacter(JsonNode mc) {
@@ -51,14 +51,14 @@ public class LevelValidator {
   }
 
   private void requireObject(JsonNode node, String fieldName) {
-    if (node.isMissingNode() || !node.isObject()) {
+    if (node == null || node.isMissingNode() || !node.isObject()) {
       throw new LevelLoadException("Level file missing required object: '" + fieldName + "'");
     }
   }
 
   private void requireText(JsonNode node, String key, String path) {
     JsonNode field = node.path(key);
-    if (field.isMissingNode() || !field.isTextual()) {
+    if (field.isMissingNode() || !field.isTextual() || field.asText().isBlank()) {
       throw new LevelLoadException("Level file missing required string: '" + path + "'");
     }
   }
@@ -75,5 +75,27 @@ public class LevelValidator {
     if (field.isMissingNode() || !field.isArray()) {
       throw new LevelLoadException("Level file missing required array: '" + path + "'");
     }
+  }
+
+  private void validatePointArray(JsonNode array, String path) {
+    for (int index = 0; index < array.size(); index++) {
+      validatePoint(array.get(index), path + "[" + index + "]");
+    }
+  }
+
+  private void validateMapObjects(JsonNode objects) {
+    for (int index = 0; index < objects.size(); index++) {
+      JsonNode object = objects.get(index);
+      String path = "map.objects[" + index + "]";
+      requireObject(object, path);
+      requireText(object, "type", path + ".type");
+      validatePoint(object.path("position"), path + ".position");
+    }
+  }
+
+  private void validatePoint(JsonNode point, String path) {
+    requireObject(point, path);
+    requireNumber(point, "x", path + ".x");
+    requireNumber(point, "y", path + ".y");
   }
 }
