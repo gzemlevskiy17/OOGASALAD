@@ -202,16 +202,20 @@ public class ScreenFactory {
     screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authController::handle,
             authService.session()::isLoggedIn));
+    GameAuthoringScreenImpl gameAuthoringScreen =
+        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath,
+            authoringScreen::setGameConfig);
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
         new AuthoringEntryScreenImpl(this::guardedOutcome, this::scanLevels,
-            worldKey -> configureAuthoringForWorld(authoringScreen, worldKey),
+            worldKey -> {
+              configureAuthoringForWorld(authoringScreen, worldKey);
+              configureGameAuthoringForWorld(gameAuthoringScreen, worldKey);
+            },
             path -> {
               configureAuthoringForLevel(authoringScreen, path);
               authoringScreen.loadLevelFromPath(path);
             }));
-    screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY,
-        new GameAuthoringScreenImpl(this::guardedOutcome, authoringScreen::loadLevelFromPath,
-            authoringScreen::setGameConfig));
+    screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY, gameAuthoringScreen);
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected,
@@ -258,6 +262,21 @@ public class ScreenFactory {
       LOG.warn("Could not load game config for world '{}'; authoring will run without catalog",
           worldKey, e);
       authoringScreen.setGameConfig(null);
+    }
+  }
+
+  private void configureGameAuthoringForWorld(GameAuthoringScreenImpl gameAuthoringScreen,
+      String worldKey) {
+    if (worldKey == null || worldKey.isBlank()) {
+      return;
+    }
+    String representativeLevelPath =
+        Path.of("data", "levels", worldKey, "level.json").toString();
+    try {
+      String gamePath = LevelPaths.gameFileForLevel(representativeLevelPath, worldKey);
+      gameAuthoringScreen.loadCatalogFromPath(gamePath);
+    } catch (RuntimeException e) {
+      LOG.warn("Could not auto-load game catalog for world '{}' into game editor", worldKey, e);
     }
   }
 
