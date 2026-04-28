@@ -1,18 +1,23 @@
 package oogasalad.view.player.internal;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
+import oogasalad.view.core.internal.TerrainPaints;
 import oogasalad.view.player.api.GameplayView;
 
 /**
@@ -25,9 +30,15 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
   private Pane gameLayer;
+  private ImageView backgroundImageView;
+  private String backgroundImagePath = "";
+  private HBox bottomControls;
+  private GameHudDisplay hud;
   private Runnable onPause = () -> { };
   private Runnable onResume = () -> { };
   private Runnable onReset = () -> { };
+  private Consumer<KeyCode> onKeyPressed = key -> { };
+  private Consumer<KeyCode> onKeyReleased = key -> { };
   private java.util.function.Consumer<String> onToolActivated = id -> {
   };
   private java.util.function.Consumer<String> onToolDeactivated = id -> {
@@ -37,10 +48,50 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     super(onOutcome);
   }
 
+  @Override
   public Pane getGameLayer() {
     return gameLayer;
   }
 
+  public void setBackgroundImagePath(String imagePath) {
+    backgroundImagePath = imagePath == null ? "" : imagePath.strip();
+    if (gameLayer == null) {
+      return;
+    }
+    if (backgroundImagePath.isBlank()) {
+      removeBackgroundImage();
+      return;
+    }
+    Image image = TerrainPaints.loadImage(backgroundImagePath);
+    if (image == null || image.isError()) {
+      removeBackgroundImage();
+      return;
+    }
+    ensureBackgroundImageView();
+    backgroundImageView.setImage(image);
+    backgroundImageView.toBack();
+  }
+
+  /**
+   * Pushes the latest per-tick stats to the in-game HUD. Intended to be wired to
+   * {@code GameplaySession.setOnStatsTick}.
+   *
+   * @param elapsedSeconds seconds since session start (>= 0)
+   * @param progressPercent progress toward the goal in [0.0, 1.0]
+   */
+  public void updateHud(double elapsedSeconds, double progressPercent) {
+    if (hud != null) {
+      hud.update(elapsedSeconds, progressPercent);
+    }
+  }
+
+  public void updateHud(double elapsedSeconds, int score, double progressPercent) {
+    if (hud != null) {
+      hud.update(elapsedSeconds, score, progressPercent);
+    }
+  }
+
+  @Override
   public void setOnPause(Runnable onPause) {
     if (onPause == null) {
       this.onPause = () -> { };
@@ -57,12 +108,21 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  @Override
   public void setOnReset(Runnable onReset) {
     if (onReset == null) {
       this.onReset = () -> { };
     } else {
       this.onReset = onReset;
     }
+  }
+
+  public void setOnKeyPressed(Consumer<KeyCode> onKeyPressed) {
+    this.onKeyPressed = onKeyPressed;
+  }
+
+  public void setOnKeyReleased(Consumer<KeyCode> onKeyReleased) {
+    this.onKeyReleased = onKeyReleased;
   }
 
   public void setOnToolActivated(java.util.function.Consumer<String> onToolActivated) {
@@ -78,6 +138,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   @Override
   protected StackPane createRoot() {
     StackPane root = new StackPane();
+    wireKeyboardInput(root);
     root.getStylesheets().add(getClass().getResource("/oogasalad/view/player/gameplay.css").toExternalForm());
     root.getStyleClass().add("screen-root");
 
@@ -86,17 +147,39 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     gameLayer.prefHeightProperty().bind(root.heightProperty());
 
     HBox topControls = createTopControlsRegion();
-    HBox bottomControls = createBottomControlsRegion();
+    bottomControls = new HBox(d("bottom.controls.spacing"));
+    bottomControls.getStyleClass().add("controlbuttons-bottom");
+    bottomControls.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE,
+        javafx.scene.layout.Region.USE_PREF_SIZE);
+    bottomControls.setPickOnBounds(false);
+    hud = new GameHudDisplay();
 
     Node backButton = createBackButtonRegion();
 
     StackPane.setAlignment(topControls, Pos.TOP_LEFT);
+    StackPane.setAlignment(hud, Pos.TOP_CENTER);
     StackPane.setAlignment(backButton, Pos.TOP_RIGHT);
     StackPane.setAlignment(bottomControls, Pos.BOTTOM_CENTER);
 
-    root.getChildren().addAll(gameLayer, topControls, bottomControls, backButton);
+    root.getChildren().addAll(gameLayer, hud, topControls, bottomControls, backButton);
 
     return root;
+  }
+
+  public void requestKeyboardFocus() {
+    getRoot().requestFocus();
+  }
+
+  /**
+   * Adds an overlay node (e.g. a HUD) on top of the game layer at the given alignment within the
+   * root StackPane. Idempotent: a previously attached node at the same identity is removed first to
+   * support fresh sessions on level restart.
+   */
+  public void attachOverlay(Node overlay, Pos alignment) {
+    StackPane root = (StackPane) getRoot();
+    root.getChildren().remove(overlay);
+    StackPane.setAlignment(overlay, alignment);
+    root.getChildren().add(overlay);
   }
 
   private Node createBackButtonRegion() {
@@ -110,12 +193,50 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private Pane createGameAreaRegion() {
     Pane gameContainer = new Pane();
     gameContainer.getStyleClass().add("game-container");
+    if (!backgroundImagePath.isBlank()) {
+      gameLayer = gameContainer;
+      setBackgroundImagePath(backgroundImagePath);
+    }
     return gameContainer;
+  }
+
+  private void ensureBackgroundImageView() {
+    if (backgroundImageView == null) {
+      backgroundImageView = new ImageView();
+      backgroundImageView.setMouseTransparent(true);
+      backgroundImageView.setPreserveRatio(false);
+      backgroundImageView.fitWidthProperty().bind(gameLayer.widthProperty());
+      backgroundImageView.fitHeightProperty().bind(gameLayer.heightProperty());
+    }
+    if (!gameLayer.getChildren().contains(backgroundImageView)) {
+      gameLayer.getChildren().add(0, backgroundImageView);
+    }
+  }
+
+  private void removeBackgroundImage() {
+    if (backgroundImageView != null && gameLayer != null) {
+      gameLayer.getChildren().remove(backgroundImageView);
+      backgroundImageView.setImage(null);
+    }
+  }
+
+  private void wireKeyboardInput(StackPane root) {
+    root.setFocusTraversable(true);
+    root.addEventHandler(KeyEvent.KEY_PRESSED,
+        event -> onKeyPressed.accept(event.getCode()));
+    root.addEventHandler(KeyEvent.KEY_RELEASED,
+        event -> onKeyReleased.accept(event.getCode()));
+    root.setOnMouseClicked(event -> root.requestFocus());
+    root.sceneProperty().addListener((observable, oldScene, newScene) -> {
+      if (newScene != null) {
+        Platform.runLater(root::requestFocus);
+      }
+    });
   }
 
   private HBox createTopControlsRegion() {
     HBox container = new HBox(d("top.controls.spacing"));
-    container.getStyleClass().add("hud-top");
+    container.getStyleClass().add("controlbuttons-top");
 
     container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
     container.setPickOnBounds(false);
@@ -136,44 +257,45 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     resetBtn.setOnAction(e -> onReset.run());
     resetBtn.getStyleClass().add("sys-button");
 
-    Button tempWinBtn = new Button(s("button.debug.win"));
-    tempWinBtn.getStyleClass().add("sys-button");
-    tempWinBtn.setOnAction(event -> onOutcome.accept(Outcome.GAME_WON));
-
-    Button tempLoseBtn = new Button(s("button.debug.lose"));
-    tempLoseBtn.getStyleClass().add("sys-button");
-    tempLoseBtn.setOnAction(event -> onOutcome.accept(Outcome.GAME_LOST));
-
-    container.getChildren().addAll(pauseBtn, resetBtn, tempWinBtn, tempLoseBtn);
+    container.getChildren().addAll(pauseBtn, resetBtn);
     return container;
   }
 
-  private HBox createBottomControlsRegion() {
-    HBox container = new HBox(d("bottom.controls.spacing"));
-    container.getStyleClass().add("hud-bottom");
-
-    container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-    container.setPickOnBounds(false);
-
-    for (String tool : getList("tools")) {
-      ToggleButton toolBtn = new ToggleButton(s("tool." + tool));
+  public void setAvailableTools(Collection<String> toolIds) {
+    if (bottomControls == null) {
+      return;
+    }
+    bottomControls.getChildren().clear();
+    if (toolIds == null || toolIds.isEmpty()) {
+      return;
+    }
+    for (String toolId : toolIds) {
+      String label = toolLabel(toolId);
+      ToggleButton toolBtn = new ToggleButton(label);
       toolBtn.getStyleClass().add("tool-button");
-
       toolBtn.setOnAction(e -> {
         if (toolBtn.isSelected()) {
-          onToolActivated.accept(tool);
+          onToolActivated.accept(toolId);
         } else {
-          onToolDeactivated.accept(tool);
+          onToolDeactivated.accept(toolId);
         }
       });
-
-      container.getChildren().add(toolBtn);
+      bottomControls.getChildren().add(toolBtn);
     }
-
-    return container;
   }
 
-  private List<String> getList(String key) { return Arrays.asList(s(key).split(",")); }
+  private String toolLabel(String toolId) {
+    String key = "tool." + toolId;
+    try {
+      return PROPS.getString(key);
+    } catch (java.util.MissingResourceException e) {
+      if (toolId.isEmpty()) {
+        return toolId;
+      }
+      return Character.toUpperCase(toolId.charAt(0)) + toolId.substring(1);
+    }
+  }
+
   private String s(String key) { return PROPS.getString(key); }
   private double d(String key) { return Double.parseDouble(PROPS.getString(key)); }
 }

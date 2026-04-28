@@ -1,14 +1,43 @@
 package oogasalad.data.api;
 
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.model.engine.api.World;
 
-/** Contract for translating JSON files to memory. */
+/**
+ * Translates a level.json file into runtime World objects + level attributes. The caller must
+ * supply the {@link GameConfig} (parsed from the matching game.json) so the loader can resolve
+ * mapObject type ids against the catalog.
+ *
+ * @author Paulina Vvedenskaya
+ */
 public interface LevelLoader {
+
   /**
-   * Loads a level from a file and populates the provided World.
-   * @param fileName the path to the JSON file.
-   * @param world the target container for loaded objects.
-   * @param config the configuration context for the level.
+   * Loads a level from a file and populates the provided World and level attributes.
+   *
+   * @param fileName        path to the level.json file
+   * @param game            catalog from the matching game.json
+   * @param world           target container for loaded runtime objects
+   * @param levelAttributes target container for gameMetadata + mainCharacter values
    */
-  void loadLevel(String fileName, World world, GameConfig config);
+  void loadLevel(String fileName, GameConfig game, World world, LevelAttributes levelAttributes);
+
+  /**
+   * Convenience overload when the caller doesn't need to harvest level attributes.
+   *
+   * @param fileName path to the level.json file
+   * @param game     catalog from the matching game.json
+   * @param world    target container for loaded runtime objects
+   */
+  default void loadLevel(String fileName, GameConfig game, World world) {
+    loadLevel(fileName, game, world, new LevelAttributes());
+  }
+
+  /**
+   * Loads only level metadata/main-character settings without constructing runtime world objects.
+   *
+   * @param fileName path to the level.json file
+   * @return populated level attributes
+   */
+  LevelAttributes loadAttributes(String fileName);
 }

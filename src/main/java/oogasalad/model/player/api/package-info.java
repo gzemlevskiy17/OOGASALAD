@@ -13,7 +13,7 @@
  * - hasLost(World): Returns true if the current world state meets failure criteria.
  *
  * 3. ScoreCalculator: Quantifies player performance.
- * - calculateScore(World, GameConfig): Computes a numerical score based on
+ * - calculateScore(World, Settings): Computes a numerical score based on
  * time, distance, or collected items.
  *
  * 4. VehicleWorkspace: Defines assembly constraints.

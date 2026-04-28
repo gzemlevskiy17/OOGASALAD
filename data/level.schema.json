@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oogasalad.team03/level.schema.json",
+  "title": "Level File",
+  "description": "A single playable level. References a game.json for its catalog of types.",
+  "type": "object",
+  "required": [
+    "gameMetadata",
+    "map",
+    "mainCharacter"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "gameMetadata": {
+      "$ref": "#/$defs/gameMetadata"
+    },
+    "map": {
+      "$ref": "#/$defs/mapData"
+    },
+    "mainCharacter": {
+      "$ref": "#/$defs/mainCharacter"
+    }
+  },
+  "$defs": {
+    "vector2": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
+    "gameMetadata": {
+      "type": "object",
+      "required": [
+        "levelName",
+        "gameType",
+        "screenWidth",
+        "screenHeight",
+        "gravity",
+        "drag"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "levelName": {
+          "type": "string"
+        },
+        "gameType": {
+          "type": "string",
+          "description": "Must match the gameId of the referenced game.json."
+        },
+        "screenWidth": {
+          "type": "number",
+          "minimum": 0
+        },
+        "screenHeight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gravity": {
+          "type": "number"
+        },
+        "drag": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "mapObject": {
+      "type": "object",
+      "required": [
+        "type",
+        "position"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Must match an id from staticComponents or terrainTypes in the referenced game.json."
+        },
+        "position": {
+          "$ref": "#/$defs/vector2"
+        }
+      }
+    },
+    "mapData": {
+      "type": "object",
+      "required": [
+        "knotLocations",
+        "objects",
+        "spawnPoint"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "knotLocations": {
+          "type": "array",
+          "description": "Control points defining the splined terrain track.",
+          "items": {
+            "$ref": "#/$defs/vector2"
+          }
+        },
+        "spawnPoint": {
+          "$ref": "#/$defs/vector2",
+          "description": "Where the main character is placed at level start."
+        },
+        "objects": {
+          "type": "array",
+          "description": "Pickups, hazards, end flag, decorations placed on the map.",
+          "items": {
+            "$ref": "#/$defs/mapObject"
+          }
+        },
+        "terrainOptions": {
+          "type": "array",
+          "description": "Editor hint: terrain type ids the author may use in this level.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "mainCharacter": {
+      "type": "object",
+      "required": [
+        "gridSize",
+        "elementsAllowed",
+        "maxSelectable",
+        "maxHP"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "gridSize": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Cell size of the vehicle-builder grid for this level."
+        },
+        "elementsAllowed": {
+          "type": "array",
+          "description": "Component ids (from game.json) the player may place in the vehicle builder for this level.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "maxSelectable": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum number of components the player may place in the vehicle for this level."
+        },
+        "maxHP": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cameraFollows": {
+          "type": "string",
+          "description": "Tag, display name, or component type the gameplay camera should follow."
+        }
+      }
+    }
+  }
+}

@@ -10,7 +10,7 @@ public interface Driveable {
 
   Vector getThrustDirection();
 
-  void setThrustDirection(Vector thrustDirection);
+//  void setThrustDirection(Vector thrustDirection);
 
   double getThrustForce();
 

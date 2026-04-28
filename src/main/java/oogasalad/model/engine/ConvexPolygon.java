@@ -1,5 +1,6 @@
 package oogasalad.model.engine;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import oogasalad.model.engine.api.Vector;
@@ -24,26 +25,53 @@ import oogasalad.model.engine.api.Vector;
  *
  * @author Georgiy Zemlevskiy
  */
-public class ConvexPolygon {
+public record ConvexPolygon(List<Vector> points) {
   //TODO: define as interface?
-
-  private List<Vector> points;
-
-  public ConvexPolygon(List<Vector> points) {
-    this.points = points;
-  }
 
   public static ConvexPolygon axisAlignedBox(double x, double y, double w, double h) {
     return new ConvexPolygon(List.of(
-        new Vector(x,     y),
+        new Vector(x, y),
         new Vector(x + w, y),
         new Vector(x + w, y + h),
-        new Vector(x,     y + h),
-        new Vector(x,     y)
+        new Vector(x, y + h),
+        new Vector(x, y)
     ));
   }
 
-  public List<Vector> getPoints() { //in CW order
+  /**
+   * Creates a box collider centered at ({@code centerX}, {@code centerY}) rotated by
+   * {@code radians} around its center.
+   */
+  public static ConvexPolygon rotatedBox(double centerX, double centerY, double w, double h,
+      double radians) {
+    Vector center = new Vector(centerX, centerY);
+    Vector bottomLeft = new Vector(-w / 2.0, -h / 2.0).rotate(radians).add(center);
+    Vector bottomRight = new Vector(w / 2.0, -h / 2.0).rotate(radians).add(center);
+    Vector topRight = new Vector(w / 2.0, h / 2.0).rotate(radians).add(center);
+    Vector topLeft = new Vector(-w / 2.0, h / 2.0).rotate(radians).add(center);
+    return new ConvexPolygon(List.of(bottomLeft, bottomRight, topRight, topLeft, bottomLeft));
+  }
+
+  /**
+   * Creates a closed regular polygon centered at ({@code centerX}, {@code centerY}).
+   */
+  public static ConvexPolygon regularPolygon(double centerX, double centerY, double radius,
+      int sides, double radians) {
+    if (sides < 3) {
+      throw new IllegalArgumentException("regular polygon must have at least 3 sides");
+    }
+    Vector center = new Vector(centerX, centerY);
+    List<Vector> vertices = new ArrayList<>();
+    for (int i = 0; i < sides; i++) {
+      double angle = radians + (2.0 * Math.PI * i / sides);
+      vertices.add(new Vector(radius * Math.cos(angle), radius * Math.sin(angle)).add(center));
+    }
+    vertices.add(vertices.getFirst());
+    return new ConvexPolygon(vertices);
+  }
+
+  @Override
+  public List<Vector> points() { //in CW order
     return Collections.unmodifiableList(points);
   }
 }

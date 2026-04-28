@@ -2,7 +2,8 @@ package oogasalad.model.engine.internal.components;
 
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.view.core.api.SpriteRenderable;
+import oogasalad.model.engine.api.TypedComponent;
+import oogasalad.model.engine.api.Vector;
 
 /**
  * A visible finish-line column placed in the world. The pig wins when it reaches this zone.
@@ -11,40 +12,64 @@ import oogasalad.view.core.api.SpriteRenderable;
  *
  * @author Paulina Vvedenskaya
  */
-public class GoalLineComponent extends FinishLineComponent implements SpriteRenderable {
+public class GoalLineComponent extends FinishLineComponent implements TypedComponent {
 
   private final double width;
   private final double height;
 
   public GoalLineComponent(double x, double y, double width, double height) {
-    super(x, y, 0, 0, 0);
+    super(x, y, 0,
+        ConvexPolygon.axisAlignedBox(x - width / 2, y - height / 2, width, height),
+        "");
     this.width = width;
     this.height = height;
-    updatePolygon();
   }
 
   @Override
   public void updatePolygon() {
-    setPolygon(ConvexPolygon.axisAlignedBox(getX(), getY(), width, height));
+    setPolygon(ConvexPolygon.axisAlignedBox(
+        x() - width / 2, y() - height / 2, width, height));
   }
 
-  @Override
   public void applyEffect(GameObject target) {
     // win detection is handled by FinishLineWinChecker, not by the component itself
   }
 
   @Override
-  public String getSpritePath() {
-    return "";
+  public String getComponentType() {
+    return "GoalLine";
   }
 
-  @Override
-  public double getSpriteWidth() {
+  public double getWidth() {
     return width;
   }
 
-  @Override
-  public double getSpriteHeight() {
+  public double getHeight() {
     return height;
+  }
+
+  @Override
+  public void addForce(Vector force) {
+    // Non-physical zone: ignore forces.
+  }
+
+  @Override
+  public void setRestitution(double restitution) {
+    // No rigid-body restitution for this zone unless you store it later.
+  }
+
+  @Override
+  public double getFriction() {
+    return 0.0;
+  }
+
+  @Override
+  public boolean isAffectedByGravity() {
+    return false;
+  }
+
+  @Override
+  public boolean isTrigger() {
+    return true;
   }
 }

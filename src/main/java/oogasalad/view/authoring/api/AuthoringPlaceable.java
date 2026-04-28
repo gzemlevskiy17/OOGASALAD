@@ -1,19 +1,16 @@
 package oogasalad.view.authoring.api;
 
+import oogasalad.view.core.api.Renderable;
+
 /**
  * Represents a placeable object in the authoring environment.
  *
  * <p>This contract unifies palette selection metadata, rectangular bounds, and
  * backend object creation so the authoring controller and canvas can work with
  * one consistent abstraction.
- *
  * @author Emilio Garcia
  */
-public interface AuthoringPlaceable {
-
-  double getX();
-
-  double getY();
+public interface AuthoringPlaceable extends Renderable {
 
   double getWidth();
 
@@ -27,12 +24,16 @@ public interface AuthoringPlaceable {
     return (int) Math.ceil(getHeight() / cellSize);
   }
 
+  default String getDisplayName() {
+    return getClass().getSimpleName();
+  }
+
   default double left() {
-    return getX();
+    return x();
   }
 
   default double top() {
-    return getY();
+    return y();
   }
 
   default double right() {
@@ -50,6 +51,19 @@ public interface AuthoringPlaceable {
   boolean isTiled();
 
   double getFriction();
+
+  double getRestitution();
+
+  default String getTrackColor() {
+    return "#000000";
+  }
+
+  /**
+   * Display name from the terrain catalog (palette key), e.g. {@code Earth}, when known.
+   *
+   * @return the catalog id, or {@code null} for legacy/loaded content without that metadata
+   */
+  default String getCatalogName() {return null;}
 
   /**
    * Creates a placed backend object anchored at the given grid cell.

@@ -1,0 +1,157 @@
+.game-authoring-root {
+  -fx-background-color: linear-gradient(to bottom, #fffdf8, #ffffff);
+}
+
+.game-authoring-root .authoring-entry-title {
+  -fx-font-size: 36px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #2f2f2f;
+}
+
+.game-authoring-root .tab-pane {
+  -fx-background-color: transparent;
+  -fx-tab-min-height: 34;
+}
+
+.game-authoring-root .tab-pane .tab-header-area {
+  -fx-padding: 12 0 0 0;
+}
+
+.game-authoring-root .tab-pane .tab-header-background {
+  -fx-background-color: transparent;
+}
+
+.game-authoring-root .tab {
+  -fx-background-color: #f7f1e8;
+  -fx-border-color: #d7c7b1;
+  -fx-border-width: 1 1 0 1;
+  -fx-border-radius: 10 10 0 0;
+  -fx-background-radius: 10 10 0 0;
+  -fx-padding: 4 18 4 18;
+}
+
+.game-authoring-root .tab:selected {
+  -fx-background-color: white;
+  -fx-border-color: #e67e22 #e67e22 white #e67e22;
+}
+
+.game-authoring-root .tab .tab-label {
+  -fx-font-family: "Serif";
+  -fx-font-size: 14px;
+  -fx-text-fill: #333333;
+}
+
+.game-authoring-root .tab:selected .tab-label {
+  -fx-font-weight: bold;
+}
+
+.game-authoring-root .tab-pane .tab-content-area {
+  -fx-background-color: white;
+  -fx-border-color: #e67e22 #707070 #707070 #707070;
+  -fx-border-width: 3;
+  -fx-border-radius: 0 0 15 15;
+  -fx-background-radius: 0 0 15 15;
+  -fx-padding: 10;
+}
+
+.game-authoring-root .list-view {
+  -fx-background-color: #fffdf8;
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 12;
+  -fx-background-radius: 12;
+  -fx-padding: 4;
+}
+
+.game-authoring-root .list-view .list-cell {
+  -fx-background-color: transparent;
+  -fx-font-family: "Serif";
+  -fx-font-size: 14px;
+  -fx-text-fill: #333333;
+  -fx-padding: 8 10 8 10;
+}
+
+.game-authoring-root .list-view .list-cell:filled:selected {
+  -fx-background-color: #ffd3b6;
+  -fx-text-fill: #222222;
+  -fx-background-radius: 8;
+}
+
+.game-authoring-root .label {
+  -fx-font-family: "Serif";
+  -fx-text-fill: #333333;
+}
+
+.game-authoring-root .text-field {
+  -fx-background-color: white;
+  -fx-border-color: #b8b8b8;
+  -fx-border-width: 1.5;
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+  -fx-font-family: "Serif";
+  -fx-font-size: 13px;
+  -fx-padding: 6 8 6 8;
+}
+
+.game-authoring-root .text-field:focused {
+  -fx-border-color: #e67e22;
+  -fx-effect: dropshadow(gaussian, rgba(230,126,34,0.20), 6, 0.15, 0, 0);
+}
+
+.game-authoring-root .button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 2;
+  -fx-border-radius: 9;
+  -fx-background-radius: 9;
+  -fx-font-family: "Serif";
+  -fx-font-size: 13px;
+  -fx-text-fill: #333333;
+  -fx-padding: 6 14 6 14;
+}
+
+.game-authoring-root .button:hover {
+  -fx-background-color: #f7f7f7;
+  -fx-border-color: #e67e22;
+  -fx-cursor: hand;
+}
+
+.game-authoring-root .game-authoring-action-area {
+  -fx-alignment: bottom-right;
+}
+
+.game-authoring-root .game-authoring-action-row {
+  -fx-alignment: center-right;
+}
+
+.game-authoring-root .game-authoring-inline-action-row {
+  -fx-alignment: center-left;
+  -fx-padding: 0 0 4 128;
+}
+
+.game-authoring-root .check-box {
+  -fx-font-family: "Serif";
+  -fx-text-fill: #333333;
+}
+
+.game-authoring-root .check-box .box {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-radius: 4;
+  -fx-background-radius: 4;
+}
+
+.game-authoring-root .check-box:selected .mark {
+  -fx-background-color: #e67e22;
+}
+
+.game-authoring-root .authoring-entry-action {
+  -fx-border-width: 3;
+  -fx-border-radius: 14;
+  -fx-background-radius: 14;
+}
+
+.game-authoring-root .authoring-entry-back {
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+}

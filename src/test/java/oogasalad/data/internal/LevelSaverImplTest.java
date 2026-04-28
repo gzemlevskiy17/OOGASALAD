@@ -2,7 +2,6 @@ package oogasalad.data.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,9 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
-import oogasalad.model.engine.internal.components.TerrainBlock;
+import oogasalad.model.engine.internal.components.SpawnPointComponent;
+import oogasalad.model.engine.internal.components.TerrainSpline;
+import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -32,79 +36,132 @@ class LevelSaverImplTest {
     saver = new LevelSaverImpl();
   }
 
+  // ── gameMetadata section ─────────────────────────────────────────────────
+
   @Test
-  void saveLevel_singleTerrainBlock_writesCorrectJson() throws IOException {
+  void saveLevel_writesGameMetadataFromAttributes() throws IOException {
+    LevelAttributes attrs = new LevelAttributes();
+    attrs.setLevelName("Rolling Hills");
+    attrs.setGameType("badpiggies");
+    attrs.setGravity(-9.8);
+    attrs.setDrag(0.01);
+    attrs.setScreenWidth(3200);
+    attrs.setScreenHeight(1600);
+    attrs.setBackgroundImage("data/assets/background2.png");
+
+    File output = tempDir.resolve("level.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), new FakeWorld(), attrs);
+
+    JsonNode meta = new ObjectMapper().readTree(output).path("gameMetadata");
+    assertEquals("Rolling Hills", meta.path("levelName").asText());
+    assertEquals("badpiggies", meta.path("gameType").asText());
+    assertEquals(-9.8, meta.path("gravity").asDouble(), 0.001);
+    assertEquals(0.01, meta.path("drag").asDouble(), 0.0001);
+    assertEquals(3200, meta.path("screenWidth").asInt());
+    assertEquals(1600, meta.path("screenHeight").asInt());
+    assertEquals("data/assets/background2.png", meta.path("backgroundImage").asText());
+  }
+
+  // ── map section ──────────────────────────────────────────────────────────
+
+  @Test
+  void saveLevel_splineKnots_writtenToKnotLocations() throws IOException {
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(0, 0, 10, 2, "assets/terrain/grass.png", true, 0.6));
+    ParabolaSpline spline = new ParabolaSpline(
+        List.of(new Vector(0, 10), new Vector(20, 15), new Vector(40, 10)), 100.0, 6);
+    world.addObject(new TerrainSpline(spline, "grass.png", true, 0.6, "#4A2C0F"));
 
-    File output = tempDir.resolve("saved_level.json").toFile();
-    saver.saveLevel(output.getAbsolutePath(), world);
+    File output = tempDir.resolve("level.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), world, new LevelAttributes());
 
-    assertTrue(output.exists());
-    JsonNode root = new ObjectMapper().readTree(output);
-    JsonNode terrain = root.path("level").path("terrain");
-    assertEquals(1, terrain.size());
-    assertEquals(0.0, terrain.get(0).path("position").path("x").asDouble(), 0.001);
-    assertEquals(10.0, terrain.get(0).path("size").path("width").asDouble(), 0.001);
-    assertEquals("assets/terrain/grass.png",
-        terrain.get(0).path("properties").path("texture").asText());
-    assertTrue(terrain.get(0).path("properties").path("tile_texture").asBoolean());
+    JsonNode knots = new ObjectMapper().readTree(output).path("map").path("knotLocations");
+    assertEquals(3, knots.size());
+    assertEquals(0.0, knots.get(0).path("x").asDouble(), 0.001);
+    assertEquals(10.0, knots.get(0).path("y").asDouble(), 0.001);
+    assertEquals(40.0, knots.get(2).path("x").asDouble(), 0.001);
   }
 
   @Test
-  void saveLevel_multipleBlocks_writesAllEntries() throws IOException {
+  void saveLevel_scaleFactor_appliedToKnotCoordinates() throws IOException {
+    LevelSaverImpl scalingSaver = new LevelSaverImpl(20.0);
     FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(0, 0, 5, 1, "a.png", true, 0.5));
-    world.addObject(new TerrainBlock(5, 0, 5, 1, "b.png", false, 0.4));
+    ParabolaSpline spline = new ParabolaSpline(
+        List.of(new Vector(1, 2), new Vector(5, 3)), 10.0, 4);
+    world.addObject(new TerrainSpline(spline, "", false, 0.5, "#fff"));
 
-    File output = tempDir.resolve("saved_level.json").toFile();
-    saver.saveLevel(output.getAbsolutePath(), world);
+    File output = tempDir.resolve("scaled.json").toFile();
+    scalingSaver.saveLevel(output.getAbsolutePath(), world, new LevelAttributes());
 
-    JsonNode terrain = new ObjectMapper().readTree(output).path("level").path("terrain");
-    assertEquals(2, terrain.size());
+    JsonNode knot = new ObjectMapper().readTree(output).path("map").path("knotLocations").get(0);
+    assertEquals(20.0, knot.path("x").asDouble(), 0.001);
+    assertEquals(40.0, knot.path("y").asDouble(), 0.001);
   }
 
   @Test
-  void saveLevel_emptyWorld_writesEmptyTerrainArray() throws IOException {
+  void saveLevel_spawnPoint_writtenToMap() throws IOException {
     FakeWorld world = new FakeWorld();
+    world.addObject(new SpawnPointComponent(17.5, 15.0));
 
-    File output = tempDir.resolve("saved_level.json").toFile();
-    saver.saveLevel(output.getAbsolutePath(), world);
+    File output = tempDir.resolve("level.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), world, new LevelAttributes());
 
-    JsonNode terrain = new ObjectMapper().readTree(output).path("level").path("terrain");
-    assertEquals(0, terrain.size());
+    JsonNode spawn = new ObjectMapper().readTree(output).path("map").path("spawnPoint");
+    assertEquals(17.5, spawn.path("x").asDouble(), 0.001);
+    assertEquals(15.0, spawn.path("y").asDouble(), 0.001);
   }
 
   @Test
-  void saveLevel_roundTrip_loaderRestoresSameBlockCount() throws IOException {
-    FakeWorld world = new FakeWorld();
-    world.addObject(new TerrainBlock(3, 1, 4, 2, "assets/terrain/dirt.png", false, 0.3));
+  void saveLevel_emptyWorld_writesEmptyKnotLocations() throws IOException {
+    File output = tempDir.resolve("empty.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), new FakeWorld(), new LevelAttributes());
 
-    File output = tempDir.resolve("round_trip.json").toFile();
-    saver.saveLevel(output.getAbsolutePath(), world);
-
-    FakeWorld reloaded = new FakeWorld();
-    new LevelLoaderImpl().loadLevel(output.getAbsolutePath(), reloaded, new FakeGameConfig());
-
-    assertEquals(1, reloaded.objectCount());
+    JsonNode knots = new ObjectMapper().readTree(output).path("map").path("knotLocations");
+    assertEquals(0, knots.size());
   }
+
+  // ── mainCharacter section ────────────────────────────────────────────────
+
+  @Test
+  void saveLevel_writesMainCharacterFromAttributes() throws IOException {
+    LevelAttributes attrs = new LevelAttributes();
+    attrs.setGridSize(60);
+    attrs.setMainCharacterElementsAllowed(List.of("body", "wheel", "motor"));
+    attrs.setMaxSelectable(5);
+    attrs.setMaxHP(100);
+
+    File output = tempDir.resolve("level.json").toFile();
+    saver.saveLevel(output.getAbsolutePath(), new FakeWorld(), attrs);
+
+    JsonNode mc = new ObjectMapper().readTree(output).path("mainCharacter");
+    assertEquals(60.0, mc.path("gridSize").asDouble(), 0.001);
+    assertEquals(5, mc.path("maxSelectable").asInt());
+    assertEquals(100.0, mc.path("maxHP").asDouble(), 0.001);
+    assertEquals(3, mc.path("elementsAllowed").size());
+    assertEquals("body", mc.path("elementsAllowed").get(0).asText());
+  }
+
+  // ── Error handling ───────────────────────────────────────────────────────
 
   @Test
   void saveLevel_invalidPath_throwsLevelSaveException() {
-    FakeWorld world = new FakeWorld();
-
     assertThrows(LevelSaveException.class,
-        () -> saver.saveLevel("/invalid:/path/level.json", world));
+        () -> saver.saveLevel("/invalid:/path/level.json", new FakeWorld(), new LevelAttributes()));
   }
 
-  // --- Test doubles ---
-
-  private static class FakeGameConfig implements oogasalad.data.api.GameConfig {
-    @Override public String getSetting(String key) { return null; }
-    @Override public double getNumericSetting(String key) { return 0; }
+  @Test
+  void constructor_zeroScale_throwsIllegalArgument() {
+    assertThrows(IllegalArgumentException.class, () -> new LevelSaverImpl(0));
   }
+
+  @Test
+  void constructor_negativeScale_throwsIllegalArgument() {
+    assertThrows(IllegalArgumentException.class, () -> new LevelSaverImpl(-1));
+  }
+
+  // ── Test doubles ─────────────────────────────────────────────────────────
 
   private static class FakeWorld implements World {
+
     private final List<GameComponent> components = new ArrayList<>();
 
     @Override
@@ -122,15 +179,52 @@ class LevelSaverImplTest {
       return List.copyOf(components);
     }
 
+    /**
+     * Returns all registered dynamic components in registration order.
+     */
+    @Override
+    public List<DynamicComponent> getActiveDynamicComponents() {
+      return getActiveComponents().stream()
+          .filter(DynamicComponent.class::isInstance)
+          .map(DynamicComponent.class::cast)
+          .toList();
+    }
+
     @Override
     public List<Joint> getJoints() {
       return List.of();
     }
-    @Override public void addComponent(GameComponent component) { components.add(component); }
-    @Override public void removeComponent(GameComponent component) { components.remove(component); }
-    @Override public void clear() { components.clear(); }
-    @Override public void addJoint(Joint j) {}
-    @Override public void removeJoint(Joint j) {}
-    int objectCount() { return components.size(); }
+
+    @Override
+    public void addComponent(GameComponent c) {
+      components.add(c);
+    }
+
+    @Override
+    public void removeComponent(GameComponent c) {
+      components.remove(c);
+    }
+
+    @Override
+    public void clear() {
+      components.clear();
+    }
+
+    @Override
+    public void addJoint(Joint j) {
+    }
+
+    @Override
+    public void removeJoint(Joint j) {
+    }
+
+    @Override
+    public PhysicsEnvironment getPhysicsEnvironment() {
+      return PhysicsEnvironment.DEFAULT;
+    }
+
+    int objectCount() {
+      return components.size();
+    }
   }
 }

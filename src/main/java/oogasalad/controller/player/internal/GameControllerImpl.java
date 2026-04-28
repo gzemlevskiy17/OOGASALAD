@@ -2,6 +2,8 @@ package oogasalad.controller.player.internal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -11,9 +13,11 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.Action;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.InputRouter;
-import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.Settings;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.player.api.GameplayScore;
+import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.player.api.LossConditionChecker;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.view.core.api.Camera;
@@ -24,19 +28,22 @@ import oogasalad.view.core.api.Renderer;
  * Drives the gameplay simulation at 60 FPS using a JavaFX Timeline.
  * <p>
  * Each frame: updates the camera position via camera.updateCameraBehavior(), advances physics via GameEngine,
- * redraws via Renderer, then checks win/loss conditions. Reads key bindings from GameConfig and
+ * redraws via Renderer, then checks win/loss conditions. Reads key bindings from Settings and
  * registers them with InputRouter on the first call to startSimulation().
  * <p>
  * When a terminal outcome is reached, fires the callback registered via setOnOutcome().
  * Does not know or reference ScreenManager — navigation is the caller's concern.
  * <p>
- * Assumes GameConfig returns comma-separated key names for dot-path lookups, e.g.
+ * Assumes Settings returns comma-separated key names for dot-path lookups, e.g.
  * getSetting("input_mapping.activate_engine") returns "W,UP".
  */
 public class GameControllerImpl implements GameController {
 
   private static final double FRAME_DURATION_MS = 1000.0 / 60.0;
   private static final double FRAME_DURATION_SECONDS = 1.0 / 60.0;
+  private static final Map<Outcome, Boolean> TERMINAL_OUTCOMES = Map.of(
+      Outcome.GAME_WON, true,
+      Outcome.GAME_LOST, false);
 
   private final GameEngine engine;
   private final World world;
@@ -45,7 +52,8 @@ public class GameControllerImpl implements GameController {
   private final WinConditionChecker winChecker;
   private final LossConditionChecker lossChecker;
   private final InputRouter inputRouter;
-  private final GameConfig config;
+  private final Settings config;
+  private final GameplayStatsTracker tracker;
 
   /** Maps config action names (e.g. "activate_engine") to their Action instances. */
   private final Map<String, Action> actionRegistry = new HashMap<>();
@@ -57,8 +65,11 @@ public class GameControllerImpl implements GameController {
    * pause/resume cycle.
    */
   private boolean initialized = false;
+  private boolean terminalCompleted = false;
 
   private Consumer<Outcome> onOutcome;
+  private BiConsumer<Double, Double> onStatsTick;
+  private Consumer<GameplayScore> onTerminalScore;
 
   /**
    * Constructs the controller and builds the game loop (does not start it).
@@ -75,7 +86,8 @@ public class GameControllerImpl implements GameController {
    */
   public GameControllerImpl(GameEngine engine, World world, Renderer renderer, Camera camera,
       CameraBehavior cameraBehavior, WinConditionChecker winChecker,
-      LossConditionChecker lossChecker, InputRouter inputRouter, GameConfig config) {
+      LossConditionChecker lossChecker, InputRouter inputRouter, Settings config,
+      GameplayStatsTracker tracker) {
     this.engine = engine;
     this.world = world;
     this.renderer = renderer;
@@ -84,6 +96,7 @@ public class GameControllerImpl implements GameController {
     this.lossChecker = lossChecker;
     this.inputRouter = inputRouter;
     this.config = config;
+    this.tracker = tracker;
     this.gameLoop = buildGameLoop();
   }
 
@@ -98,12 +111,38 @@ public class GameControllerImpl implements GameController {
   }
 
   @Override
+  public void handleButtonRelease(String buttonId) {
+    inputRouter.handleButtonRelease(buttonId);
+  }
+
+  @Override
+  public void handleKeyPress(KeyCode key) {
+    inputRouter.handleKeyPress(key);
+  }
+
+  @Override
+  public void completeRun(Outcome outcome) {
+    Optional.ofNullable(TERMINAL_OUTCOMES.get(outcome))
+        .ifPresent(won -> finalizeAndFire(won, outcome));
+  }
+
+  @Override
   public void setOnOutcome(Consumer<Outcome> callback) {
     this.onOutcome = callback;
   }
 
+  @Override
+  public void setOnStatsTick(BiConsumer<Double, Double> callback) {
+    this.onStatsTick = callback;
+  }
+
+  @Override
+  public void setOnTerminalScore(Consumer<GameplayScore> callback) {
+    this.onTerminalScore = callback;
+  }
+
   /**
-   * Binds keys from GameConfig on first call, then starts or resumes the loop. Safe to call on
+   * Binds keys from Settings on first call, then starts or resumes the loop. Safe to call on
    * both initial start and resume-after-pause.
    */
   @Override
@@ -132,6 +171,7 @@ public class GameControllerImpl implements GameController {
   public void resetSimulation() {
     gameLoop.stop();
     initialized = false;
+    terminalCompleted = false;
   }
 
   private Timeline buildGameLoop() {
@@ -147,6 +187,10 @@ public class GameControllerImpl implements GameController {
    */
   private void tick() {
     engine.step(FRAME_DURATION_SECONDS);
+    tracker.sample(world, FRAME_DURATION_SECONDS);
+    if (onStatsTick != null) {
+      onStatsTick.accept(tracker.currentElapsedSeconds(), tracker.currentProgressPercent());
+    }
     camera.updateBehavior();
     renderer.render(camera, world.getObjects());
     checkWinLoss();
@@ -154,20 +198,29 @@ public class GameControllerImpl implements GameController {
 
   private void checkWinLoss() {
     if (winChecker.hasWon(world)) {
-      stopSimulation();
-      if (onOutcome != null) {
-        onOutcome.accept(Outcome.GAME_WON);
-      }
+      finalizeAndFire(true, Outcome.GAME_WON);
     } else if (lossChecker.hasLost(world)) {
-      stopSimulation();
-      if (onOutcome != null) {
-        onOutcome.accept(Outcome.GAME_LOST);
-      }
+      finalizeAndFire(false, Outcome.GAME_LOST);
+    }
+  }
+
+  private void finalizeAndFire(boolean won, Outcome outcome) {
+    if (terminalCompleted) {
+      return;
+    }
+    terminalCompleted = true;
+    stopSimulation();
+    GameplayScore score = tracker.finish(won);
+    if (onTerminalScore != null) {
+      onTerminalScore.accept(score);
+    }
+    if (onOutcome != null) {
+      onOutcome.accept(outcome);
     }
   }
 
   /**
-   * Reads the input_mapping block from GameConfig and binds each registered Action to its
+   * Reads the input_mapping block from Settings and binds each registered Action to its
    * configured KeyCodes via InputRouter. Skips any action name not found in config or any
    * unrecognised key string.
    */

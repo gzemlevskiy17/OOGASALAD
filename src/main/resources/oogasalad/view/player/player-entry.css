@@ -104,6 +104,16 @@
   -fx-transition: -fx-background-color 0.2s ease;
 }
 
+.world-button:hover {
+  -fx-background-color: #D1FFBD;
+  -fx-cursor: hand;
+}
+
+.world-button.world-selected,
+.world-button.world-selected:hover {
+  -fx-background-color: #D1FFBD;
+}
+
 /* Hover States for Specific Worlds */
 
 .world-forest:hover {

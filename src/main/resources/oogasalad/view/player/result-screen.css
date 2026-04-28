@@ -19,6 +19,31 @@
   -fx-font-size: 52px;
 }
 
+.result-stats {
+  -fx-padding: 20 28;
+  -fx-spacing: 10;
+  -fx-border-color: #cccccc;
+  -fx-border-width: 1;
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+  -fx-background-color: #f9f9f9;
+  -fx-pref-width: 400;
+  -fx-min-width: 400;
+}
+
+.result-stats-label {
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 20px;
+  -fx-text-fill: #333333;
+}
+
+.result-stats-badge {
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #2ecc71;
+}
+
 .result-button {
   -fx-background-color: white;
   -fx-border-color: #707070;

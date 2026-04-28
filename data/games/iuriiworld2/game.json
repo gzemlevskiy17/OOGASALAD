@@ -1,0 +1,45 @@
+{
+  "gameId" : "iuriiworld2",
+  "mainCharacterId" : "pig",
+  "components" : [ {
+    "id" : "pig",
+    "spriteUrl" : "data/assets/bp_bigPig.png",
+    "mass" : 5.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "block",
+    "spriteUrl" : "data/assets/bp_frame.png",
+    "mass" : 7.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "engine",
+    "spriteUrl" : "data/assets/bp_engine.png",
+    "mass" : 8.0,
+    "buttons" : [ ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "Pig",
+    "spriteUrl" : "data/assets/bp_bigPig.png",
+    "mass" : 5.0,
+    "onCollisionAction" : null
+  } ],
+  "terrainTypes" : [ ],
+  "cheats" : [ {
+    "id" : "test",
+    "name" : "test",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "X" ]
+    },
+    "effects" : [ {
+      "type" : "addScore",
+      "target" : {
+        "kind" : "world",
+        "id" : ""
+      },
+      "parameters" : {
+        "amount" : "10"
+      }
+    } ]
+  } ]
+}

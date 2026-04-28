@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import javafx.scene.Parent;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameplaySessionFactory;
+import oogasalad.model.player.api.GameplayScore;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.view.core.api.AppScreen;
 import oogasalad.view.player.internal.GamePlayAppScreen;
@@ -27,6 +28,10 @@ public class GamePlayScreenCoordinator implements AppScreen {
   private final GamePlayAppScreen view;
 
   private GameplaySession session;
+
+  private double lastElapsedSeconds = 0.0;
+  private double lastProgressPercent = 0.0;
+  private GameplayScore lastGameplayScore;
 
   /**
    * Creates a coordinator for one gameplay screen instance.
@@ -53,6 +58,16 @@ public class GamePlayScreenCoordinator implements AppScreen {
     view.setOnReset(() -> {
       if (session != null) session.reset();
     });
+    view.setOnKeyPressed(key -> {
+      if (session != null) {
+        session.handleKeyPress(key);
+      }
+    });
+    view.setOnKeyReleased(key -> {
+      if (session != null) {
+        session.handleKeyRelease(key);
+      }
+    });
     view.setOnToolActivated(buttonId -> {
       if (session != null) {
         session.handleButtonPress(buttonId);
@@ -60,7 +75,7 @@ public class GamePlayScreenCoordinator implements AppScreen {
     });
     view.setOnToolDeactivated(buttonId -> {
       if (session != null) {
-        session.handleButtonPress(buttonId);
+        session.handleButtonRelease(buttonId);
       }
     });
   }
@@ -82,7 +97,33 @@ public class GamePlayScreenCoordinator implements AppScreen {
   public void onEnter() {
     VehicleLayout layout = vehicleLayoutSupplier.get();
     session = sessionFactory.create(view, this::handleOutcome, layout);
+    session.setOnStatsTick((elapsed, progress) -> {
+      lastElapsedSeconds = elapsed;
+      lastProgressPercent = progress;
+      view.updateHud(elapsed, session.currentScore(), progress);
+    });
+    session.setOnTerminalScore(score -> lastGameplayScore = score);
     session.start();
+    view.requestKeyboardFocus();
+  }
+
+  /** Latest elapsed seconds reported by the stats tick; zero before any session runs. */
+  public double getLastElapsedSeconds() {
+    return lastElapsedSeconds;
+  }
+
+  /** Latest progress percent in [0, 1] reported by the stats tick; zero before any session runs. */
+  public double getLastProgressPercent() {
+    return lastProgressPercent;
+  }
+
+  /**
+   * The frozen snapshot produced by {@code tracker.finish()} for the most recent terminal
+   * outcome, or null if no run has ended yet. Cleared on a new screen entry only implicitly —
+   * callers reading this should ensure they do so immediately after a terminal outcome fires.
+   */
+  public GameplayScore getLastGameplayScore() {
+    return lastGameplayScore;
   }
 
   /**

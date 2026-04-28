@@ -8,7 +8,7 @@ public interface ToolSelector {
   /**
    * To be updated in the future
    */
-  enum ToolType { DRAW, ERASE, PAINT }
+  enum ToolType { SELECT, SPLINE }
 
   void setActiveTool(ToolType type);
   ToolType getActiveTool();

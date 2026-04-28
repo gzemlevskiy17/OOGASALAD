@@ -1,0 +1,62 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Untitled Level",
+    "gameType" : "iurii's blissful planet",
+    "screenWidth" : 3200.0,
+    "screenHeight" : 1600.0,
+    "gravity" : -9.8,
+    "drag" : 0.01
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 5.0,
+      "y" : 284.5
+    }, {
+      "x" : 488.0,
+      "y" : 351.5
+    }, {
+      "x" : 1199.0,
+      "y" : 352.5
+    }, {
+      "x" : 1201.0,
+      "y" : 353.5
+    }, {
+      "x" : 2707.0,
+      "y" : 395.5
+    }, {
+      "x" : 3038.5,
+      "y" : 409.5
+    } ],
+    "objects" : [ {
+      "type" : "star",
+      "position" : {
+        "x" : 650.0,
+        "y" : 350.0
+      }
+    }, {
+      "type" : "bomb",
+      "position" : {
+        "x" : 1070.0,
+        "y" : 350.0
+      }
+    }, {
+      "type" : "finish line",
+      "position" : {
+        "x" : 2770.0,
+        "y" : 390.0
+      }
+    } ],
+    "terrainOptions" : [ "lava", "snow" ],
+    "spawnPoint" : {
+      "x" : 100.0,
+      "y" : 100.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 60.0,
+    "elementsAllowed" : [ "baloon", "bob" ],
+    "maxSelectable" : 5,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}

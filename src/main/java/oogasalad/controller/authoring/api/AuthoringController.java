@@ -1,14 +1,9 @@
 package oogasalad.controller.authoring.api;
 
-import javafx.scene.input.MouseEvent;
-
 /**
  * Handles the high-level orchestration of the level editor.
  */
 public interface AuthoringController {
-  /** Translates mouse clicks into grid placements or removals. */
-  void handleGridInteraction(MouseEvent event);
-
   /** Registers mouse handlers (hover, click, drag) on the canvas's visual root. */
   void initializeCanvasHandlers();
 

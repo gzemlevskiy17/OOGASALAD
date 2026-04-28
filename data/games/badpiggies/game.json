@@ -1,0 +1,271 @@
+{
+  "gameId" : "badpiggies",
+  "mainCharacterId" : "BigPig",
+  "components" : [ {
+    "id" : "BigPig",
+    "spriteUrl" : "data/assets/vehicle/bp_bigPig.png",
+    "mass" : 10.0,
+    "buttons" : [ {
+      "name" : "Move Left",
+      "direction" : {
+        "x" : -5000.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Move Right",
+      "direction" : {
+        "x" : 5000.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Jump",
+      "direction" : {
+        "x" : 0.0,
+        "y" : -15000.0
+      }
+    } ]
+  }, {
+    "id" : "SmallPig",
+    "spriteUrl" : "data/assets/vehicle/bp_smallPig.png",
+    "mass" : 5.0,
+    "buttons" : [ {
+      "name" : "Move Left",
+      "direction" : {
+        "x" : -4000.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Move Right",
+      "direction" : {
+        "x" : 4000.0,
+        "y" : 0.0
+      }
+    } ]
+  }, {
+    "id" : "Balloon",
+    "spriteUrl" : "data/assets/vehicle/bp_balloon.png",
+    "mass" : 1.0,
+    "buttons" : [ {
+      "name" : "Inflate",
+      "direction" : {
+        "x" : 0.0,
+        "y" : -8000.0
+      }
+    } ]
+  }, {
+    "id" : "Fan",
+    "spriteUrl" : "data/assets/vehicle/bp_fan.png",
+    "mass" : 3.0,
+    "buttons" : [ {
+      "name" : "Thrust Left",
+      "direction" : {
+        "x" : -6000.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Thrust Right",
+      "direction" : {
+        "x" : 6000.0,
+        "y" : 0.0
+      }
+    } ]
+  }, {
+    "id" : "Engine",
+    "spriteUrl" : "data/assets/vehicle/bp_engine.png",
+    "mass" : 8.0,
+    "buttons" : [ {
+      "name" : "Drive Left",
+      "direction" : {
+        "x" : -7000.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Drive Right",
+      "direction" : {
+        "x" : 7000.0,
+        "y" : 0.0
+      }
+    } ]
+  }, {
+    "id" : "Frame",
+    "spriteUrl" : "data/assets/vehicle/bp_frame.png",
+    "mass" : 6.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Sled",
+    "spriteUrl" : "data/assets/vehicle/bp_sled.png",
+    "mass" : 4.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Wood Wheel",
+    "spriteUrl" : "data/assets/vehicle/bp_woodWheelWheel.png",
+    "mass" : 2.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Metal Wheel",
+    "spriteUrl" : "data/assets/vehicle/bp_metalWheelWheel.png",
+    "mass" : 3.0,
+    "buttons" : [ ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "Rock",
+    "spriteUrl" : "data/assets/bp_rock.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 25.0
+    }
+  }, {
+    "id" : "Coin",
+    "spriteUrl" : "data/assets/bp_coin.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "score",
+      "amount" : 10.0
+    }
+  }, {
+    "id" : "Heart",
+    "spriteUrl" : "data/assets/bp_heart.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "heal",
+      "amount" : 25.0
+    }
+  }, {
+    "id" : "Bomb",
+    "spriteUrl" : "data/assets/bp_bomb.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 50.0
+    }
+  }, {
+    "id" : "XPBoost",
+    "spriteUrl" : "data/assets/bp_xp.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "score",
+      "amount" : 50.0
+    }
+  }, {
+    "id" : "GoalLine",
+    "spriteUrl" : "data/assets/bp_goalLine.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "finish",
+      "amount" : 0.0
+    }
+  } ],
+  "terrainTypes" : [ {
+    "id" : "GrassHills",
+    "spriteUrl" : null,
+    "visualColor" : "#4A7C59",
+    "friction" : 0.6
+  }, {
+    "id" : "DirtPath",
+    "spriteUrl" : "data/assets/back.png",
+    "visualColor" : "#8B5E3C",
+    "friction" : 0.4
+  } ],
+  "cheats" : [ {
+    "id" : "test",
+    "name" : "spawnheart",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "SHIFT", "P" ]
+    },
+    "effects" : [ {
+      "type" : "spawnPowerup",
+      "target" : {
+        "kind" : "mainCharacter",
+        "id" : ""
+      },
+      "parameters" : {
+        "componentId" : "heart"
+      }
+    } ]
+  }, {
+    "id" : "test2",
+    "name" : "test2",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "X" ]
+    },
+    "effects" : [ {
+      "type" : "finishRun",
+      "target" : {
+        "kind" : "world",
+        "id" : ""
+      },
+      "parameters" : { }
+    } ]
+  }, {
+    "id" : "testscore",
+    "name" : "score",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "M" ]
+    },
+    "effects" : [ {
+      "type" : "addScore",
+      "target" : {
+        "kind" : "world",
+        "id" : ""
+      },
+      "parameters" : {
+        "amount" : "10"
+      }
+    } ]
+  }, {
+    "id" : "testdestroy",
+    "name" : "testdestroy",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "D" ]
+    },
+    "effects" : [ {
+      "type" : "destroy",
+      "target" : {
+        "kind" : "componentType",
+        "id" : "bomb"
+      },
+      "parameters" : { }
+    } ]
+  }, {
+    "id" : "testlaunch",
+    "name" : "launch",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "L" ]
+    },
+    "effects" : [ {
+      "type" : "launch",
+      "target" : {
+        "kind" : "vehicle",
+        "id" : ""
+      },
+      "parameters" : {
+        "xVelocity" : "20",
+        "yVelocity" : "20"
+      }
+    } ]
+  }, {
+    "id" : "testlaunchagain",
+    "name" : "launch",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "K" ]
+    },
+    "effects" : [ {
+      "type" : "launch",
+      "target" : {
+        "kind" : "vehicle",
+        "id" : ""
+      },
+      "parameters" : {
+        "xVelocity" : "80",
+        "yVelocity" : "80"
+      }
+    } ]
+  } ]
+}

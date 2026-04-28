@@ -1,46 +1,53 @@
 package oogasalad.controller.player.internal;
 
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javafx.scene.Node;
-import javafx.scene.image.ImageView;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
 import oogasalad.controller.player.api.InputRouter;
+import oogasalad.controller.player.internal.cheats.CheatInputHandler;
+import oogasalad.controller.player.internal.cheats.CheatKeyBinder;
+import oogasalad.controller.player.internal.cheats.CheatRuntimeContext;
 import oogasalad.data.api.GameConfig;
+import oogasalad.data.api.GameLoader;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
+import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.model.engine.CollisionDetectorImpl;
 import oogasalad.model.engine.GameEngineImpl;
-import oogasalad.model.engine.ImpulseCollisionSolver;
-import oogasalad.model.engine.WorldImpl;
-import oogasalad.model.engine.api.DefaultTag;
-import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Vector;
+import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GameComponent;
-import oogasalad.model.engine.internal.components.GoalLineComponent;
-import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.VehicleComponent;
+import oogasalad.model.player.api.GameplayStatsTracker;
 import oogasalad.model.player.api.LossConditionChecker;
+import oogasalad.model.player.api.ScoreService;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.model.player.internal.FallOffWorldLossChecker;
 import oogasalad.model.player.internal.FinishLineWinChecker;
+import oogasalad.model.player.internal.GameplayStatsTrackerImpl;
+import oogasalad.model.player.internal.MainCharacterDestroyedLossChecker;
+import oogasalad.model.player.internal.ScoreServiceImpl;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
+import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
-import oogasalad.view.core.api.SpriteRenderable;
 import oogasalad.view.core.internal.CameraImpl;
 import oogasalad.view.core.internal.FollowPlayerCameraBehavior;
 import oogasalad.view.core.internal.RendererImpl;
-import oogasalad.view.core.internal.SpriteCache;
 import oogasalad.view.player.internal.GamePlayAppScreen;
 
 /**
@@ -52,294 +59,210 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
-  // Constants for a demonstration
-  private static final double BALL_RADIUS = 12.0;
-  private static final double MIN_VIEWPORT_SIZE = 1.0;
-  private static final double DEFAULT_VIEW_WIDTH = 1280.0;
-  private static final double DEFAULT_VIEW_HEIGHT = 720.0;
-  private static final double ZOOM_STEP = 1.1;
-  private static final double MIN_ZOOM = 0.5;
-  private static final double MAX_ZOOM = 3.0;
-  private static final double BOUNDS_PADDING = 400.0;
-  private static final double FALLBACK_WORLD_WIDTH = 2600.0;
-  private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
+  private static final double INITIAL_CAMERA_X = 0.0;
+  private static final double INITIAL_CAMERA_Y = 0.0;
+  private static final double CAMERA_OFFSET_X = 0.0;
+  private static final double CAMERA_OFFSET_Y = 0.0;
+  private static final double CAMERA_FOLLOW_SMOOTHING = 0.2;
 
-  private record LevelBounds(double width, double height) {}
-
-  private record BuiltWorld(World world, LevelBounds bounds) {}
-
-  private final VehicleFactory vehicleFactory = new VehicleFactory();
+  private final GameplayWorldBuilder worldBuilder;
   private final LevelLoader levelLoader;
   private final Supplier<String> levelPathSupplier;
+  private final CameraTargetResolver cameraTargetResolver = new CameraTargetResolver();
+  private final DriveActionBinder driveActionBinder = new DriveActionBinder();
+  private final ButtonForceController buttonForceController = new ButtonForceController();
+  private final VehicleHudAttacher vehicleHudAttacher = new VehicleHudAttacher();
+  private final GameplayCameraViewportController cameraViewportController =
+      new GameplayCameraViewportController();
 
   public GameplaySessionFactoryImpl(
       LevelLoader levelLoader,
+      GameLoader gameLoader,
       Supplier<String> levelPathSupplier
   ) {
     this.levelLoader = levelLoader;
     this.levelPathSupplier = levelPathSupplier;
+    this.worldBuilder = new GameplayWorldBuilder(levelLoader, gameLoader, levelPathSupplier);
   }
 
-  private static Node createImageView(SpriteRenderable sr, SpriteCache spriteCache) {
-    javafx.scene.image.Image image = spriteCache.get(sr.getSpritePath());
-    double w = sr.getSpriteWidth();
-    double h = sr.getSpriteHeight();
-    if (image == null) {
-      Rectangle rect = new Rectangle(w, h);
-      rect.setManaged(false);
-      rect.setFill(Color.DODGERBLUE);
-      rect.setStroke(Color.BLACK);
-      rect.setStrokeWidth(1.0);
-      rect.setTranslateX(-w / 2);
-      rect.setTranslateY(-h / 2);
-      return rect;
+  static Map<Renderable, Renderable> wheelConnectorRotationSources(World world) {
+    Map<Renderable, Renderable> sources = new IdentityHashMap<>();
+    for (Joint joint : world.getJoints()) {
+      GameComponent a = joint.getComponentA();
+      GameComponent b = joint.getComponentB();
+      if (isWheel(a) && !isWheel(b)) {
+        sources.put(a, b);
+      } else if (isWheel(b) && !isWheel(a)) {
+        sources.put(b, a);
+      }
     }
-    ImageView imageView = new ImageView(image);
-    imageView.setFitWidth(w);
-    imageView.setFitHeight(h);
-    imageView.setTranslateX(-w / 2);
-    imageView.setTranslateY(-h / 2);
-    return imageView;
+    return sources;
   }
 
-  /**
-   * Builds and wires one gameplay session using the supplied screen and outcome callback.
-   */
+  private static boolean isWheel(GameComponent component) {
+    return component instanceof VehicleComponent vehicleComponent && vehicleComponent.isWheel();
+  }
+
   @Override
   public GameplaySession create(GamePlayAppScreen screen, Consumer<Outcome> onOutcome,
       VehicleLayout layout) {
     screen.getGameLayer().getChildren().clear();
 
-    GameConfig config = buildConfig();
-    BuiltWorld built = buildWorld(config, layout);
+    GameplayWorldBuilder.BuiltWorld built = worldBuilder.build(layout);
+    screen.setBackgroundImagePath(built.levelAttributes().getBackgroundImage());
     World world = built.world();
-    LevelBounds bounds = built.bounds();
-    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl(),
-        new ImpulseCollisionSolver());
-
-    WinConditionChecker winChecker = buildWinChecker();
-    LossConditionChecker lossChecker = buildLossChecker(bounds.height());
     InputRouter inputRouter = buildInputRouter();
-
-    bindDriveActions(inputRouter, world);
-
-    double viewWidth = screen.getGameLayer().getWidth();
-    double viewHeight = screen.getGameLayer().getHeight();
-    if (viewWidth <= 0) viewWidth = DEFAULT_VIEW_WIDTH;
-    if (viewHeight <= 0) viewHeight = DEFAULT_VIEW_HEIGHT;
-
-    // World boundary overlay (drawn in world space, projected each frame)
-    Rectangle worldBounds = new Rectangle(bounds.width(), bounds.height());
-    worldBounds.setManaged(false);
-    worldBounds.setFill(Color.TRANSPARENT);
-    worldBounds.setStroke(Color.LIMEGREEN);
-    worldBounds.setStrokeWidth(2.0);
-    worldBounds.getStrokeDashArray().addAll(10.0, 8.0);
-
-    // keep the world boundary behind balls
-    screen.getGameLayer().getChildren().add(worldBounds);
-    worldBounds.toBack();
-
-    Camera camera = new CameraImpl(0, 0, viewWidth, viewHeight);
-    GameObject player = resolveControlledPlayer(world);
-
-    CameraBehavior behavior = new FollowPlayerCameraBehavior(
-        () -> player, 0, 0, 0.2, bounds.width(), bounds.height());
-    camera.setBehavior(behavior);
-    wireResponsiveCamera(screen, camera);
-    SpriteCache spriteCache = new SpriteCache();
-    Renderer objectRenderer = new RendererImpl(screen.getGameLayer(), r -> {
-      if (r instanceof GoalLineComponent gl) {
-        Rectangle rect = new Rectangle(gl.getSpriteWidth(), gl.getSpriteHeight());
-        rect.setManaged(false);
-        rect.setFill(Color.rgb(0, 200, 0, 0.4));
-        rect.setStroke(Color.LIMEGREEN);
-        rect.setStrokeWidth(2.0);
-        rect.getStrokeDashArray().addAll(8.0, 6.0);
-        rect.setTranslateX(-gl.getSpriteWidth() / 2);
-        rect.setTranslateY(-gl.getSpriteHeight() / 2);
-        return rect;
-      }
-
-      if (r instanceof SpriteRenderable sr) {
-        return createImageView(sr, spriteCache);
-      }
-
-      if (r instanceof TerrainBlock tb) {
-        Rectangle rect = new Rectangle(tb.getWidth(), tb.getHeight());
-        rect.setManaged(false);
-        rect.setStrokeWidth(0.5);
-        rect.setStroke(Color.BLACK);
-        rect.setFill(Paint.valueOf(tb.getColor())); // visible even if texture missing
-        return rect;
-      }
-
-      Circle c = new Circle(BALL_RADIUS);
-      if (r == player) {
-        c.setRadius(BALL_RADIUS + 3);
-        c.setFill(Color.ORANGE);
-      } else if (r instanceof GameObject go) {
-        Vector v = go.getState().getLinearVelocity();
-        boolean moving = Math.hypot(v.x(), v.y()) > 0.001;
-        c.setFill(moving ? Color.DODGERBLUE : Color.DARKGRAY);
-      } else {
-        c.setFill(Color.DODGERBLUE);
-      }
-      return c;
-    });
-
-    Renderer renderer = (cameraRef, objects) -> {
-      objectRenderer.render(cameraRef, objects);
-
-      // project world border into viewport using camera transform
-      worldBounds.setLayoutX(-cameraRef.getX());
-      worldBounds.setLayoutY(-cameraRef.getY());
-    };
-
-    GameController controller = new GameControllerImpl(
-        engine, world, renderer, camera, behavior, winChecker, lossChecker, inputRouter, config
-    );
+    configureInputControls(screen, inputRouter, world, built.gameConfig());
+    showForceWarningsIfNeeded(screen, built);
+    GameController controller = buildController(screen, built, inputRouter);
     controller.setOnOutcome(onOutcome);
 
-    return new GameplaySession(controller);
+    ScoreService scoreService = scoreService();
+    CheatInputHandler cheatInputHandler = buildCheatInputHandler(
+        built.gameConfig(), world, controller, scoreService);
+    vehicleHudAttacher.attach(screen, built.placements());
+
+    return new GameplaySession(controller, cheatInputHandler, scoreService);
   }
 
-  private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {
-    final double[] baseWidth = {Math.max(DEFAULT_VIEW_WIDTH, screen.getGameLayer().getWidth())};
-    final double[] baseHeight = {Math.max(DEFAULT_VIEW_HEIGHT, screen.getGameLayer().getHeight())};
-    final double[] zoom = {1.0};
+  private GameController buildController(GamePlayAppScreen screen,
+      GameplayWorldBuilder.BuiltWorld built, InputRouter inputRouter) {
+    World world = built.world();
+    GameConfig gameConfig = built.gameConfig();
+    GameplayConfigSettings gameplayConfig = new GameplayConfigSettings(gameConfig);
+    GameEngine engine = new GameEngineImpl(world, new CollisionDetectorImpl());
+    WinConditionChecker winChecker = buildWinChecker(gameConfig);
+    LossConditionChecker lossChecker = buildLossChecker(gameplayConfig, built.bounds().height());
+    CameraRuntime cameraRuntime = buildCameraRuntime(screen, world, built);
+    Renderer renderer = buildRenderer(screen, gameConfig, world);
+    GameplayStatsTracker tracker = new GameplayStatsTrackerImpl(
+        levelPathSupplier.get(), mainCharacterId(gameConfig));
 
-    Runnable applyViewport = () -> {
-      double viewWidth = Math.max(MIN_VIEWPORT_SIZE, baseWidth[0] / zoom[0]);
-      double viewHeight = Math.max(MIN_VIEWPORT_SIZE, baseHeight[0] / zoom[0]);
-      camera.setViewBoundaries(viewWidth, viewHeight);
-    };
-
-    screen.getGameLayer().widthProperty().addListener((obs, oldVal, newVal) -> {
-      if (newVal.doubleValue() > 0) {
-        baseWidth[0] = newVal.doubleValue();
-        applyViewport.run();
-      }
-    });
-    screen.getGameLayer().heightProperty().addListener((obs, oldVal, newVal) -> {
-      if (newVal.doubleValue() > 0) {
-        baseHeight[0] = newVal.doubleValue();
-        applyViewport.run();
-      }
-    });
-    screen.getGameLayer().setOnScroll(event -> {
-      if (!event.isControlDown()) {
-        return;
-      }
-      zoom[0] = event.getDeltaY() > 0 ? zoom[0] * ZOOM_STEP : zoom[0] / ZOOM_STEP;
-      zoom[0] = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom[0]));
-      applyViewport.run();
-      event.consume();
-    });
-
-    applyViewport.run();
+    GameController controller = new GameControllerImpl(
+        engine, world, renderer, cameraRuntime.camera(), cameraRuntime.behavior(),
+        winChecker, lossChecker, inputRouter, gameplayConfig.controllerSettings(), tracker);
+    return controller;
   }
 
-  /**
-   * Binds the on-screen tool button IDs to actions that activate or deactivate all matching
-   * Driveable components in the world. A button whose ID matches a component's display name
-   * (case-insensitive) toggles that component's drive state.
-   */
-  private void bindDriveActions(InputRouter inputRouter, World world) {
-    for (GameObject obj : world.getObjects()) {
-      if (!(obj instanceof Driveable driveable)) {
-        continue;
-      }
-      if (!driveable.isPlayerControllable()) {
-        continue;
-      }
-
-      String id = obj.getTag();
-      if (obj instanceof VehicleComponent vc) {
-        id = vc.getDisplayName().toLowerCase();
-      }
-
-      final Driveable target = driveable;
-      final String buttonId = id;
-      inputRouter.bind(buttonId, () -> {
-        if (target.isDriveEnabled()) {
-          target.deactivateDrive();
-        } else {
-          target.activateDrive();
-        }
-      });
+  private CheatInputHandler buildCheatInputHandler(GameConfig gameConfig, World world,
+      GameController controller, ScoreService scoreService) {
+    if (gameConfig == null || gameConfig.cheats().isEmpty()) {
+      return new CheatInputHandler(List.of());
     }
+    return CheatKeyBinder.defaults().bind(gameConfig,
+        new CheatRuntimeContext(world, gameConfig, mainCharacterId(gameConfig),
+            controller::completeRun, scoreService));
   }
 
-  private BuiltWorld buildWorld(GameConfig config, VehicleLayout layout) {
-    World world = new WorldImpl();
-
-    String levelPath = levelPathSupplier.get();
-    if (levelPath != null && !levelPath.isBlank()) {
-      levelLoader.loadLevel(levelPath, world, config);
+  private ScoreService scoreService() {
+    if (levelLoader instanceof LevelLoaderImpl loaderImpl) {
+      return loaderImpl.getScore();
     }
-
-    LevelBounds bounds = computeLevelBounds(world);
-    vehicleFactory.buildVehicle(layout, world, 350, 300);
-    return new BuiltWorld(world, bounds);
+    return new ScoreServiceImpl();
   }
 
-  private LevelBounds computeLevelBounds(World world) {
-    double maxX = 0;
-    double maxY = 0;
-    for (GameComponent c : world.getAllComponents()) {
-      if (c instanceof TerrainBlock tb) {
-        maxX = Math.max(maxX, tb.getX() + tb.getWidth());
-        maxY = Math.max(maxY, tb.getY() + tb.getHeight());
-      } else if (c instanceof GoalLineComponent gl) {
-        maxX = Math.max(maxX, gl.getX() + gl.getSpriteWidth());
-        maxY = Math.max(maxY, gl.getY() + gl.getSpriteHeight());
-      }
-    }
-    double width = maxX > 0 ? maxX + BOUNDS_PADDING : FALLBACK_WORLD_WIDTH;
-    double height = maxY > 0 ? maxY + BOUNDS_PADDING : FALLBACK_WORLD_HEIGHT;
-    return new LevelBounds(width, height);
+  private CameraRuntime buildCameraRuntime(GamePlayAppScreen screen, World world,
+      GameplayWorldBuilder.BuiltWorld built) {
+    Camera camera = buildCamera(screen);
+    LevelAttributes levelAttributes = built.levelAttributes();
+    GameObject player = cameraTargetResolver.resolve(world, levelAttributes.getCameraFollows());
+    CameraBehavior behavior = buildCameraBehavior(player, built.bounds());
+    camera.setBehavior(behavior);
+    cameraViewportController.wireResponsiveCamera(screen, camera);
+    return new CameraRuntime(camera, behavior);
   }
 
-  private GameConfig buildConfig() {
-    return new GameConfig() {
-      @Override
-      public String getSetting(String key) { return ""; }
-
-      @Override
-      public double getNumericSetting(String key) { return 0.0; }
-    };
+  private void configureInputControls(GamePlayAppScreen screen, InputRouter inputRouter,
+      World world, GameConfig gameConfig) {
+    driveActionBinder.bind(inputRouter, world);
+    buttonForceController.bind(inputRouter, gameConfig, world);
+    Set<String> toolIds = new LinkedHashSet<>();
+    toolIds.addAll(driveActionBinder.collectToolIds(world));
+    toolIds.addAll(buttonForceController.collectButtonIds(gameConfig, world));
+    screen.setAvailableTools(toolIds);
+    screen.setOnToolActivated(toolId -> inputRouter.handleButtonPress(toolId));
+    screen.setOnToolDeactivated(toolId -> inputRouter.handleButtonRelease(toolId));
   }
 
-  private WinConditionChecker buildWinChecker() { return new FinishLineWinChecker(); }
-
-  private LossConditionChecker buildLossChecker(double worldHeight) {
-    return new FallOffWorldLossChecker(worldHeight);
+  private void showForceWarningsIfNeeded(GamePlayAppScreen screen,
+      GameplayWorldBuilder.BuiltWorld built) {
+    List<String> warnings = ForceViabilityChecker.check(
+        built.gameConfig(), built.world().getPhysicsEnvironment().gravity());
+    if (warnings.isEmpty()) {
+      return;
+    }
+    VBox warningBox = new VBox(4);
+    warningBox.setStyle("-fx-background-color: rgba(180,40,40,0.85); -fx-padding: 10; "
+        + "-fx-background-radius: 8;");
+    warningBox.setMaxWidth(500);
+    warningBox.setMouseTransparent(true);
+    Label header = new Label("Warning: button forces may be too weak to move the vehicle");
+    header.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13;");
+    warningBox.getChildren().add(header);
+    for (String warning : warnings) {
+      Label line = new Label(warning);
+      line.setStyle("-fx-text-fill: white; -fx-font-size: 11;");
+      line.setWrapText(true);
+      warningBox.getChildren().add(line);
+    }
+    VBox.setMargin(header, new Insets(0, 0, 4, 0));
+    screen.attachOverlay(warningBox, Pos.TOP_CENTER);
+    javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+        javafx.util.Duration.seconds(10));
+    pause.setOnFinished(e -> warningBox.setVisible(false));
+    pause.play();
   }
 
-  private InputRouterImpl buildInputRouter() { return new InputRouterImpl(); }
+  private Camera buildCamera(GamePlayAppScreen screen) {
+    return new CameraImpl(INITIAL_CAMERA_X, INITIAL_CAMERA_Y,
+        cameraViewportController.initialViewWidth(screen),
+        cameraViewportController.initialViewHeight(screen));
+  }
 
-  // Hierarchy of objects to follow
-  private GameObject resolveControlledPlayer(World world) {
-    GameObject pig = world.getObjectsByTag(DefaultTag.PIGS.value()).stream().findFirst()
-        .orElse(null);
-    if (pig != null) {
-      return pig;
+  private CameraBehavior buildCameraBehavior(GameObject player,
+      GameplayWorldBuilder.LevelBounds bounds) {
+    return new FollowPlayerCameraBehavior(() -> player, CAMERA_OFFSET_X, CAMERA_OFFSET_Y,
+        CAMERA_FOLLOW_SMOOTHING, bounds.width(), bounds.height());
+  }
+
+  private Renderer buildRenderer(GamePlayAppScreen screen, GameConfig gameConfig, World world) {
+    GameplayRenderableFactory renderableFactory = new GameplayRenderableFactory(
+        gameConfig, wheelConnectorRotationSources(world));
+    Renderer objectRenderer = new RendererImpl(screen.getGameLayer(),
+        renderable -> renderableFactory.createNode(renderable),
+        (renderable, node) -> renderableFactory.updateNode(renderable, node));
+    return (cameraRef, objects) -> objectRenderer.render(cameraRef, objects);
+  }
+
+  private WinConditionChecker buildWinChecker(GameConfig config) {
+    return new FinishLineWinChecker(mainCharacterId(config));
+  }
+
+  private LossConditionChecker buildLossChecker(GameplayConfigSettings settings,
+      double worldHeight) {
+    List<String> tracked = settings.lossTrackedTags();
+    String mainCharacterId = mainCharacterId(settings.gameConfig());
+    if (tracked.isEmpty() && mainCharacterId != null && !mainCharacterId.isBlank()) {
+      tracked = List.of(mainCharacterId);
     }
+    LossConditionChecker fallOff = new FallOffWorldLossChecker(worldHeight, tracked);
+    LossConditionChecker hpDestroyed =
+        new MainCharacterDestroyedLossChecker(mainCharacterId);
+    return world -> fallOff.hasLost(world) || hpDestroyed.hasLost(world);
+  }
 
-    GameObject vehicle = world.getObjectsByTag(DefaultTag.VEHICLE.value()).stream().findFirst()
-        .orElse(null);
-    if (vehicle != null) {
-      return vehicle;
+  private String mainCharacterId(GameConfig config) {
+    if (config == null) {
+      return null;
     }
+    return config.mainCharacterId();
+  }
 
-    GameObject dynamic = world.getObjectsByTag(DefaultTag.DYNAMIC.value()).stream().findFirst()
-        .orElse(null);
-    if (dynamic != null) {
-      return dynamic;
-    }
+  private InputRouterImpl buildInputRouter() {
+    return new InputRouterImpl();
+  }
 
-    return world.getObjects().stream().findFirst().orElse(null);
+  private record CameraRuntime(Camera camera, CameraBehavior behavior) {
   }
 
 }

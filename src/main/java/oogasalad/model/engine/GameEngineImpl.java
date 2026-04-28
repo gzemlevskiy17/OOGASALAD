@@ -1,173 +1,100 @@
 package oogasalad.model.engine;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import oogasalad.model.engine.api.CollisionDetector;
-import oogasalad.model.engine.api.CollisionSolver;
-import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
-import oogasalad.model.engine.api.Joint;
-import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 
 /**
  * Main physics-step orchestrator for simulation updates in a world.
  *
- * <p>Use this class to coordinate per-frame simulation flow: detect collisions, resolve them via
- * an injected solver, and then integrate object states.
- *
- * <p><strong>Assumptions:</strong> Constructor dependencies are non-null, world objects expose
- * valid physical state, and injected detector/solver implementations obey their interface
- * contracts. Invalid or partial state data may cause no-op updates or runtime exceptions.
- *
- * <p><strong>Dependencies:</strong> Depends on {@link World}, {@link CollisionDetector},
- * {@link CollisionSolver}, {@link GameObject}, {@link ObjectState}, {@link Collision}, and
- * {@link Vector}.
- *
- * <p><strong>Example:</strong>
- *
- * <pre>{@code
- * GameEngine engine = new GameEngineImpl(world, detector, solver);
- * engine.step(1.0 / 60.0);
- * }</pre>
- *
- * <p><strong>Details:</strong> Collision resolution architecture is inspired by Tim Wheeler's
- * write-up on 2D collision detection/resolution: <a
- * href="https://timallanwheeler.com/blog/2024/08/01/2d-collision-detection-and-resolution/">...</a></p>
+ * <p>Coordinates per-frame simulation flow across fixed-size substeps: apply forces, integrate
+ * state, resolve swept collisions, run {@link CollisionPhase}, and solve constraints. Each phase
+ * is delegated to a focused collaborator.
  *
  * @author Georgiy Zemlevskiy
+ * @author Iurii Beliaev
  */
 public class GameEngineImpl implements GameEngine {
 
-  private static final double GRAVITY = 400.0;
+  private static final double DEFAULT_FIXED_TIME_STEP = 1.0 / 60.0;
+  private static final int DEFAULT_SUB_STEP_COUNT = 4;
+  private static final double MAX_FRAME_TIME = 0.25;
 
   private final World world;
-  private final CollisionDetector collisionDetector;
-  private final CollisionSolver collisionSolver;
+  private final JointSolver jointSolver;
+  private final SweptCollisionResolver sweptResolver;
+  private final CollisionPhase collisionPhase;
+  private final double fixedTimeStep;
+  private final int subStepCount;
+  private double accumulatedTime;
 
-  /**
-   * Creates an engine with explicit simulation dependencies.
-   *
-   * <p><strong>Assumptions:</strong> All arguments are non-null and remain valid for the engine
-   * lifetime.
-   *
-   * @param world             world that stores active simulation objects
-   * @param collisionDetector pairwise detector used to build collision records
-   * @param collisionSolver   solver used to resolve detected collisions
-   */
-  public GameEngineImpl(World world, CollisionDetector collisionDetector,
-      CollisionSolver collisionSolver) {
-    this.world = world;
-    this.collisionDetector = collisionDetector;
-    this.collisionSolver = collisionSolver;
+  public GameEngineImpl(World world, CollisionDetector collisionDetector) {
+    this(world, collisionDetector, DEFAULT_FIXED_TIME_STEP, DEFAULT_SUB_STEP_COUNT);
   }
 
-  //TODO: implement collision detection for all world objects
-  //TODO: implement application of forces
+  public GameEngineImpl(World world, CollisionDetector collisionDetector,
+      double fixedTimeStep, int subStepCount) {
+    if (fixedTimeStep <= 0.0) {
+      throw new IllegalArgumentException("fixedTimeStep must be positive");
+    }
+    if (subStepCount <= 0) {
+      throw new IllegalArgumentException("subStepCount must be positive");
+    }
+    this.world = world;
+    this.fixedTimeStep = fixedTimeStep;
+    this.subStepCount = subStepCount;
+    this.accumulatedTime = 0.0;
 
-  /**
-   * Advances the simulation by one time step.
-   *
-   * <p>Use this method once per frame/tick to run collision handling and state integration in a
-   * consistent order.
-   *
-   * <p><strong>Assumptions:</strong> {@code elapsedTime} is non-negative and world object states
-   * are valid for integration.
-   *
-   * @param elapsedTime simulation delta time in seconds
-   * @throws NullPointerException if world/object state references are null
-   */
+    this.jointSolver = new JointSolver(world);
+    this.sweptResolver = new SweptCollisionResolver(world);
+    CollisionDispatcher dispatcher = new CollisionDispatcher();
+    this.collisionPhase = new CollisionPhase(world, collisionDetector, dispatcher, jointSolver);
+  }
+
   @Override
   public void step(double elapsedTime) {
-    applyJointConstraints(elapsedTime);
+    if (elapsedTime <= 0.0 || Double.isNaN(elapsedTime)) {
+      return;
+    }
+    accumulatedTime += Math.min(elapsedTime, MAX_FRAME_TIME);
+    while (accumulatedTime + 1e-12 >= fixedTimeStep) {
+      stepFixedTimeSlice();
+      accumulatedTime -= fixedTimeStep;
+    }
+  }
 
+  private void stepFixedTimeSlice() {
+    double subStepTime = fixedTimeStep / subStepCount;
+    for (int i = 0; i < subStepCount; i++) {
+      simulateSubStep(subStepTime);
+    }
+  }
+
+  private void simulateSubStep(double elapsedTime) {
+    List<DynamicComponent> dynamicComponents = world.getActiveDynamicComponents();
+    DynamicComponentUtilities.resetForces(dynamicComponents);
     for (GameObject gameObject : world.getObjects()) {
       gameObject.updatePolygon();
     }
 
-    handleCollisions();
+    Map<DynamicComponent, SweptCollisionResolver.MotionSnapshot> previousMotion =
+        sweptResolver.captureMotion(dynamicComponents);
 
-    //TODO: do this only for dynamic objects
-    for (GameObject gameObject : world.getObjects()) { //update to include only dynamic rigid bodies
-      accumulateForces(gameObject);
-      applyForcesToAcceleration(gameObject);
-      gameObject.getState().integrateObjectState(elapsedTime);
-      gameObject.setForce(new Vector(0, 0));
-    }
+    jointSolver.applyAll(elapsedTime, 1);
+    DynamicComponentUtilities.applyForces(dynamicComponents, world);
+    DynamicComponentUtilities.applyForcesToAcceleration(dynamicComponents);
+    DynamicComponentUtilities.integrateDynamicComponents(dynamicComponents, elapsedTime);
+    DynamicComponentUtilities.updateDynamicPolygons(dynamicComponents);
 
-//    for (Constraint constraint : constraings) {
-//      enforceConstraint(constraint);
-//    }
+    sweptResolver.resolve(previousMotion);
+    DynamicComponentUtilities.updateDynamicPolygons(dynamicComponents);
 
-  }
-
-  private void accumulateForces(GameObject obj) {
-    if (obj.isAffectedByGravity()) {
-      obj.addForce(new Vector(0, GRAVITY * obj.getMass()));
-    }
-    if (obj instanceof Driveable driveable) {
-      obj.addForce(driveable.getDriveForce());
-    }
-  }
-
-  private void applyForcesToAcceleration(GameObject obj) {
-    double mass = obj.getMass();
-    if (mass > 0) {
-      Vector acc = obj.getForce().multiply(1.0 / mass);
-      obj.getState().setLinearAcceleration(acc);
-    }
-  }
-
-  //TODO: implement solving of collisions in multiple small steps
-  private void handleCollisions() {
-    List<Collision> collisions = getCollisions();
-
-//    Map<String, String> solverMap = {
-//        {}
-//    }
-
-    solveCollisions(collisions);
-  }
-
-  private void applyJointConstraints(double elapsedTime) {
-    for (Joint joint : world.getJoints()) {
-      joint.apply(elapsedTime);
-    }
-  }
-
-  private static final String VEHICLE_TAG = "vehicle";
-
-  private List<Collision> getCollisions() {
-    List<Collision> collisions = new ArrayList<>();
-    List<GameObject> objects = world.getObjects();
-    for (int i = 0; i < objects.size(); i++) {
-      GameObject a = objects.get(i);
-      if (a.isTrigger()) {
-        continue;
-      }
-      for (int j = i + 1; j < objects.size(); j++) {
-        GameObject b = objects.get(j);
-        if (b.isTrigger()) {
-          continue;
-        }
-        if (a.getMass() == 0 && b.getMass() == 0) {
-          continue;
-        }
-        if (VEHICLE_TAG.equals(a.getTag()) && VEHICLE_TAG.equals(b.getTag())) {
-          continue;
-        }
-        Optional<Collision> collision = collisionDetector.detectCollision(a, b);
-        collision.ifPresent(collisions::add);
-      }
-    }
-    return collisions;
-  }
-
-  private void solveCollisions(List<Collision> collisions) {
-    for (Collision collision : collisions) {
-      collisionSolver.solve(collision);
-    }
+    collisionPhase.solve(elapsedTime);
+    //provide an update list of active components, as some may have been eliminated by solve
+    DynamicComponentUtilities.updateSleepStates(world.getActiveDynamicComponents(), elapsedTime);
   }
 }

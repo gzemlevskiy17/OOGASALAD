@@ -17,7 +17,7 @@
  * - render(Camera, Collection<Renderable>): Draws the visible subset of objects.
  *
  * 3. Renderable: A read-only graphical contract for game objects.
- * - getX(), getY(), getRotation(), getSprite(): Provides spatial and visual data.
+ * - x(), y(), rotation(), getSprite(): Provides spatial and visual data.
  *
  * 4. Camera: The viewport logic.
  * - isVisible(Renderable): Determines if an object is within the viewing frustum.

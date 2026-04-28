@@ -9,13 +9,19 @@ public enum Outcome {
   // going forwards
   OPEN_PLAYER_ENTRY("PLAYER_ENTRY"),
   OPEN_AUTHORING_ENTRY("AUTHORING_ENTRY"),
+  OPEN_GAME_AUTHORING("GAME_AUTHORING_SCREEN"),
   OPEN_AUTHORING("AUTHORING_SCREEN"),
   OPEN_VEHICLE_BUILDER("VEHICLE_BUILDER_SCREEN"),
   OPEN_GAMEPLAY("GAMEPLAY_SCREEN"),
+  // Fired by the win screen's "Continue" button. ScreenFactory intercepts this to advance
+  // selectedLevel to the next level in play order before routing — without this, the user
+  // would replay the level they just won. Falls back to OPEN_PLAYER_ENTRY if at the end.
+  OPEN_NEXT_LEVEL("VEHICLE_BUILDER_SCREEN"),
   OPEN_LOGIN("LOGIN"),
   OPEN_CREATE_ACCOUNT("CREATE_ACCOUNT"),
   OPEN_PROFILE("PROFILE"),
   OPEN_UPDATE_PROFILE("UPDATE_PROFILE"),
+  SKIP_LOGIN("MENU"),
 
   // going back
   BACK_TO_MENU("MENU"),

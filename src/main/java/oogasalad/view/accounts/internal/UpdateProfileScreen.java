@@ -24,69 +24,87 @@ public class UpdateProfileScreen implements AppScreen {
       ResourceBundle.getBundle("oogasalad.view.accounts.UpdateProfileScreen");
 
   private final Parent root;
-  private final Label statusLabel = new Label();
   private final TextField usernameField = new TextField();
   private final PasswordField passwordField = new PasswordField();
+  private final Label avatarPathLabel = new Label();
+  private final Label statusLabel = new Label();
   private String selectedPath = "";
 
   public UpdateProfileScreen(Consumer<Outcome> onNav, Consumer<AccountOutcome> onAction) {
     BorderPane layout = new BorderPane();
-    layout.setPadding(new Insets(20));
+    layout.getStylesheets().add(
+        getClass().getResource("/oogasalad/view/accounts/accounts.css").toExternalForm());
+    layout.getStyleClass().add("screen-root");
 
-    Label titleLabel = new Label(PROPS.getString("title"));
-    titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
-    BorderPane.setAlignment(titleLabel, Pos.CENTER);
+    layout.setTop(buildBackButton(onNav));
 
-    HBox usernameRow = new HBox(10, new Label(PROPS.getString("usernameLabel")),
-        usernameField, makeSaveUsernameButton(onAction));
-    usernameRow.setAlignment(Pos.CENTER);
+    Label title = new Label(PROPS.getString("title"));
+    title.getStyleClass().add("accounts-title");
 
-    HBox passwordRow = new HBox(10, new Label(PROPS.getString("passwordLabel")),
-        passwordField, makeSavePasswordButton(onAction));
-    passwordRow.setAlignment(Pos.CENTER);
+    statusLabel.getStyleClass().add("accounts-error");
 
-    HBox avatarRow = new HBox(10, new Label(PROPS.getString("avatarLabel")),
-        makeBrowseButton(), makeSaveAvatarButton(onAction));
-    avatarRow.setAlignment(Pos.CENTER);
+    VBox center = new VBox(
+        Double.parseDouble(PROPS.getString("spacing")),
+        title, buildUsernameRow(onAction), buildPasswordRow(onAction),
+        buildAvatarRow(onAction), statusLabel);
+    center.setAlignment(Pos.CENTER);
+    center.getStyleClass().add("accounts-form-wide");
+    layout.setCenter(center);
 
-    VBox centerBox = new VBox(15, usernameRow, passwordRow, avatarRow, statusLabel);
-    centerBox.setAlignment(Pos.CENTER);
-
-    layout.setTop(titleLabel);
-    layout.setCenter(centerBox);
     this.root = layout;
   }
 
-  private Button makeBrowseButton() {
+  private Button buildBackButton(Consumer<Outcome> onNav) {
+    Button backButton = new Button(PROPS.getString("backButton"));
+    backButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    backButton.setOnAction(e -> onNav.accept(Outcome.OPEN_PROFILE));
+    BorderPane.setMargin(backButton, new Insets(18, 0, 0, 18));
+    return backButton;
+  }
+
+  private HBox buildUsernameRow(Consumer<AccountOutcome> onAction) {
+    usernameField.setPromptText(PROPS.getString("usernameLabel"));
+    Button saveUsernameButton = new Button(PROPS.getString("saveUsernameButton"));
+    saveUsernameButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    saveUsernameButton.setOnAction(e -> onAction.accept(
+        new AccountOutcome.UpdateUsernameRequested(usernameField.getText())));
+    HBox usernameRow = new HBox(10, usernameField, saveUsernameButton);
+    usernameRow.setAlignment(Pos.CENTER);
+    return usernameRow;
+  }
+
+  private HBox buildPasswordRow(Consumer<AccountOutcome> onAction) {
+    passwordField.setPromptText(PROPS.getString("passwordLabel"));
+    Button savePasswordButton = new Button(PROPS.getString("savePasswordButton"));
+    savePasswordButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    savePasswordButton.setOnAction(e -> onAction.accept(
+        new AccountOutcome.UpdatePasswordRequested(passwordField.getText())));
+    HBox passwordRow = new HBox(10, passwordField, savePasswordButton);
+    passwordRow.setAlignment(Pos.CENTER);
+    return passwordRow;
+  }
+
+  private HBox buildAvatarRow(Consumer<AccountOutcome> onAction) {
+    avatarPathLabel.setText(PROPS.getString("noAvatarSelected"));
+    avatarPathLabel.getStyleClass().add("accounts-path-label");
     Button browseButton = new Button(PROPS.getString("browseButton"));
+    browseButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     browseButton.setOnAction(e -> {
-      File file = new FileChooser().showOpenDialog(null);
+      FileChooser chooser = new FileChooser();
+      chooser.setTitle(PROPS.getString("chooseAvatarTitle"));
+      File file = chooser.showOpenDialog(null);
       if (file != null) {
         selectedPath = file.getAbsolutePath();
+        avatarPathLabel.setText(file.getName());
       }
     });
-    return browseButton;
-  }
-
-  private Button makeSaveAvatarButton(Consumer<AccountOutcome> onAction) {
-    Button saveButton = new Button(PROPS.getString("saveButton"));
-    saveButton.setOnAction(
-        e -> onAction.accept(new AccountOutcome.UpdateAvatarRequested(selectedPath)));
-    return saveButton;
-  }
-
-  private Button makeSaveUsernameButton(Consumer<AccountOutcome> onAction) {
-    Button saveUsernameButton = new Button(PROPS.getString("saveUsernameButton"));
-    saveUsernameButton.setOnAction(
-        e -> onAction.accept(new AccountOutcome.UpdateUsernameRequested(usernameField.getText())));
-    return saveUsernameButton;
-  }
-
-  private Button makeSavePasswordButton(Consumer<AccountOutcome> onAction) {
-    Button savePasswordButton = new Button(PROPS.getString("savePasswordButton"));
-    savePasswordButton.setOnAction(
-        e -> onAction.accept(new AccountOutcome.UpdatePasswordRequested(passwordField.getText())));
-    return savePasswordButton;
+    Button saveAvatarButton = new Button(PROPS.getString("saveButton"));
+    saveAvatarButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
+    saveAvatarButton.setOnAction(e -> onAction.accept(
+        new AccountOutcome.UpdateAvatarRequested(selectedPath)));
+    HBox avatarRow = new HBox(10, avatarPathLabel, browseButton, saveAvatarButton);
+    avatarRow.setAlignment(Pos.CENTER);
+    return avatarRow;
   }
 
   @Override
@@ -99,6 +117,8 @@ public class UpdateProfileScreen implements AppScreen {
     statusLabel.setText("");
     usernameField.clear();
     passwordField.clear();
+    avatarPathLabel.setText(PROPS.getString("noAvatarSelected"));
+    selectedPath = "";
   }
 
   public void displayError(String message) {

@@ -1,8 +1,10 @@
 package oogasalad.model.engine.api;
 
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Dynamic;
 import java.util.ArrayList;
 import java.util.List;
 import oogasalad.model.engine.EngineError;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 
 /**
@@ -12,6 +14,7 @@ import oogasalad.model.engine.internal.components.GameComponent;
  * joint participating in constraint solving.
  */
 public interface World {
+
   /**
    * Returns the active components currently exposed to simulation and rendering in registration
    * order.
@@ -29,13 +32,21 @@ public interface World {
   List<GameComponent> getActiveComponents();
 
   /**
+   * Returns all registered dynamic components in registration order.
+   */
+  List<DynamicComponent> getActiveDynamicComponents();
+
+  /**
    * Returns every registered component whose tag matches the requested tag, in registration order.
    */
   default List<GameComponent> getComponentsByTag(String tag) {
     List<GameComponent> taggedComponents = new ArrayList<>();
     for (GameComponent component : getAllComponents()) {
-      if (component.getTag().equals(tag)) {taggedComponents.add(component);}
-    }return List.copyOf(taggedComponents);
+      if (component.getTag().equals(tag)) {
+        taggedComponents.add(component);
+      }
+    }
+    return List.copyOf(taggedComponents);
   }
 
   /**
@@ -105,7 +116,9 @@ public interface World {
    */
   void addJoint(Joint joint);
 
-  /** Removes a joint from the world. */
+  /**
+   * Removes a joint from the world.
+   */
   void removeJoint(Joint joint);
 
   /**
@@ -151,4 +164,10 @@ public interface World {
       destroyComponent(component);
     }
   }
+
+  /**
+   * Returns the per-level physics constants (gravity vector and drag coefficient) that the engine
+   * applies on every simulation step.
+   */
+  PhysicsEnvironment getPhysicsEnvironment();
 }

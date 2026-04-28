@@ -80,3 +80,32 @@
 .sys-button:hover, .tool-button:hover, .back-button:hover{
   -fx-background-color: #f0f0f0;
 }
+
+/* In-game HUD (top-center): time label + progress bar */
+.hud-display {
+  -fx-padding: 20 0 0 0;
+}
+
+.hud-score-label {
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #222222;
+}
+
+.hud-time-label {
+  -fx-font-family: "SansSerif";
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333333;
+}
+
+.hud-progress-bar > .track {
+  -fx-background-color: #e0e0e0;
+  -fx-background-radius: 3;
+}
+
+.hud-progress-bar > .bar {
+  -fx-background-color: #e67e22;
+  -fx-background-radius: 3;
+}

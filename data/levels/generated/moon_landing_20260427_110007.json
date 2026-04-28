@@ -1,0 +1,65 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Moon Landing",
+    "gameType" : "badpiggies",
+    "screenWidth" : 1920.0,
+    "screenHeight" : 1080.0,
+    "gravity" : -1.0,
+    "drag" : 0.12
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 100.0,
+      "y" : 900.0
+    }, {
+      "x" : 300.0,
+      "y" : 850.0
+    }, {
+      "x" : 550.0,
+      "y" : 870.0
+    }, {
+      "x" : 800.0,
+      "y" : 920.0
+    }, {
+      "x" : 1100.0,
+      "y" : 900.0
+    }, {
+      "x" : 1350.0,
+      "y" : 860.0
+    }, {
+      "x" : 1600.0,
+      "y" : 840.0
+    } ],
+    "objects" : [ {
+      "type" : "Rock",
+      "position" : {
+        "x" : 450.0,
+        "y" : 870.0
+      }
+    }, {
+      "type" : "Coin",
+      "position" : {
+        "x" : 900.0,
+        "y" : 880.0
+      }
+    }, {
+      "type" : "GoalLine",
+      "position" : {
+        "x" : 1700.0,
+        "y" : 820.0
+      }
+    } ],
+    "terrainOptions" : [ "DirtPath", "GrassHills" ],
+    "spawnPoint" : {
+      "x" : 120.0,
+      "y" : 870.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 20.0,
+    "elementsAllowed" : [ ],
+    "maxSelectable" : 8,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}

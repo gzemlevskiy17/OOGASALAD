@@ -7,12 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import oogasalad.controller.core.api.Outcome;
 import org.junit.jupiter.api.Test;
+import org.testfx.util.WaitForAsyncUtils;
 import util.DukeApplicationTest;
 
+/**
+ * TestFX workflows for the gameplay screen.
+ */
 class GamePlayAppScreenTest extends DukeApplicationTest {
 
   private final List<Outcome> capturedOutcomes = new ArrayList<>();
@@ -79,5 +84,25 @@ class GamePlayAppScreenTest extends DukeApplicationTest {
 
     clickOn("Engine");
     assertEquals(List.of("engine"), deactivated);
+  }
+
+  @Test
+  void KeyboardInput_RootHasFocus_ForwardsPressedAndReleasedKeys() {
+    List<KeyCode> pressedKeys = new ArrayList<>();
+    List<KeyCode> releasedKeys = new ArrayList<>();
+    runAsJFXAction(() -> {
+      screen.setOnKeyPressed(pressedKeys::add);
+      screen.setOnKeyReleased(releasedKeys::add);
+      screen.requestKeyboardFocus();
+    });
+
+    press(KeyCode.H);
+    release(KeyCode.H);
+    WaitForAsyncUtils.waitForFxEvents();
+
+    assertEquals(List.of(KeyCode.H), pressedKeys,
+        "Gameplay screen should forward key presses to the coordinator callback.");
+    assertEquals(List.of(KeyCode.H), releasedKeys,
+        "Gameplay screen should forward key releases to the coordinator callback.");
   }
 }
