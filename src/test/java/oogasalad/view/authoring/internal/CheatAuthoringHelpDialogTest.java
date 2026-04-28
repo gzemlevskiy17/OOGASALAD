@@ -47,9 +47,15 @@ class CheatAuthoringHelpDialogTest {
         "Help text should list destruction as an available primitive.");
     assertTrue(availableText.contains("- launch"),
         "Help text should list velocity launch as an available primitive.");
+    assertTrue(availableText.contains("repair: Target Kind mainCharacter, allDamageable"),
+        "Help text should explain repair target options.");
+    assertTrue(availableText.contains("finishRun: Target Kind world; Target ID blank"),
+        "Help text should explain world-only terminal effects.");
+    assertTrue(availableText.contains("launch: Target Kind mainCharacter, vehicle"),
+        "Help text should explain launch target options.");
     assertTrue(availableText.contains("- mainCharacter"),
         "Help text should list registered target kinds.");
-    assertTrue(availableText.contains("componentId=<static component id>; optional x=<number>"),
+    assertTrue(availableText.contains("componentId=<static component id>; optional"),
         "Help text should explain required spawnPowerup parameters.");
     assertTrue(availableText.contains("mainCharacterId: BigPig"),
         "Help text should include the current main character id.");

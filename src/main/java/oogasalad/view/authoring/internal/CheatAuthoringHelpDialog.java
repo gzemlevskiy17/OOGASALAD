@@ -139,16 +139,23 @@ public class CheatAuthoringHelpDialog {
 
   private String effectParameterHelp() {
     return """
-        - repair: amount=<number>
-        - damage: amount=<number>
-        - teleport: x=<number>,y=<number>
-        - finishRun: no parameters
-        - loseRun: no parameters
-        - addScore: amount=<integer>
-        - destroy: no parameters
-        - launch: xVelocity=<number>,yVelocity=<number>
-        - spawnPowerup: componentId=<static component id>; optional x=<number>,y=<number>
-        - spawnPowerup without x/y: spawns at the resolved Target Kind, e.g. mainCharacter
+        - repair: Target Kind mainCharacter, allDamageable, componentType, or tag; Target ID only
+          for componentType/tag or a mainCharacter override; Parameters amount=<number>
+        - damage: Target Kind mainCharacter, allDamageable, componentType, or tag; Target ID only
+          for componentType/tag or a mainCharacter override; Parameters amount=<number>
+        - teleport: Target Kind mainCharacter, vehicle, componentType, or tag; Target ID only for
+          componentType/tag or a mainCharacter override; Parameters x=<number>,y=<number>
+        - finishRun: Target Kind world; Target ID blank; Parameters none
+        - loseRun: Target Kind world; Target ID blank; Parameters none
+        - addScore: Target Kind world; Target ID blank; Parameters amount=<integer>
+        - destroy: Target Kind mainCharacter, vehicle, componentType, or tag; Target ID only for
+          componentType/tag or a mainCharacter override; Parameters none
+        - launch: Target Kind mainCharacter, vehicle, componentType, or tag; Target ID only for
+          componentType/tag or a mainCharacter override; Parameters xVelocity=<number>,yVelocity=<number>
+        - spawnPowerup: Target Kind world when x/y are provided, or mainCharacter, vehicle,
+          componentType, or tag to spawn at a resolved object; Target ID only for componentType/tag
+          or a mainCharacter override; Parameters componentId=<static component id>; optional
+          x=<number>,y=<number>
         """;
   }
 
