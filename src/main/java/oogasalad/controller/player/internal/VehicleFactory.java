@@ -25,6 +25,7 @@ import oogasalad.model.player.api.VehicleLayout;
  * dispatched by each part's {@link JointStyle}.
  *
  * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
  */
 public class VehicleFactory {
 
@@ -89,7 +90,8 @@ public class VehicleFactory {
     }
     addRightAngleRigidChords(structuralPlacements, world, placed, specByKey, edgeKeys);
     addAntiRotationJoints(structuralPlacements, world, placed, specByKey, edgeKeys);
-    attachPigsToHostCells(pigPlacements, placed, world, startX, startY, placementToComponent);
+    attachPigsToHostCells(pigPlacements, placed, specByKey, world, startX, startY,
+        placementToComponent);
     return placementToComponent;
   }
 
@@ -109,59 +111,68 @@ public class VehicleFactory {
   }
 
   private void attachPigsToHostCells(List<PlacedComponent> pigPlacements,
-      Map<String, RigidBody> placed, World world, double startX, double startY,
-      Map<PlacedComponent, RigidBody> placementToComponent) {
+      Map<String, RigidBody> placed, Map<String, VehiclePartSpec> specByKey, World world,
+      double startX, double startY, Map<PlacedComponent, RigidBody> placementToComponent) {
     for (PlacedComponent p : pigPlacements) {
       double worldX = startX + p.col() * CELL_SIZE;
       double worldY = startY + p.row() * CELL_SIZE;
-      RigidBody pig = registry.get(p.componentType()).create(worldX, worldY);
+      VehiclePartSpec pigSpec = registry.get(p.componentType());
+      RigidBody pig = pigSpec.create(worldX, worldY);
       world.addComponent(pig);
       placementToComponent.put(p, pig);
-      RigidBody host = resolvePigHost(p, placed);
-      if (host == null) {
+      PigHostResolution res = resolvePigHost(p, placed);
+      if (res == null) {
         throw new IllegalStateException(
             "No vehicle part to attach pig part '%s' at grid (%d,%d); layout is invalid"
                 .formatted(p.componentType(), p.row(), p.col()));
       }
-      world.addJoint(new RigidJoint(pig, host));
+      RigidBody host = res.host();
+      VehiclePartSpec hostSpec = specByKey.get(toKey(res.hostRow(), res.hostCol()));
+      if (hostSpec == null) {
+        throw new IllegalStateException(
+            "Missing part spec for pig host at grid (%d,%d)".formatted(res.hostRow(),
+                res.hostCol()));
+      }
+      boolean sameCell = res.hostRow() == p.row() && res.hostCol() == p.col();
+      if (sameCell) {
+        world.addJoint(new RigidJoint(pig, host));
+      } else {
+        world.addJoint(buildRigidFaceWeld(pig, host, pigSpec, hostSpec));
+        addPigHostWeldStabilizer(world, pig, host, pigSpec, hostSpec);
+      }
     }
   }
 
   /**
    * Same-cell structural host first; else first cardinal neighbor with a part (N, E, S, W).
    */
-  private RigidBody resolvePigHost(PlacedComponent p, Map<String, RigidBody> placed) {
+  private PigHostResolution resolvePigHost(PlacedComponent p, Map<String, RigidBody> placed) {
     RigidBody host = placed.get(toKey(p.row(), p.col()));
     if (host != null) {
-      return host;
+      return new PigHostResolution(host, p.row(), p.col());
     }
     int[][] deltas = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
     for (int[] d : deltas) {
-      host = placed.get(toKey(p.row() + d[0], p.col() + d[1]));
+      int hostRow = p.row() + d[0];
+      int hostCol = p.col() + d[1];
+      host = placed.get(toKey(hostRow, hostCol));
       if (host != null) {
-        return host;
+        return new PigHostResolution(host, hostRow, hostCol);
       }
     }
     return null;
   }
 
-  private Joint buildJoint(RigidBody a, RigidBody b,
+  /**
+   * Rigid weld using edge-aligned anchors (same geometry as non-wheel grid neighbors). Never
+   * produces a {@link RevoluteJoint} — used for pig-to-chassis so passengers weld to wheels and
+   * frames alike.
+   */
+  private Joint buildRigidFaceWeld(RigidBody a, RigidBody b,
       VehiclePartSpec specA, VehiclePartSpec specB) {
     Vector posA = a.getStaticState().getLinearPosition();
     Vector posB = b.getStaticState().getLinearPosition();
     Vector delta = posB.subtract(posA);
-
-    boolean wheelInvolved = specA.jointStyle() == JointStyle.WHEEL
-        || specB.jointStyle() == JointStyle.WHEEL;
-
-    if (wheelInvolved) {
-      RigidBody wheel = specA.jointStyle() == JointStyle.WHEEL ? a : b;
-      RigidBody chassis = wheel == a ? b : a;
-      Vector wheelPosition = wheel.getStaticState().getLinearPosition();
-      Vector chassisPosition = chassis.getStaticState().getLinearPosition();
-      return new RevoluteJoint(wheel, chassis, new Vector(0, 0),
-          wheelPosition.subtract(chassisPosition));
-    }
 
     Vector localAnchorA;
     Vector localAnchorB;
@@ -178,6 +189,41 @@ public class VehicleFactory {
       localAnchorB = new Vector(0, 0);
     }
     return new RigidJoint(a, b, localAnchorA, localAnchorB, -1.0, -1.0);
+  }
+
+  private Joint buildJoint(RigidBody a, RigidBody b,
+      VehiclePartSpec specA, VehiclePartSpec specB) {
+    boolean wheelInvolved = specA.jointStyle() == JointStyle.WHEEL
+        || specB.jointStyle() == JointStyle.WHEEL;
+
+    if (wheelInvolved) {
+      RigidBody wheel = specA.jointStyle() == JointStyle.WHEEL ? a : b;
+      RigidBody chassis = wheel == a ? b : a;
+      Vector wheelPosition = wheel.getStaticState().getLinearPosition();
+      Vector chassisPosition = chassis.getStaticState().getLinearPosition();
+      return new RevoluteJoint(wheel, chassis, new Vector(0, 0),
+          wheelPosition.subtract(chassisPosition));
+    }
+
+    return buildRigidFaceWeld(a, b, specA, specB);
+  }
+
+  /** Secondary offset weld matching {@link #addWeldStabilizerIfRigidPair} for pig-to-host. */
+  private void addPigHostWeldStabilizer(World world, RigidBody pig, RigidBody host,
+      VehiclePartSpec pigSpec, VehiclePartSpec hostSpec) {
+    Vector pigPos = pig.getStaticState().getLinearPosition();
+    Vector hostPos = host.getStaticState().getLinearPosition();
+    Vector delta = hostPos.subtract(pigPos);
+    if (delta.magnitude() < 1e-6) {
+      return;
+    }
+    boolean horizontalNeighbor = Math.abs(delta.y()) < 1e-6;
+    double offset = horizontalNeighbor
+        ? 0.35 * Math.min(pigSpec.bodyHeight() / 2.0, hostSpec.bodyHeight() / 2.0)
+        : 0.35 * Math.min(pigSpec.bodyWidth() / 2.0, hostSpec.bodyWidth() / 2.0);
+    Vector anchorPig = horizontalNeighbor ? new Vector(0, offset) : new Vector(offset, 0);
+    Vector anchorHost = horizontalNeighbor ? new Vector(0, offset) : new Vector(offset, 0);
+    world.addJoint(new RigidJoint(pig, host, anchorPig, anchorHost, -1.0, -1.0));
   }
 
   private void addRightAngleRigidChords(List<PlacedComponent> placements, World world,
@@ -286,4 +332,6 @@ public class VehicleFactory {
   private String toKey(int row, int col) {
     return row + "," + col;
   }
+
+  private record PigHostResolution(RigidBody host, int hostRow, int hostCol) {}
 }
