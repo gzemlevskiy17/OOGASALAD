@@ -124,6 +124,11 @@
   -fx-alignment: center-right;
 }
 
+.game-authoring-root .game-authoring-inline-action-row {
+  -fx-alignment: center-left;
+  -fx-padding: 0 0 4 128;
+}
+
 .game-authoring-root .check-box {
   -fx-font-family: "Serif";
   -fx-text-fill: #333333;

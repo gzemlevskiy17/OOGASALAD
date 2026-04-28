@@ -409,7 +409,8 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     List<CheatEffectInfo> pendingEffects = new ArrayList<>();
     ListView<String> effectList = new ListView<>();
     effectList.setId("cheat-effect-list");
-    effectList.setPrefHeight(95);
+    effectList.setMinHeight(120);
+    effectList.setPrefHeight(150);
 
     Button addEffect = new Button("Add Effect");
     addEffect.setId("add-cheat-effect-button");
@@ -439,10 +440,10 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
         List.of(
             formRow("ID", idF), formRow("Name", nameF), formRow("Keys", keysF),
             enabledBox,
-            new Label("Pending Effects:"), effectList,
             formRow("Effect Type", effectTypeF), formRow("Target Kind", targetKindF),
-            formRow("Target ID", targetIdF), formRow("Parameters", parametersF)),
-        buttonBar(addEffect, removeEffect),
+            formRow("Target ID", targetIdF), formRow("Parameters", parametersF),
+            inlineButtonBar(addEffect, removeEffect),
+            new Label("Pending Effects:"), effectList),
         buttonBar(addCheat, removeCheat, helpButton));
 
     return new Tab("Cheats", buildTabContent(cheatListView, form));
@@ -723,7 +724,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     form.setMaxHeight(Double.MAX_VALUE);
     HBox content = new HBox(12, list, form);
     HBox.setHgrow(form, Priority.ALWAYS);
-    content.setPadding(new Insets(8));
+    content.setPadding(new Insets(8, 8, 16, 8));
     return content;
   }
 
@@ -778,6 +779,13 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     HBox bar = new HBox(8, buttons);
     bar.setAlignment(Pos.CENTER_RIGHT);
     bar.getStyleClass().add("game-authoring-action-row");
+    return bar;
+  }
+
+  private HBox inlineButtonBar(Button... buttons) {
+    HBox bar = new HBox(8, buttons);
+    bar.setAlignment(Pos.CENTER_LEFT);
+    bar.getStyleClass().add("game-authoring-inline-action-row");
     return bar;
   }
 
