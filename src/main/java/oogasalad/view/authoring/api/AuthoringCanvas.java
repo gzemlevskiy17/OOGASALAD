@@ -94,4 +94,11 @@ public interface AuthoringCanvas {
    * <p>Default implementation is a no-op for the same reason as {@link #addOverlay(Node)}.
    */
   default void clearOverlays() {}
+
+  /**
+   * Sets an optional sky/background image behind the authoring grid.
+   *
+   * <p>Default implementation is a no-op for tests and alternate canvases.
+   */
+  default void setBackgroundImagePath(String imagePath) {}
 }

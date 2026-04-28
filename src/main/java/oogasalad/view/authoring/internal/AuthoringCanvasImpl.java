@@ -4,6 +4,8 @@ import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -71,6 +73,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
   private final Pane root;
   private final World world;
   private AuthoringPlaceable selectedPlaceable;
+  private String backgroundImagePath = "";
   private Consumer<AuthoringPlaceable> onObjectSelected = obj -> {};
   private Consumer<AuthoringPlaceable> onTerrainHoverEnter = p -> {};
   private Runnable onTerrainHoverExit = () -> {};
@@ -151,6 +154,7 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     clearHoverPreview();
     clearOverlays();
     root.getChildren().clear();
+    drawBackgroundImage();
     if (world != null) {
       drawObjects();
     }
@@ -174,6 +178,12 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     }
     root.getChildren().removeAll(transientOverlays);
     transientOverlays.clear();
+  }
+
+  @Override
+  public void setBackgroundImagePath(String imagePath) {
+    backgroundImagePath = imagePath == null ? "" : imagePath.strip();
+    refreshGrid();
   }
 
   @Override
@@ -294,6 +304,22 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
       // renders them separately. Blind-casting here previously crashed
       // refreshGrid(), which left the canvas frozen and un-clickable.
     }
+  }
+
+  private void drawBackgroundImage() {
+    if (backgroundImagePath.isBlank()) {
+      return;
+    }
+    Image image = TerrainPaints.loadImage(backgroundImagePath);
+    if (image == null || image.isError()) {
+      return;
+    }
+    ImageView background = new ImageView(image);
+    background.setFitWidth(gridCols * cellSize);
+    background.setFitHeight(gridRows * cellSize);
+    background.setPreserveRatio(false);
+    background.setMouseTransparent(true);
+    root.getChildren().add(background);
   }
 
   /**
