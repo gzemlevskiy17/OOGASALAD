@@ -22,7 +22,7 @@ import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
-import oogasalad.view.authoring.internal.AuthoringAlertService;
+import oogasalad.view.authoring.internal.common.AuthoringAlertService;
 
 /**
  * Builds the loaded gameplay world and inserts the player vehicle at the level spawn point.
