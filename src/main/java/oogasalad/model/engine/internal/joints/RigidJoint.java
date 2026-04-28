@@ -168,25 +168,7 @@ public class RigidJoint extends DistanceJoint {
 
   private void solveRelativeAngle() {
     double error = (getComponentB().rotation() - getComponentA().rotation()) - referenceAngle;
-    if (Math.abs(error) <= ANGULAR_SLOP) {
-      return;
-    }
-
-    double inverseInertiaA = getComponentA().getInverseMomentOfInertia();
-    double inverseInertiaB = getComponentB().getInverseMomentOfInertia();
-    double totalInverseInertia = inverseInertiaA + inverseInertiaB;
-    if (totalInverseInertia == 0.0) {
-      return;
-    }
-
-    if (getComponentA() instanceof DynamicComponent) {
-      getComponentA().getStaticState().setAngularPosition(getComponentA().rotation()
-          + error * inverseInertiaA / totalInverseInertia);
-    }
-    if (getComponentB() instanceof DynamicComponent) {
-      getComponentB().getStaticState().setAngularPosition(getComponentB().rotation()
-          - error * inverseInertiaB / totalInverseInertia);
-    }
+    angularHelper(error, ANGULAR_SLOP);
   }
 
   private void equalizeRelativeAngularVelocity() {

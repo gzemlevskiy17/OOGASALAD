@@ -11,7 +11,7 @@ import javafx.scene.control.ButtonType;
 import javafx.stage.Window;
 import oogasalad.model.authoring.api.GeneratedLevelResult;
 import oogasalad.model.authoring.internal.GeneratedLevelModel;
-import oogasalad.view.authoring.internal.AiLevelGenerationDialog;
+import oogasalad.view.authoring.internal.entry.AiLevelGenerationDialog;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -1,5 +1,6 @@
 package oogasalad.model.engine;
 
+import java.util.List;
 import java.util.Map;
 import oogasalad.model.engine.api.CollisionDetector;
 import oogasalad.model.engine.api.GameEngine;
@@ -10,9 +11,9 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
 /**
  * Main physics-step orchestrator for simulation updates in a world.
  *
- * <p>Coordinates per-frame simulation flow: apply forces, integrate state,
- * resolve swept collisions, and solve constraints. Each phase is delegated
- * to a focused collaborator.
+ * <p>Coordinates per-frame simulation flow across fixed-size substeps: apply forces, integrate
+ * state, resolve swept collisions, run {@link CollisionPhase}, and solve constraints. Each phase
+ * is delegated to a focused collaborator.
  *
  * @author Georgiy Zemlevskiy
  * @author Iurii Beliaev
@@ -24,7 +25,6 @@ public class GameEngineImpl implements GameEngine {
   private static final double MAX_FRAME_TIME = 0.25;
 
   private final World world;
-  private final ForceIntegrator forceIntegrator;
   private final JointSolver jointSolver;
   private final SweptCollisionResolver sweptResolver;
   private final CollisionPhase collisionPhase;
@@ -49,7 +49,6 @@ public class GameEngineImpl implements GameEngine {
     this.subStepCount = subStepCount;
     this.accumulatedTime = 0.0;
 
-    this.forceIntegrator = new ForceIntegrator(world);
     this.jointSolver = new JointSolver(world);
     this.sweptResolver = new SweptCollisionResolver(world);
     CollisionDispatcher dispatcher = new CollisionDispatcher();
@@ -76,44 +75,26 @@ public class GameEngineImpl implements GameEngine {
   }
 
   private void simulateSubStep(double elapsedTime) {
-    forceIntegrator.resetForces(world.getObjects());
-    updateAllPolygons();
-
-    Map<DynamicComponent, SweptCollisionResolver.MotionSnapshot> previousMotion =
-        sweptResolver.captureMotion();
-
-    jointSolver.applyAll(elapsedTime, 1);
-    forceIntegrator.applyForces(world.getObjects());
-    forceIntegrator.applyForcesToAcceleration(world.getObjects());
-    integrateDynamicComponents(elapsedTime);
-    updateDynamicPolygons();
-
-    sweptResolver.resolve(previousMotion);
-    updateDynamicPolygons();
-
-    collisionPhase.solve(elapsedTime);
-    forceIntegrator.updateSleepStates(world.getObjects(), elapsedTime);
-  }
-
-  private void integrateDynamicComponents(double elapsedTime) {
-    for (GameObject gameObject : world.getObjects()) {
-      if (gameObject instanceof DynamicComponent dynamicComponent) {
-        dynamicComponent.integrateObjectState(elapsedTime);
-      }
-    }
-  }
-
-  private void updateAllPolygons() {
+    List<DynamicComponent> dynamicComponents = world.getActiveDynamicComponents();
+    DynamicComponentUtilities.resetForces(dynamicComponents);
     for (GameObject gameObject : world.getObjects()) {
       gameObject.updatePolygon();
     }
-  }
 
-  private void updateDynamicPolygons() {
-    for (GameObject gameObject : world.getObjects()) {
-      if (gameObject instanceof DynamicComponent) {
-        gameObject.updatePolygon();
-      }
-    }
+    Map<DynamicComponent, SweptCollisionResolver.MotionSnapshot> previousMotion =
+        sweptResolver.captureMotion(dynamicComponents);
+
+    jointSolver.applyAll(elapsedTime, 1);
+    DynamicComponentUtilities.applyForces(dynamicComponents, world);
+    DynamicComponentUtilities.applyForcesToAcceleration(dynamicComponents);
+    DynamicComponentUtilities.integrateDynamicComponents(dynamicComponents, elapsedTime);
+    DynamicComponentUtilities.updateDynamicPolygons(dynamicComponents);
+
+    sweptResolver.resolve(previousMotion);
+    DynamicComponentUtilities.updateDynamicPolygons(dynamicComponents);
+
+    collisionPhase.solve(elapsedTime);
+    //provide an update list of active components, as some may have been eliminated by solve
+    DynamicComponentUtilities.updateSleepStates(world.getActiveDynamicComponents(), elapsedTime);
   }
 }
