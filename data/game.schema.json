@@ -41,6 +41,13 @@
       "items": {
         "$ref": "#/$defs/terrainInfo"
       }
+    },
+    "cheats": {
+      "type": "array",
+      "description": "Optional author-defined cheat keys composed from supported primitive effects.",
+      "items": {
+        "$ref": "#/$defs/cheatInfo"
+      }
     }
   },
   "$defs": {
@@ -180,6 +187,104 @@
         "friction": {
           "type": "number",
           "minimum": 0
+        }
+      }
+    },
+    "cheatInfo": {
+      "title": "Cheat Key",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "enabled",
+        "trigger",
+        "effects"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "trigger": {
+          "$ref": "#/$defs/cheatTriggerInfo"
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cheatEffectInfo"
+          }
+        }
+      }
+    },
+    "cheatTriggerInfo": {
+      "title": "Cheat Trigger",
+      "type": "object",
+      "required": [
+        "keys"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "keys": {
+          "type": "array",
+          "description": "JavaFX KeyCode names that activate the cheat, interpreted as a key chord.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cheatTargetInfo": {
+      "title": "Cheat Target",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Target selector such as mainCharacter, vehicle, allDamageable, componentType, or world."
+        },
+        "id": {
+          "type": "string",
+          "description": "Optional selector value, such as a component type id."
+        }
+      }
+    },
+    "cheatEffectInfo": {
+      "title": "Cheat Effect",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Primitive effect type, e.g. repair, damage, teleport, finishRun, loseRun, setGravity, spawnPowerup."
+        },
+        "target": {
+          "$ref": "#/$defs/cheatTargetInfo"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Effect-specific parameters. For spawnPowerup, use componentId, x, and y.",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
         }
       }
     }
