@@ -56,4 +56,9 @@ public interface GameController {
    * Forwards a keyboard press to the InputRouter.
    */
   void handleKeyPress(KeyCode key);
+
+  /**
+   * Completes the current run through the normal terminal scoring and outcome path.
+   */
+  void completeRun(Outcome outcome);
 }

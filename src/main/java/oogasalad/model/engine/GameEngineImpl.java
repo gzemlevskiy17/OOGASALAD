@@ -65,6 +65,7 @@ import oogasalad.model.engine.internal.joints.RevoluteJoint;
  *
  * @author Georgiy Zemlevskiy
  * @author Iurii Beliaev
+ * @author Emilio Garcia
  */
 public class GameEngineImpl implements GameEngine {
 
@@ -89,7 +90,7 @@ public class GameEngineImpl implements GameEngine {
   private static final int JOINT_SOLVER_ITERATIONS = 8;
   private final World world;
   private final CollisionDetector collisionDetector;
-  private final Vector gravityVector;
+  private Vector gravityVector;
   private final CollisionDispatcher collisionDispatcher;
   // private final CollisionSolver overrideCollisionSolver;
   private final Map<List<GameObject>, CachedCollisionImpulse> collisionImpulseCache;
@@ -171,6 +172,11 @@ public class GameEngineImpl implements GameEngine {
     this.fixedTimeStep = fixedTimeStep;
     this.subStepCount = subStepCount;
     this.accumulatedTime = 0.0;
+  }
+
+  @Override
+  public void setGravity(Vector gravityVector) {
+    this.gravityVector = gravityVector;
   }
 
   private static List<GameObject> canonicalUnorderedPair(GameObject a, GameObject b) {

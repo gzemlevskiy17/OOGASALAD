@@ -2,6 +2,7 @@ package oogasalad.controller.player.internal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
@@ -42,6 +43,9 @@ public class GameControllerImpl implements GameController {
 
   private static final double FRAME_DURATION_MS = 1000.0 / 60.0;
   private static final double FRAME_DURATION_SECONDS = 1.0 / 60.0;
+  private static final Map<Outcome, Boolean> TERMINAL_OUTCOMES = Map.of(
+      Outcome.GAME_WON, true,
+      Outcome.GAME_LOST, false);
 
   private final GameEngine engine;
   private final World world;
@@ -63,6 +67,7 @@ public class GameControllerImpl implements GameController {
    * pause/resume cycle.
    */
   private boolean initialized = false;
+  private boolean terminalCompleted = false;
 
   private Consumer<Outcome> onOutcome;
   private BiConsumer<Double, Double> onStatsTick;
@@ -113,6 +118,12 @@ public class GameControllerImpl implements GameController {
   }
 
   @Override
+  public void completeRun(Outcome outcome) {
+    Optional.ofNullable(TERMINAL_OUTCOMES.get(outcome))
+        .ifPresent(won -> finalizeAndFire(won, outcome));
+  }
+
+  @Override
   public void setOnOutcome(Consumer<Outcome> callback) {
     this.onOutcome = callback;
   }
@@ -157,6 +168,7 @@ public class GameControllerImpl implements GameController {
   public void resetSimulation() {
     gameLoop.stop();
     initialized = false;
+    terminalCompleted = false;
   }
 
   private Timeline buildGameLoop() {
@@ -190,6 +202,10 @@ public class GameControllerImpl implements GameController {
   }
 
   private void finalizeAndFire(boolean won, Outcome outcome) {
+    if (terminalCompleted) {
+      return;
+    }
+    terminalCompleted = true;
     stopSimulation();
     GameplayScore score = tracker.finish(won);
     if (onTerminalScore != null) {
