@@ -23,11 +23,15 @@ public class GameHudDisplay extends VBox {
       ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
   private final Label timeLabel;
+  private final Label scoreLabel;
   private final ProgressBar progressBar;
 
   public GameHudDisplay() {
     this.timeLabel = new Label();
     this.timeLabel.getStyleClass().add("hud-time-label");
+
+    this.scoreLabel = new Label();
+    this.scoreLabel.getStyleClass().add("hud-score-label");
 
     this.progressBar = new ProgressBar(0.0);
     this.progressBar.getStyleClass().add("hud-progress-bar");
@@ -39,8 +43,9 @@ public class GameHudDisplay extends VBox {
     setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
     setMouseTransparent(true);
 
-    getChildren().addAll(timeLabel, progressBar);
+    getChildren().addAll(scoreLabel, timeLabel, progressBar);
     update(0.0, 0.0);
+    updateScore(0);
   }
 
   /**
@@ -56,6 +61,25 @@ public class GameHudDisplay extends VBox {
     long seconds = total % 60;
     timeLabel.setText(String.format(PROPS.getString("hud.time.format"), minutes, seconds));
     progressBar.setProgress(clamp01(progressPercent));
+  }
+
+  /**
+   * Updates the score row, displayed as {@code "Score: N / 100"}. Negative values are clamped
+   * to {@code 0} and values above {@code 100} are clamped to {@code 100}.
+   *
+   * @param score current score in {@code [0, 100]}
+   */
+  public void updateScore(int score) {
+    int clamped = Math.max(0, Math.min(100, score));
+    scoreLabel.setText(String.format(PROPS.getString("hud.score.format"), clamped));
+  }
+
+  /**
+   * Convenience overload that updates time, score, and progress together.
+   */
+  public void update(double elapsedSeconds, int score, double progressPercent) {
+    update(elapsedSeconds, progressPercent);
+    updateScore(score);
   }
 
   private static double clamp01(double v) {

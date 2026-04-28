@@ -11,6 +11,8 @@ import oogasalad.model.player.api.PlayHistoryEntry;
 import oogasalad.model.player.api.PlayHistoryRepository;
 import oogasalad.model.player.api.ScoreCalculator;
 import oogasalad.model.player.api.UserProgressionRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Handles what happens at the end of a gameplay run: computes the numeric score, checks whether
@@ -22,6 +24,8 @@ import oogasalad.model.player.api.UserProgressionRepository;
  * available.
  */
 public class TerminalResultHandler {
+
+  private static final Logger LOG = LogManager.getLogger(TerminalResultHandler.class);
 
   /**
    * Six-argument sink for run stats. Both the win and lose result screens supply one of these
@@ -71,6 +75,9 @@ public class TerminalResultHandler {
     // Wins always display 100% progress; losses display the run's actual progress.
     double displayProgress = outcome == Outcome.GAME_WON ? 1.0 : runScore.progressPercent();
     String userId = userIdSupplier.get();
+    LOG.info("Level {}: levelId={} user={} score={} elapsed={}s progress={}",
+        outcome == Outcome.GAME_WON ? "won" : "lost",
+        runScore.levelId(), userId, score, runScore.elapsedSeconds(), displayProgress);
     RecordFlags flags = computeRecordFlags(userId, runScore, score, displayProgress);
 
     StatsReceiver target = outcome == Outcome.GAME_WON ? winReceiver : loseReceiver;

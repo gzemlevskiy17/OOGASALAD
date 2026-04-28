@@ -23,6 +23,8 @@ import oogasalad.model.engine.internal.components.PassThroughComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 import oogasalad.model.engine.internal.joints.DistanceJoint;
 import oogasalad.model.engine.internal.joints.RevoluteJoint;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Main physics-step orchestrator for simulation updates in a world.
@@ -72,6 +74,7 @@ public class GameEngineImpl implements GameEngine {
   private static final double DEFAULT_FIXED_TIME_STEP = 1.0 / 60.0;
   private static final int DEFAULT_SUB_STEP_COUNT = 4;
   private static final double MAX_FRAME_TIME = 0.25;
+  private static final Logger LOG = LogManager.getLogger(GameEngineImpl.class);
   private static final double AABB_MARGIN = 1e-6;
   private static final double CCD_SKIN = 1e-4;
 
@@ -468,7 +471,8 @@ public class GameEngineImpl implements GameEngine {
       }
 
       if (collisionPair == null) {
-        System.out.println(objectA.getClass() + " " + objectB.getClass());
+        LOG.warn("No collision solver registered for pair: {} vs {}",
+            objectA.getClass(), objectB.getClass());
         continue;
       }
 
