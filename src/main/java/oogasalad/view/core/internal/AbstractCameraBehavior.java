@@ -4,8 +4,10 @@ import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 
 /**
- * Base camera behavior with optional smoothing and world-bound clamping.
- * Subclasses provide target coordinates via {@code desiredX}/{@code desiredY}.
+ * Default structure for camera motion: each update reads a desired position from subclasses,
+ * optionally clamps that position to an axis-aligned box, then moves the camera toward the
+ * target by linear interpolation. Smoothing is a zero-to-one blend factor: one means jump
+ * immediately to the target, zero would leave the camera frozen (not recommended at exactly zero).
  *
  * @author Iurii Beliaev
  */
@@ -20,7 +22,7 @@ public abstract class AbstractCameraBehavior implements CameraBehavior {
 
 
   public AbstractCameraBehavior() {
-    this(1.0); // Set default for no smoothing
+    this(1.0);
   }
 
   public AbstractCameraBehavior(double smoothing) {
@@ -64,8 +66,10 @@ public abstract class AbstractCameraBehavior implements CameraBehavior {
     camera.setPosition(nextX, nextY);
   }
 
+  /** World X coordinate the camera should aim for before smoothing and optional bounds clamp. */
   protected abstract double desiredX(Camera camera);
 
+  /** World Y coordinate the camera should aim for before smoothing and optional bounds clamp. */
   protected abstract double desiredY(Camera camera);
 
   // Linear interpolation to integrate smooting
