@@ -23,6 +23,7 @@ public class LevelAttributes {
   private double screenHeight = 1600;
   private double gravity = -9.8;
   private double drag = 0.01;
+  private String backgroundImage = "";
 
   // mainCharacter
   private double gridSize = 60;
@@ -77,6 +78,14 @@ public class LevelAttributes {
 
   public void setDrag(double drag) {
     this.drag = drag;
+  }
+
+  public String getBackgroundImage() {
+    return backgroundImage;
+  }
+
+  public void setBackgroundImage(String backgroundImage) {
+    this.backgroundImage = backgroundImage == null ? "" : backgroundImage.strip();
   }
 
   public double getGridSize() {

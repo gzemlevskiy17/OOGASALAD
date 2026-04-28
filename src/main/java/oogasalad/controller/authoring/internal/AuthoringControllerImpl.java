@@ -78,7 +78,8 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void setSplineTerrainStyle(AuthoringPlaceable placeable) {
     if (placeable != null) {
       splineDraft.setTerrainStyle(placeable.getDisplayName(), placeable.getSprite(),
-          placeable.isTiled(), placeable.getFriction(), placeable.getColor());
+          placeable.isTiled(), placeable.getFriction(), placeable.getColor(),
+          placeable.getTrackColor());
     }
   }
 

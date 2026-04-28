@@ -69,6 +69,7 @@ public class AuthoringPersistenceService {
     GameConfig game = gameLoader.loadGame(
         LevelPaths.gameFileForLevel(fileName, attributes.getGameType()));
     levelLoader.loadLevel(fileName, game, world, levelAttributes);
+    canvas.setBackgroundImagePath(levelAttributes.getBackgroundImage());
     convertLoadedWorldToAuthoringSpace(game);
     expandCanvasToLoadedLevel(levelAttributes);
     spawnPointService.getSpawnPoint();
@@ -108,7 +109,7 @@ public class AuthoringPersistenceService {
     double scaledBaseline = spline.getSpline().baselineY() / scale;
     ParabolaSpline scaledSpline = new ParabolaSpline(scaledKnots, scaledBaseline);
     return new TerrainSpline(spline.getDisplayName(), scaledSpline, spline.getSprite(),
-        spline.isTiled(), spline.getFriction(), spline.getColor());
+        spline.isTiled(), spline.getFriction(), spline.getColor(), spline.getTrackColor());
   }
 
   private SpawnPointComponent scaleSpawnPoint(SpawnPointComponent spawn, double scale) {

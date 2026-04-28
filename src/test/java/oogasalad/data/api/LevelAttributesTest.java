@@ -24,6 +24,7 @@ class LevelAttributesTest {
     assertEquals(0.01, attrs.getDrag(), 0.0001);
     assertEquals(3200, attrs.getScreenWidth(), 0.001);
     assertEquals(1600, attrs.getScreenHeight(), 0.001);
+    assertEquals("", attrs.getBackgroundImage());
     assertEquals(60, attrs.getGridSize(), 0.001);
     assertEquals(5, attrs.getMaxSelectable());
     assertEquals(100, attrs.getMaxHP(), 0.001);
@@ -52,6 +53,15 @@ class LevelAttributesTest {
   void setDrag_updatesValue() {
     attrs.setDrag(0.05);
     assertEquals(0.05, attrs.getDrag(), 0.0001);
+  }
+
+  @Test
+  void setBackgroundImage_trimsValueAndHandlesNull() {
+    attrs.setBackgroundImage(" data/assets/background2.png ");
+    assertEquals("data/assets/background2.png", attrs.getBackgroundImage());
+
+    attrs.setBackgroundImage(null);
+    assertEquals("", attrs.getBackgroundImage());
   }
 
   @Test

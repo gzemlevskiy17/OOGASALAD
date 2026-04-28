@@ -8,6 +8,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
@@ -15,6 +17,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.core.api.AbstractAppScreen;
+import oogasalad.view.core.internal.TerrainPaints;
 import oogasalad.view.player.api.GameplayView;
 
 /**
@@ -27,6 +30,8 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
   private Pane gameLayer;
+  private ImageView backgroundImageView;
+  private String backgroundImagePath = "";
   private HBox bottomControls;
   private GameHudDisplay hud;
   private Runnable onPause = () -> { };
@@ -43,8 +48,28 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     super(onOutcome);
   }
 
+  @Override
   public Pane getGameLayer() {
     return gameLayer;
+  }
+
+  public void setBackgroundImagePath(String imagePath) {
+    backgroundImagePath = imagePath == null ? "" : imagePath.strip();
+    if (gameLayer == null) {
+      return;
+    }
+    if (backgroundImagePath.isBlank()) {
+      removeBackgroundImage();
+      return;
+    }
+    Image image = TerrainPaints.loadImage(backgroundImagePath);
+    if (image == null || image.isError()) {
+      removeBackgroundImage();
+      return;
+    }
+    ensureBackgroundImageView();
+    backgroundImageView.setImage(image);
+    backgroundImageView.toBack();
   }
 
   /**
@@ -66,6 +91,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  @Override
   public void setOnPause(Runnable onPause) {
     if (onPause == null) {
       this.onPause = () -> { };
@@ -82,6 +108,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  @Override
   public void setOnReset(Runnable onReset) {
     if (onReset == null) {
       this.onReset = () -> { };
@@ -166,7 +193,31 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private Pane createGameAreaRegion() {
     Pane gameContainer = new Pane();
     gameContainer.getStyleClass().add("game-container");
+    if (!backgroundImagePath.isBlank()) {
+      gameLayer = gameContainer;
+      setBackgroundImagePath(backgroundImagePath);
+    }
     return gameContainer;
+  }
+
+  private void ensureBackgroundImageView() {
+    if (backgroundImageView == null) {
+      backgroundImageView = new ImageView();
+      backgroundImageView.setMouseTransparent(true);
+      backgroundImageView.setPreserveRatio(false);
+      backgroundImageView.fitWidthProperty().bind(gameLayer.widthProperty());
+      backgroundImageView.fitHeightProperty().bind(gameLayer.heightProperty());
+    }
+    if (!gameLayer.getChildren().contains(backgroundImageView)) {
+      gameLayer.getChildren().add(0, backgroundImageView);
+    }
+  }
+
+  private void removeBackgroundImage() {
+    if (backgroundImageView != null && gameLayer != null) {
+      gameLayer.getChildren().remove(backgroundImageView);
+      backgroundImageView.setImage(null);
+    }
   }
 
   private void wireKeyboardInput(StackPane root) {
