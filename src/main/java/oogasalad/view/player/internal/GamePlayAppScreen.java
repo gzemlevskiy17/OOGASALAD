@@ -8,10 +8,13 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -22,6 +25,7 @@ import oogasalad.view.player.api.GameplayView;
 /**
  * Screen for the main window of the gameplay
  * @author Iurii Beliaev
+ * @author Emilio Garcia
  */
 
 public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView {
@@ -34,6 +38,8 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private Runnable onPause = () -> { };
   private Runnable onResume = () -> { };
   private Runnable onReset = () -> { };
+  private Consumer<KeyCode> onKeyPressed = key -> { };
+  private Consumer<KeyCode> onKeyReleased = key -> { };
   private java.util.function.Consumer<String> onToolActivated = id -> {
   };
   private java.util.function.Consumer<String> onToolDeactivated = id -> {
@@ -84,6 +90,14 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  public void setOnKeyPressed(Consumer<KeyCode> onKeyPressed) {
+    this.onKeyPressed = onKeyPressed;
+  }
+
+  public void setOnKeyReleased(Consumer<KeyCode> onKeyReleased) {
+    this.onKeyReleased = onKeyReleased;
+  }
+
   public void setOnToolActivated(java.util.function.Consumer<String> onToolActivated) {
     this.onToolActivated = onToolActivated != null ? onToolActivated : id -> {
     };
@@ -97,6 +111,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   @Override
   protected StackPane createRoot() {
     StackPane root = new StackPane();
+    wireKeyboardInput(root);
     root.getStylesheets().add(getClass().getResource("/oogasalad/view/player/gameplay.css").toExternalForm());
     root.getStyleClass().add("screen-root");
 
@@ -118,6 +133,10 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     root.getChildren().addAll(gameLayer, hud, topControls, bottomControls, backButton);
 
     return root;
+  }
+
+  public void requestKeyboardFocus() {
+    getRoot().requestFocus();
   }
 
   /**
@@ -144,6 +163,20 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     Pane gameContainer = new Pane();
     gameContainer.getStyleClass().add("game-container");
     return gameContainer;
+  }
+
+  private void wireKeyboardInput(StackPane root) {
+    root.setFocusTraversable(true);
+    root.addEventHandler(KeyEvent.KEY_PRESSED,
+        event -> onKeyPressed.accept(event.getCode()));
+    root.addEventHandler(KeyEvent.KEY_RELEASED,
+        event -> onKeyReleased.accept(event.getCode()));
+    root.setOnMouseClicked(event -> root.requestFocus());
+    root.sceneProperty().addListener((observable, oldScene, newScene) -> {
+      if (newScene != null) {
+        Platform.runLater(root::requestFocus);
+      }
+    });
   }
 
   private HBox createTopControlsRegion() {
