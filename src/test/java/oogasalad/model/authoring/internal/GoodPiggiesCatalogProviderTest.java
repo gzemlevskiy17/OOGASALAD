@@ -35,7 +35,7 @@ class GoodPiggiesCatalogProviderTest {
 
     GoodPiggiesCatalog catalog = provider.loadCatalog();
 
-    assertEquals("BigPig", catalog.primaryComponentId());
+    assertEquals("BigPig", catalog.mainCharacterId());
     assertEquals("GoalLine", catalog.staticComponentIds().getLast());
   }
 

@@ -16,18 +16,18 @@ import oogasalad.data.api.TerrainInfo;
 public final class TestGameConfig implements GameConfig {
 
   private final String gameId;
-  private final String primaryComponentId;
+  private final String mainCharacterId;
   private final List<ComponentInfo> components;
   private final List<StaticComponentInfo> staticComponents;
   private final List<TerrainInfo> terrainTypes;
   private final Map<String, String> settings;
 
-  public TestGameConfig(String gameId, String primaryComponentId,
+  public TestGameConfig(String gameId, String mainCharacterId,
       List<ComponentInfo> components,
       List<StaticComponentInfo> staticComponents,
       List<TerrainInfo> terrainTypes) {
     this.gameId = gameId;
-    this.primaryComponentId = primaryComponentId;
+    this.mainCharacterId = mainCharacterId;
     this.components = List.copyOf(components);
     this.staticComponents = List.copyOf(staticComponents);
     this.terrainTypes = List.copyOf(terrainTypes);
@@ -76,8 +76,8 @@ public final class TestGameConfig implements GameConfig {
   }
 
   @Override
-  public String primaryComponentId() {
-    return primaryComponentId;
+  public String mainCharacterId() {
+    return mainCharacterId;
   }
 
   @Override

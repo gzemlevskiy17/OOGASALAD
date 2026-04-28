@@ -21,12 +21,4 @@ public interface BuildRulesRegistry {
   }
 
   BuildRules lookup(String componentType);
-
-  /**
-   * Registers placement rules for component ids loaded from a game catalog.
-   *
-   * @param config game catalog whose component ids should be buildable
-   */
-  default void registerFromConfig(GameConfig config) {
-  }
 }

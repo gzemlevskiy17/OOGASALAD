@@ -77,7 +77,7 @@ public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
         .map(ComponentInfo::id)
         .map(id -> id == null ? "" : id.trim())
         .filter(id -> !id.isBlank())
-        .forEach(id -> rules.putIfAbsent(id, inferredRules(id, config.primaryComponentId())));
+        .forEach(id -> rules.putIfAbsent(id, inferredRules(id, config.mainCharacterId())));
     LOG.debug("Registered build rules for {} catalog components", config.components().size());
   }
 
