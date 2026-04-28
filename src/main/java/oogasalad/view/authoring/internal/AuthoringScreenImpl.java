@@ -234,9 +234,9 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
     levelAttributes.setMaxSelectable(vehiclePalette.getMaxSelectableItems());
 
     terrainPalette = new ComponentPaletteImpl();
+    terrainPalette.setDragEnabled(false);
     pigsPalette = new ComponentPaletteImpl();
     levelItemsPalette = new ComponentPaletteImpl();
-    subscribePalette(terrainPalette);
     terrainPalette.subscribe(controller::setSplineTerrainStyle);
     subscribePalette(pigsPalette);
     subscribePalette(levelItemsPalette);
