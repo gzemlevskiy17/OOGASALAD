@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import oogasalad.data.api.CheatInfo;
 import oogasalad.data.api.GameConfig;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,7 @@ class GameplayConfigSettingsTest {
       return List.of();
     }
     @Override public List<oogasalad.data.api.TerrainInfo> terrainTypes() { return List.of(); }
+    @Override public List<CheatInfo> cheats() { return List.of(); }
 
     @Override
     public String getSetting(String key) {

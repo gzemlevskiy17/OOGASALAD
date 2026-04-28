@@ -3,6 +3,7 @@ package oogasalad.support;
 import java.util.List;
 import java.util.Map;
 import oogasalad.data.api.ButtonInfo;
+import oogasalad.data.api.CheatInfo;
 import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.StaticComponentInfo;
@@ -20,17 +21,27 @@ public final class TestGameConfig implements GameConfig {
   private final List<ComponentInfo> components;
   private final List<StaticComponentInfo> staticComponents;
   private final List<TerrainInfo> terrainTypes;
+  private final List<CheatInfo> cheats;
   private final Map<String, String> settings;
 
   public TestGameConfig(String gameId, String mainCharacterId,
       List<ComponentInfo> components,
       List<StaticComponentInfo> staticComponents,
       List<TerrainInfo> terrainTypes) {
+    this(gameId, mainCharacterId, components, staticComponents, terrainTypes, List.of());
+  }
+
+  public TestGameConfig(String gameId, String mainCharacterId,
+      List<ComponentInfo> components,
+      List<StaticComponentInfo> staticComponents,
+      List<TerrainInfo> terrainTypes,
+      List<CheatInfo> cheats) {
     this.gameId = gameId;
     this.mainCharacterId = mainCharacterId;
     this.components = List.copyOf(components);
     this.staticComponents = List.copyOf(staticComponents);
     this.terrainTypes = List.copyOf(terrainTypes);
+    this.cheats = List.copyOf(cheats);
     this.settings = Map.of();
   }
 
@@ -93,6 +104,11 @@ public final class TestGameConfig implements GameConfig {
   @Override
   public List<TerrainInfo> terrainTypes() {
     return List.copyOf(terrainTypes);
+  }
+
+  @Override
+  public List<CheatInfo> cheats() {
+    return List.copyOf(cheats);
   }
 
   @Override
