@@ -1,4 +1,4 @@
-package oogasalad.view.authoring.internal;
+package oogasalad.view.authoring.internal.game;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -19,6 +19,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import oogasalad.data.api.CollisionAction;
 import oogasalad.data.api.StaticComponentInfo;
+import oogasalad.view.authoring.internal.common.AuthoringAlertService;
 import org.junit.jupiter.api.Test;
 import org.testfx.util.WaitForAsyncUtils;
 import util.DukeApplicationTest;

@@ -1,4 +1,4 @@
-package oogasalad.view.authoring.internal;
+package oogasalad.view.authoring.internal.game;
 
 import java.util.HashSet;
 import java.util.List;
