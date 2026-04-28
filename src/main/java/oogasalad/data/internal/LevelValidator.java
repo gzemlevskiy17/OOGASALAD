@@ -25,6 +25,10 @@ public class LevelValidator {
 
   private static final double DRAG_MIN = 0.0;
   private static final double DRAG_MAX = 1.0;
+  // Gravity is stored in physics convention: negative = downward in screen-space (Y grows down).
+  // Bounds match the authoring spinner so files saved by the editor always validate.
+  private static final double GRAVITY_MIN = -50.0;
+  private static final double GRAVITY_MAX = 0.0;
 
   public void validate(JsonNode root) {
     List<String> errors = new ArrayList<>();
@@ -56,7 +60,7 @@ public class LevelValidator {
     requireText(meta, "gameType", "gameMetadata.gameType", errors);
     requirePositive(meta, "screenWidth", "gameMetadata.screenWidth", errors);
     requirePositive(meta, "screenHeight", "gameMetadata.screenHeight", errors);
-    requireFiniteNumber(meta, "gravity", "gameMetadata.gravity", errors);
+    requireInRange(meta, "gravity", "gameMetadata.gravity", GRAVITY_MIN, GRAVITY_MAX, errors);
     requireInRange(meta, "drag", "gameMetadata.drag", DRAG_MIN, DRAG_MAX, errors);
   }
 

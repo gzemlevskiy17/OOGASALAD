@@ -7,6 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Stream;
 import oogasalad.data.api.LevelLoadException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -183,6 +189,20 @@ class LevelValidatorTest {
   }
 
   @Test
+  void validate_positiveGravity_throws() throws JsonProcessingException {
+    JsonNode root = parse(VALID_LEVEL.replace("\"gravity\": -9.8", "\"gravity\": 9.8"));
+    LevelLoadException ex = assertThrows(LevelLoadException.class,
+        () -> validator.validate(root));
+    assertTrue(ex.getMessage().contains("gameMetadata.gravity"));
+  }
+
+  @Test
+  void validate_gravityBelowFloor_throws() throws JsonProcessingException {
+    JsonNode root = parse(VALID_LEVEL.replace("\"gravity\": -9.8", "\"gravity\": -1000"));
+    assertThrows(LevelLoadException.class, () -> validator.validate(root));
+  }
+
+  @Test
   void validate_zeroMaxHP_throws() throws JsonProcessingException {
     JsonNode root = parse(VALID_LEVEL.replace("\"maxHP\": 100", "\"maxHP\": 0"));
     LevelLoadException ex = assertThrows(LevelLoadException.class,
@@ -277,5 +297,32 @@ class LevelValidatorTest {
         "should mention drag: " + ex.getMessage());
     assertTrue(ex.getMessage().contains("gridSize"),
         "should mention gridSize: " + ex.getMessage());
+  }
+
+  // ── Real production fixtures ─────────────────────────────────────────────
+
+  /**
+   * Walks every JSON file under {@code data/levels/generated/} and asserts the validator accepts
+   * it. Catches the case where the validator's rules drift from what the saver actually produces.
+   */
+  @Test
+  void validate_allGeneratedFixtures_pass() throws IOException {
+    Path dir = Paths.get("data", "levels", "generated");
+    if (!Files.isDirectory(dir)) {
+      return; // nothing to verify in this environment
+    }
+    List<Path> fixtures;
+    try (Stream<Path> stream = Files.list(dir)) {
+      fixtures = stream
+          .filter(p -> p.toString().endsWith(".json"))
+          .toList();
+    }
+    assertTrue(!fixtures.isEmpty(),
+        "expected at least one generated level fixture under " + dir.toAbsolutePath());
+    for (Path fixture : fixtures) {
+      JsonNode root = MAPPER.readTree(fixture.toFile());
+      assertDoesNotThrow(() -> validator.validate(root),
+          "validator rejected real fixture: " + fixture);
+    }
   }
 }

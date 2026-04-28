@@ -13,6 +13,7 @@ import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelId;
+import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
 import oogasalad.data.internal.GameLoaderImpl;
@@ -34,6 +35,7 @@ import oogasalad.view.accounts.internal.CreateAccountScreen;
 import oogasalad.view.accounts.internal.LoginScreen;
 import oogasalad.view.accounts.internal.ProfileScreen;
 import oogasalad.view.accounts.internal.UpdateProfileScreen;
+import oogasalad.view.authoring.internal.AuthoringAlertService;
 import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.AuthoringScreenImpl;
 import oogasalad.view.authoring.internal.GameAuthoringScreenImpl;
@@ -259,8 +261,17 @@ public class ScreenFactory {
   }
 
   private void configureAuthoringForLevel(AuthoringScreenImpl authoringScreen, String levelPath) {
+    LevelAttributes attrs;
     try {
-      LevelAttributes attrs = levelLoader.loadAttributes(levelPath);
+      attrs = levelLoader.loadAttributes(levelPath);
+    } catch (LevelLoadException e) {
+      LOG.error("Cannot open level '{}' for authoring: {}", levelPath, e.getMessage(), e);
+      new AuthoringAlertService().showError(
+          "Cannot Open Level", "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+      authoringScreen.setGameConfig(null);
+      return;
+    }
+    try {
       authoringScreen.setGameConfig(
           gameLoader.loadGame(LevelPaths.gameFileForLevel(levelPath, attrs.getGameType())));
     } catch (RuntimeException e) {
@@ -336,7 +347,17 @@ public class ScreenFactory {
       vehicleBuilderScreen.setGameConfig(null);
       return;
     }
-    LevelAttributes attributes = levelLoader.loadAttributes(levelPath);
+    LevelAttributes attributes;
+    try {
+      attributes = levelLoader.loadAttributes(levelPath);
+    } catch (LevelLoadException e) {
+      LOG.error("Cannot launch level '{}': {}", levelPath, e.getMessage(), e);
+      new AuthoringAlertService().showError(
+          "Cannot Launch Level", "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+      vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
+      vehicleBuilderScreen.setGameConfig(null);
+      return;
+    }
     try {
       oogasalad.data.api.GameConfig config = gameLoader.loadGame(
           LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));

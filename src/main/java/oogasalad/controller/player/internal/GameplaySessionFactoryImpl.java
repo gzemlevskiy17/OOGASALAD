@@ -30,6 +30,7 @@ import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.Settings;
 import oogasalad.data.internal.LevelPaths;
@@ -63,6 +64,7 @@ import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.model.player.internal.FallOffWorldLossChecker;
 import oogasalad.model.player.internal.FinishLineWinChecker;
 import oogasalad.model.player.internal.GameplayStatsTrackerImpl;
+import oogasalad.view.authoring.internal.AuthoringAlertService;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
@@ -310,7 +312,15 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     String levelPath = levelPathSupplier.get();
     if (levelPath != null && !levelPath.isBlank()) {
-      attributes = levelLoader.loadAttributes(levelPath);
+      try {
+        attributes = levelLoader.loadAttributes(levelPath);
+      } catch (LevelLoadException e) {
+        LOG.error("Cannot start gameplay session for level '{}': {}", levelPath, e.getMessage(), e);
+        new AuthoringAlertService().showError(
+            "Cannot Start Level",
+            "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+        throw e;
+      }
       try {
         loadedConfig = gameLoader.loadGame(
             LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
@@ -322,7 +332,15 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
     World world = new WorldImpl(physicsEnvironment(attributes));
     if (levelPath != null && !levelPath.isBlank()) {
-      levelLoader.loadLevel(levelPath, loadedConfig, world);
+      try {
+        levelLoader.loadLevel(levelPath, loadedConfig, world);
+      } catch (LevelLoadException e) {
+        LOG.error("Level body load failed for '{}': {}", levelPath, e.getMessage(), e);
+        new AuthoringAlertService().showError(
+            "Cannot Start Level",
+            "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+        throw e;
+      }
       if (loadedConfig != null) {
         vehicleFactory.getRegistry().registerFromConfig(loadedConfig);
       }

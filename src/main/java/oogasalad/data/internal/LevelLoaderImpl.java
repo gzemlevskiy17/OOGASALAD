@@ -40,6 +40,7 @@ public class LevelLoaderImpl implements LevelLoader {
 
   private static final Logger LOG = LogManager.getLogger(LevelLoaderImpl.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final LevelValidator VALIDATOR = new LevelValidator();
 
   private static final double DEFAULT_OBJECT_SIZE = 60;
   private static final double SPLINE_BASELINE_MARGIN = 200;
@@ -78,11 +79,18 @@ public class LevelLoaderImpl implements LevelLoader {
   }
 
   private JsonNode parseFile(String fileName) {
+    JsonNode root;
     try {
-      return MAPPER.readTree(new File(fileName));
+      root = MAPPER.readTree(new File(fileName));
     } catch (IOException e) {
       throw new LevelLoadException("Could not read level file: " + fileName, e);
     }
+    // Only validate files that use the new schema; legacy fixtures with a top-level "level"
+    // wrapper are still tolerated for backward compatibility.
+    if (root.has("gameMetadata")) {
+      VALIDATOR.validate(root);
+    }
+    return root;
   }
 
   private void populateGameMetadata(JsonNode node, LevelAttributes attrs) {
