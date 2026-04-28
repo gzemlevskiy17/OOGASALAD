@@ -1,59 +1,95 @@
 {
   "gameMetadata" : {
-    "levelName" : "Lunar Leap",
+    "levelName" : "Lunar Glide",
     "gameType" : "badpiggies",
-    "screenWidth" : 3800.0,
-    "screenHeight" : 1200.0,
+    "screenWidth" : 1920.0,
+    "screenHeight" : 1080.0,
     "gravity" : -1.0,
-    "drag" : 0.05
+    "drag" : 0.02
   },
   "map" : {
     "knotLocations" : [ {
-      "x" : 80.0,
-      "y" : 950.0
+      "x" : 120.0,
+      "y" : 880.0
     }, {
-      "x" : 400.0,
-      "y" : 950.0
+      "x" : 320.0,
+      "y" : 860.0
     }, {
-      "x" : 800.0,
-      "y" : 760.0
-    }, {
-      "x" : 1200.0,
-      "y" : 700.0
-    }, {
-      "x" : 1500.0,
-      "y" : 800.0
-    }, {
-      "x" : 1800.0,
-      "y" : 600.0
-    }, {
-      "x" : 2100.0,
-      "y" : 750.0
-    }, {
-      "x" : 2500.0,
+      "x" : 560.0,
       "y" : 900.0
     }, {
-      "x" : 2900.0,
-      "y" : 850.0
+      "x" : 800.0,
+      "y" : 840.0
     }, {
-      "x" : 3300.0,
+      "x" : 1100.0,
+      "y" : 930.0
+    }, {
+      "x" : 1500.0,
       "y" : 950.0
     }, {
-      "x" : 3720.0,
-      "y" : 950.0
+      "x" : 1780.0,
+      "y" : 870.0
     } ],
-    "objects" : [ ],
-    "terrainOptions" : [ "Spline Terrain" ],
+    "objects" : [ {
+      "type" : "Rock",
+      "position" : {
+        "x" : 480.0,
+        "y" : 900.0
+      }
+    }, {
+      "type" : "Bomb",
+      "position" : {
+        "x" : 1050.0,
+        "y" : 920.0
+      }
+    }, {
+      "type" : "Coin",
+      "position" : {
+        "x" : 1300.0,
+        "y" : 900.0
+      }
+    }, {
+      "type" : "GoalLine",
+      "position" : {
+        "x" : 1760.0,
+        "y" : 850.0
+      }
+    }, {
+      "type" : "Rock",
+      "position" : {
+        "x" : 570.0,
+        "y" : 890.0
+      }
+    }, {
+      "type" : "Coin",
+      "position" : {
+        "x" : 630.0,
+        "y" : 870.0
+      }
+    }, {
+      "type" : "Bomb",
+      "position" : {
+        "x" : 690.0,
+        "y" : 850.0
+      }
+    }, {
+      "type" : "XPBoost",
+      "position" : {
+        "x" : 770.0,
+        "y" : 850.0
+      }
+    } ],
+    "terrainOptions" : [ "GrassHills" ],
     "spawnPoint" : {
-      "x" : 120.0,
+      "x" : 140.0,
       "y" : 850.0
     }
   },
   "mainCharacter" : {
     "gridSize" : 20.0,
     "elementsAllowed" : [ ],
-    "maxSelectable" : 10,
-    "maxHP" : 5.0,
+    "maxSelectable" : 9,
+    "maxHP" : 3.0,
     "cameraFollows" : "vehicle"
   }
 }
