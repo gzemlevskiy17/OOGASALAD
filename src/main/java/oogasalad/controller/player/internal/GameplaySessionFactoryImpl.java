@@ -29,6 +29,7 @@ import oogasalad.controller.player.api.InputRouter;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.model.engine.CollisionDetectorImpl;
@@ -38,6 +39,7 @@ import oogasalad.model.engine.api.Damageable;
 import oogasalad.model.engine.api.GameEngine;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Joint;
+import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.TypedComponent;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
@@ -58,6 +60,7 @@ import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.model.player.internal.FallOffWorldLossChecker;
 import oogasalad.model.player.internal.FinishLineWinChecker;
 import oogasalad.model.player.internal.GameplayStatsTrackerImpl;
+import oogasalad.view.authoring.internal.AuthoringAlertService;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
 import oogasalad.view.core.api.Renderable;
@@ -91,6 +94,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   private static final double BOUNDS_PADDING = 400.0;
   private static final double FALLBACK_WORLD_WIDTH = 2600.0;
   private static final double FALLBACK_WORLD_HEIGHT = 1600.0;
+  private static final double GRAVITY_SCALE = 100.0;
   // Regardless of how tiny the authored terrain is, the world must be at least one
   // viewport + padding on each axis. Without this floor, a level with just a few
   // blocks near the top of the canvas yields a world shorter than the viewport,
@@ -301,13 +305,20 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
   }
 
   private BuiltWorld buildWorld(VehicleLayout layout) {
-    World world = new WorldImpl();
     GameConfig loadedConfig = null;
+    LevelAttributes attributes = new LevelAttributes();
 
     String levelPath = levelPathSupplier.get();
-    LevelAttributes attributes = new LevelAttributes();
     if (levelPath != null && !levelPath.isBlank()) {
-      attributes = levelLoader.loadAttributes(levelPath);
+      try {
+        attributes = levelLoader.loadAttributes(levelPath);
+      } catch (LevelLoadException e) {
+        LOG.error("Cannot start gameplay session for level '{}': {}", levelPath, e.getMessage(), e);
+        new AuthoringAlertService().showError(
+            "Cannot Start Level",
+            "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+        throw e;
+      }
       try {
         loadedConfig = gameLoader.loadGame(
             LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
@@ -315,7 +326,19 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
         LOG.warn("Game config not found for level {}; running without catalog: {}", levelPath,
             e.getMessage());
       }
-      levelLoader.loadLevel(levelPath, loadedConfig, world);
+    }
+
+    World world = new WorldImpl(physicsEnvironment(attributes));
+    if (levelPath != null && !levelPath.isBlank()) {
+      try {
+        levelLoader.loadLevel(levelPath, loadedConfig, world);
+      } catch (LevelLoadException e) {
+        LOG.error("Level body load failed for '{}': {}", levelPath, e.getMessage(), e);
+        new AuthoringAlertService().showError(
+            "Cannot Start Level",
+            "Level file '" + levelPath + "' is invalid:\n\n" + e.getMessage());
+        throw e;
+      }
       if (loadedConfig != null) {
         vehicleFactory.getRegistry().registerFromConfig(loadedConfig);
       }
@@ -331,6 +354,16 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     Map<PlacedComponent, RigidBody> placements =
         vehicleFactory.buildVehicle(layout, world, spawnX, spawnY);
     return new BuiltWorld(world, bounds, placements, loadedConfig, attributes);
+  }
+
+  /**
+   * Authoring stores gravity in physics convention (negative = downward, magnitude in m/s²),
+   * but the engine works in screen-space (Y grows downward) at a 100× pixel scale, so the
+   * default LevelAttributes value -9.8 maps to engine vector (0, +980).
+   */
+  private static PhysicsEnvironment physicsEnvironment(LevelAttributes attributes) {
+    Vector gravity = new Vector(0, -attributes.getGravity() * GRAVITY_SCALE);
+    return new PhysicsEnvironment(gravity, attributes.getDrag());
   }
 
   private void wireResponsiveCamera(GamePlayAppScreen screen, Camera camera) {

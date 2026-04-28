@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.IOException;
 import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
@@ -29,6 +30,7 @@ public class LevelSaverImpl implements LevelSaver {
 
   private static final Logger LOG = LogManager.getLogger(LevelSaverImpl.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final LevelValidator VALIDATOR = new LevelValidator();
   private static final double DEFAULT_SCALE = 1.0;
 
   private final double scale;
@@ -51,6 +53,13 @@ public class LevelSaverImpl implements LevelSaver {
     root.set("gameMetadata", buildGameMetadata(attrs));
     root.set("map", buildMap(world));
     root.set("mainCharacter", buildMainCharacter(attrs));
+
+    try {
+      VALIDATOR.validate(root);
+    } catch (LevelLoadException e) {
+      throw new LevelSaveException(
+          "Refusing to write invalid level file '" + fileName + "': " + e.getMessage(), e);
+    }
 
     try {
       MAPPER.writerWithDefaultPrettyPrinter().writeValue(new File(fileName), root);
