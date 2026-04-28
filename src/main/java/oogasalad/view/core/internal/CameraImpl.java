@@ -1,5 +1,6 @@
 package oogasalad.view.core.internal;
 
+import java.util.Optional;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.core.api.Camera;
@@ -56,9 +57,7 @@ public class CameraImpl implements Camera {
   }
 
   public void updateBehavior() {
-    if (cameraBehavior != null) {
-      cameraBehavior.update(this);
-    }
+    Optional.ofNullable(cameraBehavior).ifPresent(cb -> cb.update(this));
   }
 
   public void setViewBoundaries(double width, double height) {
@@ -74,26 +73,23 @@ public class CameraImpl implements Camera {
     if (object == null) {
       return false;
     }
-
     double viewLeft = x;
-    double viewRight = x + viewWidth;
     double viewTop = y;
+    double viewRight = x + viewWidth;
     double viewBottom = y + viewHeight;
 
-    if (object instanceof GameObject gameObject) {
-      CollisionPolygonBounds.UnionAabb aabb =
-          CollisionPolygonBounds.unionAabb(gameObject);
-      if (!aabb.defined()) {
-        return pointInsideViewport(viewLeft, viewTop, viewRight, viewBottom,
-            object.x(), object.y());
-      }
-      return CollisionPolygonBounds.rectsOverlap(
-          aabb.minX(), aabb.minY(), aabb.maxX(), aabb.maxY(),
-          viewLeft, viewTop, viewRight, viewBottom);
+    if (!(object instanceof GameObject gameObject)) {
+      return pointInsideViewport(viewLeft, viewTop, viewRight, viewBottom,
+          object.x(), object.y());
     }
 
-    return pointInsideViewport(viewLeft, viewTop, viewRight, viewBottom,
-        object.x(), object.y());
+    CollisionPolygonBounds.UnionAabb aabb = CollisionPolygonBounds.unionAabb(gameObject);
+    return aabb.defined()
+        ? CollisionPolygonBounds.rectsOverlap(
+        aabb.minX(), aabb.minY(), aabb.maxX(), aabb.maxY(),
+        viewLeft, viewTop, viewRight, viewBottom)
+        : pointInsideViewport(viewLeft, viewTop, viewRight, viewBottom,
+            object.x(), object.y());
   }
 
   private static boolean pointInsideViewport(double viewLeft, double viewTop,
