@@ -33,6 +33,7 @@ import oogasalad.model.player.api.WinConditionChecker;
 import oogasalad.model.player.internal.FallOffWorldLossChecker;
 import oogasalad.model.player.internal.FinishLineWinChecker;
 import oogasalad.model.player.internal.GameplayStatsTrackerImpl;
+import oogasalad.model.player.internal.MainCharacterDestroyedLossChecker;
 import oogasalad.model.player.internal.ScoreServiceImpl;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
@@ -202,7 +203,10 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     if (tracked.isEmpty() && mainCharacterId != null && !mainCharacterId.isBlank()) {
       tracked = List.of(mainCharacterId);
     }
-    return new FallOffWorldLossChecker(worldHeight, tracked);
+    LossConditionChecker fallOff = new FallOffWorldLossChecker(worldHeight, tracked);
+    LossConditionChecker hpDestroyed =
+        new MainCharacterDestroyedLossChecker(mainCharacterId);
+    return world -> fallOff.hasLost(world) || hpDestroyed.hasLost(world);
   }
 
   private String mainCharacterId(GameConfig config) {
