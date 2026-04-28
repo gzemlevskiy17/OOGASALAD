@@ -5,6 +5,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import oogasalad.data.api.GameLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -26,6 +27,7 @@ class RestartActionTest {
   private World world;
   private GameConfig config;
   private RestartAction restartAction;
+  private GameLoader gameLoader;
 
   @BeforeEach
   void setUp() {
@@ -33,7 +35,8 @@ class RestartActionTest {
     levelLoader = mock(LevelLoader.class);
     world       = mock(World.class);
     config      = mock(GameConfig.class);
-    restartAction = new RestartAction(controller, levelLoader, world, config, LEVEL_PATH);
+    gameLoader = mock(GameLoader.class);
+    restartAction = new RestartAction(controller, levelLoader, gameLoader, world, LEVEL_PATH);
   }
 
   @Test
@@ -42,7 +45,7 @@ class RestartActionTest {
 
     InOrder order = inOrder(controller, levelLoader);
     order.verify(controller).resetSimulation();
-    order.verify(levelLoader).loadLevel(LEVEL_PATH, world, config);
+    order.verify(levelLoader).loadLevel(LEVEL_PATH, config, world);
     order.verify(controller).startSimulation();
   }
 
@@ -50,24 +53,24 @@ class RestartActionTest {
   void execute_loadsCorrectLevelPath() {
     restartAction.execute();
 
-    verify(levelLoader).loadLevel(LEVEL_PATH, world, config);
+    verify(levelLoader).loadLevel(LEVEL_PATH, config, world);
   }
 
   @Test
   void constructor_nullController_throwsIllegalArgumentException() {
     assertThrows(IllegalArgumentException.class,
-        () -> new RestartAction(null, levelLoader, world, config, LEVEL_PATH));
+        () -> new RestartAction(controller, levelLoader, gameLoader, world, null));
   }
 
   @Test
   void constructor_nullLevelLoader_throwsIllegalArgumentException() {
     assertThrows(IllegalArgumentException.class,
-        () -> new RestartAction(controller, null, world, config, LEVEL_PATH));
+        () -> new RestartAction(controller, levelLoader, gameLoader, world, null));
   }
 
   @Test
   void constructor_nullLevelPath_throwsIllegalArgumentException() {
     assertThrows(IllegalArgumentException.class,
-        () -> new RestartAction(controller, levelLoader, world, config, null));
+        () -> new RestartAction(controller, levelLoader, gameLoader, world, null));
   }
 }

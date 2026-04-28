@@ -9,6 +9,7 @@ import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.World;
+import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.GameComponent;
 import oogasalad.model.engine.internal.components.StaticComponent;
 import org.junit.jupiter.api.Test;
@@ -106,22 +107,70 @@ class FallOffWorldLossCheckerTest {
   // --- Test doubles ---
 
   private static final class TaggedBody extends StaticComponent {
+
     TaggedBody(String tag, double x, double y) {
       super(x, y, 0, ConvexPolygon.axisAlignedBox(x - 5, y - 5, 10, 10), tag, 0, 0);
     }
   }
 
   private static final class FakeWorld implements World {
+
     private final List<GameComponent> components = new ArrayList<>();
-    @Override public List<GameComponent> getComponents() { return List.copyOf(components); }
-    @Override public List<GameComponent> getAllComponents() { return List.copyOf(components); }
-    @Override public List<GameComponent> getActiveComponents() { return List.copyOf(components); }
-    @Override public List<Joint> getJoints() { return List.of(); }
-    @Override public void addComponent(GameComponent c) { components.add(c); }
-    @Override public void removeComponent(GameComponent c) { components.remove(c); }
-    @Override public void clear() { components.clear(); }
-    @Override public void addJoint(Joint j) {}
-    @Override public void removeJoint(Joint j) {}
-    @Override public double getDragCoefficient() { return 0.0; }
+
+    @Override
+    public List<GameComponent> getComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<GameComponent> getAllComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<GameComponent> getActiveComponents() {
+      return List.copyOf(components);
+    }
+
+    @Override
+    public List<DynamicComponent> getActiveDynamicComponents() {
+      return getActiveComponents().stream()
+          .filter(DynamicComponent.class::isInstance)
+          .map(DynamicComponent.class::cast)
+          .toList();
+    }
+
+    @Override
+    public List<Joint> getJoints() {
+      return List.of();
+    }
+
+    @Override
+    public void addComponent(GameComponent c) {
+      components.add(c);
+    }
+
+    @Override
+    public void removeComponent(GameComponent c) {
+      components.remove(c);
+    }
+
+    @Override
+    public void clear() {
+      components.clear();
+    }
+
+    @Override
+    public void addJoint(Joint j) {
+    }
+
+    @Override
+    public void removeJoint(Joint j) {
+    }
+
+    @Override
+    public double getDragCoefficient() {
+      return 0.0;
+    }
   }
 }

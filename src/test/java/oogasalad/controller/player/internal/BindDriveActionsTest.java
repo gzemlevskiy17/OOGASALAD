@@ -27,10 +27,9 @@ class BindDriveActionsTest {
   @BeforeEach
   void setUp() {
     factory = new GameplaySessionFactoryImpl(
-        (String fileName, World w, LevelAttributes levelAttributes, GameConfig config) -> {
-          /* no-op LevelLoader */
-        },
-        () -> null /* no level path */
+        null,
+        null,
+        () -> null
     );
     router = new InputRouterImpl();
     world = new WorldImpl();
