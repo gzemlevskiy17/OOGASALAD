@@ -265,6 +265,30 @@ class VehicleFactoryPigPlacementTest {
     assertWheelFrameJointUsesWheelAsBodyA(1);
   }
 
+  @Test
+  void pigCardinallyAdjacentToFrame_getsRigidJointToFrame() {
+    VehicleLayout layout = new VehicleLayout(List.of(
+        new PlacedComponent(2, 3, "Frame"),
+        new PlacedComponent(2, 2, "Pig")
+    ));
+    World world = new WorldImpl();
+
+    new VehicleFactory().buildVehicle(layout, world, START_X, START_Y);
+
+    PigComponent pig = findPig(world);
+    StructuralComponent frame = findFrame(world);
+
+    double expectedPigX = START_X + 2 * CELL_SIZE;
+    double expectedPigY = START_Y + 2 * CELL_SIZE;
+    assertEquals(expectedPigX, pig.x(), 1e-9);
+    assertEquals(expectedPigY, pig.y(), 1e-9);
+
+    boolean joint = world.getJoints().stream()
+        .filter(RigidJoint.class::isInstance)
+        .anyMatch(j -> jointConnects(j, pig, frame));
+    assertTrue(joint, "Adjacent pig should rigidly attach to neighboring frame");
+  }
+
   private void assertWheelFrameJointUsesWheelAsBodyA(int wheelCol) {
     VehicleLayout layout = new VehicleLayout(List.of(
         new PlacedComponent(0, 0, "Frame"),
