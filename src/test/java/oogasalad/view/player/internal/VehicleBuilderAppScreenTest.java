@@ -1,6 +1,7 @@
 package oogasalad.view.player.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.util.List;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.data.internal.GameConfigImpl;
@@ -19,13 +21,21 @@ import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.SpriteCache;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.testfx.util.WaitForAsyncUtils;
 import util.DukeApplicationTest;
 
+/**
+ * TestFX workflows for the vehicle builder screen.
+ *
+ * @author Emilio Garcia
+ */
 class VehicleBuilderAppScreenTest extends DukeApplicationTest {
 
   private final List<Outcome> capturedOutcomes = new ArrayList<>();
+
   @TempDir
   Path tempDir;
+
   private VehicleBuilderAppScreen screen;
 
   @Override
@@ -37,33 +47,30 @@ class VehicleBuilderAppScreenTest extends DukeApplicationTest {
   }
 
   @Test
-  void title_showsCreateYourVehicle() {
+  void Title_DefaultScreen_DisplaysCreateYourVehicle() {
     Label title = lookup(".header-title").queryAs(Label.class);
+
     assertEquals("Create your vehicle", title.getText());
   }
 
   @Test
-  void backButton_invokesOnOutcomeWithBackToPlayerEntry() {
+  void BackButton_Clicked_EmitsBackToPlayerEntry() {
     clickOn("Back to Level Choosing Screen");
-    assertEquals(1, capturedOutcomes.size());
-    assertEquals(Outcome.BACK_TO_PLAYER_ENTRY, capturedOutcomes.get(0));
+
+    assertEquals(List.of(Outcome.BACK_TO_PLAYER_ENTRY), capturedOutcomes);
   }
 
   @Test
-  void startButton_invokesOnOutcomeWithOpenGameplay() {
+  void StartButton_NoGameConfig_EmitsOpenGameplay() {
     clickOn("START THE LEVEL");
-    assertEquals(1, capturedOutcomes.size());
-    assertEquals(Outcome.OPEN_GAMEPLAY, capturedOutcomes.get(0));
+
+    assertEquals(List.of(Outcome.OPEN_GAMEPLAY), capturedOutcomes);
   }
 
   @Test
-  void startButton_requiresConfiguredMainCharacterInBuild() throws IOException {
-    Path gameFile = tempDir.resolve("game.json");
-    Files.writeString(gameFile, """
-        {"gameId":"test","mainCharacterId":"Pig",
-         "components":[],"staticComponents":[],"terrainTypes":[]}
-        """);
-    screen.setGameConfig(new GameConfigImpl(gameFile.toString()));
+  void StartButton_ConfiguredMainCharacterMissing_ShowsErrorAndDoesNotEmitOutcome()
+      throws IOException {
+    runAsJFXAction(() -> screen.setGameConfig(loadGameConfigWithMainCharacter("Pig")));
 
     clickOn("START THE LEVEL");
 
@@ -73,17 +80,77 @@ class VehicleBuilderAppScreenTest extends DukeApplicationTest {
   }
 
   @Test
-  void getVehicleLayout_initiallyEmpty() {
-    assertTrue(screen.getVehicleLayout().placements().isEmpty());
+  void DragComponent_FrameDroppedOnGrid_RecordsFramePlacement() {
+    dragComponentToFirstGridCell("Frame");
+
+    assertEquals("Frame", screen.getVehicleLayout().getComponentAtIndex(0, 0).orElseThrow());
   }
 
   @Test
-  void dragComponentFromPaletteToGrid_recordsPlacement() {
-    Node source = lookup(".component-cell").nth(0).query();
-    Node target = lookup(".grid-cell").nth(0).query();
-    drag(source).dropTo(target);
-    assertEquals(
-        "Pig",
-        screen.getVehicleLayout().getComponentAtIndex(0, 0).orElseThrow());
+  void StartButton_ConfiguredPigStackedInsideFrame_EmitsOpenGameplay() throws IOException {
+    runAsJFXAction(() -> screen.setGameConfig(loadGameConfigWithMainCharacter("Pig")));
+    dragComponentToFirstGridCell("Frame");
+    dragComponentToFirstGridCell("Pig");
+
+    clickOn("START THE LEVEL");
+
+    assertEquals(List.of(Outcome.OPEN_GAMEPLAY), capturedOutcomes);
+  }
+
+  @Test
+  void OnEnter_PreviousGridContentsExist_ClearsVisualGridAndLayout() {
+    StackPane cell = firstGridCell();
+    dragComponentToFirstGridCell("Frame");
+    assertFalse(cell.getChildren().isEmpty());
+
+    runAsJFXAction(screen::onEnter);
+
+    assertTrue(screen.getVehicleLayout().placements().isEmpty());
+    assertTrue(cell.getChildren().isEmpty());
+  }
+
+  @Test
+  void SetAllowedComponentIds_PreviousGridContentsExist_ClearsVisualGridAndLayout() {
+    StackPane cell = firstGridCell();
+    dragComponentToFirstGridCell("Frame");
+    assertFalse(cell.getChildren().isEmpty());
+
+    runAsJFXAction(() -> screen.setAllowedComponentIds(List.of("Frame", "Pig")));
+
+    assertTrue(screen.getVehicleLayout().placements().isEmpty());
+    assertTrue(cell.getChildren().isEmpty());
+  }
+
+  private void dragComponentToFirstGridCell(String componentName) {
+    drag(componentCell(componentName)).dropTo(firstGridCell());
+    WaitForAsyncUtils.waitForFxEvents();
+  }
+
+  private Node componentCell(String componentName) {
+    return lookup(".component-cell").queryAll().stream()
+        .filter(node -> componentLabel(node).getText().equals(componentName))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private Label componentLabel(Node componentCell) {
+    return (Label) componentCell.lookup(".label");
+  }
+
+  private StackPane firstGridCell() {
+    return lookup(".grid-cell").nth(0).queryAs(StackPane.class);
+  }
+
+  private GameConfigImpl loadGameConfigWithMainCharacter(String mainCharacterId) {
+    Path gameFile = tempDir.resolve(mainCharacterId + "-game.json");
+    try {
+      Files.writeString(gameFile, """
+          {"gameId":"test","mainCharacterId":"%s",
+           "components":[],"staticComponents":[],"terrainTypes":[]}
+          """.formatted(mainCharacterId));
+    } catch (IOException exception) {
+      throw new IllegalStateException("Could not create test game config", exception);
+    }
+    return new GameConfigImpl(gameFile.toString());
   }
 }
