@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Focused tests for force → acceleration → integration in {@link GameEngineImpl}.
+ *
+ * @author Emilio Garcia
  */
 class GameEngineImplTest {
 
@@ -70,6 +72,22 @@ class GameEngineImplTest {
     assertEquals(G * FIXED_DT, body.getDynamicState().getLinearVelocity().y(), EPS);
     assertEquals(semiImplicitSubstepDisplacement(G, 1),
         body.getStaticState().getLinearPosition().y() - 100, EPS);
+  }
+
+  @Test
+  void SetGravity_CustomGravity_ChangesFutureVerticalAcceleration() {
+    World world = new WorldImpl();
+    DynamicComponent body = box(2.0, 0, 100, true);
+    world.addComponent(body);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+
+    engine.setGravity(new Vector(0, 120));
+    engine.step(FIXED_DT);
+
+    assertEquals(120, body.getDynamicState().getLinearAcceleration().y(), EPS,
+        "setGravity should affect the acceleration used by future physics steps.");
+    assertEquals(120 * FIXED_DT, body.getDynamicState().getLinearVelocity().y(), EPS,
+        "setGravity should affect velocity integration on the next physics step.");
   }
 
   @Test
