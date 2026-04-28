@@ -7,9 +7,13 @@ import javafx.stage.Stage;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.view.core.api.AppScreen;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /** Registry-based screen manager. Swaps JavaFX Scenes on the Stage by name. */
 public class ScreenManagerImpl implements ScreenManager {
+
+  private static final Logger LOG = LogManager.getLogger(ScreenManagerImpl.class);
 
   private final Map<String, AppScreen> registry = new HashMap<>();
   private final Stage stage;
@@ -33,6 +37,7 @@ public class ScreenManagerImpl implements ScreenManager {
     if (screen == null) {
       throw new IllegalArgumentException("No screen registered under: " + screenName);
     }
+    LOG.info("Switching to screen '{}'", screenName);
     screen.onEnter();
     if (sharedScene == null) {
       sharedScene = new Scene(screen.getRoot());
