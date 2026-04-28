@@ -109,8 +109,6 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
     BorderPane pane = new BorderPane();
     pane.getStylesheets().add(
         getClass().getResource("/oogasalad/view/authoring/authoring-entry.css").toExternalForm());
-    pane.getStylesheets().add(
-        getClass().getResource("/oogasalad/view/player/player-entry.css").toExternalForm());
     pane.getStyleClass().add("screen-root");
     pane.setPadding(new Insets(d("rootPadding")));
     return pane;

@@ -10,6 +10,7 @@
 
 .authoring-entry-title {
   -fx-font-family: "Serif";
+  -fx-font-size: 36px;
   -fx-text-fill: #333333;
 }
 
@@ -51,23 +52,77 @@
   -fx-padding: 20;
 }
 
-/* Override player-entry.css min-heights so the hub fits more buttons vertically. */
-.authoring-entry-scroll .world-button {
+.world-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
   -fx-min-height: 70;
   -fx-min-width: 240;
   -fx-pref-height: 70;
+  -fx-pref-width: 240;
   -fx-border-radius: 12;
   -fx-background-radius: 12;
+  -fx-font-family: "Serif";
   -fx-font-size: 14px;
+  -fx-text-fill: #333333;
 }
 
-.authoring-entry-scroll .level-button {
+.level-button {
+  -fx-background-color: white;
+  -fx-border-color: #707070;
+  -fx-border-width: 3;
   -fx-min-height: 70;
   -fx-min-width: 240;
   -fx-pref-height: 70;
+  -fx-pref-width: 240;
   -fx-border-radius: 12;
   -fx-background-radius: 12;
+  -fx-font-family: "Serif";
   -fx-font-size: 14px;
+  -fx-text-fill: #333333;
+}
+
+.world-button:hover,
+.level-button:hover,
+.level-button.level-selected,
+.level-button.level-selected:hover {
+  -fx-background-color: #D1FFBD;
+  -fx-cursor: hand;
+}
+
+.world-button.world-selected,
+.world-button.world-selected:hover {
+  -fx-background-color: #D1FFBD;
+}
+
+.world-button.world-forest:hover,
+.world-button.world-selected.world-forest,
+.world-button.world-selected.world-forest:hover {
+  -fx-background-color: #A8E6CF;
+}
+
+.world-button.world-desert:hover,
+.world-button.world-selected.world-desert,
+.world-button.world-selected.world-desert:hover {
+  -fx-background-color: #FFD3B6;
+}
+
+.world-button.world-moon:hover,
+.world-button.world-selected.world-moon,
+.world-button.world-selected.world-moon:hover {
+  -fx-background-color: #D3D3D3;
+}
+
+.world-button.world-glacier:hover,
+.world-button.world-selected.world-glacier,
+.world-button.world-selected.world-glacier:hover {
+  -fx-background-color: #C4FCE8;
+}
+
+.world-button.world-mars:hover,
+.world-button.world-selected.world-mars,
+.world-button.world-selected.world-mars:hover {
+  -fx-background-color: #FFAAA5;
 }
 
 .authoring-entry-scroll .scroll-pane,
@@ -83,5 +138,6 @@
 
 .authoring-entry-header {
   -fx-font-family: "Serif";
+  -fx-font-size: 22px;
   -fx-text-fill: #333333;
 }
