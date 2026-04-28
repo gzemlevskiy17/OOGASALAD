@@ -116,6 +116,7 @@ public class LevelLoaderImpl implements LevelLoader {
     attrs.setScreenHeight(node.path("screenHeight").asDouble(attrs.getScreenHeight()));
     attrs.setGravity(node.path("gravity").asDouble(attrs.getGravity()));
     attrs.setDrag(node.path("drag").asDouble(attrs.getDrag()));
+    attrs.setBackgroundImage(node.path("backgroundImage").asText(attrs.getBackgroundImage()));
   }
 
   private void populateMainCharacter(JsonNode node, LevelAttributes attrs) {
@@ -137,6 +138,7 @@ public class LevelLoaderImpl implements LevelLoader {
   }
 
   private static final String DEFAULT_TERRAIN_COLOR = "#4A2C0F";
+  private static final String DEFAULT_TRACK_COLOR = "#000000";
 
   private void loadTerrainSpline(JsonNode map, GameConfig game, World world) {
     JsonNode knotsNode = map.path("knotLocations");
@@ -162,7 +164,12 @@ public class LevelLoaderImpl implements LevelLoader {
     if (color == null) {
       color = DEFAULT_TERRAIN_COLOR;
     }
-    return new TerrainSpline(terrain.id(), spline, sprite, true, terrain.friction(), color);
+    String trackColor = terrain.trackColor();
+    if (trackColor == null) {
+      trackColor = DEFAULT_TRACK_COLOR;
+    }
+    return new TerrainSpline(terrain.id(), spline, sprite, true, terrain.friction(), color,
+        trackColor);
   }
 
   private TerrainInfo pickTerrain(JsonNode terrainOptions, GameConfig game) {

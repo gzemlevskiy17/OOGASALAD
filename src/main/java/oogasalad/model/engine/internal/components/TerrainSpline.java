@@ -35,6 +35,7 @@ import oogasalad.model.engine.internal.spline.SplineTessellator;
 public class TerrainSpline extends TerrainComponent {
 
   private static final String DEFAULT_COLOR = "#4A2C0F";
+  private static final String DEFAULT_TRACK_COLOR = "#000000";
   private static final String DEFAULT_NAME = "Spline Terrain";
   private static final String DEFAULT_SPRITE = "";
   private static final double DEFAULT_RESTITUTION = 0.5;
@@ -45,6 +46,7 @@ public class TerrainSpline extends TerrainComponent {
   private final double width;
   private final double height;
   private final String color;
+  private final String trackColor;
   private final String sprite;
   private final boolean tiled;
 
@@ -57,11 +59,16 @@ public class TerrainSpline extends TerrainComponent {
    */
   public TerrainSpline(ParabolaSpline spline, String sprite, boolean tiled, double friction,
       String color) {
-    this(DEFAULT_NAME, spline, sprite, tiled, friction, color);
+    this(DEFAULT_NAME, spline, sprite, tiled, friction, color, DEFAULT_TRACK_COLOR);
   }
 
   public TerrainSpline(String displayName, ParabolaSpline spline, String sprite, boolean tiled,
       double friction, String color) {
+    this(displayName, spline, sprite, tiled, friction, color, DEFAULT_TRACK_COLOR);
+  }
+
+  public TerrainSpline(String displayName, ParabolaSpline spline, String sprite, boolean tiled,
+      double friction, String color, String trackColor) {
     super(boundingMinX(Objects.requireNonNull(spline, "spline")), boundingMinY(spline), 0.0,
         firstSlabOrPlaceholder(spline), "", friction, DEFAULT_RESTITUTION);
     this.displayName = displayName == null || displayName.isBlank() ? DEFAULT_NAME : displayName;
@@ -72,6 +79,7 @@ public class TerrainSpline extends TerrainComponent {
     this.sprite = sprite == null ? DEFAULT_SPRITE : sprite;
     this.tiled = tiled;
     this.color = color == null ? DEFAULT_COLOR : color;
+    this.trackColor = trackColor == null || trackColor.isBlank() ? DEFAULT_TRACK_COLOR : trackColor;
 
     // Once the slab list exists, expose the first slab as the single-polygon view so getPolygon()
     // remains consistent with the physics surface (the constructor's super() call only had access
@@ -132,6 +140,11 @@ public class TerrainSpline extends TerrainComponent {
   @Override
   public String getColor() {
     return color;
+  }
+
+  @Override
+  public String getTrackColor() {
+    return trackColor;
   }
 
   private static double boundingMinX(ParabolaSpline spline) {

@@ -90,6 +90,11 @@ public class GameCatalogSaver {
       } else {
         n.putNull("visualColor");
       }
+      if (t.trackColor() != null) {
+        n.put("trackColor", t.trackColor());
+      } else {
+        n.putNull("trackColor");
+      }
       n.put("friction", t.friction());
     }
 

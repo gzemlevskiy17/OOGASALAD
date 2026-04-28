@@ -325,8 +325,9 @@ public class GameConfigImpl implements GameConfig {
       String id = entry.path("id").asText("");
       String spriteUrl = nullableText(entry.path("spriteUrl"));
       String visualColor = nullableText(entry.path("visualColor"));
+      String trackColor = nullableText(entry.path("trackColor"));
       double friction = entry.path("friction").asDouble(0);
-      result.add(new TerrainInfo(id, spriteUrl, visualColor, friction));
+      result.add(new TerrainInfo(id, spriteUrl, visualColor, trackColor, friction));
     }
     return result;
   }
