@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import oogasalad.model.engine.api.CollisionDetector;
-import oogasalad.model.engine.api.CollisionSolver;
 import oogasalad.model.engine.api.Driveable;
 import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
@@ -33,8 +32,6 @@ class GameEngineImplTest {
   private static final double FIXED_DT = 1.0 / 60.0;
 
   private static final CollisionDetector NO_HITS = (a, b) -> Optional.empty();
-  private static final CollisionSolver NO_SOLVE = (a, b, c, d) -> {
-  };
 
   private static DynamicComponent box(double mass, double x, double y, boolean gravity) {
     ConvexPolygon poly =
@@ -57,7 +54,7 @@ class GameEngineImplTest {
     DynamicComponent body = box(2.0, 0, 100, true);
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     engine.step(FIXED_DT);
 
     double ay = body.getDynamicState().getLinearAcceleration().y();
@@ -75,7 +72,7 @@ class GameEngineImplTest {
     DynamicComponent body = box(2.0, 0, 100, true);
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     engine.step(FIXED_DT / 2.0);
 
     assertEquals(100, body.getStaticState().getLinearPosition().y(), EPS);
@@ -95,7 +92,7 @@ class GameEngineImplTest {
     DynamicComponent body = box(1.0, 3, 4, false);
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     engine.step(0.02);
 
     assertEquals(3, body.getStaticState().getLinearPosition().x(), EPS);
@@ -110,7 +107,7 @@ class GameEngineImplTest {
     DriveBody body = new DriveBody(0, 0, 1.0, new Vector(0, 1), 5.0);
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     double dt = 0.05;
     engine.step(dt);
 
@@ -127,7 +124,7 @@ class GameEngineImplTest {
     body.deactivate();
     world.addComponent(body);
 
-    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS, NO_SOLVE);
+    GameEngineImpl engine = new GameEngineImpl(world, NO_HITS);
     engine.step(0.1);
 
     assertEquals(0, body.getStaticState().getLinearPosition().x(), EPS);
@@ -135,38 +132,44 @@ class GameEngineImplTest {
   }
 
   @Test
-  void findSuperClass_resolvesDynamicStatic()
+  void findSuperClassPair_resolvesDynamicStatic()
       throws ReflectiveOperationException {
-    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
-    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+    CollisionPhase phase = new CollisionPhase(new WorldImpl(), NO_HITS,
+        new CollisionDispatcher(), new JointSolver(new WorldImpl()));
+    Method method = CollisionPhase.class.getDeclaredMethod("findSuperClassPair",
+        CollisionPair.class);
     method.setAccessible(true);
 
-    CollisionPair result = (CollisionPair) method.invoke(engine,
+    CollisionPair result = (CollisionPair) method.invoke(phase,
         new CollisionPair(RockComponent.class, DriveBody.class));
 
     assertEquals(CollisionPair.of(StaticComponent.class, DynamicComponent.class), result);
   }
 
   @Test
-  void findSuperClass_resolvesStaticDynamic() throws ReflectiveOperationException {
-    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
-    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+  void findSuperClassPair_resolvesStaticDynamic() throws ReflectiveOperationException {
+    CollisionPhase phase = new CollisionPhase(new WorldImpl(), NO_HITS,
+        new CollisionDispatcher(), new JointSolver(new WorldImpl()));
+    Method method = CollisionPhase.class.getDeclaredMethod("findSuperClassPair",
+        CollisionPair.class);
     method.setAccessible(true);
 
-    CollisionPair result = (CollisionPair) method.invoke(engine,
+    CollisionPair result = (CollisionPair) method.invoke(phase,
         new CollisionPair(StructuralComponent.class, FinishLineComponent.class));
 
     assertEquals(CollisionPair.of(DynamicComponent.class, PassThroughComponent.class), result);
   }
 
   @Test
-  void findSuperClass_returnsNullOnStaticStaticPair()
+  void findSuperClassPair_returnsNullOnStaticStaticPair()
       throws ReflectiveOperationException {
-    GameEngineImpl engine = new GameEngineImpl(new WorldImpl(), NO_HITS, NO_SOLVE);
-    Method method = GameEngineImpl.class.getDeclaredMethod("findSuperClass", CollisionPair.class);
+    CollisionPhase phase = new CollisionPhase(new WorldImpl(), NO_HITS,
+        new CollisionDispatcher(), new JointSolver(new WorldImpl()));
+    Method method = CollisionPhase.class.getDeclaredMethod("findSuperClassPair",
+        CollisionPair.class);
     method.setAccessible(true);
 
-    CollisionPair result = (CollisionPair) method.invoke(engine,
+    CollisionPair result = (CollisionPair) method.invoke(phase,
         new CollisionPair(StaticComponent.class, StaticComponent.class));
 
     assertNull(result);

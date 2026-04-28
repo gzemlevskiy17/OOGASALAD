@@ -16,6 +16,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
@@ -26,6 +27,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import oogasalad.controller.core.api.Outcome;
@@ -213,18 +215,32 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
     TextField idF = AuthoringValueHints.newTextField("catalog.terrain.id");
     TextField spriteF = AuthoringValueHints.newTextField("catalog.terrain.spriteUrl");
-    TextField colorF = AuthoringValueHints.newTextField("catalog.terrain.color");
+    ColorPicker colorF = new ColorPicker(Color.WHITE);
+    colorF.setPrefWidth(220);
+    spriteF.textProperty().addListener((obs, oldVal, newVal) -> {
+      colorF.setDisable(!newVal.isBlank());
+    });
     TextField frictionF = AuthoringValueHints.newTextField("catalog.terrain.friction");
 
     Button add = new Button("Add");
     add.setOnAction(e -> {
+      boolean hasSprite = !spriteF.getText().isBlank();
+      String hex = null;
+      if (!hasSprite) {
+        Color c = colorF.getValue();
+        hex = String.format("#%02x%02x%02x",
+            (int) (c.getRed() * 255),
+            (int) (c.getGreen() * 255),
+            (int) (c.getBlue() * 255));
+      }
       terrainTypes.add(new TerrainInfo(
           idF.getText().strip(),
           nullIfBlank(spriteF.getText()),
-          nullIfBlank(colorF.getText()),
+          hex,
           parseDouble(frictionF.getText(), DEFAULT_FRICTION)));
       refreshTerrainList(list);
-      clearFields(idF, spriteF, colorF, frictionF);
+      colorF.setValue(Color.WHITE);
+      clearFields(idF, spriteF, frictionF);
     });
 
     Button remove = new Button("Remove");
@@ -238,7 +254,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
 
     return new Tab("Terrain", buildTabContent(list,
         formRow("ID", idF), spriteRow(spriteF),
-        formRow("Color", colorF), formRow("Friction", frictionF),
+        formRow("Color", colorF, 120), formRow("Friction", frictionF),
         buttonBar(add, remove)));
   }
 
@@ -604,6 +620,12 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     Label lbl = new Label(label + ":");
     lbl.setPrefWidth(DEFAULT_WIDTH);
     return new HBox(FORM_ROW_WIDTH, lbl, field);
+  }
+
+  private HBox formRow(String label, Node control, double labelWidth) {
+    Label lbl = new Label(label + ":");
+    lbl.setPrefWidth(labelWidth);
+    return new HBox(8, lbl, control);
   }
 
   private HBox buttonBar(Button... buttons) {

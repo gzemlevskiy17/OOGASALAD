@@ -1,0 +1,104 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Untitled Level",
+    "gameType" : "mynew wonderful game",
+    "screenWidth" : 3200.0,
+    "screenHeight" : 1600.0,
+    "gravity" : -9.8,
+    "drag" : 0.01
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 7.0,
+      "y" : 106.0
+    }, {
+      "x" : 503.0,
+      "y" : 232.0
+    }, {
+      "x" : 504.0,
+      "y" : 230.0
+    }, {
+      "x" : 613.0,
+      "y" : 224.0
+    }, {
+      "x" : 655.0,
+      "y" : 207.0
+    }, {
+      "x" : 700.0,
+      "y" : 204.0
+    }, {
+      "x" : 770.0,
+      "y" : 207.0
+    }, {
+      "x" : 938.0,
+      "y" : 221.0
+    }, {
+      "x" : 1034.0,
+      "y" : 153.0
+    }, {
+      "x" : 1178.0,
+      "y" : 144.0
+    }, {
+      "x" : 1515.0,
+      "y" : 132.0
+    }, {
+      "x" : 1611.0,
+      "y" : 148.0
+    }, {
+      "x" : 1960.5,
+      "y" : 151.0
+    }, {
+      "x" : 2147.5,
+      "y" : 173.0
+    }, {
+      "x" : 2308.5,
+      "y" : 173.0
+    }, {
+      "x" : 2308.0,
+      "y" : 283.5
+    }, {
+      "x" : 2979.0,
+      "y" : 348.5
+    }, {
+      "x" : 3111.5,
+      "y" : 341.5
+    } ],
+    "objects" : [ {
+      "type" : "fiinish",
+      "position" : {
+        "x" : 330.0,
+        "y" : 190.0
+      }
+    }, {
+      "type" : "shield",
+      "position" : {
+        "x" : 410.0,
+        "y" : 210.0
+      }
+    }, {
+      "type" : "star",
+      "position" : {
+        "x" : 750.0,
+        "y" : 350.0
+      }
+    }, {
+      "type" : "star",
+      "position" : {
+        "x" : 710.0,
+        "y" : 190.0
+      }
+    } ],
+    "terrainOptions" : [ "ice", "mountain", "grass" ],
+    "spawnPoint" : {
+      "x" : 100.0,
+      "y" : 100.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 60.0,
+    "elementsAllowed" : [ "grinch", "big pig", "fan" ],
+    "maxSelectable" : 5,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}

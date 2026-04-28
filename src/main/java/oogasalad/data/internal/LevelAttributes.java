@@ -93,7 +93,8 @@ public class LevelAttributes {
 
   public void setMainCharacterElementsAllowed(List<String> mainCharacterElementsAllowed) {
     this.mainCharacterElementsAllowed =
-        mainCharacterElementsAllowed == null ? new ArrayList<>() : new ArrayList<>(mainCharacterElementsAllowed);
+        mainCharacterElementsAllowed == null ? new ArrayList<>()
+            : new ArrayList<>(mainCharacterElementsAllowed);
   }
 
   public int getMaxSelectable() {
@@ -136,7 +137,8 @@ public class LevelAttributes {
    */
   @Deprecated
   public void setAllowedVehicleComponents(List<String> components) {
-    setMainCharacterElementsAllowed(components); // before it was returning main components in place of VehicleComponents
+    setMainCharacterElementsAllowed(
+        components); // before it was returning main components in place of VehicleComponents
   }
 
   /**

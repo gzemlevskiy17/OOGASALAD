@@ -1,6 +1,7 @@
 package oogasalad.controller.core.internal;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import oogasalad.controller.accounts.api.AuthController;
@@ -10,13 +11,15 @@ import oogasalad.controller.core.api.ScreenManager;
 import oogasalad.controller.player.internal.GamePlayScreenCoordinator;
 import oogasalad.controller.player.internal.GameplaySessionFactoryImpl;
 import oogasalad.controller.player.internal.TerminalResultHandler;
+import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelId;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
+import oogasalad.data.internal.GameAttributes;
 import oogasalad.data.internal.GameLoaderImpl;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.data.internal.LevelProgression;
@@ -44,9 +47,6 @@ import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
 import oogasalad.view.player.internal.WinAppScreen;
-import java.util.List;
-import oogasalad.data.api.GameConfig;
-import oogasalad.data.internal.GameAttributes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -363,6 +363,10 @@ public class ScreenFactory {
     }
   }
 
+  private static List<String> resolvedVehiclePaletteIds(GameConfig gameConfig) {
+    return new GameAttributes(gameConfig).movableComponentIds();
+  }
+
   /**
    * Returns true if the vehicle builder is ready to open for the selected level. Returns false
    * when level-file validation rejected the level (in which case an alert has been shown and the
@@ -393,19 +397,15 @@ public class ScreenFactory {
       gameConfig = gameLoader.loadGame(
           LevelPaths.gameFileForLevel(levelPath, attributes.getGameType()));
       vehicleBuilderScreen.setGameConfig(gameConfig);
+      vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig));
     } catch (RuntimeException e) {
       LOG.warn(
           "Could not load game config for level '{}'; vehicle builder will run without catalog",
           levelPath, e);
       vehicleBuilderScreen.setGameConfig(null);
+      vehicleBuilderScreen.setAllowedComponentIds(java.util.List.of());
     }
-
-    vehicleBuilderScreen.setAllowedComponentIds(resolvedVehiclePaletteIds(gameConfig));
     return true;
-  }
-
-  private static List<String> resolvedVehiclePaletteIds(GameConfig gameConfig) {
-    return new GameAttributes(gameConfig).movableComponentIds();
   }
 
   /**

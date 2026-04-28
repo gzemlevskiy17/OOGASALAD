@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.IOException;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
@@ -20,7 +20,6 @@ import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.engine.internal.spline.ParabolaSpline;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 /**
  * Serializes the current authoring World state to the new level JSON schema.
  *
@@ -69,7 +68,7 @@ public class LevelSaverImpl implements LevelSaver {
     }
   }
 
-  private ObjectNode buildGameMetadata(LevelAttributes attrs) {
+  private ObjectNode buildGameMetadata(oogasalad.data.internal.LevelAttributes attrs) {
     ObjectNode meta = MAPPER.createObjectNode();
     meta.put("levelName", attrs.getLevelName());
     meta.put("gameType", attrs.getGameType());
@@ -159,4 +158,5 @@ public class LevelSaverImpl implements LevelSaver {
     mc.put("cameraFollows", attrs.getCameraFollows());
     return mc;
   }
+
 }
