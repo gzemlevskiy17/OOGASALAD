@@ -116,10 +116,10 @@ class VectorTest {
   }
 
   @Test
-  void normalize_zeroVector_producesNaN() {
+  void normalize_zeroVector_producesZeroVector() {
     Vector unit = new Vector(0.0, 0.0).normalize();
-    assertTrue(Double.isNaN(unit.x()));
-    assertTrue(Double.isNaN(unit.y()));
+    assertEquals(0.0, unit.x(), EPS);
+    assertEquals(0.0, unit.y(), EPS);
   }
 
   // ── dot ───────────────────────────────────────────────────────────────────

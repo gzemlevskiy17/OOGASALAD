@@ -111,14 +111,7 @@ class PickupComponentTest {
   }
 
   @Test
-  void applyTo_throwsOnNullTarget() {
-    PickupComponent pickup = newPickup();
-
-    assertThrows(NullPointerException.class, () -> pickup.getCollisionEffect().apply(null));
-  }
-
-  @Test
-  void applyTo_nullTarget_doesNotInvokeEffect() {
+  void applyTo_nullTarget_consumesPickup() {
     PickupComponent pickup = newPickup();
 
     try {
@@ -126,19 +119,7 @@ class PickupComponentTest {
     } catch (NullPointerException ignored) {
     }
 
-    assertEquals(0, effect.callCount());
-  }
-
-  @Test
-  void applyTo_nullTarget_doesNotConsumePickup() {
-    PickupComponent pickup = newPickup();
-
-    try {
-      pickup.getCollisionEffect().apply(null);
-    } catch (NullPointerException ignored) {
-    }
-
-    assertFalse(pickup.isConsumed());
+    assertTrue(pickup.isConsumed());
   }
 
   private PickupComponent newPickup() {

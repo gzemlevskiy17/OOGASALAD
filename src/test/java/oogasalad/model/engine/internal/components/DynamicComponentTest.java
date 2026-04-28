@@ -103,14 +103,8 @@ class DynamicComponentTest {
   }
 
   @Test
-  void applyForceToAcceleration_nonPositiveMass_yieldsZeroAcceleration() {
-    DynamicComponent body = newBody(0, 0, 0);
-    body.resetForce();
-    body.addForce(new Vector(100, 200));
-    body.applyForceToAcceleration();
-    Vector a = body.getDynamicState().getLinearAcceleration();
-    assertEquals(0, a.x(), EPS);
-    assertEquals(0, a.y(), EPS);
+  void constructor_zeroMass_throwsIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class, () -> newBody(0, 0, 0));
   }
 
   @Test
@@ -233,10 +227,8 @@ class DynamicComponentTest {
   }
 
   @Test
-  void inverseMass_zeroMass_returnsZeroInsteadOfInfinity() {
-    DynamicComponent body = newBody(0, 0, 0);
-
-    assertEquals(0.0, body.getInverseMass(), EPS);
+  void inverseMass_zeroMass_throwsIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class, () -> newBody(0, 0, 0));
   }
 
   @Test

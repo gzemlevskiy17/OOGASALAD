@@ -63,7 +63,7 @@ class VehicleBuilderAppScreenTest extends DukeApplicationTest {
         {"gameId":"test","mainCharacterId":"Pig",
          "components":[],"staticComponents":[],"terrainTypes":[]}
         """);
-    screen.setGameConfig(new GameConfigImpl(gameFile.toString()));
+    interact(() -> screen.setGameConfig(new GameConfigImpl(gameFile.toString())));
 
     clickOn("START THE LEVEL");
 
