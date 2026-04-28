@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 /**
  * Shared resource-backed helpers used by generated-level normalization collaborators.
- *
  * @author Emilio Garcia
  */
 final class NormalizationSupport {
@@ -19,7 +18,6 @@ final class NormalizationSupport {
    * Creates helper accessors backed by the given resource bundle.
    *
    * @param props normalization properties bundle
-   * @author Emilio Garcia
    */
   NormalizationSupport(ResourceBundle props) {
     this.props = props;

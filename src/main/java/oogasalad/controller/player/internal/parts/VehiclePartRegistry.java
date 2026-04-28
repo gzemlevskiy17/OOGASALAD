@@ -14,7 +14,6 @@ import oogasalad.model.engine.api.Vector;
  * vehicle builder and physics engine without touching code.
  *
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public final class VehiclePartRegistry {
 

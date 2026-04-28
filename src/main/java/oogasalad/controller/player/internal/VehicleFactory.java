@@ -25,7 +25,6 @@ import oogasalad.model.player.api.VehicleLayout;
  * dispatched by each part's {@link JointStyle}.
  *
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public class VehicleFactory {
 

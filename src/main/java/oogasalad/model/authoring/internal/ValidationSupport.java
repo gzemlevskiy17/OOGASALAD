@@ -7,7 +7,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Shared validation helpers used by schema-native generated-level validators.
- *
  * @author Emilio Garcia
  */
 final class ValidationSupport {
@@ -20,7 +19,6 @@ final class ValidationSupport {
    * Creates helper accessors backed by the given validation properties bundle.
    *
    * @param props validator properties bundle
-   * @author Emilio Garcia
    */
   ValidationSupport(ResourceBundle props) {
     this.props = props;

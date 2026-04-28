@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests resource-backed normalization helper behavior.
- *
  * @author Emilio Garcia
  */
 class NormalizationSupportTest {

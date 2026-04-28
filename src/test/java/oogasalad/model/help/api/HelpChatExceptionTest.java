@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests custom help-chat exception constructors.
- *
  * @author Emilio Garcia
  */
 class HelpChatExceptionTest {

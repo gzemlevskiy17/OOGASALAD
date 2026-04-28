@@ -2,8 +2,6 @@ package oogasalad.model.engine.api;
 
 /**
  * Contract to step and adjust a gameplay simulation.
- *
- * @author Emilio Garcia
  */
 public interface GameEngine {
 

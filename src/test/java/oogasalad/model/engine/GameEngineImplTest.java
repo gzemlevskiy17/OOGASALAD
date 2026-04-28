@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Focused tests for force → acceleration → integration in {@link GameEngineImpl}.
- *
- * @author Emilio Garcia
  */
 class GameEngineImplTest {
 

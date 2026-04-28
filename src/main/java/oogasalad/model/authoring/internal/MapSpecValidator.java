@@ -8,7 +8,6 @@ import oogasalad.model.authoring.api.GeneratedLevelSpec.PointSpec;
 
 /**
  * Validates the schema-native {@code map} section for generated Good Piggies levels.
- *
  * @author Emilio Garcia
  */
 final class MapSpecValidator {
@@ -21,7 +20,6 @@ final class MapSpecValidator {
    * @param allowedStaticObjectIds valid Good Piggies placed-object ids
    * @param allowedTerrainIds valid Good Piggies terrain option ids
    * @param support shared validation utilities and properties
-   * @author Emilio Garcia
    */
   MapSpecValidator(Set<String> allowedStaticObjectIds, Set<String> allowedTerrainIds,
       ValidationSupport support) {

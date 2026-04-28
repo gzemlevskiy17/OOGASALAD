@@ -18,7 +18,6 @@ import org.apache.logging.log4j.Logger;
 /**
  * Coordinates the AI level generation prompt flow from dialog submission through asynchronous model
  * execution and success/error handoff back to the authoring UI.
- *
  * @author Emilio Garcia
  */
 public class AiLevelGenerationCoordinator {
@@ -36,7 +35,6 @@ public class AiLevelGenerationCoordinator {
    *
    * @param model generated-level orchestration model
    * @param successHandler callback invoked when generation completes successfully
-   * @author Emilio Garcia
    */
   public AiLevelGenerationCoordinator(GeneratedLevelModel model,
       Consumer<GeneratedLevelResult> successHandler) {
@@ -49,7 +47,6 @@ public class AiLevelGenerationCoordinator {
    * @param model generated-level orchestration model
    * @param dialog prompt dialog used to collect user input
    * @param successHandler callback invoked when generation completes successfully
-   * @author Emilio Garcia
    */
   public AiLevelGenerationCoordinator(GeneratedLevelModel model, AiLevelGenerationDialog dialog,
       Consumer<GeneratedLevelResult> successHandler) {
@@ -64,7 +61,6 @@ public class AiLevelGenerationCoordinator {
    * pipeline asynchronously.
    *
    * @param owner owner window for modal dialog display and error alerts
-   * @author Emilio Garcia
    */
   public void open(Window owner) {
     dialog.showAndWait(owner).ifPresent(prompt -> generateAsync(prompt, owner));

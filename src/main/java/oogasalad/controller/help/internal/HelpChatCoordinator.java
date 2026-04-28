@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Coordinates the help chat interaction between the popup UI and the chat model.
- *
  * @author Emilio Garcia
  */
 public class HelpChatCoordinator {
@@ -36,7 +35,6 @@ public class HelpChatCoordinator {
    * @param model backing chat model
    * @param historyView transcript view
    * @param inputBar input controls
-   * @author Emilio Garcia
    */
   public HelpChatCoordinator(HelpChatModel model, HelpChatHistoryView historyView,
       HelpChatInputBar inputBar) {
@@ -50,7 +48,6 @@ public class HelpChatCoordinator {
    * background.
    *
    * @param submittedText raw submitted user text
-   * @author Emilio Garcia
    */
   public void handleSend(String submittedText) {
     String userText = submittedText.trim();

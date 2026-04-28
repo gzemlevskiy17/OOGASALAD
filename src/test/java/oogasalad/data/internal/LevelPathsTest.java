@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests game-catalog path resolution for level files.
- *
  * @author Emilio Garcia
  */
 class LevelPathsTest {

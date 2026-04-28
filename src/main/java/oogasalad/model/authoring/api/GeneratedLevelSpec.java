@@ -25,8 +25,6 @@ public record GeneratedLevelSpec(
 
   /**
    * Creates an immutable schema-aligned generated-level specification.
-   *
-   * @author Emilio Garcia
    */
   public GeneratedLevelSpec {
     gameMetadata = gameMetadata == null ? new GameMetadataSpec(null, null, null, null, null, null)
@@ -46,7 +44,6 @@ public record GeneratedLevelSpec(
    * @param screenHeight logical authored level height
    * @param gravity world gravity
    * @param drag world drag coefficient
-   * @author Emilio Garcia
    */
   public record GameMetadataSpec(
       String levelName,
@@ -64,7 +61,6 @@ public record GeneratedLevelSpec(
    * @param spawnPoint level spawn point
    * @param objects placed map objects constrained to the selected game catalog
    * @param terrainOptions optional authoring terrain hints
-   * @author Emilio Garcia
    */
   public record MapSpec(
       List<PointSpec> knotLocations,
@@ -74,8 +70,6 @@ public record GeneratedLevelSpec(
 
     /**
      * Creates immutable map data.
-     *
-     * @author Emilio Garcia
      */
     public MapSpec {
       knotLocations = knotLocations == null ? List.of() : List.copyOf(knotLocations);
@@ -96,7 +90,6 @@ public record GeneratedLevelSpec(
    * @param maxSelectable maximum number of buildable components allowed
    * @param maxHP starting/max HP for the tracked main character
    * @param cameraFollows optional camera-follow target convention
-   * @author Emilio Garcia
    */
   public record MainCharacterSpec(
       Double gridSize,
@@ -107,8 +100,6 @@ public record GeneratedLevelSpec(
 
     /**
      * Creates immutable main-character metadata.
-     *
-     * @author Emilio Garcia
      */
     public MainCharacterSpec {
       elementsAllowed = elementsAllowed == null ? List.of() : List.copyOf(elementsAllowed);
@@ -120,7 +111,6 @@ public record GeneratedLevelSpec(
    *
    * @param type referenced static-object or terrain-option id
    * @param position object position
-   * @author Emilio Garcia
    */
   public record MapObjectSpec(String type, PointSpec position) {
   }
@@ -130,7 +120,6 @@ public record GeneratedLevelSpec(
    *
    * @param x x-coordinate
    * @param y y-coordinate
-   * @author Emilio Garcia
    */
   public record PointSpec(Double x, Double y) {
   }

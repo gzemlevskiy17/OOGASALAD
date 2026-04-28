@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests conversion from normalized generated-level specs to runtime JSON.
- *
  * @author Emilio Garcia
  */
 class GeneratedLevelJsonBuilderTest {

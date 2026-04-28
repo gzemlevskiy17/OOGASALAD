@@ -17,8 +17,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests JSON-backed game catalog parsing.
- *
- * @author Emilio Garcia
  */
 class GameConfigImplTest {
 

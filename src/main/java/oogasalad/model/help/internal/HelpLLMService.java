@@ -19,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Handles communication with the LLM provider used by the in-game help chatbot.
- *
  * @author Emilio Garcia
  */
 public class HelpLLMService {
@@ -35,8 +34,6 @@ public class HelpLLMService {
 
   /**
    * Creates the help chatbot LLM service using runtime environment configuration.
-   *
-   * @author Emilio Garcia
    */
   public HelpLLMService() {
     String apiKey = getEnv(PROPS.getString("apiKeyEnvVarName"));
@@ -61,7 +58,6 @@ public class HelpLLMService {
    * @param systemPrompt non-blank prompt that describes Good Piggies help behavior
    * @param conversation prior user and assistant messages to include in the request
    * @return assistant response text
-   * @author Emilio Garcia
    */
   public String getLLMResponse(String systemPrompt, List<ChatMessage> conversation) {
     validateRequest(systemPrompt, conversation);

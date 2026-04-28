@@ -13,7 +13,6 @@ import oogasalad.model.player.api.GameplayScore;
  * It exposes semantic session controls used by the screen coordinator.
  *
  * @author Iurii Beliaev
- * @author Emilio Garcia
  */
 public class GameplaySession {
   private final GameController controller;

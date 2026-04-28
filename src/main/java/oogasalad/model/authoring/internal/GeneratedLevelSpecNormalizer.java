@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
  * <p>The normalizer fills defaults from the schema-era authoring contract, clamps physics values
  * into safe ranges, synthesizes a minimal knot track when missing, and guarantees the map contains
  * at least one finish object and one terrain option from the fixed Good Piggies catalog.
- *
  * @author Emilio Garcia
  */
 public class GeneratedLevelSpecNormalizer {
@@ -30,8 +29,6 @@ public class GeneratedLevelSpecNormalizer {
   /**
    * Creates a generated-level normalizer using the fixed Good Piggies catalog and resource-backed
    * normalization defaults.
-   *
-   * @author Emilio Garcia
    */
   public GeneratedLevelSpecNormalizer() {
     this(new GoodPiggiesCatalogProvider());
@@ -41,7 +38,6 @@ public class GeneratedLevelSpecNormalizer {
    * Creates a generated-level normalizer with an injected Good Piggies catalog provider.
    *
    * @param catalogProvider provider for the fixed Good Piggies catalog
-   * @author Emilio Garcia
    */
   public GeneratedLevelSpecNormalizer(GoodPiggiesCatalogProvider catalogProvider) {
     if (catalogProvider == null) {
@@ -60,7 +56,6 @@ public class GeneratedLevelSpecNormalizer {
    *
    * @param spec generated level specification to normalize
    * @return normalized Good Piggies level specification
-   * @author Emilio Garcia
    */
   public GeneratedLevelSpec normalize(GeneratedLevelSpec spec) {
     if (spec == null) {

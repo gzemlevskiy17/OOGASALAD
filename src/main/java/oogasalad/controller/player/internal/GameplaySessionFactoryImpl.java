@@ -85,7 +85,6 @@ import oogasalad.view.player.internal.VehicleHpHud;
  *
  * @author Iurii Beliaev
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 

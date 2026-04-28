@@ -3,7 +3,6 @@ package oogasalad.model.authoring.api;
 /**
  * Raised when a normalized generated-level specification cannot be converted into the repository's
  * runtime level JSON shape.
- *
  * @author Emilio Garcia
  */
 public class GeneratedLevelJsonBuildException extends RuntimeException {
@@ -12,7 +11,6 @@ public class GeneratedLevelJsonBuildException extends RuntimeException {
    * Creates a JSON build exception with the given message.
    *
    * @param message build failure description
-   * @author Emilio Garcia
    */
   public GeneratedLevelJsonBuildException(String message) {
     super(message);
@@ -23,7 +21,6 @@ public class GeneratedLevelJsonBuildException extends RuntimeException {
    *
    * @param message build failure description
    * @param cause underlying cause
-   * @author Emilio Garcia
    */
   public GeneratedLevelJsonBuildException(String message, Throwable cause) {
     super(message, cause);

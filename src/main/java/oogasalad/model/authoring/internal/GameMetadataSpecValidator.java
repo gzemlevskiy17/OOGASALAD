@@ -5,7 +5,6 @@ import oogasalad.model.authoring.api.GoodPiggiesCatalog;
 
 /**
  * Validates the schema-native {@code gameMetadata} section for generated Good Piggies levels.
- *
  * @author Emilio Garcia
  */
 final class GameMetadataSpecValidator {
@@ -16,7 +15,6 @@ final class GameMetadataSpecValidator {
   /**
    * @param catalog fixed Good Piggies catalog used to verify the level's game id
    * @param support shared validation utilities and properties
-   * @author Emilio Garcia
    */
   GameMetadataSpecValidator(GoodPiggiesCatalog catalog, ValidationSupport support) {
     this.catalog = catalog;

@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
  *
  * <p>This class owns the conversation transcript and delegates response generation to the
  * configured LLM service.
- *
  * @author Emilio Garcia
  */
 public class HelpChatModel {
@@ -31,8 +30,6 @@ public class HelpChatModel {
 
   /**
    * Creates a help chat model using the default LLM service and configured prompt resource.
-   *
-   * @author Emilio Garcia
    */
   public HelpChatModel() {
     this(new HelpLLMService());
@@ -42,7 +39,6 @@ public class HelpChatModel {
    * Creates a help chat model with an injected LLM service.
    *
    * @param llmService service used to generate assistant responses
-   * @author Emilio Garcia
    */
   public HelpChatModel(HelpLLMService llmService) {
     if (llmService == null) {
@@ -59,7 +55,6 @@ public class HelpChatModel {
    * Returns an immutable snapshot of the current conversation transcript.
    *
    * @return current chat transcript
-   * @author Emilio Garcia
    */
   public List<ChatMessage> getConversation() {
     return List.copyOf(conversation);
@@ -70,7 +65,6 @@ public class HelpChatModel {
    *
    * @param userMessage non-blank user message
    * @return assistant reply
-   * @author Emilio Garcia
    */
   public ChatMessage getResponse(String userMessage) {
     ChatMessage request = ChatMessage.userMessage(userMessage);
@@ -83,8 +77,6 @@ public class HelpChatModel {
 
   /**
    * Clears the current transcript.
-   *
-   * @author Emilio Garcia
    */
   public void clearConversation() {
     conversation.clear();
@@ -94,7 +86,6 @@ public class HelpChatModel {
    * Returns the configured system prompt currently used by the help assistant.
    *
    * @return configured system prompt text
-   * @author Emilio Garcia
    */
   public String getSystemPrompt() {
     return systemPrompt;

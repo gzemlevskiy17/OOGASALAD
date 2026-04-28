@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests normalization of generated main-character metadata.
- *
  * @author Emilio Garcia
  */
 class GeneratedMainCharacterSpecNormalizerTest {

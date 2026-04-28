@@ -26,8 +26,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests JSON game catalog serialization.
- *
- * @author Emilio Garcia
  */
 class GameCatalogSaverTest {
 

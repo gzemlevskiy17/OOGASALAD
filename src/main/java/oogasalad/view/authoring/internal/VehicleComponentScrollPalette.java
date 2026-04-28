@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Scrollable vehicle-component palette displayed as one long horizontal row of component cells.
- *
  * @author Emilio Garcia
  */
 public class VehicleComponentScrollPalette implements ComponentPallete {
@@ -52,8 +51,6 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
 
   /**
    * Creates the vehicle component palette view.
-   *
-   * @author Emilio Garcia
    */
   public VehicleComponentScrollPalette() {
     double contentPadding = Double.parseDouble(PALETTE_CONFIG.getString("contentPadding"));
@@ -89,7 +86,6 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
    * Returns the maximum number of vehicle items the palette allows to be selected.
    *
    * @return configured vehicle-item selection cap
-   * @author Emilio Garcia
    */
   public int getMaxSelectableItems() {
     return Integer.parseInt(PALETTE_CONFIG.getString("maxSelectableItems"));
@@ -116,7 +112,6 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
    * Registers a listener that is notified whenever the selected vehicle item summary changes.
    *
    * @param handler consumer that receives the formatted selected-items summary text
-   * @author Emilio Garcia
    */
   public void setSelectionSummaryHandler(Consumer<String> handler) {
     selectionSummaryHandler = handler == null ? summary -> {
@@ -128,7 +123,6 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
    * Registers a listener that is notified whenever the selected vehicle component IDs change.
    *
    * @param handler consumer that receives the current selected vehicle component IDs
-   * @author Emilio Garcia
    */
   public void setSelectedComponentsHandler(Consumer<List<String>> handler) {
     selectedComponentsHandler = handler == null ? selectedComponents -> {
@@ -141,7 +135,6 @@ public class VehicleComponentScrollPalette implements ComponentPallete {
    *
    * @param componentName display name for the component
    * @return configured selectable palette cell
-   * @author Emilio Garcia
    */
   private StackPane createComponentCell(String componentName) {
     Label label = new Label(componentName);

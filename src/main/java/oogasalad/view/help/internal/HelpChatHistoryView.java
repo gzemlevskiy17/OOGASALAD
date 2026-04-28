@@ -14,7 +14,6 @@ import oogasalad.model.help.api.ChatMessage;
 
 /**
  * Visual transcript area for the help chatbot popup.
- *
  * @author Emilio Garcia
  */
 public class HelpChatHistoryView {
@@ -27,8 +26,6 @@ public class HelpChatHistoryView {
 
   /**
    * Creates the transcript view used by the help chat popup.
-   *
-   * @author Emilio Garcia
    */
   public HelpChatHistoryView() {
     this.chatHistory = new VBox(d("messageSpacing"));
@@ -39,7 +36,6 @@ public class HelpChatHistoryView {
    * Returns the root node for the transcript area.
    *
    * @return transcript view root
-   * @author Emilio Garcia
    */
   public Node getRoot() {
     return root;
@@ -49,7 +45,6 @@ public class HelpChatHistoryView {
    * Appends a chat message to the visible transcript.
    *
    * @param message chat message to render
-   * @author Emilio Garcia
    */
   public void appendMessage(ChatMessage message) {
     removeWaitingMessageIfPresent();
@@ -74,8 +69,6 @@ public class HelpChatHistoryView {
 
   /**
    * Shows the transient assistant waiting message.
-   *
-   * @author Emilio Garcia
    */
   public void showWaitingMessage() {
     appendMessage(ChatMessage.assistantMessage(s("aiWaitingMessage")));
@@ -83,8 +76,6 @@ public class HelpChatHistoryView {
 
   /**
    * Removes the transient assistant waiting message when present.
-   *
-   * @author Emilio Garcia
    */
   public void removeWaitingMessageIfPresent() {
     if (chatHistory.getChildren().isEmpty()) {

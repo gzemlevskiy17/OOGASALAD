@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Applies playability shaping rules to normalized map terrain, spawn, and goal support zones.
- *
  * @author Emilio Garcia
  */
 final class GeneratedMapSupportNormalizer {
@@ -25,7 +24,6 @@ final class GeneratedMapSupportNormalizer {
    * Creates a support-zone normalizer backed by the given resource bundle.
    *
    * @param props normalization properties bundle
-   * @author Emilio Garcia
    */
   GeneratedMapSupportNormalizer(ResourceBundle props) {
     this.support = new NormalizationSupport(props);
@@ -37,7 +35,6 @@ final class GeneratedMapSupportNormalizer {
    * @param knots normalized terrain knots
    * @param spawnPoint normalized spawn point
    * @param objects normalized map objects
-   * @author Emilio Garcia
    */
   void flattenSupportZones(List<GeneratedLevelSpec.PointSpec> knots,
       GeneratedLevelSpec.PointSpec spawnPoint, List<GeneratedLevelSpec.MapObjectSpec> objects,
@@ -56,7 +53,6 @@ final class GeneratedMapSupportNormalizer {
    * @param spawnPoint normalized spawn point
    * @param knots support-shaped terrain knots
    * @return adjusted spawn point
-   * @author Emilio Garcia
    */
   GeneratedLevelSpec.PointSpec adjustSpawnPointToGround(
       GeneratedLevelSpec.PointSpec spawnPoint, List<GeneratedLevelSpec.PointSpec> knots) {
@@ -74,7 +70,6 @@ final class GeneratedMapSupportNormalizer {
    * @param objects normalized map objects
    * @param knots support-shaped terrain knots
    * @return adjusted object list
-   * @author Emilio Garcia
    */
   List<GeneratedLevelSpec.MapObjectSpec> adjustObjectsToGround(
       List<GeneratedLevelSpec.MapObjectSpec> objects, List<GeneratedLevelSpec.PointSpec> knots) {

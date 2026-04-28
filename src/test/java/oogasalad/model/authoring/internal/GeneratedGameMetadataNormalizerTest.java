@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests normalization of generated-level metadata.
- *
  * @author Emilio Garcia
  */
 class GeneratedGameMetadataNormalizerTest {

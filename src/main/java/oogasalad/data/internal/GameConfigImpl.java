@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
  * Parses a {@code game.json} file into a typed {@link GameConfig}.
  *
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public class GameConfigImpl implements GameConfig {
 

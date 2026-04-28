@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
  * in one place so callers don't reinvent it.
  *
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public final class LevelPaths {
 

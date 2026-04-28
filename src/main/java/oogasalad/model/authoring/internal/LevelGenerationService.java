@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 /**
  * Handles communication with the LLM provider used to generate intermediate AI level
  * specifications from free-form user prompts.
- *
  * @author Emilio Garcia
  */
 public class LevelGenerationService {
@@ -40,8 +39,6 @@ public class LevelGenerationService {
   /**
    * Creates the level generation service using runtime configuration and the packaged generation
    * prompt resource.
-   *
-   * @author Emilio Garcia
    */
   public LevelGenerationService() {
     this(new GoodPiggiesCatalogProvider());
@@ -51,7 +48,6 @@ public class LevelGenerationService {
    * Creates the level generation service with an injected Good Piggies catalog provider.
    *
    * @param catalogProvider provider for the fixed Good Piggies catalog
-   * @author Emilio Garcia
    */
   public LevelGenerationService(GoodPiggiesCatalogProvider catalogProvider) {
     this.catalogProvider = requireCatalogProvider(catalogProvider);
@@ -77,7 +73,6 @@ public class LevelGenerationService {
    *
    * @param userPrompt free-form authored level request
    * @return raw JSON string representing the generated intermediate level spec
-   * @author Emilio Garcia
    */
   public String generateLevelSpecJson(String userPrompt) {
     validatePrompt(userPrompt);

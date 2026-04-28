@@ -26,8 +26,6 @@ import util.DukeApplicationTest;
 
 /**
  * TestFX workflows for the vehicle builder screen.
- *
- * @author Emilio Garcia
  */
 class VehicleBuilderAppScreenTest extends DukeApplicationTest {
 

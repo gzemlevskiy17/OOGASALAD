@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests immutable help-chat message construction.
- *
  * @author Emilio Garcia
  */
 class ChatMessageTest {

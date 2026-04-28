@@ -19,8 +19,6 @@ public record ChatMessage(ChatMessage.Role role, String content) {
 
   /**
    * Supported chat speaker roles for the help assistant conversation.
-   *
-   * @author Emilio Garcia
    */
   public enum Role {
     USER,
@@ -32,7 +30,6 @@ public record ChatMessage(ChatMessage.Role role, String content) {
    * Creates a validated chat message.
    *
    * @throws IllegalArgumentException when the role is null or content is blank
-   * @author Emilio Garcia
    */
   public ChatMessage {
     if (role == null) {
@@ -52,7 +49,6 @@ public record ChatMessage(ChatMessage.Role role, String content) {
    *
    * @param content message text
    * @return user chat message
-   * @author Emilio Garcia
    */
   public static ChatMessage userMessage(String content) {
     return new ChatMessage(Role.USER, content);
@@ -63,7 +59,6 @@ public record ChatMessage(ChatMessage.Role role, String content) {
    *
    * @param content message text
    * @return assistant chat message
-   * @author Emilio Garcia
    */
   public static ChatMessage assistantMessage(String content) {
     return new ChatMessage(Role.ASSISTANT, content);
@@ -74,7 +69,6 @@ public record ChatMessage(ChatMessage.Role role, String content) {
    *
    * @param content instruction text
    * @return developer chat message
-   * @author Emilio Garcia
    */
   public static ChatMessage developerMessage(String content) {
     return new ChatMessage(Role.DEVELOPER, content);

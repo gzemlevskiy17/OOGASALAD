@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
  * <p>This provider centralizes the temporary "one concrete game" assumption so later schema-aware
  * generation steps can validate ids and build prompts without hardcoding catalog strings across
  * the codebase.
- *
  * @author Emilio Garcia
  */
 public class GoodPiggiesCatalogProvider {
@@ -36,8 +35,6 @@ public class GoodPiggiesCatalogProvider {
 
   /**
    * Creates a provider that loads the Good Piggies catalog using the default game loader.
-   *
-   * @author Emilio Garcia
    */
   public GoodPiggiesCatalogProvider() {
     this(new GameLoaderImpl());
@@ -47,7 +44,6 @@ public class GoodPiggiesCatalogProvider {
    * Creates a provider with an injected catalog loader.
    *
    * @param gameLoader loader used to parse the fixed Good Piggies game catalog
-   * @author Emilio Garcia
    */
   public GoodPiggiesCatalogProvider(GameLoader gameLoader) {
     if (gameLoader == null) {
@@ -63,7 +59,6 @@ public class GoodPiggiesCatalogProvider {
    * model for later calls.
    *
    * @return validated Good Piggies catalog
-   * @author Emilio Garcia
    */
   public GoodPiggiesCatalog loadCatalog() {
     if (cachedCatalog != null) {
@@ -91,7 +86,6 @@ public class GoodPiggiesCatalogProvider {
    * original explicit {@link #loadCatalog()} API.
    *
    * @return validated Good Piggies catalog
-   * @author Emilio Garcia
    */
   public GoodPiggiesCatalog load() {
     return loadCatalog();

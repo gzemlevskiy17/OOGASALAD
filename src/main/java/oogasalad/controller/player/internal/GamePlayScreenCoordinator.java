@@ -17,7 +17,6 @@ import oogasalad.view.player.internal.GamePlayAppScreen;
  *
  * @author Iurii Beliaev
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 
 // Keep GamePlayAppScreen view-only

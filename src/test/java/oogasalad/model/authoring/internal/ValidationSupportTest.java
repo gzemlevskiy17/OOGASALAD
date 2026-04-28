@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests validation helper behavior for generated-level validators.
- *
  * @author Emilio Garcia
  */
 class ValidationSupportTest {

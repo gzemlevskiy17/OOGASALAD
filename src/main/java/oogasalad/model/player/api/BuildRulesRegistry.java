@@ -7,7 +7,6 @@ import oogasalad.data.api.GameConfig;
  * validator reads through this registry — no component-type branching inside the validator.
  *
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public interface BuildRulesRegistry {
 
@@ -15,7 +14,6 @@ public interface BuildRulesRegistry {
    * Registers or overlays build rules for the selected game's component catalog.
    *
    * @param config selected game catalog
-   * @author Emilio Garcia
    */
   default void registerFromConfig(GameConfig config) {
   }

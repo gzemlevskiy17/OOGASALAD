@@ -10,7 +10,6 @@ import javafx.scene.control.ButtonType;
  *
  * <p>This service keeps JavaFX alert creation in the view layer so controllers
  * and model logic can continue to communicate failures through exceptions.
- *
  * @author Emilio Garcia
  */
 public class AuthoringAlertService {

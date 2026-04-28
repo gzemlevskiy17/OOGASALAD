@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 /**
  * Persists generated level JSON files to a dedicated output directory and returns the saved file
  * path for later authoring-screen loading.
- *
  * @author Emilio Garcia
  */
 public class GeneratedLevelFileService {
@@ -31,8 +30,6 @@ public class GeneratedLevelFileService {
 
   /**
    * Creates a generated-level file service using the configured output directory.
-   *
-   * @author Emilio Garcia
    */
   public GeneratedLevelFileService() {
     this(Paths.get(PROPS.getString("outputDirectory")));
@@ -42,7 +39,6 @@ public class GeneratedLevelFileService {
    * Creates a generated-level file service using the given output directory.
    *
    * @param outputDirectory directory where generated level files should be written
-   * @author Emilio Garcia
    */
   public GeneratedLevelFileService(Path outputDirectory) {
     if (outputDirectory == null) {
@@ -60,7 +56,6 @@ public class GeneratedLevelFileService {
    * @param levelJson generated level JSON tree to persist
    * @param levelName requested level name used to derive the output filename
    * @return absolute path to the saved generated level JSON file
-   * @author Emilio Garcia
    */
   public String save(ObjectNode levelJson, String levelName) {
     if (levelJson == null) {

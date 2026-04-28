@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests generated-level schema validation against the fixed catalog.
- *
  * @author Emilio Garcia
  */
 class GeneratedLevelSpecValidatorTest {

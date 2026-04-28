@@ -25,7 +25,6 @@ import oogasalad.view.player.api.GameplayView;
 /**
  * Screen for the main window of the gameplay
  * @author Iurii Beliaev
- * @author Emilio Garcia
  */
 
 public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView {

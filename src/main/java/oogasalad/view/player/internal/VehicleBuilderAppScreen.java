@@ -40,7 +40,6 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Iurii Beliaev
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
@@ -236,8 +235,6 @@ public class VehicleBuilderAppScreen extends AbstractAppScreen {
 
   /**
    * Clears stale builder state every time the shared screen instance is shown again.
-   *
-   * @author Emilio Garcia
    */
   @Override
   public void onEnter() {

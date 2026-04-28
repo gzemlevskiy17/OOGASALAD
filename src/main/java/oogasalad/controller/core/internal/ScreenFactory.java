@@ -47,6 +47,7 @@ import oogasalad.view.player.internal.WinAppScreen;
  * Creates and registers all application screens with the ScreenManager.
  *
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public class ScreenFactory {
 

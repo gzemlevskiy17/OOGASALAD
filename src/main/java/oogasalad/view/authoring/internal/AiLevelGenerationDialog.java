@@ -16,7 +16,6 @@ import javafx.stage.Window;
 /**
  * Dialog that collects a free-form prompt for AI level generation and exposes simple loading and
  * error state controls for later coordinator wiring.
- *
  * @author Emilio Garcia
  */
 public class AiLevelGenerationDialog {
@@ -32,8 +31,6 @@ public class AiLevelGenerationDialog {
 
   /**
    * Creates an AI level generation prompt dialog.
-   *
-   * @author Emilio Garcia
    */
   public AiLevelGenerationDialog() {
     this.dialog = new Dialog<>();
@@ -49,7 +46,6 @@ public class AiLevelGenerationDialog {
    *
    * @param owner owning window for modality and positioning
    * @return optional trimmed prompt text
-   * @author Emilio Garcia
    */
   public Optional<String> showAndWait(Window owner) {
     if (owner != null) {
@@ -66,7 +62,6 @@ public class AiLevelGenerationDialog {
    * Returns the current prompt text.
    *
    * @return trimmed prompt text
-   * @author Emilio Garcia
    */
   public String getPromptText() {
     return promptArea.getText().trim();
@@ -76,7 +71,6 @@ public class AiLevelGenerationDialog {
    * Replaces the current prompt text.
    *
    * @param promptText new prompt text
-   * @author Emilio Garcia
    */
   public void setPromptText(String promptText) {
     promptArea.setText(promptText == null ? "" : promptText);
@@ -86,7 +80,6 @@ public class AiLevelGenerationDialog {
    * Updates the dialog to reflect whether generation is currently in progress.
    *
    * @param loading true when generation is in progress
-   * @author Emilio Garcia
    */
   public void setLoading(boolean loading) {
     promptArea.setDisable(loading);
@@ -105,7 +98,6 @@ public class AiLevelGenerationDialog {
    * Displays an inline error/status message.
    *
    * @param message message to display
-   * @author Emilio Garcia
    */
   public void showStatusMessage(String message) {
     String normalizedMessage = message == null ? "" : message.trim();
@@ -116,8 +108,6 @@ public class AiLevelGenerationDialog {
 
   /**
    * Clears any inline status/error message.
-   *
-   * @author Emilio Garcia
    */
   public void clearStatusMessage() {
     showStatusMessage("");
@@ -125,8 +115,6 @@ public class AiLevelGenerationDialog {
 
   /**
    * Closes the dialog.
-   *
-   * @author Emilio Garcia
    */
   public void close() {
     dialog.close();

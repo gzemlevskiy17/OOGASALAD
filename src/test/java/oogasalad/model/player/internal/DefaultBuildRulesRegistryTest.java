@@ -15,7 +15,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests build-rule lookup for default and catalog-backed vehicle components.
- *
  * @author Emilio Garcia
  */
 class DefaultBuildRulesRegistryTest {

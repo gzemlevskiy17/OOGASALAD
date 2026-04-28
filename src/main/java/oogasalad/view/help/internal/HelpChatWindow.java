@@ -18,7 +18,6 @@ import oogasalad.model.help.internal.HelpChatModel;
 
 /**
  * Draggable popup chat window used to provide in-game help through an LLM-backed assistant.
- *
  * @author Emilio Garcia
  */
 public class HelpChatWindow {
@@ -37,7 +36,6 @@ public class HelpChatWindow {
    * Creates a help chat popup window backed by the given model.
    *
    * @param model stateful chat model used to generate responses
-   * @author Emilio Garcia
    */
   public HelpChatWindow(HelpChatModel model) {
     if (model == null) {
@@ -57,7 +55,6 @@ public class HelpChatWindow {
    * Returns the popup root node so callers can add it to an existing scene graph.
    *
    * @return chat popup root
-   * @author Emilio Garcia
    */
   public Parent getRoot() {
     return root;
@@ -65,8 +62,6 @@ public class HelpChatWindow {
 
   /**
    * Shows the popup window.
-   *
-   * @author Emilio Garcia
    */
   public void show() {
     root.setManaged(true);
@@ -76,8 +71,6 @@ public class HelpChatWindow {
 
   /**
    * Hides the popup window.
-   *
-   * @author Emilio Garcia
    */
   public void hide() {
     root.setManaged(false);
@@ -86,8 +79,6 @@ public class HelpChatWindow {
 
   /**
    * Toggles popup visibility.
-   *
-   * @author Emilio Garcia
    */
   public void toggle() {
     if (root.isVisible()) {

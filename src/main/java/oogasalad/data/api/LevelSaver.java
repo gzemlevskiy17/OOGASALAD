@@ -10,7 +10,6 @@ public interface LevelSaver {
    * @param fileName the destination path
    * @param world the simulation state to save
    * @param levelAttributes metadata to save alongside terrain and objects
-   * @author Emilio Garcia
    */
   void saveLevel(String fileName, World world, LevelAttributes levelAttributes);
 
@@ -19,7 +18,6 @@ public interface LevelSaver {
    *
    * @param fileName the destination path
    * @param world the simulation state to save
-   * @author Emilio Garcia
    */
   default void saveLevel(String fileName, World world) {
     saveLevel(fileName, world, new LevelAttributes());

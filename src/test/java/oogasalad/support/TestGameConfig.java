@@ -11,7 +11,6 @@ import oogasalad.data.api.TerrainInfo;
 
 /**
  * In-memory game catalog fixture for unit tests.
- *
  * @author Emilio Garcia
  */
 public final class TestGameConfig implements GameConfig {

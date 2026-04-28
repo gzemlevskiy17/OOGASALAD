@@ -35,6 +35,7 @@ import oogasalad.view.core.internal.AbstractAppScreen;
  * "Add a New Level" action at the bottom.
  *
  * @author Paulina Vvedenskaya
+ * @author Emilio Garcia
  */
 public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 

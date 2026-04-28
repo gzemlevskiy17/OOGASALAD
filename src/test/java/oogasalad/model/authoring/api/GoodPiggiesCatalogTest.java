@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests Good Piggies catalog id projections and immutable list behavior.
- *
  * @author Emilio Garcia
  */
 class GoodPiggiesCatalogTest {

@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests fixed Good Piggies catalog loading and validation.
- *
  * @author Emilio Garcia
  */
 class GoodPiggiesCatalogProviderTest {

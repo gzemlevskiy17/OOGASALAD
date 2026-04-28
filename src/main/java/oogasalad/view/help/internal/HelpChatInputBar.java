@@ -11,7 +11,6 @@ import javafx.scene.layout.Priority;
 
 /**
  * Input row for the help chatbot popup.
- *
  * @author Emilio Garcia
  */
 public class HelpChatInputBar {
@@ -26,8 +25,6 @@ public class HelpChatInputBar {
 
   /**
    * Creates the help chat input row.
-   *
-   * @author Emilio Garcia
    */
   public HelpChatInputBar() {
     this.inputField = new TextField();
@@ -38,7 +35,6 @@ public class HelpChatInputBar {
    * Returns the input row root node.
    *
    * @return input row root
-   * @author Emilio Garcia
    */
   public Node getRoot() {
     inputField.setPromptText(s("inputPromptText"));
@@ -58,7 +54,6 @@ public class HelpChatInputBar {
    * Registers the send handler invoked when the user submits text.
    *
    * @param onSend callback for submitted text
-   * @author Emilio Garcia
    */
   public void setOnSend(Consumer<String> onSend) {
     this.onSend = onSend == null ? text -> {
@@ -67,8 +62,6 @@ public class HelpChatInputBar {
 
   /**
    * Clears the current input text.
-   *
-   * @author Emilio Garcia
    */
   public void clearInput() {
     inputField.clear();
@@ -76,8 +69,6 @@ public class HelpChatInputBar {
 
   /**
    * Requests input focus.
-   *
-   * @author Emilio Garcia
    */
   public void requestFocus() {
     inputField.requestFocus();
@@ -87,7 +78,6 @@ public class HelpChatInputBar {
    * Enables or disables user input controls.
    *
    * @param enabled true when input should be interactive
-   * @author Emilio Garcia
    */
   public void setInputEnabled(boolean enabled) {
     sendButton.setDisable(!enabled);

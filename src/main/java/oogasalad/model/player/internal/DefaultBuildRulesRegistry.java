@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
  * Default in-code rules registry. One entry per component type in the current palette.
  *
  * @author Paulina Vvedenskaya
- * @author Emilio Garcia
  */
 public class DefaultBuildRulesRegistry implements BuildRulesRegistry {
 

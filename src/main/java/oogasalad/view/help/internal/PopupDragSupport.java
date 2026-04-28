@@ -4,7 +4,6 @@ import javafx.scene.Node;
 
 /**
  * Adds draggable popup behavior to a target node using a designated drag handle.
- *
  * @author Emilio Garcia
  */
 public class PopupDragSupport {
@@ -19,7 +18,6 @@ public class PopupDragSupport {
    *
    * @param dragHandle node that receives press/drag events
    * @param target node whose translation is updated
-   * @author Emilio Garcia
    */
   public void enableDragging(Node dragHandle, Node target) {
     dragHandle.setOnMousePressed(event -> {

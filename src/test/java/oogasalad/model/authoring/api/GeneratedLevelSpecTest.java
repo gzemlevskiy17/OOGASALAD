@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests generated-level specification record defaults and immutability.
- *
  * @author Emilio Garcia
  */
 class GeneratedLevelSpecTest {

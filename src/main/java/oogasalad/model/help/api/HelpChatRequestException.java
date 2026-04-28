@@ -2,7 +2,6 @@ package oogasalad.model.help.api;
 
 /**
  * Thrown when the help chatbot cannot complete a request to the LLM provider.
- *
  * @author Emilio Garcia
  */
 public class HelpChatRequestException extends RuntimeException {
@@ -11,7 +10,6 @@ public class HelpChatRequestException extends RuntimeException {
    * Creates a request exception with the given message.
    *
    * @param message request failure description
-   * @author Emilio Garcia
    */
   public HelpChatRequestException(String message) {
     super(message);
@@ -22,7 +20,6 @@ public class HelpChatRequestException extends RuntimeException {
    *
    * @param message request failure description
    * @param cause root cause
-   * @author Emilio Garcia
    */
   public HelpChatRequestException(String message, Throwable cause) {
     super(message, cause);

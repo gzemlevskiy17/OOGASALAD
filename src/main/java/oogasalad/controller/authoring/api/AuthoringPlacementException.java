@@ -1,6 +1,10 @@
 package oogasalad.controller.authoring.api;
 
-/** Thrown when an authoring placement request is invalid and cannot be applied. */
+/**
+ * Thrown when an authoring placement request is invalid and cannot be applied.
+ *
+ * @author Emilio Garcia
+ */
 public class AuthoringPlacementException extends RuntimeException {
 
   public AuthoringPlacementException(String message) {

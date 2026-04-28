@@ -7,7 +7,6 @@ import oogasalad.model.authoring.api.GoodPiggiesCatalog;
 
 /**
  * Validates the schema-native {@code mainCharacter} section for generated Good Piggies levels.
- *
  * @author Emilio Garcia
  */
 final class MainCharacterSpecValidator {
@@ -20,7 +19,6 @@ final class MainCharacterSpecValidator {
    * @param catalog fixed Good Piggies catalog used to verify camera-follow behavior
    * @param allowedComponentIds valid Good Piggies buildable component ids
    * @param support shared validation utilities and properties
-   * @author Emilio Garcia
    */
   MainCharacterSpecValidator(GoodPiggiesCatalog catalog, Set<String> allowedComponentIds,
       ValidationSupport support) {

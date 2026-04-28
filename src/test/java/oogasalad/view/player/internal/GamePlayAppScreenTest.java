@@ -17,8 +17,6 @@ import util.DukeApplicationTest;
 
 /**
  * TestFX workflows for the gameplay screen.
- *
- * @author Emilio Garcia
  */
 class GamePlayAppScreenTest extends DukeApplicationTest {
 

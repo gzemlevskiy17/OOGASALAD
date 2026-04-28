@@ -20,8 +20,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Serializes a game catalog to a {@code game.json} file following the game schema.
- *
- * @author Emilio Garcia
  */
 public class GameCatalogSaver {
 

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests custom generated-level exception constructors.
- *
  * @author Emilio Garcia
  */
 class GeneratedLevelExceptionTest {

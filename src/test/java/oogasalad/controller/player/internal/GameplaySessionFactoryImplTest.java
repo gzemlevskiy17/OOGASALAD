@@ -17,8 +17,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests gameplay session assembly helpers.
- *
- * @author Emilio Garcia
  */
 class GameplaySessionFactoryImplTest {
 

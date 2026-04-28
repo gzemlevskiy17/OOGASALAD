@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests full map-section normalization.
- *
  * @author Emilio Garcia
  */
 class GeneratedMapSpecNormalizerTest {

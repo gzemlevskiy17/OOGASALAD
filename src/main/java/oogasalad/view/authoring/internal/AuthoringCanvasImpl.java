@@ -42,8 +42,6 @@ import org.apache.logging.log4j.Logger;
  * Collaborators: AuthoringControllerImpl (calls refreshGrid after model changes,
  *                registers mouse handlers on getVisualRoot()),
  *                WorldImpl (source of objects to render).
- *
- * @author Emilio Garcia
  */
 public class AuthoringCanvasImpl implements AuthoringCanvas {
 

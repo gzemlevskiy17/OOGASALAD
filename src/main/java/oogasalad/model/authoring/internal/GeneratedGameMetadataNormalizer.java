@@ -5,7 +5,6 @@ import oogasalad.model.authoring.api.GeneratedLevelSpec;
 
 /**
  * Normalizes the schema {@code gameMetadata} section for AI-generated Good Piggies levels.
- *
  * @author Emilio Garcia
  */
 final class GeneratedGameMetadataNormalizer {
@@ -16,7 +15,6 @@ final class GeneratedGameMetadataNormalizer {
    * Creates a metadata normalizer backed by the given resource bundle.
    *
    * @param props normalization properties bundle
-   * @author Emilio Garcia
    */
   GeneratedGameMetadataNormalizer(ResourceBundle props) {
     this.support = new NormalizationSupport(props);
@@ -28,7 +26,6 @@ final class GeneratedGameMetadataNormalizer {
    * @param metadata generated metadata section
    * @param fixedGameId required Good Piggies game id
    * @return normalized schema metadata
-   * @author Emilio Garcia
    */
   GeneratedLevelSpec.GameMetadataSpec normalize(GeneratedLevelSpec.GameMetadataSpec metadata,
       String fixedGameId) {

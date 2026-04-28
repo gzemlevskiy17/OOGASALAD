@@ -40,8 +40,6 @@ import oogasalad.view.core.internal.AbstractAppScreen;
 
 /**
  * Layout shell for the authoring environment.
- *
- * @author Emilio Garcia
  */
 public class AuthoringScreenImpl extends AbstractAppScreen {
 
@@ -160,8 +158,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
 
   /**
    * Clears the current level and resets the visible editor state.
-   *
-   * @author Emilio Garcia
    */
   public void resetForNewLevel() {
     controller.clearLevel();
@@ -172,7 +168,6 @@ public class AuthoringScreenImpl extends AbstractAppScreen {
    * Loads a saved level into the authoring environment.
    *
    * @param path path to the level file
-   * @author Emilio Garcia
    */
   public void loadLevelFromPath(String path) {
     try {

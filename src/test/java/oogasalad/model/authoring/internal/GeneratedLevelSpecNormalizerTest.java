@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests generated-level normalization into playable Good Piggies defaults.
- *
  * @author Emilio Garcia
  */
 class GeneratedLevelSpecNormalizerTest {

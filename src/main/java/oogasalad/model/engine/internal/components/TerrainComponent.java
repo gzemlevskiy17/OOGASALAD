@@ -8,7 +8,6 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
  * Base authoring-aware terrain component for static terrain objects in the engine.
  *
  * @author Xuye
- * @author Emilio Garcia
  */
 public abstract class TerrainComponent extends StaticComponent implements AuthoringPlaceable {
 

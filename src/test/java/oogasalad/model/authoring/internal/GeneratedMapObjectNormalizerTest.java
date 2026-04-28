@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests normalization of generated map objects and terrain options.
- *
  * @author Emilio Garcia
  */
 class GeneratedMapObjectNormalizerTest {

@@ -8,7 +8,6 @@ import oogasalad.model.authoring.api.GoodPiggiesCatalog;
 
 /**
  * Orchestrates schema-native validation of AI-generated Good Piggies levels.
- *
  * @author Emilio Garcia
  */
 public class GeneratedLevelSpecValidator {
@@ -23,8 +22,6 @@ public class GeneratedLevelSpecValidator {
 
   /**
    * Creates a generated-level validator using the fixed Good Piggies catalog provider.
-   *
-   * @author Emilio Garcia
    */
   public GeneratedLevelSpecValidator() {
     this(new GoodPiggiesCatalogProvider());
@@ -34,7 +31,6 @@ public class GeneratedLevelSpecValidator {
    * Creates a generated-level validator with an injected Good Piggies catalog provider.
    *
    * @param catalogProvider provider for the fixed Good Piggies catalog
-   * @author Emilio Garcia
    */
   public GeneratedLevelSpecValidator(GoodPiggiesCatalogProvider catalogProvider) {
     this.support = new ValidationSupport(PROPS);
@@ -59,7 +55,6 @@ public class GeneratedLevelSpecValidator {
    * schema-incompatible value.
    *
    * @param spec generated level specification to validate
-   * @author Emilio Garcia
    */
   public void validate(GeneratedLevelSpec spec) {
     support.requirePresent("nullSpecError", spec);

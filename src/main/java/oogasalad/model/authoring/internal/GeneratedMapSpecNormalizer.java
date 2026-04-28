@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Normalizes the schema {@code map} section for AI-generated Good Piggies levels.
- *
  * @author Emilio Garcia
  */
 final class GeneratedMapSpecNormalizer {
@@ -25,7 +24,6 @@ final class GeneratedMapSpecNormalizer {
    * Creates a map normalizer backed by the given resource bundle.
    *
    * @param props normalization properties bundle
-   * @author Emilio Garcia
    */
   GeneratedMapSpecNormalizer(ResourceBundle props) {
     this.support = new NormalizationSupport(props);
@@ -41,7 +39,6 @@ final class GeneratedMapSpecNormalizer {
    * @param screenHeight normalized screen height
    * @param catalog fixed Good Piggies catalog
    * @return normalized map section
-   * @author Emilio Garcia
    */
   GeneratedLevelSpec.MapSpec normalize(GeneratedLevelSpec.MapSpec map, double screenWidth,
       double screenHeight, GoodPiggiesCatalog catalog) {

@@ -7,7 +7,6 @@ import oogasalad.support.TestGameConfig;
 
 /**
  * Shared in-memory generated-level fixtures.
- *
  * @author Emilio Garcia
  */
 final class GeneratedLevelFixtures {

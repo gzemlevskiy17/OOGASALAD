@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests terrain shaping rules for AI-generated levels.
- *
  * @author Emilio Garcia
  */
 class GeneratedMapSupportNormalizerTest {

@@ -8,7 +8,6 @@ import oogasalad.view.core.api.Renderable;
  * <p>This contract unifies palette selection metadata, rectangular bounds, and
  * backend object creation so the authoring controller and canvas can work with
  * one consistent abstraction.
- *
  * @author Emilio Garcia
  */
 public interface AuthoringPlaceable extends Renderable {

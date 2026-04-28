@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests vehicle-selection-limit exception construction.
- *
  * @author Emilio Garcia
  */
 class VehicleSelectionLimitExceptionTest {

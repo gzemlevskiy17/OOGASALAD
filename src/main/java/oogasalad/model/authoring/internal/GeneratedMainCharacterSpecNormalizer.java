@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Normalizes the schema {@code mainCharacter} section for AI-generated Good Piggies levels.
- *
  * @author Emilio Garcia
  */
 final class GeneratedMainCharacterSpecNormalizer {
@@ -23,7 +22,6 @@ final class GeneratedMainCharacterSpecNormalizer {
    * Creates a main-character normalizer backed by the given resource bundle.
    *
    * @param props normalization properties bundle
-   * @author Emilio Garcia
    */
   GeneratedMainCharacterSpecNormalizer(ResourceBundle props) {
     this.support = new NormalizationSupport(props);
@@ -35,7 +33,6 @@ final class GeneratedMainCharacterSpecNormalizer {
    * @param mainCharacter generated main-character section
    * @param catalog fixed Good Piggies catalog
    * @return normalized main-character section
-   * @author Emilio Garcia
    */
   GeneratedLevelSpec.MainCharacterSpec normalize(
       GeneratedLevelSpec.MainCharacterSpec mainCharacter, GoodPiggiesCatalog catalog) {

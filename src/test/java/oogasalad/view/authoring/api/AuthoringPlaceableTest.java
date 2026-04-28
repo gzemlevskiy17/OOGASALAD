@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests default geometry helpers for authoring placeables.
- *
  * @author Emilio Garcia
  */
 class AuthoringPlaceableTest {

@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
  *
  * <p>{@code cameraFollows} is written only when non-blank so the builder stays compatible with the
  * branch's sample level files while the checked-in schema definition catches up.
- *
  * @author Emilio Garcia
  */
 public class GeneratedLevelJsonBuilder {
@@ -44,7 +43,6 @@ public class GeneratedLevelJsonBuilder {
    *
    * @param spec normalized generated-level specification
    * @return schema-aligned level JSON tree
-   * @author Emilio Garcia
    */
   public ObjectNode build(GeneratedLevelSpec spec) {
     if (spec == null) {

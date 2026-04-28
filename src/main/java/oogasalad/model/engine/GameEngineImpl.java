@@ -65,7 +65,6 @@ import oogasalad.model.engine.internal.joints.RevoluteJoint;
  *
  * @author Georgiy Zemlevskiy
  * @author Iurii Beliaev
- * @author Emilio Garcia
  */
 public class GameEngineImpl implements GameEngine {
 

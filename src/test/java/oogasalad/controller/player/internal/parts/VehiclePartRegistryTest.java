@@ -14,7 +14,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests vehicle part registration for default and catalog-backed components.
- *
  * @author Emilio Garcia
  */
 class VehiclePartRegistryTest {

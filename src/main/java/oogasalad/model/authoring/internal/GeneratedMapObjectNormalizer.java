@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Normalizes schema map objects and terrain-option ids for AI-generated Good Piggies levels.
- *
  * @author Emilio Garcia
  */
 final class GeneratedMapObjectNormalizer {
@@ -25,7 +24,6 @@ final class GeneratedMapObjectNormalizer {
    * Creates a map-object normalizer backed by the given resource bundle.
    *
    * @param props normalization properties bundle
-   * @author Emilio Garcia
    */
   GeneratedMapObjectNormalizer(ResourceBundle props) {
     this.support = new NormalizationSupport(props);
@@ -39,7 +37,6 @@ final class GeneratedMapObjectNormalizer {
    * @param screenHeight normalized screen height
    * @param catalog fixed Good Piggies catalog
    * @return normalized map objects
-   * @author Emilio Garcia
    */
   List<GeneratedLevelSpec.MapObjectSpec> normalizeObjects(
       List<GeneratedLevelSpec.MapObjectSpec> objects, double screenWidth, double screenHeight,
@@ -88,7 +85,6 @@ final class GeneratedMapObjectNormalizer {
    * @param terrainOptions generated terrain option ids
    * @param catalog fixed Good Piggies catalog
    * @return normalized terrain options
-   * @author Emilio Garcia
    */
   List<String> normalizeTerrainOptions(List<String> terrainOptions, GoodPiggiesCatalog catalog) {
     LinkedHashSet<String> normalized = new LinkedHashSet<>();

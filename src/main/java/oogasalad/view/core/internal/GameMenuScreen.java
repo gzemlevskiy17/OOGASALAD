@@ -23,6 +23,7 @@ import oogasalad.view.help.internal.HelpChatWindow;
  * Basic start menu screen for the application.
  *
  * @author Iurii Beliaev
+ * @author Emilio Garcia
  */
 public class GameMenuScreen extends AbstractAppScreen {
 

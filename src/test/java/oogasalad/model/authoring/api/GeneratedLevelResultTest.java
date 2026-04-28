@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests generated-level result value object behavior.
- *
  * @author Emilio Garcia
  */
 class GeneratedLevelResultTest {

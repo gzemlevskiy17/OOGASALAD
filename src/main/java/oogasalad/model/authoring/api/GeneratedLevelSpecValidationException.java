@@ -3,7 +3,6 @@ package oogasalad.model.authoring.api;
 /**
  * Raised when an AI-generated level specification violates the accepted authoring-generation
  * contract and cannot safely proceed to normalization or JSON conversion.
- *
  * @author Emilio Garcia
  */
 public class GeneratedLevelSpecValidationException extends RuntimeException {
@@ -12,7 +11,6 @@ public class GeneratedLevelSpecValidationException extends RuntimeException {
    * Creates a validation exception with the given message.
    *
    * @param message validation failure description
-   * @author Emilio Garcia
    */
   public GeneratedLevelSpecValidationException(String message) {
     super(message);
@@ -23,7 +21,6 @@ public class GeneratedLevelSpecValidationException extends RuntimeException {
    *
    * @param message validation failure description
    * @param cause underlying cause
-   * @author Emilio Garcia
    */
   public GeneratedLevelSpecValidationException(String message, Throwable cause) {
     super(message, cause);

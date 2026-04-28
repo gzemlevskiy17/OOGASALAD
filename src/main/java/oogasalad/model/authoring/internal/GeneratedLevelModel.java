@@ -17,7 +17,6 @@ import org.apache.logging.log4j.Logger;
  * <p>This model coordinates LLM generation, JSON parsing, validation, normalization, runtime JSON
  * conversion, and persistence so the UI can trigger one high-level operation and receive a single
  * generated result.
- *
  * @author Emilio Garcia
  */
 public class GeneratedLevelModel {
@@ -35,8 +34,6 @@ public class GeneratedLevelModel {
 
   /**
    * Creates a generated-level model with the default authoring generation collaborators.
-   *
-   * @author Emilio Garcia
    */
   public GeneratedLevelModel() {
     this(
@@ -55,7 +52,6 @@ public class GeneratedLevelModel {
    * @param normalizer generated-spec normalizer
    * @param jsonBuilder runtime JSON builder
    * @param fileService generated-level file persistence service
-   * @author Emilio Garcia
    */
   public GeneratedLevelModel(LevelGenerationService generationService,
       GeneratedLevelSpecValidator validator,
@@ -75,7 +71,6 @@ public class GeneratedLevelModel {
    *
    * @param prompt free-form user request describing the desired level
    * @return generated level result with saved file path and normalized gravity
-   * @author Emilio Garcia
    */
   public GeneratedLevelResult generateLevel(String prompt) {
     String rawSpecJson = generationService.generateLevelSpecJson(prompt);

@@ -14,8 +14,6 @@ import oogasalad.view.authoring.api.AuthoringCanvas;
  *
  * <p>The handler ignores spline mode and clicks that land on existing placed objects so
  * object selection can coexist with click-to-place behavior.
- *
- * @author Emilio Garcia
  */
 public class ClickPlaceInputHandler implements CanvasInputHandler {
 
