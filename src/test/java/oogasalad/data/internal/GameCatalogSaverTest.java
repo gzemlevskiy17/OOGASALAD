@@ -10,7 +10,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import oogasalad.data.api.ButtonInfo;
+import oogasalad.data.api.CheatEffectInfo;
+import oogasalad.data.api.CheatInfo;
+import oogasalad.data.api.CheatTargetInfo;
+import oogasalad.data.api.CheatTriggerInfo;
 import oogasalad.data.api.CollisionAction;
 import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.StaticComponentInfo;
@@ -19,6 +24,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * Tests JSON game catalog serialization.
+ *
+ * @author Emilio Garcia
+ */
 class GameCatalogSaverTest {
 
   @TempDir
@@ -99,6 +109,35 @@ class GameCatalogSaverTest {
   }
 
   @Test
+  void Save_CheatWithSpawnPowerupEffect_WritesCheatArray() throws IOException {
+    File out = savedFile("game.json");
+    CheatInfo cheat = new CheatInfo(
+        "spawn_heart",
+        "Spawn Heart",
+        true,
+        new CheatTriggerInfo(List.of("SHIFT", "P")),
+        List.of(new CheatEffectInfo(
+            "spawnPowerup",
+            new CheatTargetInfo("world", ""),
+            Map.of("componentId", "Heart", "x", "400", "y", "600"))));
+
+    saver.save(out.getAbsolutePath(), "g", "body", List.of(), List.of(), List.of(),
+        List.of(cheat));
+
+    JsonNode cheatNode = new ObjectMapper().readTree(out).path("cheats").get(0);
+    JsonNode effectNode = cheatNode.path("effects").get(0);
+    assertEquals("spawn_heart", cheatNode.path("id").asText());
+    assertEquals("Spawn Heart", cheatNode.path("name").asText());
+    assertTrue(cheatNode.path("enabled").asBoolean());
+    assertEquals("SHIFT", cheatNode.path("trigger").path("keys").get(0).asText());
+    assertEquals("spawnPowerup", effectNode.path("type").asText());
+    assertEquals("world", effectNode.path("target").path("kind").asText());
+    assertEquals("Heart", effectNode.path("parameters").path("componentId").asText());
+    assertEquals("400", effectNode.path("parameters").path("x").asText());
+    assertEquals("600", effectNode.path("parameters").path("y").asText());
+  }
+
+  @Test
   void roundTrip_savedCatalogCanBeReloadedByGameConfigImpl() throws IOException {
     File out = savedFile("game.json");
     var comp = new ComponentInfo("body", "body.png", 5.0, List.of());
@@ -114,5 +153,6 @@ class GameCatalogSaverTest {
     assertEquals(1, loaded.terrainTypes().size());
     assertEquals(0.1, loaded.terrainTypes().get(0).friction(), 0.001);
     assertFalse(loaded.components().isEmpty());
+    assertTrue(loaded.cheats().isEmpty());
   }
 }
