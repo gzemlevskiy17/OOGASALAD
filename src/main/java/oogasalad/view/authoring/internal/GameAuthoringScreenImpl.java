@@ -19,6 +19,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -36,6 +37,7 @@ import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.StaticComponentInfo;
 import oogasalad.data.api.TerrainInfo;
+import oogasalad.data.internal.BuiltInVehicleCatalog;
 import oogasalad.data.internal.GameCatalogSaver;
 import oogasalad.data.internal.GameConfigImpl;
 import oogasalad.view.core.internal.AbstractAppScreen;
@@ -48,6 +50,7 @@ import org.apache.logging.log4j.Logger;
  * and then used to drive the level editor and vehicle builder.
  *
  * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
  */
 public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private static final double DEFAULT_WIDTH = 220;
@@ -94,6 +97,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
   private ListView<String> terrainListView;
   private ListView<String> staticListView;
   private ListView<String> componentListView;
+  private ListView<String> builtinPickerListView;
 
   public GameAuthoringScreenImpl(Consumer<Outcome> onOutcome, Consumer<String> loadLevelHandler,
       Consumer<GameConfig> onGameConfigReady) {
@@ -131,6 +135,14 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     }
     if (componentListView != null) {
       refreshComponentList(componentListView);
+    }
+    refreshBuiltinPicker();
+  }
+
+  private void refreshBuiltinPicker() {
+    if (builtinPickerListView != null) {
+      builtinPickerListView.getItems().setAll(
+          BuiltInVehicleCatalog.idsNotYetInCatalog(components));
     }
   }
 
@@ -347,6 +359,31 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
     TextField btnDxF = AuthoringValueHints.newTextField("catalog.component.directionX");
     TextField btnDyF = AuthoringValueHints.newTextField("catalog.component.directionY");
 
+    // TODO: Refactor
+    ListView<String> presetPicker = new ListView<>();
+    presetPicker.setPrefHeight(100);
+    presetPicker.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+    builtinPickerListView = presetPicker;
+
+    Label presetLabel = new Label("Preset parts (add to catalog):");
+    Button addSelectedPresets = new Button("Add selected presets");
+    addSelectedPresets.setOnAction(e -> {
+      for (String id : new ArrayList<>(presetPicker.getSelectionModel().getSelectedItems())) {
+        BuiltInVehicleCatalog.templateById(id)
+            .ifPresent(template -> {
+              if (components.stream().noneMatch(c -> c.id().equals(template.id()))) {
+                components.add(template);
+              }
+            });
+      }
+      refreshComponentList(list);
+      refreshBuiltinPicker();
+    });
+
+    VBox presetBlock = new VBox(6, presetLabel, presetPicker,
+        new HBox(8, addSelectedPresets));
+    refreshBuiltinPicker();
+
     List<ButtonInfo> pendingButtons = new ArrayList<>();
     ListView<String> btnList = new ListView<>();
     btnList.setPrefHeight(BUTTON_LIST_HEIGHT);
@@ -373,6 +410,7 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
       pendingButtons.clear();
       btnList.getItems().clear();
       refreshComponentList(list);
+      refreshBuiltinPicker();
       clearFields(idF, spriteF, massF);
     });
 
@@ -394,10 +432,13 @@ public class GameAuthoringScreenImpl extends AbstractAppScreen {
           mainCharacterIdField.clear();
         }
         refreshComponentList(list);
+        refreshBuiltinPicker();
       }
     });
 
     VBox form = new VBox(FORM_SPACING,
+        presetBlock,
+        new Label("Custom component"),
         formRow("ID", idF), spriteRow(spriteF), formRow("Mass", massF),
         new Label("Buttons:"), btnList,
         formRow("Button Name", btnNameF), formRow("Dir X", btnDxF), formRow("Dir Y", btnDyF),
