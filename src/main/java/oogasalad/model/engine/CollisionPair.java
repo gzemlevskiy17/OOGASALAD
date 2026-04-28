@@ -38,7 +38,14 @@ public record CollisionPair(Class<?> objectA, Class<?> objectB) {
    * @return normalized pair with lexicographically ordered class names
    */
   public static CollisionPair of(Class<?> objectA, Class<?> objectB) {
-    if (objectA.getName().compareTo(objectB.getName()) < 0) {
+    int compareByName = objectA.getName().compareTo(objectB.getName());
+    if (compareByName < 0) {
+      return new CollisionPair(objectA, objectB);
+    }
+    if (compareByName > 0) {
+      return new CollisionPair(objectB, objectA);
+    }
+    if (objectA.hashCode() <= objectB.hashCode()) {
       return new CollisionPair(objectA, objectB);
     } else {
       return new CollisionPair(objectB, objectA);

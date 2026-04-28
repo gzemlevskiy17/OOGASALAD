@@ -29,12 +29,6 @@ class CollisionPhase {
   private static final Logger LOG = LogManager.getLogger(CollisionPhase.class);
   private static final int SOLVER_ITERATIONS = 8;
 
-  private static final Comparator<GameObject> UNORDERED_PAIR_KEY_ORDER = Comparator
-      .<GameObject>comparingInt(o -> System.identityHashCode(o))
-      .thenComparingInt(Object::hashCode)
-      .thenComparing(o -> o.getClass().getName())
-      .thenComparing(GameObject::getTag, Comparator.nullsFirst(Comparator.naturalOrder()));
-
   private final World world;
   private final CollisionDetector collisionDetector;
   private final CollisionDispatcher collisionDispatcher;
@@ -93,10 +87,10 @@ class CollisionPhase {
   }
 
   private static List<GameObject> canonicalPair(GameObject a, GameObject b) {
-    if (UNORDERED_PAIR_KEY_ORDER.compare(a, b) <= 0) {
-      return List.of(a, b);
-    }
-    return List.of(b, a);
+    List<GameObject> pair = new ArrayList<>(List.of(a, b));
+    pair.sort(Comparator.comparing(o -> o.getClass().getName())
+        .thenComparing(o -> o.hashCode()));
+    return pair;
   }
 
   private static List<GameObject> pairKeyFor(Collision collision) {
