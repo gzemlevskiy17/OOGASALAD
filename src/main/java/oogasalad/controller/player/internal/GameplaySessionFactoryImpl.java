@@ -7,6 +7,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import oogasalad.controller.core.api.Outcome;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.controller.player.api.GameplaySessionFactory;
@@ -107,6 +111,7 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     World world = built.world();
     InputRouter inputRouter = buildInputRouter();
     configureInputControls(screen, inputRouter, world, built.gameConfig());
+    showForceWarningsIfNeeded(screen, built);
     GameController controller = buildController(screen, built, inputRouter);
     controller.setOnOutcome(onOutcome);
 
@@ -175,6 +180,31 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
     screen.setAvailableTools(toolIds);
     screen.setOnToolActivated(toolId -> inputRouter.handleButtonPress(toolId));
     screen.setOnToolDeactivated(toolId -> inputRouter.handleButtonRelease(toolId));
+  }
+
+  private void showForceWarningsIfNeeded(GamePlayAppScreen screen,
+      GameplayWorldBuilder.BuiltWorld built) {
+    List<String> warnings = ForceViabilityChecker.check(
+        built.gameConfig(), built.world().getPhysicsEnvironment().gravity());
+    if (warnings.isEmpty()) {
+      return;
+    }
+    VBox warningBox = new VBox(4);
+    warningBox.setStyle("-fx-background-color: rgba(180,40,40,0.85); -fx-padding: 10; "
+        + "-fx-background-radius: 8;");
+    warningBox.setMaxWidth(500);
+    warningBox.setMouseTransparent(true);
+    Label header = new Label("Warning: button forces may be too weak to move the vehicle");
+    header.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13;");
+    warningBox.getChildren().add(header);
+    for (String warning : warnings) {
+      Label line = new Label(warning);
+      line.setStyle("-fx-text-fill: white; -fx-font-size: 11;");
+      line.setWrapText(true);
+      warningBox.getChildren().add(line);
+    }
+    VBox.setMargin(header, new Insets(0, 0, 4, 0));
+    screen.attachOverlay(warningBox, Pos.TOP_CENTER);
   }
 
   private Camera buildCamera(GamePlayAppScreen screen) {
