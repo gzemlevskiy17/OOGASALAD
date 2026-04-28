@@ -1,4 +1,4 @@
-package oogasalad.data.api;
+package oogasalad.data.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,7 +26,7 @@ class LevelAttributesTest {
     assertEquals(60, attrs.getGridSize(), 0.001);
     assertEquals(5, attrs.getMaxSelectable());
     assertEquals(100, attrs.getMaxHP(), 0.001);
-    assertTrue(attrs.getElementsAllowed().isEmpty());
+    assertTrue(attrs.getMainCharacterElementsAllowed().isEmpty());
   }
 
   @Test
@@ -54,17 +54,17 @@ class LevelAttributesTest {
   }
 
   @Test
-  void setElementsAllowed_storesDefensiveCopy() {
+  void setMainCharacterElementsAllowed_storesDefensiveCopy() {
     List<String> ids = new java.util.ArrayList<>(List.of("body", "wheel"));
-    attrs.setElementsAllowed(ids);
+    attrs.setMainCharacterElementsAllowed(ids);
     ids.add("motor");
-    assertEquals(2, attrs.getElementsAllowed().size());
+    assertEquals(2, attrs.getMainCharacterElementsAllowed().size());
   }
 
   @Test
   void setElementsAllowed_null_treatedAsEmpty() {
-    attrs.setElementsAllowed(null);
-    assertTrue(attrs.getElementsAllowed().isEmpty());
+    attrs.setMainCharacterElementsAllowed(null);
+    assertTrue(attrs.getMainCharacterElementsAllowed().isEmpty());
   }
 
   @Test
@@ -82,15 +82,15 @@ class LevelAttributesTest {
   // ── Deprecated alias compatibility ───────────────────────────────────────
 
   @Test
-  void getAllowedVehicleComponents_delegatesToElementsAllowed() {
-    attrs.setElementsAllowed(List.of("body", "wheel"));
-    assertEquals(List.of("body", "wheel"), attrs.getElementsAllowed());
+  void getAllowedMainCharacterVehicleComponents_delegatesToElementsAllowed() {
+    attrs.setMainCharacterElementsAllowed(List.of("body", "wheel"));
+    assertEquals(List.of("body", "wheel"), attrs.getMainCharacterElementsAllowed());
   }
 
   @Test
-  void setAllowedVehicleComponents_delegatesToElementsAllowed() {
-    attrs.setElementsAllowed(List.of("fan"));
-    assertEquals(List.of("fan"), attrs.getElementsAllowed());
+  void setAllowedMainCharacterVehicleComponents_delegatesToElementsAllowed() {
+    attrs.setMainCharacterElementsAllowed(List.of("fan"));
+    assertEquals(List.of("fan"), attrs.getMainCharacterElementsAllowed());
   }
 
   @Test

@@ -5,16 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import oogasalad.model.engine.api.Vector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class VehicleComponentTest {
 
-  private DriveComponent vehicle;
+  private FixedDirectionDriveComponent vehicle;
 
   @BeforeEach
   void setUp() {
-    vehicle = new DriveComponent(1.0, 2.0, 45.0, 10.0, 0.3, 100.0, "TestCar", 64.0, 48.0);
+    vehicle = new FixedDirectionDriveComponent(1.0, 2.0, 45.0, 10.0, 0.3, 100.0, "TestCar", 64.0,
+        48.0, new Vector(1, 0));
   }
 
   // ── identity + body fields ────────────────────────────────────────────────
@@ -56,7 +58,7 @@ class VehicleComponentTest {
   @Test
   void negativeMaxHpInConstructor_throwsIllegalArgument() {
     assertThrows(IllegalArgumentException.class, () ->
-        new DriveComponent(0, 0, 0, 1, 0, -1, "X", 1, 1));
+        new FixedDirectionDriveComponent(0, 0, 0, 1, 0, -1, "X", 1, 1, new Vector(1, 0)));
   }
 
   @Test

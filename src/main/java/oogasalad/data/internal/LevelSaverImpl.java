@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.IOException;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
@@ -125,7 +124,7 @@ public class LevelSaverImpl implements LevelSaver {
     ObjectNode mc = MAPPER.createObjectNode();
     mc.put("gridSize", attrs.getGridSize());
     ArrayNode allowed = mc.putArray("elementsAllowed");
-    for (String id : attrs.getElementsAllowed()) {
+    for (String id : attrs.getMainCharacterElementsAllowed()) {
       allowed.add(id);
     }
     mc.put("maxSelectable", attrs.getMaxSelectable());

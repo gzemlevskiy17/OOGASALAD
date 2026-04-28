@@ -137,7 +137,10 @@ public class AuthoringEntryScreenImpl extends AbstractAppScreen {
 
     editExistingWorldButton = actionButton(
         s("editExistingWorldButtonText"),
-        event -> onOutcome.accept(Outcome.OPEN_GAME_AUTHORING));
+        event -> {
+          onWorldSelected.accept(selectedWorldKey);
+          onOutcome.accept(Outcome.OPEN_GAME_AUTHORING);
+        });
     editExistingWorldButton.setDisable(true);
 
     Button addNewWorldButton = actionButton(

@@ -1,7 +1,9 @@
 package oogasalad.model.player.internal;
 
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.DefaultTag;
 import oogasalad.model.engine.api.GameObject;
+import oogasalad.model.engine.api.Vector;
 import oogasalad.model.engine.api.World;
 import oogasalad.model.engine.internal.components.GoalLineComponent;
 import oogasalad.model.player.api.WinConditionChecker;
@@ -13,7 +15,7 @@ import oogasalad.model.player.api.WinConditionChecker;
  */
 public class FinishLineWinChecker implements WinConditionChecker {
 
-  private static final double DEFAULT_MAIN_CHARACTER_SIZE = 40.0;
+  private static final double FALLBACK_MAIN_CHARACTER_SIZE = 40.0;
 
   private final String mainCharacterId;
 
@@ -38,7 +40,7 @@ public class FinishLineWinChecker implements WinConditionChecker {
         double fyT = g.y() - g.getHeight() / 2.0;
         double fyB = g.y() + g.getHeight() / 2.0;
 
-        double mainCharacterHalf = DEFAULT_MAIN_CHARACTER_SIZE / 2.0;
+        double mainCharacterHalf = halfSizeOf(mainCharacter);
         double px = mainCharacter.x(), py = mainCharacter.y();
 
         boolean crossedHoriz =
@@ -51,6 +53,21 @@ public class FinishLineWinChecker implements WinConditionChecker {
       }
     }
     return false;
+  }
+
+  private static double halfSizeOf(GameObject obj) {
+    double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+    double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+    for (ConvexPolygon poly : obj.getCollisionPolygons()) {
+      for (Vector pt : poly.points()) {
+        minX = Math.min(minX, pt.x()); maxX = Math.max(maxX, pt.x());
+        minY = Math.min(minY, pt.y()); maxY = Math.max(maxY, pt.y());
+      }
+    }
+    if (minX == Double.MAX_VALUE) {
+      return FALLBACK_MAIN_CHARACTER_SIZE / 2.0;
+    }
+    return Math.max(maxX - minX, maxY - minY) / 2.0;
   }
 }
 

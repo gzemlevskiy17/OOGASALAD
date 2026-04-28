@@ -72,7 +72,7 @@ class DriveActionTest {
 
   private static final class FakeDriveable implements Driveable {
 
-    private Vector thrustDirection = new Vector(1, 0);
+    private final Vector thrustDirection = new Vector(1, 0);
     private double thrustForce = 1.0;
     private boolean driveEnabled = false;
     private boolean playerControllable = true;
@@ -83,10 +83,6 @@ class DriveActionTest {
       return thrustDirection;
     }
 
-    @Override
-    public void setThrustDirection(Vector v) {
-      this.thrustDirection = v;
-    }
 
     @Override
     public double getThrustForce() {
