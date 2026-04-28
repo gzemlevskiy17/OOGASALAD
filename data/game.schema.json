@@ -18,8 +18,19 @@
       "description": "Unique identifier for this game. Levels reference it via gameMetadata.gameType."
     },
     "mainCharacterId": {
-      "type": "string",
-      "description": "Id of the component (from components[]) treated as the game's main character."
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      ],
+      "description": "Id, or ordered ids, of the component(s) from components[] treated as the game's main character."
     },
     "components": {
       "type": "array",

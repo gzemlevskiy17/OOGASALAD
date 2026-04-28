@@ -184,5 +184,20 @@
         "componentId" : "heart"
       }
     } ]
+  }, {
+    "id" : "test2",
+    "name" : "test2",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "X" ]
+    },
+    "effects" : [ {
+      "type" : "finishRun",
+      "target" : {
+        "kind" : "world",
+        "id" : ""
+      },
+      "parameters" : { }
+    } ]
   } ]
 }
