@@ -54,6 +54,10 @@ public interface AuthoringPlaceable extends Renderable {
 
   double getRestitution();
 
+  default String getTrackColor() {
+    return "#000000";
+  }
+
   /**
    * Display name from the terrain catalog (palette key), e.g. {@code Earth}, when known.
    *
