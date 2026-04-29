@@ -193,7 +193,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private Pane createGameAreaRegion() {
     Pane gameContainer = new Pane();
     gameContainer.getStyleClass().add("game-container");
-    if (!backgroundImagePath.isBlank()) {
+    if (backgroundImagePath != null && !backgroundImagePath.isBlank()) {
       gameLayer = gameContainer;
       setBackgroundImagePath(backgroundImagePath);
     }
