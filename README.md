@@ -9,7 +9,7 @@ Players progress through authored levels: assemble vehicles from a per-game cata
 
 ### Architecture (overview)
 
-The design keeps **simulation machinery stable** (physics integration, collision detection, world state, rendering from read-only data) while **gameplay stays extensible**: new component types, actions, collision behaviors, camera modes, win/loss checkers, and scoring rules are added through interfaces and configuration, not by forking the engine. **Game-type behavior** (build mode, camera mode, controls, win/loss, scoring, modifiers) comes from the parsed **`game.json`** (`GameConfig` in code — the course design doc sometimes calls this layer `game_config.json`; on disk this project uses `game.json`). **Authoring and runtime share the same JSON** (`level.json` and catalog files), so edited levels load the same way in play. Packages follow **`api/` (interfaces, records) vs `internal/` (implementations)** so features depend on contracts, not concrete classes. For subsystem tables, screen flow, and the module diagram, see **`doc/plan/DESIGN_PLAN.md`**.
+The design keeps **simulation machinery stable** (physics integration, collision detection, world state, rendering from read-only data) while **gameplay stays extensible**: new component types, actions, collision behaviors, camera modes, win/loss checkers, and scoring rules are added through interfaces and configuration, not by forking the engine. **Game-type behavior** (build mode, camera mode, controls, win/loss, scoring, modifiers) comes from the parsed **`game.json`** (`GameConfig` in code — the course design doc sometimes calls this layer `game_config.json`; on disk this project uses `game.json`). **Authoring and runtime share the same JSON** (`level.json` and catalog files), so edited levels load the same way in play. Packages follow **`api/` (interfaces, records) vs `internal/` (implementations)** so features depend on contracts, not concrete classes. For subsystem tables, screen flow, and the module diagram.
 
 ### Timeline
 
@@ -17,7 +17,7 @@ The design keeps **simulation machinery stable** (physics integration, collision
 
  * Finish Date: April 29th
 
- * Hours Spent: *(fill in)*
+ * Hours Spent: about ~300 team hours
 
 
 
@@ -29,7 +29,7 @@ The design keeps **simulation machinery stable** (physics integration, collision
 
  * Resources used directly (including AI assistance): 
     * OpenAI Codex for original joint implementations
-    * Cursor IDE for refactoring
+    * Cursor IDE for refactoring and documentations
 
 
 
@@ -86,7 +86,7 @@ The design keeps **simulation machinery stable** (physics integration, collision
 
  * Features unimplemented:
 
-    * **Ghost chase** (an enemy pursuing the vehicle for difficulty) was discussed but not implemented due to time. It would need new simulation or controller logic (pathing, spawning, lose condition wiring); it is **not** something you can turn on from JSON/`game.json` alone without corresponding code.
+    * **Ghost chase** (an enemy pursuing the vehicle for difficulty) was discussed but not implemented due to time. 
 
  * Noteworthy Features:
 
@@ -100,7 +100,7 @@ The design keeps **simulation machinery stable** (physics integration, collision
 
 ### Assignment Impressions
 
-Working in a larger team was harder than in a four-person group: scheduling meetings was difficult, and even with a group chat it was not always clear who was doing what in real time, which sometimes led to duplicated work. We split into smaller sub-teams (engine, gameplay, authoring). Parallel feature work meant branches diverged in both UI and behavior; concurrent progress helped overall throughput, but dependencies and merge conflicts were painful. Clear communication mattered most in that setup — and was often what we lacked.
+Working in a larger team was more challenging than in a four-person group. Scheduling meetings became harder, and even with a group chat, it was not always clear who was responsible for what at any given time, which sometimes led to duplicated work.
 
-
+To manage this, we split into smaller sub-teams (engine, gameplay, and authoring). While parallel development improved overall productivity, it also caused branches to diverge in both UI and behavior, making dependencies and merge conflicts more difficult to handle. In this setup, clear and consistent communication became especially important.
 
