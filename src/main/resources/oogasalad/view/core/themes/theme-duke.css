@@ -1,0 +1,62 @@
+/*
+ * App-wide Duke theme: light gray background with Duke-blue buttons and accents.
+ * Loaded at the Scene level by ThemeService so it cascades to every screen sharing the same
+ * Scene. Uses !important to win over per-screen Parent stylesheets.
+ */
+
+.root {
+  -fx-background-color: #e8e8ec !important;
+  -fx-base: #ffffff !important;
+  -fx-text-base-color: #001a57 !important;
+}
+
+.label {
+  -fx-text-fill: #001a57 !important;
+}
+
+.button {
+  -fx-background-color: #001a57 !important;
+  -fx-background-insets: 0 !important;
+  -fx-text-fill: #ffffff !important;
+  -fx-border-color: transparent !important;
+  -fx-border-width: 0 !important;
+  -fx-effect: null !important;
+}
+
+.button:hover {
+  -fx-background-color: #7f8cab !important;
+  -fx-cursor: hand !important;
+}
+
+/* Menu-screen polish */
+.screen-root {
+  -fx-background-color: #e8e8ec !important;
+  -fx-border-color: #001a57 !important;
+  -fx-border-width: 4 !important;
+}
+
+.menu-title {
+  -fx-text-fill: #001a57 !important;
+}
+
+.menu-button {
+  -fx-background-color: #001a57 !important;
+  -fx-background-insets: 0 !important;
+  -fx-text-fill: #ffffff !important;
+  -fx-border-color: transparent !important;
+  -fx-border-width: 0 !important;
+  -fx-border-radius: 10 !important;
+  -fx-background-radius: 10 !important;
+}
+
+.menu-button:hover {
+  -fx-background-color: #7f8cab !important;
+  -fx-cursor: hand !important;
+}
+
+.text-field, .text-area {
+  -fx-control-inner-background: #ffffff !important;
+  -fx-text-fill: #001a57 !important;
+  -fx-border-color: #001a57 !important;
+  -fx-border-width: 1 !important;
+}

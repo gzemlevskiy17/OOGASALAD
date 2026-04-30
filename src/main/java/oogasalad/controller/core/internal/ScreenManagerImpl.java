@@ -51,4 +51,9 @@ public class ScreenManagerImpl implements ScreenManager {
   public void onOutcome(Outcome outcome) {
     switchScreen(outcome.screenKey);
   }
+
+  @Override
+  public Scene getSharedScene() {
+    return sharedScene;
+  }
 }
