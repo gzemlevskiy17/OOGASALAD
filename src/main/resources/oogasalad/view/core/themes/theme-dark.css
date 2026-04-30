@@ -1,0 +1,57 @@
+/*
+ * App-wide Dark theme. Loaded at the Scene level by ThemeService so it cascades to every
+ * screen sharing the same Scene. Uses !important to win over per-screen Parent stylesheets,
+ * which would otherwise take precedence in JavaFX's CSS cascade.
+ */
+
+.root {
+  -fx-background-color: #1e1e1e !important;
+  -fx-base: #2b2b2b !important;
+  -fx-text-base-color: #f5f5f5 !important;
+}
+
+.label {
+  -fx-text-fill: #f5f5f5 !important;
+}
+
+.button {
+  -fx-background-color: #2b2b2b !important;
+  -fx-background-insets: 0 !important;
+  -fx-text-fill: #f5f5f5 !important;
+  -fx-border-color: #aaaaaa !important;
+  -fx-border-width: 2 !important;
+  -fx-effect: null !important;
+}
+
+.button:hover {
+  -fx-background-color: #3a3a3a !important;
+}
+
+/* Menu-screen polish: keeps the original radius/font for the main menu's dedicated styles. */
+.screen-root {
+  -fx-background-color: #1e1e1e !important;
+  -fx-border-color: #e67e22 !important;
+  -fx-border-width: 4 !important;
+}
+
+.menu-title {
+  -fx-text-fill: #f5f5f5 !important;
+}
+
+.menu-button {
+  -fx-background-color: #2b2b2b !important;
+  -fx-background-insets: 0 !important;
+  -fx-text-fill: #f5f5f5 !important;
+  -fx-border-color: #aaaaaa !important;
+  -fx-border-radius: 10 !important;
+  -fx-background-radius: 10 !important;
+}
+
+.menu-button:hover {
+  -fx-background-color: #3a3a3a !important;
+}
+
+.text-field, .text-area {
+  -fx-control-inner-background: #2b2b2b !important;
+  -fx-text-fill: #f5f5f5 !important;
+}

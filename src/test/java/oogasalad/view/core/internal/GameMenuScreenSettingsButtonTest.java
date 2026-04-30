@@ -20,7 +20,8 @@ class GameMenuScreenSettingsButtonTest extends DukeApplicationTest {
 
   @Override
   public void start(Stage stage) {
-    screen = new GameMenuScreen(outcome -> {}, accountOutcome -> {}, () -> false);
+    screen = new GameMenuScreen(outcome -> {}, accountOutcome -> {}, () -> false,
+        new ThemeService(() -> null));
     stage.setScene(new Scene(screen.getRoot(), 1000, 700));
     stage.show();
   }

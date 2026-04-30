@@ -44,6 +44,7 @@ import oogasalad.view.authoring.internal.entry.AuthoringEntryScreenImpl;
 import oogasalad.view.authoring.internal.game.GameAuthoringScreenImpl;
 import oogasalad.view.authoring.internal.level.AuthoringScreenImpl;
 import oogasalad.view.core.internal.GameMenuScreen;
+import oogasalad.view.core.internal.ThemeService;
 import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
 import oogasalad.view.player.internal.VehicleBuilderAppScreen;
@@ -77,6 +78,7 @@ public class ScreenFactory {
   private static final Logger LOG = LogManager.getLogger(ScreenFactory.class);
 
   private final ScreenManager screenManager;
+  private final ThemeService themeService;
   private final AuthService authService = AuthFactory.createService();
   private final AuthController authController;
   private final PlayHistoryRepository playHistoryRepo = new SqlitePlayHistoryRepo();
@@ -125,6 +127,7 @@ public class ScreenFactory {
 
   public ScreenFactory(ScreenManager screenManager) {
     this.screenManager = screenManager;
+    this.themeService = new ThemeService(screenManager::getSharedScene);
     this.authController = new AuthControllerImpl(
         authService,
         this::guardedOutcome,
@@ -216,7 +219,7 @@ public class ScreenFactory {
   private void registerAuthoringScreens(AuthoringScreenImpl authoringScreen) {
     screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authController::handle,
-            authService.session()::isLoggedIn));
+            authService.session()::isLoggedIn, themeService));
     screenManager.registerScreen(AUTHORING_ENTRY_SCREEN_KEY,
         new AuthoringEntryScreenImpl(this::guardedOutcome, this::scanLevels,
             worldKey -> {
