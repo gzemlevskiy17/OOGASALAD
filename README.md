@@ -17,7 +17,7 @@ The design keeps **simulation machinery stable** (physics integration, collision
 
  * Finish Date: April 29th
 
- * Hours Spent: about ~300 team hours
+ * Hours Spent: about ~500 team hours
 
 
 
