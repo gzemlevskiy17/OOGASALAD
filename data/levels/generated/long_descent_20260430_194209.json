@@ -1,0 +1,110 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Long Descent",
+    "gameType" : "badpiggies",
+    "screenWidth" : 4000.0,
+    "screenHeight" : 1200.0,
+    "gravity" : -9.8,
+    "drag" : 0.05
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 0.0,
+      "y" : 900.0
+    }, {
+      "x" : 30.0,
+      "y" : 900.0
+    }, {
+      "x" : 150.0,
+      "y" : 900.0
+    }, {
+      "x" : 270.0,
+      "y" : 900.0
+    }, {
+      "x" : 400.0,
+      "y" : 850.0
+    }, {
+      "x" : 800.0,
+      "y" : 800.0
+    }, {
+      "x" : 1200.0,
+      "y" : 700.0
+    }, {
+      "x" : 1600.0,
+      "y" : 600.0
+    }, {
+      "x" : 2000.0,
+      "y" : 520.0
+    }, {
+      "x" : 2400.0,
+      "y" : 450.0
+    }, {
+      "x" : 2800.0,
+      "y" : 380.0
+    }, {
+      "x" : 3200.0,
+      "y" : 320.0
+    }, {
+      "x" : 3600.0,
+      "y" : 260.0
+    }, {
+      "x" : 3830.0,
+      "y" : 200.0
+    }, {
+      "x" : 3950.0,
+      "y" : 200.0
+    }, {
+      "x" : 4000.0,
+      "y" : 200.0
+    } ],
+    "objects" : [ {
+      "type" : "Coin",
+      "position" : {
+        "x" : 700.0,
+        "y" : 780.0
+      }
+    }, {
+      "type" : "Rock",
+      "position" : {
+        "x" : 1600.0,
+        "y" : 570.0
+      }
+    }, {
+      "type" : "Heart",
+      "position" : {
+        "x" : 2350.0,
+        "y" : 400.0
+      }
+    }, {
+      "type" : "Bomb",
+      "position" : {
+        "x" : 3100.0,
+        "y" : 330.0
+      }
+    }, {
+      "type" : "XPBoost",
+      "position" : {
+        "x" : 3700.0,
+        "y" : 220.0
+      }
+    }, {
+      "type" : "GoalLine",
+      "position" : {
+        "x" : 3950.0,
+        "y" : 170.0
+      }
+    } ],
+    "terrainOptions" : [ "GrassHills", "DirtPath" ],
+    "spawnPoint" : {
+      "x" : 150.0,
+      "y" : 580.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 80.0,
+    "elementsAllowed" : [ ],
+    "maxSelectable" : 8,
+    "maxHP" : 3.0,
+    "cameraFollows" : "vehicle"
+  }
+}

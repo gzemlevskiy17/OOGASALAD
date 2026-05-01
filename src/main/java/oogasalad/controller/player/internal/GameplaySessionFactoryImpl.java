@@ -1,8 +1,10 @@
 package oogasalad.controller.player.internal;
 
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -18,6 +20,7 @@ import oogasalad.controller.player.api.InputRouter;
 import oogasalad.controller.player.internal.cheats.CheatInputHandler;
 import oogasalad.controller.player.internal.cheats.CheatKeyBinder;
 import oogasalad.controller.player.internal.cheats.CheatRuntimeContext;
+import oogasalad.data.api.ComponentInfo;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.internal.LevelAttributes;
@@ -174,14 +177,28 @@ public class GameplaySessionFactoryImpl implements GameplaySessionFactory {
 
   private void configureInputControls(GamePlayAppScreen screen, InputRouter inputRouter,
       World world, GameConfig gameConfig) {
-    driveActionBinder.bind(inputRouter, world);
+    Set<String> authored = normalizedIdsWithAuthoredButtons(gameConfig);
+    driveActionBinder.bind(inputRouter, world, authored);
     buttonForceController.bind(inputRouter, gameConfig, world);
     Set<String> toolIds = new LinkedHashSet<>();
-    toolIds.addAll(driveActionBinder.collectToolIds(world));
+    toolIds.addAll(driveActionBinder.collectToolIds(world, authored));
     toolIds.addAll(buttonForceController.collectButtonIds(gameConfig, world));
     screen.setAvailableTools(toolIds);
     screen.setOnToolActivated(toolId -> inputRouter.handleButtonPress(toolId));
     screen.setOnToolDeactivated(toolId -> inputRouter.handleButtonRelease(toolId));
+  }
+
+  private Set<String> normalizedIdsWithAuthoredButtons(GameConfig config) {
+    Set<String> out = new HashSet<>();
+    if (config == null) {
+      return out;
+    }
+    for (ComponentInfo ci : config.components()) {
+      if (ci != null && ci.id() != null && !ci.buttons().isEmpty()) {
+        out.add(ci.id().trim().toLowerCase(Locale.ROOT));
+      }
+    }
+    return out;
   }
 
   private void showForceWarningsIfNeeded(GamePlayAppScreen screen,

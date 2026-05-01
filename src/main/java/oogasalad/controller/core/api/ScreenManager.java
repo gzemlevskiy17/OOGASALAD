@@ -1,5 +1,6 @@
 package oogasalad.controller.core.api;
 
+import javafx.scene.Scene;
 import oogasalad.view.core.api.AppScreen;
 
 /**
@@ -20,4 +21,11 @@ public interface ScreenManager {
    * This is the single place where outcomes are mapped to screen names.
    */
   void onOutcome(Outcome outcome);
+
+  /**
+   * Returns the shared Scene used to render every registered screen, or null if no screen has
+   * yet been switched to. Exposed so app-wide concerns like theming can attach scene-level
+   * stylesheets that cascade across all screens.
+   */
+  Scene getSharedScene();
 }
