@@ -1,0 +1,141 @@
+{
+  "gameMetadata": {
+    "levelName": "World 1-1",
+    "gameType": "mario",
+    "screenWidth": 4000.0,
+    "screenHeight": 1600.0,
+    "gravity": -15.0,
+    "drag": 0.01,
+    "backgroundImage": "data/assets/mario/background.png"
+  },
+  "map": {
+    "knotLocations": [
+      {
+        "x": 1.0,
+        "y": 1899.0
+      },
+      {
+        "x": 497.0,
+        "y": 1889.0
+      },
+      {
+        "x": 1139.0,
+        "y": 1880.0
+      },
+      {
+        "x": 1552.0,
+        "y": 1934.0
+      },
+      {
+        "x": 2320.0,
+        "y": 1957.0
+      },
+      {
+        "x": 2778.0,
+        "y": 1906.0
+      },
+      {
+        "x": 3574.0,
+        "y": 1889.0
+      },
+      {
+        "x": 3985.0,
+        "y": 1893.0
+      },
+      {
+        "x": 3997.0,
+        "y": 1893.0
+      }
+    ],
+    "blocks": [],
+    "objects": [
+      {
+        "type": "Coin",
+        "position": {
+          "x": 610.0,
+          "y": 1850.0
+        }
+      },
+      {
+        "type": "Coin",
+        "position": {
+          "x": 650.0,
+          "y": 1850.0
+        }
+      },
+      {
+        "type": "Mushroom",
+        "position": {
+          "x": 950.0,
+          "y": 1850.0
+        }
+      },
+      {
+        "type": "Goomba",
+        "position": {
+          "x": 1630.0,
+          "y": 1930.0
+        }
+      },
+      {
+        "type": "Mushroom",
+        "position": {
+          "x": 2270.0,
+          "y": 1930.0
+        }
+      },
+      {
+        "type": "Star",
+        "position": {
+          "x": 3170.0,
+          "y": 1870.0
+        }
+      },
+      {
+        "type": "Coin",
+        "position": {
+          "x": 3550.0,
+          "y": 1870.0
+        }
+      },
+      {
+        "type": "Coin",
+        "position": {
+          "x": 3450.0,
+          "y": 1870.0
+        }
+      },
+      {
+        "type": "Coin",
+        "position": {
+          "x": 3670.0,
+          "y": 1870.0
+        }
+      },
+      {
+        "type": "GoalLine",
+        "position": {
+          "x": 3930.0,
+          "y": 1850.0
+        }
+      }
+    ],
+    "terrainOptions": [
+      "Spline Terrain"
+    ],
+    "spawnPoint": {
+      "x": 100.0,
+      "y": 100.0
+    }
+  },
+  "mainCharacter": {
+    "gridSize": 60.0,
+    "elementsAllowed": [
+      "Mario",
+      "Frame"
+    ],
+    "maxSelectable": 2,
+    "maxHP": 100.0,
+    "cameraFollows": "vehicle"
+  }
+}

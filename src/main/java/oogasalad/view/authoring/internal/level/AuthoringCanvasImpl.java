@@ -12,6 +12,7 @@ import javafx.scene.transform.Scale;
 import oogasalad.model.engine.api.World;
 import oogasalad.view.authoring.api.AuthoringCanvas;
 import oogasalad.view.authoring.api.AuthoringPlaceable;
+import oogasalad.view.core.internal.TerrainPaints;
 
 /**
  * JavaFX grid canvas for the level editor.
@@ -257,8 +258,8 @@ public class AuthoringCanvasImpl implements AuthoringCanvas {
     if (backgroundImagePath.isBlank()) {
       return;
     }
-    Image image = new Image(backgroundImagePath, false);
-    if (image.isError()) {
+    Image image = TerrainPaints.loadImage(backgroundImagePath);
+    if (image == null || image.isError()) {
       return;
     }
     ImageView background = new ImageView(image);
