@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import util.DukeApplicationTest;
 
 /**
- * Failing test for the "Settings button has no action handler" bug.
+ * Regression test ensuring the main menu Settings control remains wired to an action handler.
  * See doc/bugs/SETTINGS_BUTTON_BUG.md.
  *
  * @author Mason Wu
@@ -18,6 +18,7 @@ class GameMenuScreenSettingsButtonTest extends DukeApplicationTest {
 
   private GameMenuScreen screen;
 
+  /** Mounts GameMenuScreen on a sized Scene for lookup-based UI assertions. */
   @Override
   public void start(Stage stage) {
     screen = new GameMenuScreen(outcome -> {}, accountOutcome -> {}, () -> false,

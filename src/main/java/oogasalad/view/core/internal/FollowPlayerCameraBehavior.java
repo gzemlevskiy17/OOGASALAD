@@ -21,10 +21,12 @@ public class FollowPlayerCameraBehavior extends AbstractCameraBehavior {
   private final double offsetX;
   private final double offsetY;
 
+  /** Infinite-world follow with smoothing 1.0 and centered offset zero. */
   public FollowPlayerCameraBehavior(Supplier<? extends Renderable> targetSupplier) {
     this(targetSupplier, 0.0, 0.0, 1.0, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
   }
 
+  /** Adds pixel offsets without finite world clamps. */
   public FollowPlayerCameraBehavior(
       Supplier<? extends Renderable> playerSupplier,
       double offsetX,

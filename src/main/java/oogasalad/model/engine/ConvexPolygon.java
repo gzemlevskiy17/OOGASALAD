@@ -24,9 +24,9 @@ import oogasalad.model.engine.api.Vector;
  * }</pre>
  *
  * @author Georgiy Zemlevskiy
+ * @author Iurii Beliaev
  */
 public record ConvexPolygon(List<Vector> points) {
-  //TODO: define as interface?
 
   public static ConvexPolygon axisAlignedBox(double x, double y, double w, double h) {
     return new ConvexPolygon(List.of(

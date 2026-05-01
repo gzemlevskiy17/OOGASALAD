@@ -6,6 +6,7 @@ import javafx.scene.input.KeyCode;
  * Routes hardware input to abstract Actions.
  *
  * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
  */
 public interface InputRouter {
   /** Registers a KeyCode-to-Action binding. */
