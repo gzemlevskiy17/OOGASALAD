@@ -1,4 +1,4 @@
-package oogasalad.view.authoring.internal;
+package oogasalad.view.authoring.internal.level;
 
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;

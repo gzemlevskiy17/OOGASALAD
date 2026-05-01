@@ -1,4 +1,4 @@
-package oogasalad.view.authoring.internal;
+package oogasalad.view.authoring.internal.level;
 
 import java.util.ResourceBundle;
 import javafx.scene.layout.Pane;
