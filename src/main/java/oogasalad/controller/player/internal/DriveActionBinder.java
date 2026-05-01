@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import oogasalad.controller.player.api.Action;
@@ -24,18 +25,24 @@ import oogasalad.model.engine.internal.components.VehicleComponent;
  */
 final class DriveActionBinder {
 
-  /**
-   * Collects the tool IDs that should be shown for the current vehicle.
-   *
-   * @param world gameplay world after the vehicle has been built
-   * @return lowercase tool IDs for player-controllable drive components
-   */
   Set<String> collectToolIds(World world) {
+    return collectToolIds(world, Set.of());
+  }
+  /**
+   * @param skipNormalizedIds catalog component ids (normalized) that have authored buttons;
+   * drives for those ids are omitted so ButtonForceController owns the UI.
+   */
+  Set<String> collectToolIds(World world, Set<String> skipNormalizedIds) {
+    Set<String> skip = skipNormalizedIds == null ? Set.of() : skipNormalizedIds;
     Set<String> ids = new HashSet<>();
     for (GameObject obj : world.getObjects()) {
-      if (isControllableDrive(obj)) {
-        ids.add(driveButtonId(obj));
+      if (!isControllableDrive(obj)) {
+        continue;
       }
+      if (skip.contains(normalizeKey(driveButtonId(obj)))) {
+        continue;
+      }
+      ids.add(driveButtonId(obj));
     }
     return ids;
   }
@@ -47,9 +54,16 @@ final class DriveActionBinder {
    * @param world gameplay world after the vehicle has been built
    */
   void bind(InputRouter inputRouter, World world) {
+    bind(inputRouter, world, Set.of());
+  }
+  void bind(InputRouter inputRouter, World world, Set<String> skipNormalizedIds) {
+    Set<String> skip = skipNormalizedIds == null ? Set.of() : skipNormalizedIds;
     Map<String, List<Driveable>> drivesById = new LinkedHashMap<>();
     for (GameObject obj : world.getObjects()) {
       if (!(obj instanceof Driveable driveable) || !driveable.isPlayerControllable()) {
+        continue;
+      }
+      if (skip.contains(normalizeKey(driveButtonId(obj)))) {
         continue;
       }
       drivesById.computeIfAbsent(driveButtonId(obj), ignored -> new ArrayList<>()).add(driveable);
@@ -58,6 +72,13 @@ final class DriveActionBinder {
       inputRouter.bind(entry.getKey(), activateAction(entry.getValue()));
       inputRouter.bindRelease(entry.getKey(), deactivateAction(entry.getValue()));
     }
+  }
+
+  private String normalizeKey(String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    return value.trim().toLowerCase(Locale.ROOT);
   }
 
   private boolean isControllableDrive(GameObject obj) {
