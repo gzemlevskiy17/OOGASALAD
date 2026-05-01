@@ -1,0 +1,64 @@
+{
+  "gameId" : "testworld",
+  "mainCharacterId" : "BigPig",
+  "components" : [ {
+    "id" : "Balloon",
+    "spriteUrl" : "data/assets/vehicle/bp_balloon.png",
+    "mass" : 1.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Fan",
+    "spriteUrl" : "data/assets/vehicle/bp_fan.png",
+    "mass" : 3.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Engine",
+    "spriteUrl" : "data/assets/vehicle/bp_engine.png",
+    "mass" : 8.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Frame",
+    "spriteUrl" : "data/assets/vehicle/bp_frame.png",
+    "mass" : 6.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Sled",
+    "spriteUrl" : "data/assets/vehicle/bp_sled.png",
+    "mass" : 4.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "BigPig",
+    "spriteUrl" : "data/assets/vehicle/bp_bigPig.png",
+    "mass" : 10.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "SmallPig",
+    "spriteUrl" : "data/assets/vehicle/bp_smallPig.png",
+    "mass" : 5.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Wood Wheel",
+    "spriteUrl" : "",
+    "mass" : 2.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Metal Wheel",
+    "spriteUrl" : "",
+    "mass" : 3.0,
+    "buttons" : [ ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "coin",
+    "spriteUrl" : "data/assets/bp_coin.png",
+    "mass" : 1.0,
+    "onCollisionAction" : null
+  } ],
+  "terrainTypes" : [ {
+    "id" : "grass",
+    "spriteUrl" : null,
+    "visualColor" : "#008000",
+    "trackColor" : null,
+    "friction" : 0.3
+  } ],
+  "cheats" : [ ]
+}
