@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement />
+  <nodes>
+    <node x="320.0" y="386.0">oogasalad.model.engine.CollisionPhase</node>
+    <node x="133.5" y="446.0">oogasalad.model.engine.CollisionDetectorImpl</node>
+    <node x="1203.60051736881" y="271.0886917960089">oogasalad.model.engine.api.PhysicsEnvironment</node>
+    <node x="88.5" y="-14.0">oogasalad.model.engine.CollisionPair</node>
+    <node x="605.5" y="46.0">oogasalad.model.engine.DynamicDynamicSolver</node>
+    <node x="1098.60051736881" y="211.0886917960089">oogasalad.model.engine.api.World</node>
+    <node x="475.1862527716186" y="607.5576496674057">oogasalad.model.engine.GameEngineImpl</node>
+    <node x="330.0" y="266.0">oogasalad.model.engine.api.CollisionDetector</node>
+    <node x="92.5" y="195.82261640798225">oogasalad.model.engine.CollisionDispatcher</node>
+    <node x="216.5" y="46.0">oogasalad.model.engine.DynamicStaticSolver</node>
+    <node x="3.5" y="266.0">oogasalad.model.engine.Collision</node>
+    <node x="-61.0" y="46.0">oogasalad.model.engine.api.CollisionSolver</node>
+    <node x="390.5" y="-14.0">oogasalad.model.engine.DynamicPassthroughSolver</node>
+    <node x="1225.9541759053955" y="571.0886917960089">oogasalad.model.engine.api.GameEngine</node>
+    <node x="1142.10051736881" y="451.0886917960089">oogasalad.model.engine.WorldImpl</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="oogasalad.model.engine.GameEngineImpl" target="oogasalad.model.engine.CollisionDispatcher" relationship="CREATE">
+      <point x="-59.666666666666686" y="-14.0" />
+      <point x="505.019586104952" y="540.0" />
+      <point x="401.0" y="540.0" />
+      <point x="401.0" y="520.0" />
+      <point x="-19.0" y="520.0" />
+      <point x="-19.0" y="160.0" />
+      <point x="241.0" y="160.0" />
+      <point x="49.5" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.DynamicStaticSolver" relationship="TO_ONE">
+      <point x="-49.5" y="-14.0" />
+      <point x="142.0" y="180.0" />
+      <point x="161.0" y="180.0" />
+      <point x="161.0" y="100.0" />
+      <point x="268.75" y="100.0" />
+      <point x="-52.25" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.DynamicStaticSolver" relationship="CREATE">
+      <point x="49.5" y="-14.0" />
+      <point x="241.0" y="180.0" />
+      <point x="281.0" y="180.0" />
+      <point x="281.0" y="120.0" />
+      <point x="373.25" y="120.0" />
+      <point x="52.25" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDetectorImpl" target="oogasalad.model.engine.Collision" relationship="CREATE">
+      <point x="-53.75" y="-14.0" />
+      <point x="187.25" y="420.0" />
+      <point x="61.0" y="420.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.WorldImpl" target="oogasalad.model.engine.api.PhysicsEnvironment" relationship="TO_ONE">
+      <point x="32.0" y="-14.0" />
+      <point x="1238.10051736881" y="365.0886917960089" />
+      <point x="1306.10051736881" y="365.0886917960089" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.GameEngineImpl" target="oogasalad.model.engine.api.World" relationship="TO_ONE">
+      <point x="0.0" y="-14.0" />
+      <point x="564.6862527716187" y="418.0886917960089" />
+      <point x="1126.10051736881" y="418.0886917960089" />
+      <point x="1126.10051736881" y="265.0886917960089" />
+      <point x="1122.35051736881" y="265.0886917960089" />
+      <point x="-23.75" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionPhase" target="oogasalad.model.engine.api.CollisionDetector" relationship="TO_ONE">
+      <point x="0.0" y="-14.0" />
+      <point x="401.0" y="320.0" />
+      <point x="466.5" y="320.0" />
+      <point x="45.5" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionPhase" target="oogasalad.model.engine.CollisionDispatcher" relationship="TO_ONE">
+      <point x="0.0" y="-14.0" />
+      <point x="401.0" y="320.0" />
+      <point x="301.0" y="320.0" />
+      <point x="301.0" y="140.0" />
+      <point x="142.0" y="140.0" />
+      <point x="-49.5" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.DynamicPassthroughSolver" relationship="TO_ONE">
+      <point x="-49.5" y="-14.0" />
+      <point x="142.0" y="180.0" />
+      <point x="161.0" y="180.0" />
+      <point x="161.0" y="100.0" />
+      <point x="455.75" y="100.0" />
+      <point x="-65.25" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.DynamicDynamicSolver" relationship="CREATE">
+      <point x="49.5" y="-14.0" />
+      <point x="241.0" y="180.0" />
+      <point x="281.0" y="180.0" />
+      <point x="281.0" y="120.0" />
+      <point x="778.75" y="120.0" />
+      <point x="57.75" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionPhase" target="oogasalad.model.engine.api.World" relationship="TO_ONE">
+      <point x="0.0" y="-14.0" />
+      <point x="401.0" y="345.0886917960089" />
+      <point x="1126.10051736881" y="345.0886917960089" />
+      <point x="1126.10051736881" y="265.0886917960089" />
+      <point x="1122.35051736881" y="265.0886917960089" />
+      <point x="-23.75" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.DynamicDynamicSolver" relationship="TO_ONE">
+      <point x="-49.5" y="-14.0" />
+      <point x="142.0" y="180.0" />
+      <point x="161.0" y="180.0" />
+      <point x="161.0" y="100.0" />
+      <point x="663.25" y="100.0" />
+      <point x="-57.75" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.CollisionPair" relationship="CREATE">
+      <point x="49.5" y="-14.0" />
+      <point x="241.0" y="180.0" />
+      <point x="281.0" y="180.0" />
+      <point x="281.0" y="120.0" />
+      <point x="197.25" y="120.0" />
+      <point x="36.25" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.api.CollisionSolver" relationship="TO_MANY">
+      <point x="-49.5" y="-14.0" />
+      <point x="142.0" y="180.0" />
+      <point x="161.0" y="180.0" />
+      <point x="161.0" y="100.0" />
+      <point x="21.0" y="100.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.GameEngineImpl" target="oogasalad.model.engine.api.GameEngine" relationship="REALIZATION">
+      <point x="59.66666666666667" y="-14.0" />
+      <point x="624.3529194382853" y="545.0886917960089" />
+      <point x="1299.4541759053955" y="545.0886917960089" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.GameEngineImpl" target="oogasalad.model.engine.CollisionPhase" relationship="TO_ONE">
+      <point x="0.0" y="-14.0" />
+      <point x="564.6862527716187" y="540.0" />
+      <point x="501.0" y="540.0" />
+      <point x="501.0" y="360.0" />
+      <point x="401.0" y="360.0" />
+      <point x="0.0" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.DynamicPassthroughSolver" relationship="CREATE">
+      <point x="49.5" y="-14.0" />
+      <point x="241.0" y="180.0" />
+      <point x="281.0" y="180.0" />
+      <point x="281.0" y="120.0" />
+      <point x="586.25" y="120.0" />
+      <point x="65.25" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.GameEngineImpl" target="oogasalad.model.engine.CollisionPhase" relationship="CREATE">
+      <point x="-59.666666666666686" y="-14.0" />
+      <point x="481.33333333333326" y="607.5576496674057" />
+      <point x="481.33333333333326" y="540.0" />
+      <point x="401.0" y="540.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.WorldImpl" target="oogasalad.model.engine.api.World" relationship="REALIZATION">
+      <point x="-32.0" y="-14.0" />
+      <point x="1174.10051736881" y="425.0886917960089" />
+      <point x="1169.85051736881" y="425.0886917960089" />
+      <point x="23.75" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDispatcher" target="oogasalad.model.engine.CollisionPair" relationship="TO_MANY">
+      <point x="-49.5" y="-14.0" />
+      <point x="142.0" y="180.0" />
+      <point x="161.0" y="180.0" />
+      <point x="161.0" y="100.0" />
+      <point x="124.75" y="100.0" />
+      <point x="-36.25" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.CollisionDetectorImpl" target="oogasalad.model.engine.api.CollisionDetector" relationship="REALIZATION">
+      <point x="53.75" y="-14.0" />
+      <point x="294.75" y="360.0" />
+      <point x="375.5" y="360.0" />
+      <point x="-45.5" y="14.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Compact" zoom="1.1790849673202617" showDependencies="true" x="421.6868070953435" y="301.43070953436796" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>public</VISIBILITY>
+</Diagram>
+
