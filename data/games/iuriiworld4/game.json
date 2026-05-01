@@ -2,59 +2,9 @@
   "gameId" : "iuriiworld4",
   "mainCharacterId" : "paulina",
   "components" : [ {
-    "id" : "Balloon",
-    "spriteUrl" : "data/assets/vehicle/bp_balloon.png",
-    "mass" : 1.0,
-    "buttons" : [ {
-      "name" : "Inflate",
-      "direction" : {
-        "x" : 0.0,
-        "y" : 500.0
-      }
-    } ]
-  }, {
-    "id" : "Engine",
-    "spriteUrl" : "data/assets/vehicle/bp_engine.png",
-    "mass" : 8.0,
-    "buttons" : [ {
-      "name" : "Drive Left",
-      "direction" : {
-        "x" : -500.0,
-        "y" : 0.0
-      }
-    }, {
-      "name" : "Drive Right",
-      "direction" : {
-        "x" : 500.0,
-        "y" : 0.0
-      }
-    } ]
-  }, {
-    "id" : "Fan",
-    "spriteUrl" : "data/assets/vehicle/bp_fan.png",
-    "mass" : 3.0,
-    "buttons" : [ {
-      "name" : "Thrust Left",
-      "direction" : {
-        "x" : -5000.0,
-        "y" : 0.0
-      }
-    }, {
-      "name" : "Thrust Right",
-      "direction" : {
-        "x" : 5000.0,
-        "y" : 0.0
-      }
-    } ]
-  }, {
     "id" : "BigPig",
     "spriteUrl" : "data/assets/vehicle/bp_bigPig.png",
     "mass" : 10.0,
-    "buttons" : [ ]
-  }, {
-    "id" : "paulina",
-    "spriteUrl" : "data/assets/paulinavvedenskaya.jpg",
-    "mass" : 1.0,
     "buttons" : [ ]
   }, {
     "id" : "Frame",
@@ -66,6 +16,38 @@
     "spriteUrl" : "",
     "mass" : 2.0,
     "buttons" : [ ]
+  }, {
+    "id" : "Fan",
+    "spriteUrl" : "data/assets/vehicle/bp_fan.png",
+    "mass" : 3.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Engine",
+    "spriteUrl" : "data/assets/vehicle/bp_engine.png",
+    "mass" : 8.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Balloon",
+    "spriteUrl" : "data/assets/vehicle/bp_balloon.png",
+    "mass" : 1.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "paulina",
+    "spriteUrl" : "data/assets/paulinavvedenskaya.jpg",
+    "mass" : 10.0,
+    "buttons" : [ {
+      "name" : "go left",
+      "direction" : {
+        "x" : -10000.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "go up",
+      "direction" : {
+        "x" : 0.0,
+        "y" : -50000.0
+      }
+    } ]
   } ],
   "staticComponents" : [ {
     "id" : "GoalLine",
