@@ -1,14 +1,18 @@
 package oogasalad.view.authoring.internal.level;
 
+import java.io.File;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import oogasalad.data.internal.LevelAttributes;
 import oogasalad.view.authoring.internal.common.AuthoringValueHints;
 
@@ -36,9 +40,16 @@ public class LevelAttributesPanel {
 
   private final VBox root;
   private final LevelAttributes model;
+  private final Consumer<String> onBackgroundChanged;
 
   public LevelAttributesPanel(LevelAttributes model) {
+    this(model, path -> {
+    });
+  }
+
+  public LevelAttributesPanel(LevelAttributes model, Consumer<String> onBackgroundChanged) {
     this.model = model;
+    this.onBackgroundChanged = onBackgroundChanged;
     this.root = new VBox(FIELD_SPACING);
     root.setPadding(new Insets(PANEL_PADDING));
     root.getStyleClass().add("authoring-attributes-panel");
@@ -47,7 +58,8 @@ public class LevelAttributesPanel {
         buildNameRow(),
         buildGravityRow(),
         buildDragRow(),
-        buildMaxHPRow()
+        buildMaxHPRow(),
+        buildBackgroundRow()
     );
   }
 
@@ -113,6 +125,31 @@ public class LevelAttributesPanel {
       }
     });
     return labeledRow("Max HP", spinner);
+  }
+
+  private HBox buildBackgroundRow() {
+    TextField field = new TextField(model.getBackgroundImage());
+    field.setPrefWidth(FIELD_WIDTH);
+    field.textProperty().addListener((obs, oldVal, newVal) -> {
+      model.setBackgroundImage(newVal);
+      onBackgroundChanged.accept(model.getBackgroundImage());
+    });
+
+    Button browseButton = new Button("Browse...");
+    browseButton.setOnAction(e -> {
+      FileChooser chooser = new FileChooser();
+      chooser.setTitle("Select Background Image");
+      chooser.getExtensionFilters().add(
+          new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif"));
+      File file = chooser.showOpenDialog(root.getScene().getWindow());
+      if (file != null) {
+        field.setText(file.getPath());
+      }
+    });
+
+    HBox controls = new HBox(FIELD_SPACING, field, browseButton);
+    controls.setAlignment(Pos.CENTER_LEFT);
+    return labeledRow("Background", controls);
   }
 
   private HBox labeledRow(String labelText, Node field) {

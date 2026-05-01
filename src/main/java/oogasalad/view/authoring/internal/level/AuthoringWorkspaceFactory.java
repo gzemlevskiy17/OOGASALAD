@@ -7,8 +7,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import oogasalad.controller.authoring.internal.AuthoringControllerImpl;
 import oogasalad.controller.authoring.internal.ToolSelectorImpl;
-import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.internal.GameLoaderImpl;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelSaverImpl;
 import oogasalad.model.engine.WorldImpl;
@@ -28,9 +28,10 @@ final class AuthoringWorkspaceFactory {
   Workspace create() {
     World world = new WorldImpl();
     LevelAttributes levelAttributes = new LevelAttributes();
-    LevelAttributesPanel levelAttributesPanel = new LevelAttributesPanel(levelAttributes);
     TerrainPropertiesPanel terrainPropertiesPanel = new TerrainPropertiesPanel();
     AuthoringCanvasImpl canvas = new AuthoringCanvasImpl(world);
+    LevelAttributesPanel levelAttributesPanel =
+        new LevelAttributesPanel(levelAttributes, canvas::setBackgroundImagePath);
     canvas.setOnObjectSelected(terrainPropertiesPanel::show);
     terrainPropertiesPanel.setEditContext(world, canvas::refreshGrid);
 

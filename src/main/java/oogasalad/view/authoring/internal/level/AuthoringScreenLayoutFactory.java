@@ -8,6 +8,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -73,7 +74,7 @@ final class AuthoringScreenLayoutFactory {
     Label selectedItemsLabel = buildSelectedItemsLabel();
     HBox levelPaletteTabs = buildLevelPaletteTabs(
         terrainPaletteButton, levelItemsPaletteButton, settingsPaletteButton);
-    StackPane bottomContentHost = buildBottomRegion();
+    BottomRegion bottomRegion = buildBottomRegion();
 
     TopBarParts topBarParts = buildTopBar();
     VBox topSections = new VBox(d("outerSectionSpacing"), topBarParts.topBar(),
@@ -81,7 +82,8 @@ final class AuthoringScreenLayoutFactory {
     topSections.getStyleClass().add("authoring-top-sections");
 
     HBox paletteModeRow = buildPaletteModeRow(levelPaletteTabs, selectedItemsLabel);
-    VBox bottomSections = new VBox(d("outerSectionSpacing"), paletteModeRow, bottomContentHost);
+    VBox bottomSections = new VBox(d("outerSectionSpacing"), paletteModeRow,
+        bottomRegion.wrapper());
     bottomSections.getStyleClass().add("authoring-bottom-sections");
 
     BorderPane layout = buildRootPane();
@@ -93,7 +95,7 @@ final class AuthoringScreenLayoutFactory {
     return new Parts(layout, topBarParts.selectButton(), topBarParts.splineButton(),
         levelModeButton, vehicleModeButton, terrainPaletteButton, pigsPaletteButton,
         levelItemsPaletteButton, settingsPaletteButton, levelPaletteTabs, selectedItemsLabel,
-        bottomContentHost);
+        bottomRegion.contentHost());
   }
 
   private BorderPane buildRootPane() {
@@ -207,15 +209,27 @@ final class AuthoringScreenLayoutFactory {
     return row;
   }
 
-  private StackPane buildBottomRegion() {
-    StackPane region = new StackPane();
+  private BottomRegion buildBottomRegion() {
+    StackPane contentHost = new StackPane();
+    contentHost.setAlignment(Pos.TOP_LEFT);
+
+    ScrollPane scrollPane = new ScrollPane(contentHost);
+    scrollPane.setFitToWidth(true);
+    scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    scrollPane.setStyle("-fx-background-color: transparent;");
+
     double bottomHeight = d("bottomRegionHeight");
-    region.setPrefHeight(bottomHeight);
-    region.setMinHeight(bottomHeight);
-    region.setMinWidth(d("bottomRegionMinWidth"));
-    region.setAlignment(Pos.TOP_LEFT);
-    region.getStyleClass().add("authoring-bottom-region");
-    return region;
+    StackPane wrapper = new StackPane(scrollPane);
+    wrapper.setPrefHeight(bottomHeight);
+    wrapper.setMinHeight(bottomHeight);
+    wrapper.setMinWidth(d("bottomRegionMinWidth"));
+    wrapper.setAlignment(Pos.TOP_LEFT);
+    wrapper.getStyleClass().add("authoring-bottom-region");
+    return new BottomRegion(wrapper, contentHost);
+  }
+
+  private record BottomRegion(StackPane wrapper, StackPane contentHost) {
   }
 
   private Button createActionButton(String text, double width, double height) {
