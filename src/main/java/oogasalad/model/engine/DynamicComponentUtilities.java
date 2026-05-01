@@ -65,7 +65,7 @@ public class DynamicComponentUtilities {
       if (dynamicComponent.isSleeping()) {
         dynamicComponent.setSleeping(false);
       }
-      dynamicComponent.addForce(externalForce);
+      dynamicComponent.addForce(externalForce.rotate(dynamicComponent.getStaticState().getAngularPosition()));
     }
   }
 

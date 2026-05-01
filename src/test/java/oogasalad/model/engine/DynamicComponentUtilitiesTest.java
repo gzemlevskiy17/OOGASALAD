@@ -70,6 +70,38 @@ class DynamicComponentUtilitiesTest {
         EPS,
         "Catalog-style upward force on a drive part must still enter the force accumulator each step.");
   }
+  @Test
+  void applyForces_rotatesExternalForceBy90Degrees_appliesCorrectRelativeForce() {
+    WorldImpl world = new WorldImpl(new PhysicsEnvironment(new Vector(0, 0), 0));
+    DynamicComponent body = nonGravitatingBody();
+    body.getStaticState().setAngularPosition(Math.PI / 2);
+    body.addExternalForce("push_right", new Vector(100, 0));
+    
+    DynamicComponentUtilities.resetForces(List.of(body));
+    DynamicComponentUtilities.applyForces(List.of(body), world);
+    
+    Vector accumulated = body.getForce();
+    // A relative force of (100, 0) rotated by 90 degrees becomes (0, 100).
+    assertEquals(0, accumulated.x(), EPS, "X component should be 0 after 90 degree rotation");
+    assertEquals(100, accumulated.y(), EPS, "Y component should be 100 after 90 degree rotation");
+  }
+
+  @Test
+  void applyForces_rotatesExternalForceBy180Degrees_appliesCorrectRelativeForce() {
+    WorldImpl world = new WorldImpl(new PhysicsEnvironment(new Vector(0, 0), 0));
+    DynamicComponent body = nonGravitatingBody();
+    body.getStaticState().setAngularPosition(Math.PI);
+    body.addExternalForce("push_up", new Vector(0, -100));
+    
+    DynamicComponentUtilities.resetForces(List.of(body));
+    DynamicComponentUtilities.applyForces(List.of(body), world);
+    
+    Vector accumulated = body.getForce();
+    // A relative force of (0, -100) rotated by 180 degrees becomes (0, 100).
+    assertEquals(0, accumulated.x(), EPS, "X component should be 0 after 180 degree rotation");
+    assertEquals(100, accumulated.y(), EPS, "Y component should be 100 after 180 degree rotation");
+  }
+
   private static DynamicComponent nonGravitatingBody() {
     ConvexPolygon box = ConvexPolygon.axisAlignedBox(0, 0, 10, 10);
     return new DynamicComponent(5, 5, 0, box, "", 0, 1.0, 1.0, 0.5, false) {};
