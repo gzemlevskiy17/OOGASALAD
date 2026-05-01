@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import oogasalad.data.api.CollisionAction;
 import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.StaticComponentInfo;
@@ -116,6 +115,7 @@ public class LevelLoaderImpl implements LevelLoader {
     attrs.setScreenHeight(node.path("screenHeight").asDouble(attrs.getScreenHeight()));
     attrs.setGravity(node.path("gravity").asDouble(attrs.getGravity()));
     attrs.setDrag(node.path("drag").asDouble(attrs.getDrag()));
+    attrs.setBackgroundImage(node.path("backgroundImage").asText(attrs.getBackgroundImage()));
   }
 
   private void populateMainCharacter(JsonNode node, LevelAttributes attrs) {
@@ -137,6 +137,7 @@ public class LevelLoaderImpl implements LevelLoader {
   }
 
   private static final String DEFAULT_TERRAIN_COLOR = "#4A2C0F";
+  private static final String DEFAULT_TRACK_COLOR = "#000000";
 
   private void loadTerrainSpline(JsonNode map, GameConfig game, World world) {
     JsonNode knotsNode = map.path("knotLocations");
@@ -162,7 +163,12 @@ public class LevelLoaderImpl implements LevelLoader {
     if (color == null) {
       color = DEFAULT_TERRAIN_COLOR;
     }
-    return new TerrainSpline(terrain.id(), spline, sprite, true, terrain.friction(), color);
+    String trackColor = terrain.trackColor();
+    if (trackColor == null) {
+      trackColor = DEFAULT_TRACK_COLOR;
+    }
+    return new TerrainSpline(terrain.id(), spline, sprite, true, terrain.friction(), color,
+        trackColor);
   }
 
   private TerrainInfo pickTerrain(JsonNode terrainOptions, GameConfig game) {
@@ -184,7 +190,9 @@ public class LevelLoaderImpl implements LevelLoader {
         return info;
       }
     }
-    throw new LevelLoadException("Unknown terrain option: '" + firstId + "'");
+    LOG.warn("Unknown terrain option '{}'; loading spline without catalog terrain styling",
+        firstId);
+    return null;
   }
 
   private double baselineFor(List<Vector> knots) {

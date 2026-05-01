@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import oogasalad.data.api.LevelAttributes;
 import oogasalad.data.api.LevelSaveException;
 import oogasalad.model.engine.api.Joint;
 import oogasalad.model.engine.api.PhysicsEnvironment;
@@ -48,6 +47,7 @@ class LevelSaverImplTest {
     attrs.setDrag(0.01);
     attrs.setScreenWidth(3200);
     attrs.setScreenHeight(1600);
+    attrs.setBackgroundImage("data/assets/background2.png");
 
     File output = tempDir.resolve("level.json").toFile();
     saver.saveLevel(output.getAbsolutePath(), new FakeWorld(), attrs);
@@ -59,6 +59,7 @@ class LevelSaverImplTest {
     assertEquals(0.01, meta.path("drag").asDouble(), 0.0001);
     assertEquals(3200, meta.path("screenWidth").asInt());
     assertEquals(1600, meta.path("screenHeight").asInt());
+    assertEquals("data/assets/background2.png", meta.path("backgroundImage").asText());
   }
 
   // ── map section ──────────────────────────────────────────────────────────

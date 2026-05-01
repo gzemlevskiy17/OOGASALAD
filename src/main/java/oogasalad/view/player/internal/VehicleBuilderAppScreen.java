@@ -30,7 +30,7 @@ import oogasalad.model.player.api.ValidationResult;
 import oogasalad.model.player.api.VehicleLayout;
 import oogasalad.model.player.internal.PlacementValidator;
 import oogasalad.view.core.api.SingleSprite;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
 import oogasalad.view.core.internal.PaletteSpriteRegistry;
 import oogasalad.view.core.internal.SpriteCache;
 import org.apache.logging.log4j.LogManager;

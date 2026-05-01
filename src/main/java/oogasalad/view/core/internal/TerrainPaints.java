@@ -59,7 +59,7 @@ public final class TerrainPaints {
     }
   }
 
-  private static Image loadImage(String spritePath) {
+  public static Image loadImage(String spritePath) {
     if (spritePath == null || spritePath.isBlank()) {
       return null;
     }

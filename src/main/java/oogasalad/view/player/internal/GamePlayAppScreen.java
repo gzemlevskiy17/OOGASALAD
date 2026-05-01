@@ -1,25 +1,23 @@
 package oogasalad.view.player.internal;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
+import oogasalad.view.core.internal.TerrainPaints;
 import oogasalad.view.player.api.GameplayView;
 
 /**
@@ -32,6 +30,8 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private static final ResourceBundle PROPS = ResourceBundle.getBundle("oogasalad.view.player.GamePlayAppScreen");
 
   private Pane gameLayer;
+  private ImageView backgroundImageView;
+  private String backgroundImagePath = "";
   private HBox bottomControls;
   private GameHudDisplay hud;
   private Runnable onPause = () -> { };
@@ -48,8 +48,28 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     super(onOutcome);
   }
 
+  @Override
   public Pane getGameLayer() {
     return gameLayer;
+  }
+
+  public void setBackgroundImagePath(String imagePath) {
+    backgroundImagePath = imagePath == null ? "" : imagePath.strip();
+    if (gameLayer == null) {
+      return;
+    }
+    if (backgroundImagePath.isBlank()) {
+      removeBackgroundImage();
+      return;
+    }
+    Image image = TerrainPaints.loadImage(backgroundImagePath);
+    if (image == null || image.isError()) {
+      removeBackgroundImage();
+      return;
+    }
+    ensureBackgroundImageView();
+    backgroundImageView.setImage(image);
+    backgroundImageView.toBack();
   }
 
   /**
@@ -71,6 +91,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  @Override
   public void setOnPause(Runnable onPause) {
     if (onPause == null) {
       this.onPause = () -> { };
@@ -87,6 +108,7 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     }
   }
 
+  @Override
   public void setOnReset(Runnable onReset) {
     if (onReset == null) {
       this.onReset = () -> { };
@@ -125,7 +147,11 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     gameLayer.prefHeightProperty().bind(root.heightProperty());
 
     HBox topControls = createTopControlsRegion();
-    bottomControls = createBottomControlsRegion(null);
+    bottomControls = new HBox(d("bottom.controls.spacing"));
+    bottomControls.getStyleClass().add("controlbuttons-bottom");
+    bottomControls.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE,
+        javafx.scene.layout.Region.USE_PREF_SIZE);
+    bottomControls.setPickOnBounds(false);
     hud = new GameHudDisplay();
 
     Node backButton = createBackButtonRegion();
@@ -167,7 +193,31 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
   private Pane createGameAreaRegion() {
     Pane gameContainer = new Pane();
     gameContainer.getStyleClass().add("game-container");
+    if (!backgroundImagePath.isBlank()) {
+      gameLayer = gameContainer;
+      setBackgroundImagePath(backgroundImagePath);
+    }
     return gameContainer;
+  }
+
+  private void ensureBackgroundImageView() {
+    if (backgroundImageView == null) {
+      backgroundImageView = new ImageView();
+      backgroundImageView.setMouseTransparent(true);
+      backgroundImageView.setPreserveRatio(false);
+      backgroundImageView.fitWidthProperty().bind(gameLayer.widthProperty());
+      backgroundImageView.fitHeightProperty().bind(gameLayer.heightProperty());
+    }
+    if (!gameLayer.getChildren().contains(backgroundImageView)) {
+      gameLayer.getChildren().add(0, backgroundImageView);
+    }
+  }
+
+  private void removeBackgroundImage() {
+    if (backgroundImageView != null && gameLayer != null) {
+      gameLayer.getChildren().remove(backgroundImageView);
+      backgroundImageView.setImage(null);
+    }
   }
 
   private void wireKeyboardInput(StackPane root) {
@@ -211,47 +261,41 @@ public class GamePlayAppScreen extends AbstractAppScreen implements GameplayView
     return container;
   }
 
-  // availableToolIds == null means "show every tool in the properties file" (startup default).
-  private HBox createBottomControlsRegion(Set<String> availableToolIds) {
-    HBox container = new HBox(d("bottom.controls.spacing"));
-    container.getStyleClass().add("controlbuttons-bottom");
-
-    container.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-    container.setPickOnBounds(false);
-
-    for (String tool : getList("tools")) {
-      if (availableToolIds != null && !availableToolIds.contains(tool)) {
-        continue;
-      }
-      ToggleButton toolBtn = new ToggleButton(s("tool." + tool));
-      toolBtn.getStyleClass().add("tool-button");
-
-      toolBtn.setOnAction(e -> {
-        if (toolBtn.isSelected()) {
-          onToolActivated.accept(tool);
-        } else {
-          onToolDeactivated.accept(tool);
-        }
-      });
-
-      container.getChildren().add(toolBtn);
-    }
-
-    return container;
-  }
-
   public void setAvailableTools(Collection<String> toolIds) {
     if (bottomControls == null) {
       return;
     }
-    Set<String> filter = toolIds == null
-        ? null
-        : toolIds.stream().map(String::toLowerCase).collect(Collectors.toCollection(HashSet::new));
-    HBox rebuilt = createBottomControlsRegion(filter);
-    bottomControls.getChildren().setAll(rebuilt.getChildren());
+    bottomControls.getChildren().clear();
+    if (toolIds == null || toolIds.isEmpty()) {
+      return;
+    }
+    for (String toolId : toolIds) {
+      String label = toolLabel(toolId);
+      ToggleButton toolBtn = new ToggleButton(label);
+      toolBtn.getStyleClass().add("tool-button");
+      toolBtn.setOnAction(e -> {
+        if (toolBtn.isSelected()) {
+          onToolActivated.accept(toolId);
+        } else {
+          onToolDeactivated.accept(toolId);
+        }
+      });
+      bottomControls.getChildren().add(toolBtn);
+    }
   }
 
-  private List<String> getList(String key) { return Arrays.asList(s(key).split(",")); }
+  private String toolLabel(String toolId) {
+    String key = "tool." + toolId;
+    try {
+      return PROPS.getString(key);
+    } catch (java.util.MissingResourceException e) {
+      if (toolId.isEmpty()) {
+        return toolId;
+      }
+      return Character.toUpperCase(toolId.charAt(0)) + toolId.substring(1);
+    }
+  }
+
   private String s(String key) { return PROPS.getString(key); }
   private double d(String key) { return Double.parseDouble(PROPS.getString(key)); }
 }

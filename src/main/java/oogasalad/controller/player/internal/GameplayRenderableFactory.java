@@ -35,7 +35,7 @@ final class GameplayRenderableFactory {
 
   private static final double NO_ANIMATION_SPEED = 0.0;
   private static final double TERRAIN_STROKE_WIDTH = 0.5;
-  private static final double SPLINE_STROKE_WIDTH = 1.0;
+  private static final double SPLINE_STROKE_WIDTH = 4.0;
 
   private final SpriteCache spriteCache = new SpriteCache();
   private final PaletteSpriteRegistry spriteRegistry = new PaletteSpriteRegistry();
@@ -84,7 +84,7 @@ final class GameplayRenderableFactory {
     addSplineCurve(path, spline, originX, originY);
     TerrainPaints.applyTerrainFill(path, terrainSpline.getSprite(), terrainSpline.getColor(),
         terrainSpline.getWidth(), terrainSpline.getHeight(), terrainSpline.isTiled());
-    path.setStroke(Color.BLACK);
+    path.setStroke(TerrainPaints.parseColor(terrainSpline.getTrackColor()));
     path.setStrokeWidth(SPLINE_STROKE_WIDTH);
     return path;
   }

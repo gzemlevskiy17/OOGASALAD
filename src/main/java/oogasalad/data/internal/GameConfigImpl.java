@@ -170,6 +170,7 @@ public class GameConfigImpl implements GameConfig {
       String path = "components[" + index + "]";
       requireObject(component, path);
       requireText(component, "id", path + ".id");
+      optionalTextString(component, "spriteUrl", path + ".spriteUrl");
       requireNumber(component, "mass", path + ".mass");
       if (component.has("buttons")) {
         requireArray(component, "buttons", path + ".buttons");
@@ -194,6 +195,7 @@ public class GameConfigImpl implements GameConfig {
       String path = "staticComponents[" + index + "]";
       requireObject(component, path);
       requireText(component, "id", path + ".id");
+      optionalTextString(component, "spriteUrl", path + ".spriteUrl");
       requireNumber(component, "mass", path + ".mass");
       validateCollisionAction(component.path("onCollisionAction"), path + ".onCollisionAction");
     }
@@ -323,8 +325,9 @@ public class GameConfigImpl implements GameConfig {
       String id = entry.path("id").asText("");
       String spriteUrl = nullableText(entry.path("spriteUrl"));
       String visualColor = nullableText(entry.path("visualColor"));
+      String trackColor = nullableText(entry.path("trackColor"));
       double friction = entry.path("friction").asDouble(0);
-      result.add(new TerrainInfo(id, spriteUrl, visualColor, friction));
+      result.add(new TerrainInfo(id, spriteUrl, visualColor, trackColor, friction));
     }
     return result;
   }
@@ -398,5 +401,20 @@ public class GameConfigImpl implements GameConfig {
       return null;
     }
     return node.asText(null);
+  }
+
+  /**
+   * Sprite URLs may be empty when rendering falls back to bundled palette keys (e.g. Wood Wheel /
+   * oogasalad.view.core.internal.PaletteSpriteRegistry). Rejects non-text JSON values only.
+   */
+  private void optionalTextString(JsonNode node, String key, String path) {
+    JsonNode field = node.path(key);
+    if (field.isMissingNode() || field.isNull()) {
+      return;
+    }
+    if (!field.isTextual()) {
+      throw new LevelLoadException(
+          "Game config must store a text or null string for '" + path + "'");
+    }
   }
 }

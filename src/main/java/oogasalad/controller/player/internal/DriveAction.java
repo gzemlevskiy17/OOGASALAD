@@ -1,28 +1,25 @@
 package oogasalad.controller.player.internal;
 
 import oogasalad.controller.player.api.Action;
-import oogasalad.model.engine.api.Driveable;
 
 /**
- * Toggles a {@link Driveable}'s drive-enabled flag each time {@link #execute()} is called.
+ * Toggles an engine/motor drive component on or off each time execute() is called.
  *
- * The physics engine reads the flag each step via {@link Driveable#getDriveForce()} and
- * returns thrust while enabled, zero otherwise.
+ * A drive-capable component can hold a reference to this action and use {@link #isActive()} to
+ * decide whether to output thrust or zero force.
  */
 public class DriveAction implements Action {
 
-  private final Driveable target;
-
-  public DriveAction(Driveable target) {
-    this.target = target;
-  }
+  private boolean active = false;
 
   @Override
   public void execute() {
-    if (target.isDriveEnabled()) {
-      target.deactivateDrive();
-    } else {
-      target.activateDrive();
-    }
+    active = !active;
+  }
+
+
+  /** @return true if the drive component is currently on. */
+  public boolean isActive() {
+    return active;
   }
 }

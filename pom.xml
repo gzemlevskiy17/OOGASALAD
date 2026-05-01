@@ -76,15 +76,6 @@
         <groupId>org.xerial</groupId>
         <version>3.47.1.0</version>
       </dependency>
-
-      <!-- OpenAI Client -->
-        <dependency>
-            <groupId>com.openai</groupId>
-            <artifactId>openai-java</artifactId>
-            <version>4.30.0</version>
-            <scope>compile</scope>
-        </dependency>
-
     </dependencies>
 
     <build>

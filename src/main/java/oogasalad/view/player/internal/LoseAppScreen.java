@@ -10,7 +10,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import oogasalad.controller.core.api.Outcome;
-import oogasalad.view.core.internal.AbstractAppScreen;
+import oogasalad.view.core.api.AbstractAppScreen;
 
 /**
  * Screen displayed when the player loses the level.
@@ -19,6 +19,8 @@ public class LoseAppScreen extends AbstractAppScreen {
 
   private static final ResourceBundle PROPS =
       ResourceBundle.getBundle("oogasalad.view.player.LoseAppScreen");
+  private static final int CONTENT_SPACING = 24;
+  private static final int BUTTON_SPACING = 16;
 
   private ResultStatsPanel statsPanel;
 
@@ -33,18 +35,23 @@ public class LoseAppScreen extends AbstractAppScreen {
         getClass().getResource("/oogasalad/view/player/result-screen.css").toExternalForm());
     root.getStyleClass().add("screen-root");
 
-    VBox content = new VBox(24);
-    content.getStyleClass().add("result-card");
-    content.setAlignment(Pos.CENTER);
+    root.setCenter(buildContent());
+    return root;
+  }
 
+  private VBox buildContent() {
     Label title = new Label(s("title.text"));
     title.getStyleClass().add("result-title");
 
     statsPanel = new ResultStatsPanel(PROPS);
 
-    HBox buttons = new HBox(16);
-    buttons.setAlignment(Pos.CENTER);
+    VBox content = new VBox(CONTENT_SPACING, title, statsPanel.getNode(), buildButtonRow());
+    content.getStyleClass().add("result-card");
+    content.setAlignment(Pos.CENTER);
+    return content;
+  }
 
+  private HBox buildButtonRow() {
     Button tryAgainButton = new Button(s("try.again.button.text"));
     tryAgainButton.getStyleClass().add("result-button");
     tryAgainButton.setOnAction(event -> onOutcome.accept(Outcome.OPEN_GAMEPLAY));
@@ -57,10 +64,9 @@ public class LoseAppScreen extends AbstractAppScreen {
     homeButton.getStyleClass().add("result-button");
     homeButton.setOnAction(event -> onOutcome.accept(Outcome.BACK_TO_MENU));
 
-    buttons.getChildren().addAll(tryAgainButton, playSomethingButton, homeButton);
-    content.getChildren().addAll(title, statsPanel.getNode(), buttons);
-    root.setCenter(content);
-    return root;
+    HBox buttons = new HBox(BUTTON_SPACING, tryAgainButton, playSomethingButton, homeButton);
+    buttons.setAlignment(Pos.CENTER);
+    return buttons;
   }
 
   /**

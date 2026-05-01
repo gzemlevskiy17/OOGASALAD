@@ -1,0 +1,50 @@
+{
+  "gameId" : "iuriiworld3",
+  "mainCharacterId" : "BigPig",
+  "components" : [ {
+    "id" : "Metal Wheel",
+    "spriteUrl" : "",
+    "mass" : 3.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "BigPig",
+    "spriteUrl" : "data/assets/vehicle/bp_bigPig.png",
+    "mass" : 10.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Engine",
+    "spriteUrl" : "data/assets/vehicle/bp_engine.png",
+    "mass" : 8.0,
+    "buttons" : [ {
+      "name" : "Drive Left",
+      "direction" : {
+        "x" : -500.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Drive Right",
+      "direction" : {
+        "x" : 500.0,
+        "y" : 0.0
+      }
+    } ]
+  }, {
+    "id" : "Frame",
+    "spriteUrl" : "data/assets/vehicle/bp_frame.png",
+    "mass" : 6.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "baloooon",
+    "spriteUrl" : "data/assets/star.png",
+    "mass" : 1.0,
+    "buttons" : [ {
+      "name" : "uppp",
+      "direction" : {
+        "x" : 0.0,
+        "y" : 100.0
+      }
+    } ]
+  } ],
+  "staticComponents" : [ ],
+  "terrainTypes" : [ ]
+}

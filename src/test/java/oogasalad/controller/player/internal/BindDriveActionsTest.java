@@ -48,16 +48,16 @@ class BindDriveActionsTest {
   }
 
   @Test
-  void buttonPress_twiceOnSameId_togglesBack() {
+  void buttonRelease_afterPress_deactivatesDrive() {
     DriveComponent fan = newDrive("Fan");
     world.addComponent(fan);
 
     binder.bind(router, world);
     router.handleButtonPress("fan");
-    router.handleButtonPress("fan");
+    router.handleButtonRelease("fan");
 
     assertFalse(fan.isDriveEnabled(),
-        "two presses should toggle off — matches control-button ToggleButton select/deselect");
+        "releasing 'fan' should deactivate the drive that was activated by press");
   }
 
   @Test
@@ -132,7 +132,7 @@ class BindDriveActionsTest {
   }
 
   @Test
-  void twoDrivesWithSameDisplayName_secondPressTurnsBothOff() {
+  void twoDrivesWithSameDisplayName_releaseTurnsBothOff() {
     DriveComponent fanA = newDrive("Fan");
     DriveComponent fanB = newDrive("Fan");
     world.addComponent(fanA);
@@ -140,7 +140,7 @@ class BindDriveActionsTest {
 
     binder.bind(router, world);
     router.handleButtonPress("fan");
-    router.handleButtonPress("fan");
+    router.handleButtonRelease("fan");
 
     assertFalse(fanA.isDriveEnabled(), "first fan should turn off");
     assertFalse(fanB.isDriveEnabled(), "second fan should turn off");

@@ -22,14 +22,14 @@ public class SpringJoint extends DistanceJoint {
   /** Creates a spring joint that uses the initial anchor spacing as its target length. */
   public SpringJoint(RigidBody objectA, RigidBody objectB, double stiffness, double damping) {
     super(objectA, objectB, stiffness, damping);
-    stiff_zerocheck(stiffness);
+    checkStiffnessNonzero(stiffness);
   }
 
   /** Creates a spring joint with an allowed distance band around the anchors. */
   public SpringJoint(RigidBody objectA, RigidBody objectB, double minDistance,
       double maxDistance, double stiffness, double damping) {
     super(objectA, objectB, minDistance, maxDistance, stiffness, damping);
-    stiff_zerocheck(stiffness);
+    checkStiffnessNonzero(stiffness);
   }
 
   /** Creates a spring joint with explicit local anchors, range limits, and spring parameters. */
@@ -37,10 +37,10 @@ public class SpringJoint extends DistanceJoint {
       Vector localAnchorB, double minDistance, double maxDistance, double stiffness, double damping) {
     super(objectA, objectB, localAnchorA, localAnchorB, minDistance, maxDistance, stiffness,
         damping);
-    stiff_zerocheck(stiffness);
+    checkStiffnessNonzero(stiffness);
   }
 
-  private static void stiff_zerocheck(double stiffness) {
+  private static void checkStiffnessNonzero(double stiffness) {
     if (stiffness == 0.0) {
       throw new IllegalArgumentException(
           EngineError.SPRING_JOINT_REQUIRES_POSITIVE_STIFFNESS.message());}

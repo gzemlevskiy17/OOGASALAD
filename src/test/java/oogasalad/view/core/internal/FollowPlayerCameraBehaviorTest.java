@@ -3,6 +3,7 @@ package oogasalad.view.core.internal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import oogasalad.view.core.api.AbstractCameraBehavior;
 import oogasalad.view.core.api.Renderable;
 import org.junit.jupiter.api.Test;
 

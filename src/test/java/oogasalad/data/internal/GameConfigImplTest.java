@@ -109,18 +109,20 @@ class GameConfigImplTest {
   }
 
   @Test
-  void terrainTypes_parsedWithFrictionAndColor() throws IOException {
+  void terrainTypes_parsedWithFrictionColorAndTrackColor() throws IOException {
     File f = writeConfig("""
         { "gameId": "g", "mainCharacterId": "body",
           "components": [], "staticComponents": [],
           "terrainTypes": [
-            { "id": "ice", "spriteUrl": null, "visualColor": "#ADE8F4", "friction": 0.1 }
+            { "id": "ice", "spriteUrl": null, "visualColor": "#ADE8F4",
+              "trackColor": "#123456", "friction": 0.1 }
           ] }
         """);
     var t = new GameConfigImpl(f.getAbsolutePath()).terrainTypes().get(0);
     assertEquals("ice", t.id());
     assertEquals(0.1, t.friction(), 0.001);
     assertEquals("#ADE8F4", t.visualColor());
+    assertEquals("#123456", t.trackColor());
     assertNull(t.spriteUrl());
   }
 

@@ -46,7 +46,9 @@ public class SplineDraftController {
   private static final Color GHOST_STROKE_COLOR = Color.CORNFLOWERBLUE;
   private static final Color CURSOR_HINT_COLOR = Color.rgb(100, 100, 100, 0.55);
   private static final int MIN_KNOTS_TO_COMMIT = 2;
+  private static final double TRACK_STROKE_WIDTH = 4.0;
   private static final String DEFAULT_COLOR = "#4A2C0F";
+  private static final String DEFAULT_TRACK_COLOR = "#000000";
   private static final String DEFAULT_SPRITE = "";
   private static final double DEFAULT_FRICTION = 0.6;
 
@@ -61,6 +63,7 @@ public class SplineDraftController {
   private boolean terrainTiled = true;
   private double terrainFriction = DEFAULT_FRICTION;
   private String terrainColor = DEFAULT_COLOR;
+  private String trackColor = DEFAULT_TRACK_COLOR;
 
   /**
    * @param world  the world that committed splines are added to
@@ -85,11 +88,18 @@ public class SplineDraftController {
    */
   public void setTerrainStyle(String name, String sprite, boolean tiled, double friction,
       String color) {
+    setTerrainStyle(name, sprite, tiled, friction, color, DEFAULT_TRACK_COLOR);
+  }
+
+  public void setTerrainStyle(String name, String sprite, boolean tiled, double friction,
+      String color, String trackColor) {
     terrainName = name == null || name.isBlank() ? "Spline Terrain" : name;
     terrainSprite = sprite == null ? DEFAULT_SPRITE : sprite;
     terrainTiled = true;
     terrainFriction = friction;
     terrainColor = color == null || color.isBlank() ? DEFAULT_COLOR : color;
+    this.trackColor = trackColor == null || trackColor.isBlank()
+        ? DEFAULT_TRACK_COLOR : trackColor;
     renderDraftOverlay();
   }
 
@@ -122,7 +132,8 @@ public class SplineDraftController {
       ParabolaSpline spline = new ParabolaSpline(
           new ArrayList<>(draftKnots), baselineYCells);
       committed = new TerrainSpline(
-          terrainName, spline, terrainSprite, terrainTiled, terrainFriction, terrainColor);
+          terrainName, spline, terrainSprite, terrainTiled, terrainFriction, terrainColor,
+          trackColor);
       world.addObject(committed);
     }
     cancel();
@@ -189,10 +200,18 @@ public class SplineDraftController {
     path.getElements().add(new ClosePath());
 
     path.setFill(parseGhostFillColor());
-    path.setStroke(GHOST_STROKE_COLOR);
-    path.setStrokeWidth(1.5);
+    path.setStroke(parseTrackColor());
+    path.setStrokeWidth(TRACK_STROKE_WIDTH);
     path.setMouseTransparent(true);
     return path;
+  }
+
+  private Color parseTrackColor() {
+    try {
+      return Color.web(trackColor);
+    } catch (IllegalArgumentException e) {
+      return GHOST_STROKE_COLOR;
+    }
   }
 
   private Color parseGhostFillColor() {

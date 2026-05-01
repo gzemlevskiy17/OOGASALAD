@@ -1,5 +1,7 @@
 package oogasalad.view.core.internal;
 
+import java.util.Optional;
+import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.view.core.api.Camera;
 import oogasalad.view.core.api.CameraBehavior;
@@ -55,9 +57,7 @@ public class CameraImpl implements Camera {
   }
 
   public void updateBehavior() {
-    if (cameraBehavior != null) {
-      cameraBehavior.update(this);
-    }
+    Optional.ofNullable(cameraBehavior).ifPresent(cb -> cb.update(this));
   }
 
   public void setViewBoundaries(double width, double height) {
@@ -70,25 +70,30 @@ public class CameraImpl implements Camera {
 
   @Override
   public boolean isVisible(Renderable object) {
-    if (object == null) return false;
+    if (object == null) {
+      return false;
+    }
+    double viewLeft = x;
+    double viewTop = y;
+    double viewRight = x + viewWidth;
+    double viewBottom = y + viewHeight;
 
-    double left = x;
-    double right = x + viewWidth;
-    double top = y;
-    double bottom = y + viewHeight;
-
-    if (object instanceof TerrainBlock tb) {
-      double objLeft = tb.x();
-      double objRight = tb.x() + tb.getWidth();
-      double objTop = tb.y();
-      double objBottom = tb.y() + tb.getHeight();
-
-      return objRight >= left && objLeft <= right
-          && objBottom >= top && objTop <= bottom;
+    if (!(object instanceof GameObject gameObject)) {
+      return pointInsideViewport(viewLeft, viewTop, viewRight, viewBottom,
+          object.x(), object.y());
     }
 
-    double objectX = object.x();
-    double objectY = object.y();
-    return objectX >= left && objectX <= right && objectY >= top && objectY <= bottom;
+    CollisionPolygonBounds.UnionAabb aabb = CollisionPolygonBounds.unionAabb(gameObject);
+    return aabb.defined()
+        ? CollisionPolygonBounds.rectsOverlap(
+        aabb.minX(), aabb.minY(), aabb.maxX(), aabb.maxY(),
+        viewLeft, viewTop, viewRight, viewBottom)
+        : pointInsideViewport(viewLeft, viewTop, viewRight, viewBottom,
+            object.x(), object.y());
+  }
+
+  private static boolean pointInsideViewport(double viewLeft, double viewTop,
+      double viewRight, double viewBottom, double px, double py) {
+    return px >= viewLeft && px <= viewRight && py >= viewTop && py <= viewBottom;
   }
 }

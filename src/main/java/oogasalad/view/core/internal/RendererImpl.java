@@ -16,6 +16,16 @@ import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Renderer;
 import oogasalad.view.core.api.Sprite;
 
+/**
+ * Default renderer: keeps one JavaFX node per renderable instance, reuses it across frames,
+ * sets layout from world position minus camera position, applies rotation when the node allows
+ * it (see Sprite.USES_RENDERABLE_ROTATION_KEY on the node’s properties), runs an optional
+ * per-frame callback to sync visuals, and removes nodes whose renderables were not passed in
+ * this frame. Uses identity, not equals, to match renderables to nodes.
+ *
+ * @author Iurii Beliaev
+ */
+
 public class RendererImpl implements Renderer {
 
   private static final double DEFAULT_MARKER_RADIUS = 4.0;
@@ -44,10 +54,6 @@ public class RendererImpl implements Renderer {
     this.frameUpdater = frameUpdater;
   }
 
-  public Pane getRenderLayer() {
-    return renderLayer;
-  }
-
   @Override
   public void render(Camera camera, Collection<? extends Renderable> objects) {
     if (camera == null || objects == null) {
@@ -56,6 +62,9 @@ public class RendererImpl implements Renderer {
     Set<Renderable> seenThisFrame = Collections.newSetFromMap(new IdentityHashMap<>());
     for (Renderable object : objects) {
       if (object == null) {
+        continue;
+      }
+      if (!camera.isVisible(object)) {
         continue;
       }
       seenThisFrame.add(object);

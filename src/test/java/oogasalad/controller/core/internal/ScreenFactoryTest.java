@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import oogasalad.data.api.GameConfig;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.internal.GameConfigImpl;
 import org.junit.jupiter.api.Test;
 

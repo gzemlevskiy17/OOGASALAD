@@ -313,7 +313,7 @@ class LevelValidatorTest {
   }
 
   @Test
-  void validate_mapObjectMissingPosition_throws() throws JsonProcessingException {
+  void validate_mapObjectMissingPosition_errorsReportedCorrectly() throws JsonProcessingException {
     JsonNode root = parse("""
         { "gameMetadata": { "levelName": "T", "gameType": "g",
             "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
@@ -327,7 +327,7 @@ class LevelValidatorTest {
   }
 
   @Test
-  void validate_mapObjectMissingType_throws() throws JsonProcessingException {
+  void validate_mapObjectMissingType_errorsReportedCorrectly() throws JsonProcessingException {
     JsonNode root = parse("""
         { "gameMetadata": { "levelName": "T", "gameType": "g",
             "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },
@@ -339,7 +339,7 @@ class LevelValidatorTest {
   }
 
   @Test
-  void validate_spawnPointMissingX_throws() throws JsonProcessingException {
+  void validate_spawnPointMissingX_errorsReportedCorrectly() throws JsonProcessingException {
     JsonNode root = parse("""
         { "gameMetadata": { "levelName": "T", "gameType": "g",
             "screenWidth": 100, "screenHeight": 100, "gravity": -9.8, "drag": 0.01 },

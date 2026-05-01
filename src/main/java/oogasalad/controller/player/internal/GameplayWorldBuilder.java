@@ -6,7 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.internal.LevelPaths;
@@ -22,7 +22,7 @@ import oogasalad.model.engine.internal.components.TerrainBlock;
 import oogasalad.model.engine.internal.components.TerrainSpline;
 import oogasalad.model.player.api.PlacedComponent;
 import oogasalad.model.player.api.VehicleLayout;
-import oogasalad.view.authoring.internal.AuthoringAlertService;
+import oogasalad.view.authoring.internal.common.AuthoringAlertService;
 
 /**
  * Builds the loaded gameplay world and inserts the player vehicle at the level spawn point.

@@ -1,6 +1,8 @@
 package oogasalad.model.engine;
 
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Dynamic;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
@@ -25,23 +27,18 @@ class SweptCollisionResolver {
     this.world = world;
   }
 
-  Map<DynamicComponent, MotionSnapshot> captureMotion() {
+  Map<DynamicComponent, MotionSnapshot> captureMotion(List<DynamicComponent> dynamicComponents) {
     Map<DynamicComponent, MotionSnapshot> motion = new HashMap<>();
-    for (GameObject object : world.getObjects()) {
-      if (object instanceof DynamicComponent dynamicComponent) {
-        motion.put(dynamicComponent, new MotionSnapshot(
-            BoundingBox.from(dynamicComponent),
-            dynamicComponent.getStaticState().getLinearPosition()));
-      }
+    for (DynamicComponent dynamicComponent : dynamicComponents) {
+      motion.put(dynamicComponent, new MotionSnapshot(
+          BoundingBox.from(dynamicComponent),
+          dynamicComponent.getStaticState().getLinearPosition()));
     }
     return motion;
   }
 
   void resolve(Map<DynamicComponent, MotionSnapshot> previousMotion) {
-    for (GameObject dynamicObject : world.getObjects()) {
-      if (!(dynamicObject instanceof DynamicComponent dynamicComponent)) {
-        continue;
-      }
+    for (DynamicComponent dynamicComponent : world.getActiveDynamicComponents()) {
       resolveForComponent(dynamicComponent, previousMotion);
     }
   }
@@ -65,7 +62,7 @@ class SweptCollisionResolver {
       BoundingBox startBounds, BoundingBox endBounds, Vector displacement) {
     SweptHit earliestHit = null;
     for (GameObject staticObject : world.getObjects()) {
-      if (staticObject == dynamicComponent || !(staticObject instanceof StaticComponent)) {
+      if (!(staticObject instanceof StaticComponent)) {
         continue;
       }
       BoundingBox staticBounds = BoundingBox.from(staticObject);

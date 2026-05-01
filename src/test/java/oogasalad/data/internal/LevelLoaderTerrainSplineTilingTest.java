@@ -34,6 +34,7 @@ class LevelLoaderTerrainSplineTilingTest {
               "id": "DirtPath",
               "spriteUrl": "data/assets/back.png",
               "visualColor": "#8B5E3C",
+              "trackColor": "#FF00AA",
               "friction": 0.4
             }
           ]
@@ -76,6 +77,7 @@ class LevelLoaderTerrainSplineTilingTest {
     TerrainSpline spline = firstTerrainSpline(world);
     assertEquals("DirtPath", spline.getDisplayName());
     assertEquals("data/assets/back.png", spline.getSprite());
+    assertEquals("#FF00AA", spline.getTrackColor());
     assertTrue(spline.isTiled());
   }
 

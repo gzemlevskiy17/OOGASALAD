@@ -25,8 +25,6 @@ public class LevelValidator {
 
   private static final double DRAG_MIN = 0.0;
   private static final double DRAG_MAX = 1.0;
-  // Gravity is stored in physics convention: negative = downward in screen-space (Y grows down).
-  // Bounds match the authoring spinner so files saved by the editor always validate.
   private static final double GRAVITY_MIN = -50.0;
   private static final double GRAVITY_MAX = 0.0;
 
@@ -67,7 +65,7 @@ public class LevelValidator {
     requireText(meta, "gameType", "gameMetadata.gameType", errors);
     requirePositive(meta, "screenWidth", "gameMetadata.screenWidth", errors);
     requirePositive(meta, "screenHeight", "gameMetadata.screenHeight", errors);
-    requireInRange(meta, "gravity", "gameMetadata.gravity", GRAVITY_MIN, GRAVITY_MAX, errors);
+    requireGravity(meta, errors);
     requireInRange(meta, "drag", "gameMetadata.drag", DRAG_MIN, DRAG_MAX, errors);
   }
 
@@ -125,6 +123,20 @@ public class LevelValidator {
       errors.add(path + ".position must be a {x, y} object");
     } else {
       validatePoint(pos, path + ".position", errors);
+    }
+  }
+
+  private void requireGravity(JsonNode meta, List<String> errors) {
+    JsonNode field = meta.path("gravity");
+    if (field.isMissingNode() || !field.isNumber()) {
+      errors.add("missing required number: 'gameMetadata.gravity'");
+      return;
+    }
+    double value = field.asDouble();
+    if (!Double.isFinite(value) || value < GRAVITY_MIN || value > GRAVITY_MAX) {
+      errors.add("gameMetadata.gravity must be in [" + GRAVITY_MIN + ", " + GRAVITY_MAX
+          + "] (got " + field.asText() + "). Gravity uses negative values where "
+          + GRAVITY_MIN + " is the strongest downward pull and 0 is no gravity.");
     }
   }
 

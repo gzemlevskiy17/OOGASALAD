@@ -7,7 +7,7 @@ import oogasalad.controller.authoring.api.AuthoringController;
 import oogasalad.controller.authoring.api.ToolSelector;
 import oogasalad.controller.authoring.api.ToolSelector.ToolType;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelSaver;
 import oogasalad.model.engine.api.GameObject;
@@ -78,7 +78,8 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void setSplineTerrainStyle(AuthoringPlaceable placeable) {
     if (placeable != null) {
       splineDraft.setTerrainStyle(placeable.getDisplayName(), placeable.getSprite(),
-          placeable.isTiled(), placeable.getFriction(), placeable.getColor());
+          placeable.isTiled(), placeable.getFriction(), placeable.getColor(),
+          placeable.getTrackColor());
     }
   }
 

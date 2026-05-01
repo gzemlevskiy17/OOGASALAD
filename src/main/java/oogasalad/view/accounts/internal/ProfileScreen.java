@@ -37,12 +37,21 @@ public class ProfileScreen implements AppScreen {
         getClass().getResource("/oogasalad/view/accounts/accounts.css").toExternalForm());
     layout.getStyleClass().add("screen-root");
 
+    layout.setTop(buildBackButton(onNav));
+    layout.setCenter(buildCenter(onNav, onAction));
+
+    this.root = layout;
+  }
+
+  private Button buildBackButton(Consumer<Outcome> onNav) {
     Button backButton = new Button(PROPS.getString("backButton"));
     backButton.getStyleClass().addAll("menu-button", "menu-secondary-button");
     backButton.setOnAction(e -> onNav.accept(Outcome.BACK_TO_MENU));
     BorderPane.setMargin(backButton, new Insets(18, 0, 0, 18));
-    layout.setTop(backButton);
+    return backButton;
+  }
 
+  private VBox buildCenter(Consumer<Outcome> onNav, Consumer<AccountOutcome> onAction) {
     Label title = new Label(PROPS.getString("title"));
     title.getStyleClass().add("accounts-title");
 
@@ -65,9 +74,7 @@ public class ProfileScreen implements AppScreen {
         title, avatarView, usernameLabel, editButton, logoutButton);
     center.setAlignment(Pos.CENTER);
     center.getStyleClass().add("accounts-form");
-    layout.setCenter(center);
-
-    this.root = layout;
+    return center;
   }
 
   @Override

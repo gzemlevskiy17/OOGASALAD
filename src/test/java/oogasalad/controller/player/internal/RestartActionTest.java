@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 import oogasalad.controller.player.api.GameController;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.model.engine.api.World;
 import org.junit.jupiter.api.BeforeEach;

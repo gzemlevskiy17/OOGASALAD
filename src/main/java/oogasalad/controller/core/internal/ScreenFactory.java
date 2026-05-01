@@ -15,7 +15,7 @@ import oogasalad.controller.player.internal.TerminalResultHandler;
 import oogasalad.data.api.GameConfig;
 import oogasalad.data.api.GameLoader;
 import oogasalad.data.api.LevelId;
-import oogasalad.data.api.LevelAttributes;
+import oogasalad.data.internal.LevelAttributes;
 import oogasalad.data.api.LevelLoadException;
 import oogasalad.data.api.LevelLoader;
 import oogasalad.data.api.LevelLockedException;
@@ -25,7 +25,7 @@ import oogasalad.data.internal.LevelLoaderImpl;
 import oogasalad.data.internal.LevelPaths;
 import oogasalad.data.internal.LevelProgression;
 import oogasalad.data.internal.LevelScanner;
-import oogasalad.model.auth.api.AuthFactory;
+import oogasalad.model.auth.internal.AuthFactory;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.model.auth.api.PlayerProfile;
 import oogasalad.model.player.api.PlayHistoryRepository;
@@ -39,10 +39,10 @@ import oogasalad.view.accounts.internal.CreateAccountScreen;
 import oogasalad.view.accounts.internal.LoginScreen;
 import oogasalad.view.accounts.internal.ProfileScreen;
 import oogasalad.view.accounts.internal.UpdateProfileScreen;
-import oogasalad.view.authoring.internal.AuthoringAlertService;
-import oogasalad.view.authoring.internal.AuthoringEntryScreenImpl;
-import oogasalad.view.authoring.internal.AuthoringScreenImpl;
-import oogasalad.view.authoring.internal.GameAuthoringScreenImpl;
+import oogasalad.view.authoring.internal.common.AuthoringAlertService;
+import oogasalad.view.authoring.internal.entry.AuthoringEntryScreenImpl;
+import oogasalad.view.authoring.internal.game.GameAuthoringScreenImpl;
+import oogasalad.view.authoring.internal.level.AuthoringScreenImpl;
 import oogasalad.view.core.internal.GameMenuScreen;
 import oogasalad.view.player.internal.LoseAppScreen;
 import oogasalad.view.player.internal.PlayerEntryAppScreen;
@@ -56,6 +56,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Paulina Vvedenskaya
  * @author Emilio Garcia
+ * @author Iurii Beliaev
  */
 public class ScreenFactory {
 
@@ -207,6 +208,12 @@ public class ScreenFactory {
         new AuthoringScreenImpl(this::guardedOutcome, selectedLevelPath::set);
     gameAuthoringScreen = new GameAuthoringScreenImpl(this::guardedOutcome,
         authoringScreen::loadLevelFromPath, authoringScreen::setGameConfig);
+    registerAuthoringScreens(authoringScreen);
+    registerPlayerScreens();
+    registerGameplayScreens();
+  }
+
+  private void registerAuthoringScreens(AuthoringScreenImpl authoringScreen) {
     screenManager.registerScreen(MENU_SCREEN_KEY,
         new GameMenuScreen(this::guardedOutcome, authController::handle,
             authService.session()::isLoggedIn));
@@ -227,6 +234,9 @@ public class ScreenFactory {
             gameAuthoringScreen::resetForNewCatalog));
     screenManager.registerScreen(GAME_AUTHORING_SCREEN_KEY, gameAuthoringScreen);
     screenManager.registerScreen(AUTHORING_SCREEN_KEY, authoringScreen);
+  }
+
+  private void registerPlayerScreens() {
     screenManager.registerScreen(PLAYER_ENTRY_APP_SCREEN_KEY,
         new PlayerEntryAppScreen(this::guardedOutcome, this::onLevelSelected,
             this::scanLevels));
@@ -236,7 +246,9 @@ public class ScreenFactory {
         new oogasalad.view.core.internal.PaletteSpriteRegistry(),
         new oogasalad.model.player.internal.DefaultBuildRulesRegistry());
     screenManager.registerScreen(VEHICLE_BUILDER_APP_SCREEN_KEY, vehicleBuilderScreen);
+  }
 
+  private void registerGameplayScreens() {
     GameplaySessionFactoryImpl sessionFactory = new GameplaySessionFactoryImpl(
         levelLoader,
         gameLoader,
