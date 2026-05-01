@@ -47,6 +47,9 @@ public class GameMenuScreen extends AbstractAppScreen {
   private Map<Labeled, String> textKeys;
   private final ThemeService themeService;
 
+  /**
+   * Threads login state and account actions through temporary ThreadLocals so super invokes createRoot with context.
+   */
   public GameMenuScreen(Consumer<Outcome> onOutcome, Consumer<AccountOutcome> onAccountAction,
       BooleanSupplier isLoggedIn, ThemeService themeService) {
     super(prepare(onOutcome, onAccountAction, isLoggedIn));
@@ -62,6 +65,9 @@ public class GameMenuScreen extends AbstractAppScreen {
     return onOutcome;
   }
 
+  /**
+   * Builds main menu chrome, optional help popup overlay, and wires theme and language dialogs.
+   */
   @Override
   protected Parent createRoot() {
     BooleanSupplier isLoggedIn = PENDING_LOGIN_STATE.get();

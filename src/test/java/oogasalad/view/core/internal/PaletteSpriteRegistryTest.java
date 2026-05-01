@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/** Unit tests for PaletteSpriteRegistry bundle resolution, key normalization, and GameConfig overrides. */
 class PaletteSpriteRegistryTest {
 
   private PaletteSpriteRegistry registry;

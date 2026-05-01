@@ -13,10 +13,12 @@ import oogasalad.view.core.api.Renderable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/** Unit tests for CameraImpl viewport geometry, visibility, and CameraBehavior delegation. */
 class CameraImplTest {
 
   private CameraImpl camera;
 
+  /** Builds a small renderable fixture at the given coordinates with zero rotation. */
   private static Renderable makeRenderable(double x, double y) {
     return new RenderableImpl(x, y, 0.0);
   }
