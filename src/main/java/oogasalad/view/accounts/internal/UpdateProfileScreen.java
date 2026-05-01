@@ -18,6 +18,11 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.accounts.api.AccountOutcome;
 import oogasalad.view.core.api.AppScreen;
 
+/**
+ * Profile editing screen that allows the logged-in user to change username, password, or avatar.
+ *
+ * @author Paulina Vvedenskaya
+ */
 public class UpdateProfileScreen implements AppScreen {
 
   private static final ResourceBundle PROPS =

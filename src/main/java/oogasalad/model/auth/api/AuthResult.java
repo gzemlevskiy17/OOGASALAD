@@ -8,6 +8,8 @@ package oogasalad.model.auth.api;
  *   if (result instanceof AuthResult.Success s) { ... s.profile() ... }
  *   if (result instanceof AuthResult.Failure f) { ... f.reason() ... }
  * </pre>
+ *
+ * @author Paulina Vvedenskaya
  */
 public sealed interface AuthResult permits AuthResult.Success, AuthResult.Failure {
 

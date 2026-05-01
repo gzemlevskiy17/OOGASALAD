@@ -1,0 +1,58 @@
+{
+  "gameMetadata": {
+    "levelName": "Untitled Level",
+    "gameType": "badpiggies",
+    "screenWidth": 3200.0,
+    "screenHeight": 1600.0,
+    "gravity": -9.8,
+    "drag": 0.01
+  },
+  "map": {
+    "knotLocations": [
+      {
+        "x": 7.0,
+        "y": 163.0
+      },
+      {
+        "x": 929.0,
+        "y": 291.0
+      },
+      {
+        "x": 1721.0,
+        "y": 311.0
+      },
+      {
+        "x": 2904.5,
+        "y": 321.0
+      }
+    ],
+    "blocks": [],
+    "objects": [
+      {
+        "type": "bomb",
+        "position": {
+          "x": 290.0,
+          "y": 190.0
+        }
+      }
+    ],
+    "terrainOptions": [
+      "Spline Terrain"
+    ],
+    "spawnPoint": {
+      "x": 100.0,
+      "y": 100.0
+    }
+  },
+  "mainCharacter": {
+    "gridSize": 60.0,
+    "elementsAllowed": [
+      "BigPig",
+      "Frame",
+      "Fan"
+    ],
+    "maxSelectable": 5,
+    "maxHP": 100.0,
+    "cameraFollows": "vehicle"
+  }
+}

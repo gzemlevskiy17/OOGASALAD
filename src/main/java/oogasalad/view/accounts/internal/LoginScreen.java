@@ -15,6 +15,11 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.accounts.api.AccountOutcome;
 import oogasalad.view.core.api.AppScreen;
 
+/**
+ * Login form screen that collects username and password and fires account outcomes via callbacks.
+ *
+ * @author Paulina Vvedenskaya
+ */
 public class LoginScreen implements AppScreen {
 
   private static final ResourceBundle PROPS =

@@ -13,6 +13,8 @@ import org.apache.logging.log4j.Logger;
  * <p>
  * Delegates password hashing to {@link PasswordHasher} and storage to {@link UserRepository},
  * keeping this class focused on login/register logic only.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class LocalAuthService implements AuthService {
 

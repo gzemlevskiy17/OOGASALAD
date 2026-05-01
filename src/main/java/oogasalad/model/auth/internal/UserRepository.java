@@ -7,6 +7,8 @@ import java.util.Optional;
  * <p>
  * This interface deals with raw database records (including hashed passwords). It should only be
  * used by the auth service — never exposed to the view layer.
+ *
+ * @author Paulina Vvedenskaya
  */
 public interface UserRepository {
 

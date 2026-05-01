@@ -9,7 +9,7 @@ import oogasalad.model.player.api.GameplayScore;
 /**
  * High-level controller of the game player environment.
  *
- *
+ * @author Paulina Vvedenskaya
  */
 public interface GameController {
   /** Starts the 60-FPS loop. On the first call, binds keys from config. */

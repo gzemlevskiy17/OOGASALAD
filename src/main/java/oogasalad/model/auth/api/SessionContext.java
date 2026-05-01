@@ -6,6 +6,8 @@ package oogasalad.model.auth.api;
  * Always reflects the latest state — if the player logs out, {@link #isLoggedIn} returns false
  * immediately. Check {@link #isLoggedIn} before calling {@link #currentUser} to avoid a null
  * return.
+ *
+ * @author Paulina Vvedenskaya
  */
 public interface SessionContext {
 

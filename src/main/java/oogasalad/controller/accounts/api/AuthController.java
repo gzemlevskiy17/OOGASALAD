@@ -7,6 +7,8 @@ import oogasalad.view.accounts.api.AccountOutcome;
  * <p>
  * Sits between the view layer (account screens) and the model layer
  * ({@link oogasalad.model.auth.api.AuthService}), keeping both sides decoupled from each other.
+ *
+ * @author Paulina Vvedenskaya
  */
 public interface AuthController {
 

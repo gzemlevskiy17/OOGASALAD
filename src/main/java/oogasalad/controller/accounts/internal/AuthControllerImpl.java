@@ -7,6 +7,12 @@ import oogasalad.model.auth.api.AuthResult;
 import oogasalad.model.auth.api.AuthService;
 import oogasalad.view.accounts.api.AccountOutcome;
 
+/**
+ * Routes account-screen intents through the authentication service and dispatches navigation or
+ * error callbacks based on the result.
+ *
+ * @author Paulina Vvedenskaya
+ */
 public class AuthControllerImpl implements AuthController {
 
   private final AuthService authService;

@@ -6,6 +6,8 @@ package oogasalad.data.api;
  * @param type   registry key, e.g. "heal", "damage", "finish"
  * @param amount magnitude for actions that take one; ignored for zero-argument actions like
  *               "finish"
+ *
+ * @author Paulina Vvedenskaya
  */
 public record CollisionAction(String type, double amount) {
 

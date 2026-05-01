@@ -15,6 +15,8 @@ import java.util.UUID;
  * Stores user accounts in a SQLite database file at {@code ~/.oogasalad/users.db}.
  * <p>
  * The database and schema are created automatically on first launch, so no manual setup is needed.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class SqliteUserRepo implements UserRepository {
 

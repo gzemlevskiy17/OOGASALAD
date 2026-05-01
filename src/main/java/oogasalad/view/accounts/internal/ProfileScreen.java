@@ -17,6 +17,12 @@ import oogasalad.model.auth.api.PlayerProfile;
 import oogasalad.view.accounts.api.AccountOutcome;
 import oogasalad.view.core.api.AppScreen;
 
+/**
+ * Displays the logged-in player's profile with avatar, username, and navigation to editing or
+ * logout.
+ *
+ * @author Paulina Vvedenskaya
+ */
 public class ProfileScreen implements AppScreen {
 
   private static final ResourceBundle PROPS =

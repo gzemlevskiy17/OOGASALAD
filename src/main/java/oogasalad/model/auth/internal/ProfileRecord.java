@@ -8,6 +8,8 @@ import oogasalad.model.auth.api.PlayerProfile;
  * <p>
  * Contains only display information — no passwords, no salts. A new instance is created whenever
  * the profile changes (e.g. avatar update).
+ *
+ * @author Paulina Vvedenskaya
  */
 record ProfileRecord(String username, String avatarPath) implements PlayerProfile {
 
