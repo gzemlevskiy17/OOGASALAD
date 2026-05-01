@@ -6,8 +6,10 @@ package oogasalad.view.core.api;
  * same call.
  *
  * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
  */
 public interface SpriteRegistry {
 
+  /** Maps a gameplay renderable to its drawable Sprite representation. */
   Sprite resolve(Renderable renderable);
 }

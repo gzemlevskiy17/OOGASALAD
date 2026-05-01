@@ -4,28 +4,29 @@ import javafx.scene.Node;
 import oogasalad.view.core.internal.SpriteCache;
 
 /**
- * View-side description of how to draw and animate one component type. Produced by a
- * {@link SpriteRegistry} and consumed by the rendering pipeline.
- *
- * <p>Implementations are stateless. Each call returns a fresh {@link Node}.
+ * Describes how to build and optionally animate JavaFX Nodes for palette previews and RendererImpl-backed bodies.
+ * Implementations should be effectively stateless; each render call may create a new Node graph.
  *
  * @author Paulina Vvedenskaya
  */
 public sealed interface Sprite permits SingleSprite, LayeredSprite {
 
+  /** Node property key: when false, RendererImpl skips applying Renderable rotation to the outer node. */
   String USES_RENDERABLE_ROTATION_KEY = "oogasalad.view.core.api.Sprite.usesRenderableRotation";
 
+  /** Logical width in sprite units. */
   double width();
 
+  /** Logical height in sprite units. */
   double height();
 
   /**
-   * Draws the sprite with its top-left at (0,0) — suitable for embedding in a layout container.
+   * Renders with top-left at the origin, suitable for palette thumbnails and layout embedding.
    */
   Node renderPreview(SpriteCache cache);
 
   /**
-   * Draws the sprite centered around (0,0) — suitable for placement by the world renderer.
+   * Renders centered on the origin, unmanaged, with rotation hint properties for the renderer.
    */
   default Node render(SpriteCache cache) {
     Node node = renderPreview(cache);
@@ -36,16 +37,13 @@ public sealed interface Sprite permits SingleSprite, LayeredSprite {
     return node;
   }
 
-  /**
-   * Whether the renderer should rotate the entire sprite node using the body rotation.
-   */
+  /** When true, RendererImpl applies body rotation in degrees to the node. */
   default boolean usesRenderableRotation() {
     return true;
   }
 
   /**
-   * Optional per-frame update (e.g. spinning a tire). Called with the node returned by render and a
-   * signed animation speed chosen by the renderer.
+   * Optional per-frame cosmetic update such as spinning a wheel layer using signed rolling speed input.
    */
   default void update(Node node, double animationSpeed) {
   }

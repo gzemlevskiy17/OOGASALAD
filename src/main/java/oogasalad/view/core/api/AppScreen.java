@@ -2,12 +2,18 @@ package oogasalad.view.core.api;
 
 import javafx.scene.Parent;
 
-/** Contract for a visual state. Must provide a root node for the shared Scene. */
+/**
+ * One navigable UI state in the application. Implementations contribute a root node to the shared
+ * Scene when the navigator activates this screen.
+ */
 public interface AppScreen {
-  /** @return the root node representing this screen's UI. */
+
+  /** Root node representing this screen. */
   Parent getRoot();
 
-  /** Called whenever the screen becomes active. */
+  /**
+   * Called whenever this screen becomes active after navigation; default implementation does nothing.
+   */
   default void onEnter() {
   }
 }

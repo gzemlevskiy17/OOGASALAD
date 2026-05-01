@@ -8,6 +8,7 @@ import javafx.scene.Node;
 import oogasalad.view.core.internal.SpriteCache;
 import org.junit.jupiter.api.Test;
 
+/** Unit tests for LayeredSprite rendering flags and per-frame wheel spin behavior. */
 class LayeredSpriteTest {
 
   @Test

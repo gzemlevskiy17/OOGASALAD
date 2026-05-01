@@ -11,6 +11,7 @@ import oogasalad.view.core.api.Renderable;
 import oogasalad.view.core.api.Sprite;
 import org.junit.jupiter.api.Test;
 
+/** Unit tests for RendererImpl layout, rotation conversion, and sprite rotation opt-out semantics. */
 class RendererImplTest {
 
   @Test
@@ -56,6 +57,7 @@ class RendererImplTest {
     assertEquals(0.0, layer.getChildren().getFirst().getRotate(), 1e-9);
   }
 
+  /** Fixed-position Camera stub with configurable origin for deterministic RendererImpl assertions. */
   private static final class FixedCamera implements Camera {
 
     private double x;

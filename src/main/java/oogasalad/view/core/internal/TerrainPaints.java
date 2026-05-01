@@ -59,6 +59,9 @@ public final class TerrainPaints {
     }
   }
 
+  /**
+   * Loads an image from the filesystem path or classpath; returns null when the asset cannot be read.
+   */
   public static Image loadImage(String spritePath) {
     if (spritePath == null || spritePath.isBlank()) {
       return null;

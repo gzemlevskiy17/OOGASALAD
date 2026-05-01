@@ -1,10 +1,8 @@
 package oogasalad.view.core.api;
 
 /**
- * Default structure for camera motion: each update reads a desired position from subclasses,
- * optionally clamps that position to an axis-aligned box, then moves the camera toward the
- * target by linear interpolation. Smoothing is a zero-to-one blend factor: one means jump
- * immediately to the target, zero would leave the camera frozen (not recommended at exactly zero).
+ * Template for smoothed camera motion: subclasses supply desired world coordinates; this class lerps toward
+ * them and optionally clamps to an axis-aligned rectangle.
  *
  * @author Iurii Beliaev
  */
@@ -18,14 +16,21 @@ public abstract class AbstractCameraBehavior implements CameraBehavior {
   private final double maxY;
 
 
+  /** Equivalent to smoothing factor 1.0 with clamping disabled. */
   public AbstractCameraBehavior() {
     this(1.0);
   }
 
+  /**
+   * Smoothing-only constructor; subclass desired positions may still be constrained elsewhere.
+   */
   public AbstractCameraBehavior(double smoothing) {
     this(smoothing, false, 0, 0, 0, 0);
   }
 
+  /**
+   * Full constructor controlling interpolation weight and optional axis-aligned clamp box.
+   */
   public AbstractCameraBehavior(double smoothing, boolean clampEnabled, double minX, double maxX, double minY, double maxY) {
     if (smoothing < 0.0 || smoothing > 1.0) {
       throw new IllegalArgumentException("smoothing must be in [0, 1]");
@@ -43,6 +48,9 @@ public abstract class AbstractCameraBehavior implements CameraBehavior {
     this.maxY = maxY;
   }
 
+  /**
+   * Interpolates the camera toward subclass-provided targets, optionally clamping inside configured bounds.
+   */
   @Override
   public void update(Camera camera) {
     if (camera == null) {
@@ -63,16 +71,16 @@ public abstract class AbstractCameraBehavior implements CameraBehavior {
     camera.setPosition(nextX, nextY);
   }
 
-  /** World X coordinate the camera should aim for before smoothing and optional bounds clamp. */
+  /** Desired camera X before smoothing and subclass-independent clamp aggregation. */
   protected abstract double desiredX(Camera camera);
 
-  /** World Y coordinate the camera should aim for before smoothing and optional bounds clamp. */
+  /** Desired camera Y before smoothing and subclass-independent clamp aggregation. */
   protected abstract double desiredY(Camera camera);
 
-  // Linear interpolation to integrate smooting
   private static double lerp(double from, double to, double t) {
     return from + (to - from) * t;
   }
+
   private static double clamp(double value, double min, double max) {
     return Math.max(min, Math.min(max, value));
   }

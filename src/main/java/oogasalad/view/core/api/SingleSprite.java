@@ -12,9 +12,14 @@ import javafx.scene.text.Text;
 import oogasalad.view.core.internal.SpriteCache;
 
 /**
- * A sprite drawn as a single image. Used for every component type that isn't a wheel.
+ * Raster sprite backed by one image path, scaled to the record width and height.
+ *
+ * @param path   image path resolved through SpriteCache
+ * @param width  draw width
+ * @param height draw height
  *
  * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
  */
 public record SingleSprite(String path, double width, double height) implements Sprite {
 
@@ -22,10 +27,12 @@ public record SingleSprite(String path, double width, double height) implements 
   private static final Color MISSING_SPRITE_STROKE = Color.web("#B8B8B8");
   private static final String MISSING_SPRITE_LABEL = "?";
 
+  /** Ensures non-null asset path prior to constructing the sprite. */
   public SingleSprite {
     Objects.requireNonNull(path, "path");
   }
 
+  /** Loads from cache when present; otherwise draws a fallback rectangle preview. */
   @Override
   public Node renderPreview(SpriteCache cache) {
     Image image = cache.get(path);

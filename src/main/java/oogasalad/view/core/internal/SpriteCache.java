@@ -8,7 +8,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Caches loaded sprite images by file path to avoid redundant disk reads during rendering.
+ * In-memory cache of loaded Images keyed by path string to avoid repeated disk access.
+ *
+ * @author Iurii Beliaev
  */
 public class SpriteCache {
 
@@ -16,6 +18,10 @@ public class SpriteCache {
 
   private final Map<String, Image> cache = new HashMap<>();
 
+  /**
+   * Retrieves a cached Image or loads synchronously from an existing filesystem file; logs and returns
+   * null when unavailable.
+   */
   public Image get(String path) {
     return cache.computeIfAbsent(path, this::load);
   }

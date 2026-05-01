@@ -2,34 +2,9 @@
   "gameId" : "iuriiworld4",
   "mainCharacterId" : "paulina",
   "components" : [ {
-    "id" : "BigPig",
-    "spriteUrl" : "data/assets/vehicle/bp_bigPig.png",
-    "mass" : 10.0,
-    "buttons" : [ ]
-  }, {
     "id" : "Frame",
     "spriteUrl" : "data/assets/vehicle/bp_frame.png",
     "mass" : 6.0,
-    "buttons" : [ ]
-  }, {
-    "id" : "Wood Wheel",
-    "spriteUrl" : "",
-    "mass" : 2.0,
-    "buttons" : [ ]
-  }, {
-    "id" : "Fan",
-    "spriteUrl" : "data/assets/vehicle/bp_fan.png",
-    "mass" : 3.0,
-    "buttons" : [ ]
-  }, {
-    "id" : "Engine",
-    "spriteUrl" : "data/assets/vehicle/bp_engine.png",
-    "mass" : 8.0,
-    "buttons" : [ ]
-  }, {
-    "id" : "Balloon",
-    "spriteUrl" : "data/assets/vehicle/bp_balloon.png",
-    "mass" : 1.0,
     "buttons" : [ ]
   }, {
     "id" : "paulina",
@@ -38,14 +13,20 @@
     "buttons" : [ {
       "name" : "go left",
       "direction" : {
-        "x" : -10000.0,
+        "x" : -100.0,
         "y" : 0.0
       }
     }, {
       "name" : "go up",
       "direction" : {
         "x" : 0.0,
-        "y" : -50000.0
+        "y" : -20000.0
+      }
+    }, {
+      "name" : "go right",
+      "direction" : {
+        "x" : 1000.0,
+        "y" : 0.0
       }
     } ]
   } ],

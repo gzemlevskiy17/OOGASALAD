@@ -17,11 +17,8 @@ import oogasalad.view.core.api.Renderer;
 import oogasalad.view.core.api.Sprite;
 
 /**
- * Default renderer: keeps one JavaFX node per renderable instance, reuses it across frames,
- * sets layout from world position minus camera position, applies rotation when the node allows
- * it (see Sprite.USES_RENDERABLE_ROTATION_KEY on the node’s properties), runs an optional
- * per-frame callback to sync visuals, and removes nodes whose renderables were not passed in
- * this frame. Uses identity, not equals, to match renderables to nodes.
+ * Renderer that maps each Renderable identity to one JavaFX Node, updates layout from world minus camera,
+ * prunes nodes for objects absent from the latest collection, and honors Sprite rotation opt-out flags.
  *
  * @author Iurii Beliaev
  */
@@ -39,10 +36,16 @@ public class RendererImpl implements Renderer {
   private final BiConsumer<? super Renderable, ? super Node> frameUpdater;
   private final Map<Renderable, Node> nodesByRenderable = new IdentityHashMap<>();
 
+  /**
+   * Uses small placeholder circles and no per-frame updater beyond layout and rotation.
+   */
   public RendererImpl(Pane renderLayer) {
     this(renderLayer, DEFAULT_NODE_FACTORY, NO_OP_FRAME_UPDATER);
   }
 
+  /**
+   * Supplies custom node factory and optional per-frame hook for synchronizing visuals with the model.
+   */
   public RendererImpl(Pane renderLayer,
       Function<? super Renderable, ? extends Node> nodeFactory,
       BiConsumer<? super Renderable, ? super Node> frameUpdater) {
@@ -54,6 +57,9 @@ public class RendererImpl implements Renderer {
     this.frameUpdater = frameUpdater;
   }
 
+  /**
+   * Lays out and updates visible nodes for the current frame and removes orphaned renderable bindings.
+   */
   @Override
   public void render(Camera camera, Collection<? extends Renderable> objects) {
     if (camera == null || objects == null) {
