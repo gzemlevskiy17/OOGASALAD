@@ -60,11 +60,35 @@ public final class VehiclePartRegistry {
     double w = DEFAULT_SIZE;
     double h = DEFAULT_SIZE;
 
+    VehiclePartSpec existing = getIfPresent(id);
+    if (existing != null) {
+      return existing;
+    }
+    if (isWheelPart(id)) {
+      return new StructuralPartSpec(id, JointStyle.WHEEL, mass, w, h);
+    }
     if (isPigPart(id, mainCharacterId)) {
       return new PigPartSpec(id, mass, w, h);
     }
-    if (getIfPresent(id) != null) {
-      return null;
+    if (!ci.buttons().isEmpty()) {
+      double maxMagnitude = ci.buttons().stream()
+          .mapToDouble(b -> Math.sqrt(b.directionX() * b.directionX() + b.directionY() * b.directionY()))
+          .max().orElse(DEFAULT_THRUST);
+      double force = Math.max(maxMagnitude, DEFAULT_THRUST);
+      boolean bidirectional = ci.buttons().size() >= 2 && ci.buttons().stream().anyMatch(a ->
+          ci.buttons().stream().anyMatch(b ->
+              a != b && Math.signum(a.directionX()) == -Math.signum(b.directionX()) && a.directionY() == b.directionY()
+                  || Math.signum(a.directionY()) == -Math.signum(b.directionY()) && a.directionX() == b.directionX()));
+      ButtonInfo first = ci.buttons().get(0);
+      Vector direction = new Vector(first.directionX(), first.directionY()).normalize();
+      if (bidirectional) {
+        ButtonInfo pos = ci.buttons().stream()
+            .filter(b -> b.directionX() > 0 || b.directionY() < 0)
+            .findFirst().orElse(first);
+        direction = new Vector(pos.directionX(), pos.directionY()).normalize();
+        return new RelativeDirectionDrivePartSpec(id, direction, force, mass, w, h);
+      }
+      return new FixedDirectionDrivePartSpec(id, direction, force, mass, w, h);
     }
     return new StructuralPartSpec(id, JointStyle.STRUCTURAL, mass, w, h);
   }
@@ -72,6 +96,10 @@ public final class VehiclePartRegistry {
   private boolean isPigPart(String id, String mainCharacterId) {
     return id != null
         && (id.equals(mainCharacterId) || id.toLowerCase(Locale.ROOT).contains("pig"));
+  }
+
+  private boolean isWheelPart(String id) {
+    return id != null && id.toLowerCase(Locale.ROOT).contains("wheel");
   }
 
   private VehiclePartSpec getIfPresent(String paletteName) {

@@ -1,0 +1,104 @@
+{
+  "gameId": "mario",
+  "mainCharacterId": "Mario",
+  "components": [
+    {
+      "id": "Mario",
+      "spriteUrl": "data/assets/mario/mario.png",
+      "mass": 5.0,
+      "buttons": [
+        {
+          "name": "Move Left",
+          "direction": {
+            "x": -3000.0,
+            "y": 0.0
+          }
+        },
+        {
+          "name": "Move Right",
+          "direction": {
+            "x": 3000.0,
+            "y": 0.0
+          }
+        },
+        {
+          "name": "Jump",
+          "direction": {
+            "x": 0.0,
+            "y": -13000.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "Frame",
+      "spriteUrl": "data/assets/mario/transparent_support.png",
+      "mass": 10.0,
+      "buttons": []
+    }
+  ],
+  "staticComponents": [
+    {
+      "id": "Coin",
+      "spriteUrl": "data/assets/bp_coin.png",
+      "mass": 0.0,
+      "onCollisionAction": {
+        "type": "score",
+        "amount": 10.0
+      }
+    },
+    {
+      "id": "Goomba",
+      "spriteUrl": "data/assets/mario/goomba.png",
+      "mass": 0.0,
+      "onCollisionAction": {
+        "type": "damage",
+        "amount": 25.0
+      }
+    },
+    {
+      "id": "Mushroom",
+      "spriteUrl": "data/assets/mario/mushroom.png",
+      "mass": 0.0,
+      "onCollisionAction": {
+        "type": "heal",
+        "amount": 25.0
+      }
+    },
+    {
+      "id": "Star",
+      "spriteUrl": "data/assets/star.png",
+      "mass": 0.0,
+      "onCollisionAction": {
+        "type": "score",
+        "amount": 50.0
+      }
+    },
+    {
+      "id": "GoalLine",
+      "spriteUrl": "",
+      "mass": 0.0,
+      "onCollisionAction": {
+        "type": "finish",
+        "amount": 0.0
+      }
+    }
+  ],
+  "terrainTypes": [
+    {
+      "id": "OverworldGround",
+      "spriteUrl": null,
+      "visualColor": "#C84C09",
+      "trackColor": null,
+      "friction": 0.25
+    },
+    {
+      "id": "UndergroundBrick",
+      "spriteUrl": null,
+      "visualColor": "#6B4226",
+      "trackColor": null,
+      "friction": 0.25
+    }
+  ],
+  "cheats": []
+}

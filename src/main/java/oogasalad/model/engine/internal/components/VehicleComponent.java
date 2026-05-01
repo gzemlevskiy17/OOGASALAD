@@ -1,5 +1,6 @@
 package oogasalad.model.engine.internal.components;
 
+import java.util.Locale;
 import java.util.Set;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.EngineError;
@@ -53,7 +54,8 @@ public abstract class VehicleComponent extends DynamicComponent
 
   /** True for wheel parts; used for cheap wheel–terrain support in the engine. */
   public boolean isWheel() {
-    return WHEEL_DISPLAY_NAMES.contains(displayName);
+    return WHEEL_DISPLAY_NAMES.contains(displayName)
+        || displayName.toLowerCase(Locale.ROOT).contains("wheel");
   }
 
   @Override

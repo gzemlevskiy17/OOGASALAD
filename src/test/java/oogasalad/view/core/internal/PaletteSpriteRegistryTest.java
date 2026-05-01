@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import oogasalad.data.internal.GameConfigImpl;
 import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.internal.components.PigComponent;
+import oogasalad.view.core.api.LayeredSprite;
 import oogasalad.view.core.api.SingleSprite;
 import oogasalad.view.core.api.Sprite;
 import org.junit.jupiter.api.BeforeEach;
@@ -116,6 +117,7 @@ class PaletteSpriteRegistryTest {
     Files.writeString(gameFile, """
         {"gameId":"custom","mainCharacterId":"pig",
          "components":[
+           {"id":"pig","spriteUrl":"data/assets/vehicle/bp_bigPig.png","mass":1,"buttons":[]},
            {"id":"block","spriteUrl":"data/assets/bp_frame.png","mass":7,"buttons":[]}
          ],
          "staticComponents":[],"terrainTypes":[]}
@@ -125,5 +127,22 @@ class PaletteSpriteRegistryTest {
 
     SingleSprite sprite = assertInstanceOf(SingleSprite.class, registry.resolveByType("block"));
     assertEquals("data/assets/bp_frame.png", sprite.path());
+  }
+
+  @Test
+  void registerFromConfig_builtinWheelId_preservesLayeredWheelSprite() throws IOException {
+    Path gameFile = tempDir.resolve("game.json");
+    Files.writeString(gameFile, """
+        {"gameId":"custom","mainCharacterId":"BigPig",
+         "components":[
+           {"id":"BigPig","spriteUrl":"data/assets/vehicle/bp_bigPig.png","mass":10,"buttons":[]},
+           {"id":"Wood Wheel","spriteUrl":"data/assets/vehicle/bp_woodWheelWheel.png","mass":2,"buttons":[]}
+         ],
+         "staticComponents":[],"terrainTypes":[]}
+        """);
+
+    registry.registerFromConfig(new GameConfigImpl(gameFile.toString()));
+
+    assertInstanceOf(LayeredSprite.class, registry.resolveByType("Wood Wheel"));
   }
 }

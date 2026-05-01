@@ -71,6 +71,10 @@
         "drag": {
           "type": "number",
           "minimum": 0
+        },
+        "backgroundImage": {
+          "type": "string",
+          "description": "Optional path to an image rendered behind the level."
         }
       }
     },
