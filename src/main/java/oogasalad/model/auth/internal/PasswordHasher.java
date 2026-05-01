@@ -12,6 +12,8 @@ import java.util.HexFormat;
  * Each password is combined with a unique random salt before hashing, so two users with the same
  * password will always produce different stored hashes. Passwords are hashed with SHA-256 and are
  * never stored in plain text.
+ *
+ * @author Paulina Vvedenskaya
  */
 class PasswordHasher {
 

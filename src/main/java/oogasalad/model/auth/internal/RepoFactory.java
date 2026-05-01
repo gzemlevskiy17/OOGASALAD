@@ -5,6 +5,8 @@ package oogasalad.model.auth.internal;
  * <p>
  * Use this instead of constructing repositories directly so the rest of the codebase stays
  * decoupled from the SQLite implementation.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class RepoFactory {
 

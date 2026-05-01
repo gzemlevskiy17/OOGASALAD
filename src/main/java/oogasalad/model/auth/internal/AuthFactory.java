@@ -7,6 +7,8 @@ import oogasalad.model.auth.api.AuthService;
  * <p>
  * Use this instead of constructing services directly so the rest of the codebase stays decoupled
  * from the local SQLite implementation.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class AuthFactory {
 

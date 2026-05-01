@@ -1,0 +1,125 @@
+{
+  "gameMetadata": {
+    "levelName": "HP Gauntlet",
+    "gameType": "featuretest",
+    "screenWidth": 4000.0,
+    "screenHeight": 1600.0,
+    "gravity": -9.8,
+    "drag": 0.01
+  },
+  "map": {
+    "knotLocations": [
+      {
+        "x": 0.0,
+        "y": 1200.0
+      },
+      {
+        "x": 1000.0,
+        "y": 1200.0
+      },
+      {
+        "x": 2000.0,
+        "y": 1200.0
+      },
+      {
+        "x": 3000.0,
+        "y": 1200.0
+      },
+      {
+        "x": 4000.0,
+        "y": 1200.0
+      }
+    ],
+    "objects": [
+      {
+        "type": "Bomb",
+        "position": {
+          "x": 400.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Bomb",
+        "position": {
+          "x": 700.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Heart",
+        "position": {
+          "x": 1000.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Rock",
+        "position": {
+          "x": 1300.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Rock",
+        "position": {
+          "x": 1500.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Bomb",
+        "position": {
+          "x": 1800.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Heart",
+        "position": {
+          "x": 2100.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Bomb",
+        "position": {
+          "x": 2400.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Bomb",
+        "position": {
+          "x": 2700.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "GoalLine",
+        "position": {
+          "x": 3500.0,
+          "y": 1150.0
+        }
+      }
+    ],
+    "terrainOptions": [
+      "DirtPath"
+    ],
+    "spawnPoint": {
+      "x": 100.0,
+      "y": 1100.0
+    }
+  },
+  "mainCharacter": {
+    "gridSize": 60.0,
+    "elementsAllowed": [
+      "BigPig",
+      "Frame",
+      "Wood Wheel",
+      "Engine"
+    ],
+    "maxSelectable": 6,
+    "maxHP": 100.0,
+    "cameraFollows": "vehicle"
+  }
+}

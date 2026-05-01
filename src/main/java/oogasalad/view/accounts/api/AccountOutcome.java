@@ -2,6 +2,8 @@ package oogasalad.view.accounts.api;
 
 /**
  * Represents user actions taken on account screens.
+ *
+ * @author Paulina Vvedenskaya
  */
 public sealed interface AccountOutcome
     permits AccountOutcome.LoginRequested, AccountOutcome.RegisterRequested,

@@ -7,6 +7,9 @@ import javafx.scene.image.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Caches loaded sprite images by file path to avoid redundant disk reads during rendering.
+ */
 public class SpriteCache {
 
   private static final Logger logger = LogManager.getLogger(SpriteCache.class);

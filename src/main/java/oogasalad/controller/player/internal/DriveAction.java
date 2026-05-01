@@ -8,6 +8,8 @@ import oogasalad.model.engine.api.Driveable;
  *
  * The physics engine reads the flag each step via {@link Driveable#getDriveForce()} and
  * returns thrust while enabled, zero otherwise.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class DriveAction implements Action {
 
