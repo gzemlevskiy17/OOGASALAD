@@ -34,6 +34,12 @@ Rules:
 - Use a richer terrain profile with roughly 8 to 14 knotLocations unless the prompt clearly asks for something shorter.
 - Include several non-goal map objects by default, usually a mix of rewards and hazards rather than only one or two items.
 - Keep map.knotLocations plausible for a 2D physics driving level.
+- Coordinate convention for map.knotLocations: x increases to the right, y increases downward on screen.
+- Smaller y values are visually higher terrain. Larger y values are visually lower terrain.
+- If the user asks for a descending ramp, downhill ramp, downhill dash, or descent from left to right, make y increase as x increases.
+- If the user asks for an ascending ramp or climb from left to right, make y decrease as x increases.
+- If the user asks for a mountain, hill, peak, or summit, make the middle knots visually higher than both sides: y decreases toward the peak, then increases after it.
+- If the user asks for a valley, dip, or canyon, make the middle knots visually lower than both sides: y increases toward the valley bottom, then decreases after it.
 - Put map.spawnPoint above a flat supported terrain section with at least 320 vertical pixels of clearance.
 - Keep gravity and drag physically reasonable for a vehicle-building game.
 - Use negative gravity values. Default earth-like gravity is -9.8.
