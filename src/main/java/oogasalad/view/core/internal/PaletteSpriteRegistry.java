@@ -46,12 +46,12 @@ public class PaletteSpriteRegistry implements SpriteRegistry {
     }
     for (ComponentInfo ci : config.components()) {
       if (ci.spriteUrl() != null && !ci.spriteUrl().isBlank()) {
-        configSprites.put(ci.id(), new SingleSprite(ci.spriteUrl(), DEFAULT_SIZE, DEFAULT_SIZE));
+        configSprites.put(ci.id(), spriteFromConfig(ci.id(), ci.spriteUrl()));
       }
     }
     for (StaticComponentInfo si : config.staticComponents()) {
       if (si.spriteUrl() != null && !si.spriteUrl().isBlank()) {
-        configSprites.put(si.id(), new SingleSprite(si.spriteUrl(), DEFAULT_SIZE, DEFAULT_SIZE));
+        configSprites.put(si.id(), spriteFromConfig(si.id(), si.spriteUrl()));
       }
     }
   }
@@ -88,6 +88,17 @@ public class PaletteSpriteRegistry implements SpriteRegistry {
       return new LayeredSprite(hub, wheel, width, height);
     }
     return new SingleSprite(require(key + ".sprite"), width, height);
+  }
+
+  private Sprite spriteFromConfig(String id, String spriteUrl) {
+    String key = normalizeKey(id);
+    String hub = readOrNull(key + ".hubSprite");
+    String wheel = readOrNull(key + ".wheelSprite");
+    if (hub != null && wheel != null) {
+      return new LayeredSprite(hub, wheel,
+          requireDouble(key + ".width"), requireDouble(key + ".height"));
+    }
+    return new SingleSprite(spriteUrl, DEFAULT_SIZE, DEFAULT_SIZE);
   }
 
   private String normalizeKey(String componentType) {
