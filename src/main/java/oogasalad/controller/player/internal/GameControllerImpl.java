@@ -36,6 +36,8 @@ import oogasalad.view.core.api.Renderer;
  * <p>
  * Assumes Settings returns comma-separated key names for dot-path lookups, e.g.
  * getSetting("input_mapping.activate_engine") returns "W,UP".
+ *
+ * @author Paulina Vvedenskaya
  */
 public class GameControllerImpl implements GameController {
 

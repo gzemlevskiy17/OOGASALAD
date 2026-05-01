@@ -38,6 +38,7 @@ public class AuthoringControllerImpl implements AuthoringController {
   private final SpawnPointService spawnPointService;
   private final GoalLineService goalLineService;
   private final AuthoringPersistenceService persistence;
+  private final LevelAttributes levelAttributes;
 
   private AuthoringPlaceable selectedPlaceable;
 
@@ -51,6 +52,7 @@ public class AuthoringControllerImpl implements AuthoringController {
     this.splineDraft = new SplineDraftController(world, canvas);
     this.spawnPointService = new SpawnPointService(world);
     this.goalLineService = new GoalLineService(world);
+    this.levelAttributes = levelAttributes;
     this.persistence = new AuthoringPersistenceService(
         loader, saver, gameLoader, world, levelAttributes, spawnPointService, history, canvas);
     spawnPointService.getSpawnPoint();
@@ -155,6 +157,8 @@ public class AuthoringControllerImpl implements AuthoringController {
   public void clearLevel() {
     world.clear();
     history.clear();
+    levelAttributes.setBackgroundImage("");
+    canvas.setBackgroundImagePath("");
     spawnPointService.getSpawnPoint();
     canvas.refreshGrid();
     LOG.info("Level cleared");

@@ -18,6 +18,7 @@ public class ThemeService {
   private final Supplier<Scene> sceneSupplier;
   private String currentThemeUrl;
 
+  /** Captures lazily-provided Scene used by apply and clear once the Stage exists. */
   public ThemeService(Supplier<Scene> sceneSupplier) {
     this.sceneSupplier = Objects.requireNonNull(sceneSupplier, "sceneSupplier must not be null");
   }

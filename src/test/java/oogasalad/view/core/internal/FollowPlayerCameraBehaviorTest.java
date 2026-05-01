@@ -7,12 +7,12 @@ import oogasalad.view.core.api.AbstractCameraBehavior;
 import oogasalad.view.core.api.Renderable;
 import org.junit.jupiter.api.Test;
 
+/** Unit tests for FollowPlayerCameraBehavior centering, offsets, smoothing, clamps, and validation. */
 class FollowPlayerCameraBehaviorTest {
 
   private static final double EPS = 1e-9;
 
-  // ── constructor validation ─────────────────────────────────────────────────
-
+  /** Minimal RenderableImpl stand-in for simulated player coordinates. */
   private static Renderable makePlayer(double x, double y) {
     return new RenderableImpl(x, y, 0.0);
   }

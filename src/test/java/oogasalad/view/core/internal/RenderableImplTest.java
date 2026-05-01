@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
+/** Unit tests for RenderableImpl record accessors and numeric storage semantics. */
 class RenderableImplTest {
 
   @Test

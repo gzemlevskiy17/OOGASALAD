@@ -15,6 +15,7 @@ import oogasalad.model.engine.internal.components.DynamicComponent;
  *
  * @author Paulina Vvedenskaya
  * @author Georgiy Zemlevskiy
+ * @author Iurii Beliaev
  */
 public class DynamicComponentUtilities {
 
@@ -57,6 +58,14 @@ public class DynamicComponentUtilities {
 
     if (dynamicComponent instanceof Driveable driveable) {
       dynamicComponent.addForce(driveable.getDriveForce());
+    }
+
+    Vector externalForce = dynamicComponent.getExternalForceTotal();
+    if (externalForce.magnitude() > 0) {
+      if (dynamicComponent.isSleeping()) {
+        dynamicComponent.setSleeping(false);
+      }
+      dynamicComponent.addForce(externalForce.rotate(dynamicComponent.getStaticState().getAngularPosition()));
     }
   }
 

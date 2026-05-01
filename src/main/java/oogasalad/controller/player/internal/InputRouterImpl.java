@@ -6,7 +6,11 @@ import javafx.scene.input.KeyCode;
 import oogasalad.controller.player.api.Action;
 import oogasalad.controller.player.api.InputRouter;
 
-/** Maps KeyCodes and button IDs to Actions and dispatches them on demand. */
+/**
+ * Maps KeyCodes and button IDs to Actions and dispatches them on demand.
+ *
+ * @author Paulina Vvedenskaya
+ */
 public class InputRouterImpl implements InputRouter {
 
   private final Map<KeyCode, Action> keyBindings = new HashMap<>();

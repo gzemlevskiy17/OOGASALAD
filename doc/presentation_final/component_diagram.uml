@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement />
+  <nodes>
+    <node x="159.5" y="546.0">oogasalad.model.engine.api.Driveable</node>
+    <node x="348.0" y="-14.0">oogasalad.model.engine.api.GameObject</node>
+    <node x="-107.5" y="346.0">oogasalad.model.engine.internal.components.FinishLineComponent</node>
+    <node x="233.0" y="46.0">oogasalad.model.engine.StaticState</node>
+    <node x="-142.0" y="546.0">oogasalad.model.engine.internal.components.DynamicComponent</node>
+    <node x="297.0" y="346.0">oogasalad.model.engine.internal.components.RigidBody</node>
+    <node x="71.0" y="706.0">oogasalad.model.engine.internal.components.DriveComponent</node>
+    <node x="-106.5" y="766.0">oogasalad.model.engine.internal.components.StructuralComponent</node>
+    <node x="229.0" y="166.0">oogasalad.model.engine.internal.components.GameComponent</node>
+    <node x="102.5" y="286.0">oogasalad.model.engine.DynamicState</node>
+    <node x="408.3208556149734" y="686.0">oogasalad.model.engine.internal.components.RockComponent</node>
+    <node x="249.0" y="486.0">oogasalad.model.engine.internal.components.StaticComponent</node>
+    <node x="192.9176470588235" y="766.0">oogasalad.model.engine.internal.components.RelativeDirectionDriveComponent</node>
+    <node x="48.0" y="486.0">oogasalad.model.engine.api.Damageable</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="oogasalad.model.engine.internal.components.GameComponent" target="oogasalad.model.engine.api.GameObject" relationship="REALIZATION">
+      <point x="61.33333333333333" y="-14.0" />
+      <point x="382.33333333333337" y="140.0" />
+      <point x="384.5" y="140.0" />
+      <point x="-36.5" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.RockComponent" target="oogasalad.model.engine.internal.components.StaticComponent" relationship="GENERALIZATION">
+      <point x="-44.5" y="-14.0" />
+      <point x="452.8208556149734" y="720.0" />
+      <point x="461.0" y="720.0" />
+      <point x="461.0" y="460.0" />
+      <point x="341.0" y="460.0" />
+      <point x="0.0" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.GameComponent" target="oogasalad.model.engine.StaticState" relationship="CREATE">
+      <point x="-61.333333333333314" y="-14.0" />
+      <point x="259.6666666666667" y="140.0" />
+      <point x="267.0" y="140.0" />
+      <point x="-34.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.RelativeDirectionDriveComponent" target="oogasalad.model.engine.internal.components.DriveComponent" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="347.9176470588235" y="660.0" />
+      <point x="116.0" y="660.0" />
+      <point x="-45.0" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.StaticComponent" target="oogasalad.model.engine.internal.components.RigidBody" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="341.0" y="440.0" />
+      <point x="281.0" y="440.0" />
+      <point x="281.0" y="320.0" />
+      <point x="361.0" y="320.0" />
+      <point x="0.0" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.RockComponent" target="oogasalad.model.engine.api.GameObject" relationship="TO_MANY">
+      <point x="44.5" y="-14.0" />
+      <point x="541.8208556149734" y="740.0" />
+      <point x="501.0" y="740.0" />
+      <point x="501.0" y="160.0" />
+      <point x="457.5" y="160.0" />
+      <point x="36.5" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.StructuralComponent" target="oogasalad.model.engine.internal.components.DynamicComponent" relationship="GENERALIZATION">
+      <point x="-53.75" y="-14.0" />
+      <point x="-52.75" y="640.0" />
+      <point x="-59.0" y="640.0" />
+      <point x="-59.0" y="600.0" />
+      <point x="-159.0" y="600.0" />
+      <point x="-159.0" y="520.0" />
+      <point x="29.666666666666657" y="520.0" />
+      <point x="68.66666666666666" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.RigidBody" target="oogasalad.model.engine.internal.components.GameComponent" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="361.0" y="260.0" />
+      <point x="321.0" y="260.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.DynamicComponent" target="oogasalad.model.engine.internal.components.RigidBody" relationship="GENERALIZATION">
+      <point x="68.66666666666666" y="-14.0" />
+      <point x="29.666666666666657" y="440.0" />
+      <point x="281.0" y="440.0" />
+      <point x="281.0" y="320.0" />
+      <point x="361.0" y="320.0" />
+      <point x="0.0" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.DynamicComponent" target="oogasalad.model.engine.DynamicState" relationship="CREATE">
+      <point x="0.0" y="-14.0" />
+      <point x="-39.0" y="420.0" />
+      <point x="220.25" y="420.0" />
+      <point x="39.25" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.DriveComponent" target="oogasalad.model.engine.internal.components.DynamicComponent" relationship="GENERALIZATION">
+      <point x="-45.0" y="-14.0" />
+      <point x="116.0" y="640.0" />
+      <point x="-59.0" y="640.0" />
+      <point x="-59.0" y="600.0" />
+      <point x="-159.0" y="600.0" />
+      <point x="-159.0" y="520.0" />
+      <point x="29.666666666666657" y="520.0" />
+      <point x="68.66666666666666" y="-14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.DriveComponent" target="oogasalad.model.engine.api.Driveable" relationship="REALIZATION">
+      <point x="45.0" y="-14.0" />
+      <point x="206.0" y="680.0" />
+      <point x="201.0" y="680.0" />
+      <point x="201.0" y="640.0" />
+      <point x="221.0" y="640.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.GameComponent" target="oogasalad.model.engine.StaticState" relationship="TO_ONE">
+      <point x="0.0" y="-14.0" />
+      <point x="321.0" y="140.0" />
+      <point x="335.0" y="140.0" />
+      <point x="34.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.DriveComponent" target="oogasalad.model.engine.api.Damageable" relationship="REALIZATION">
+      <point x="45.0" y="-14.0" />
+      <point x="206.0" y="680.0" />
+      <point x="201.0" y="680.0" />
+      <point x="201.0" y="600.0" />
+      <point x="121.0" y="600.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.StructuralComponent" target="oogasalad.model.engine.api.Damageable" relationship="REALIZATION">
+      <point x="53.75" y="-14.0" />
+      <point x="54.75" y="620.0" />
+      <point x="121.0" y="620.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.DynamicComponent" target="oogasalad.model.engine.DynamicState" relationship="TO_ONE">
+      <point x="-68.66666666666666" y="-14.0" />
+      <point x="-107.66666666666666" y="400.0" />
+      <point x="141.75" y="400.0" />
+      <point x="-39.25" y="14.0" />
+    </edge>
+    <edge source="oogasalad.model.engine.internal.components.FinishLineComponent" target="oogasalad.model.engine.internal.components.GameComponent" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="1.0" y="260.0" />
+      <point x="321.0" y="260.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Compact" zoom="0.9862869198312236" showDependencies="true" x="181.0" y="460.0" />
+  <SelectedNodes>
+    <node>oogasalad.model.engine.internal.components.RockComponent</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>public</VISIBILITY>
+</Diagram>
+

@@ -5,7 +5,7 @@ import oogasalad.model.engine.api.GameObject;
 import oogasalad.model.engine.api.Vector;
 
 /**
- * Axis-aligned bounds from simulated collision polygons, for viewport overlap tests.
+ * Axis-aligned bounds derived from collision polygons for camera visibility tests.
  *
  * @author Iurii Beliaev
  */
@@ -15,8 +15,7 @@ final class CollisionPolygonBounds {
   }
 
   /**
-   * Axis-aligned bounding box enclosing every vertex of every collision polygon (world space).
-   * Defined is false when there are no finite vertices.
+   * Union bounding box of every collision vertex in world coordinates, or defined false when empty or non-finite.
    */
   static UnionAabb unionAabb(GameObject object) {
     double minX = Double.POSITIVE_INFINITY;
@@ -46,6 +45,7 @@ final class CollisionPolygonBounds {
     return UnionAabb.of(minX, minY, maxX, maxY);
   }
 
+  /** True when two axis-aligned rectangles overlap with inclusive edges. */
   static boolean rectsOverlap(double aMinX, double aMinY, double aMaxX, double aMaxY,
       double bMinX, double bMinY, double bMaxX, double bMaxY) {
     return aMaxX >= bMinX && aMinX <= bMaxX && aMaxY >= bMinY && aMinY <= bMaxY;

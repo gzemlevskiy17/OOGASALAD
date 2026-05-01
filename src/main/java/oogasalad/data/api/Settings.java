@@ -2,6 +2,8 @@ package oogasalad.data.api;
 
 /**
  * Provides read-only access to parsed game settings and metadata.
+ *
+ * @author Paulina Vvedenskaya
  */
 public interface Settings {
 

@@ -1,15 +1,12 @@
 package oogasalad.view.core.api;
 
 /**
- * Strategy interface that updates camera state each frame.
+ * Strategy that updates Camera position or other viewport state once per simulation or animation tick.
  *
  * @author Iurii Beliaev
  */
 public interface CameraBehavior {
-  /**
-   * Updates the supplied camera according to implementation-specific behavior.
-   *
-   * @param camera camera instance to mutate
-   */
+
+  /** Applies this behavior by mutating the given camera for the current frame. */
   void update(Camera camera);
 }

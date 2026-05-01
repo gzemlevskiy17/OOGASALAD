@@ -18,6 +18,11 @@ import oogasalad.controller.core.api.Outcome;
 import oogasalad.view.accounts.api.AccountOutcome;
 import oogasalad.view.core.api.AppScreen;
 
+/**
+ * Account registration screen that collects username, password, and optional avatar selection.
+ *
+ * @author Paulina Vvedenskaya
+ */
 public class CreateAccountScreen implements AppScreen {
 
   private static final ResourceBundle PROPS =

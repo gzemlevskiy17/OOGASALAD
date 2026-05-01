@@ -5,6 +5,8 @@ package oogasalad.model.auth.api;
  * <p>
  * Call {@link #login} or {@link #register} to start a session, then use {@link #session} to read
  * the currently logged-in player. Call {@link #logout} to end the session.
+ *
+ * @author Paulina Vvedenskaya
  */
 public interface AuthService {
 

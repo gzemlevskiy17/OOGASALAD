@@ -7,6 +7,8 @@ import java.util.List;
  * <p>
  * Contains only display information — no passwords, no internal IDs. Safe to pass to the view
  * layer.
+ *
+ * @author Paulina Vvedenskaya
  */
 public interface PlayerProfile {
 

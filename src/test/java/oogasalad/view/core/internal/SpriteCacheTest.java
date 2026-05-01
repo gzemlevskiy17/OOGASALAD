@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/** Unit tests for SpriteCache miss paths and idempotent null returns for missing assets. */
 class SpriteCacheTest {
 
   private SpriteCache cache;

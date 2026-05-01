@@ -1,0 +1,83 @@
+{
+  "gameMetadata": {
+    "levelName": "Basic Drive to Goal",
+    "gameType": "featuretest",
+    "screenWidth": 3200.0,
+    "screenHeight": 1600.0,
+    "gravity": -9.8,
+    "drag": 0.01
+  },
+  "map": {
+    "knotLocations": [
+      {
+        "x": 0.0,
+        "y": 1200.0
+      },
+      {
+        "x": 800.0,
+        "y": 1200.0
+      },
+      {
+        "x": 1600.0,
+        "y": 1200.0
+      },
+      {
+        "x": 2400.0,
+        "y": 1200.0
+      },
+      {
+        "x": 3200.0,
+        "y": 1200.0
+      }
+    ],
+    "objects": [
+      {
+        "type": "Coin",
+        "position": {
+          "x": 600.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Coin",
+        "position": {
+          "x": 1200.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "Coin",
+        "position": {
+          "x": 1800.0,
+          "y": 1150.0
+        }
+      },
+      {
+        "type": "GoalLine",
+        "position": {
+          "x": 2800.0,
+          "y": 1150.0
+        }
+      }
+    ],
+    "terrainOptions": [
+      "GrassHills"
+    ],
+    "spawnPoint": {
+      "x": 150.0,
+      "y": 1100.0
+    }
+  },
+  "mainCharacter": {
+    "gridSize": 60.0,
+    "elementsAllowed": [
+      "BigPig",
+      "Frame",
+      "Wood Wheel",
+      "Engine"
+    ],
+    "maxSelectable": 6,
+    "maxHP": 100.0,
+    "cameraFollows": "vehicle"
+  }
+}

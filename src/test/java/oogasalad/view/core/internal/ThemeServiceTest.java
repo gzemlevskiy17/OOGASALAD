@@ -24,6 +24,7 @@ class ThemeServiceTest extends DukeApplicationTest {
 
   private Scene scene;
 
+  /** Installs a lightweight Scene used to exercise ThemeService.apply and clear. */
   @Override
   public void start(Stage stage) {
     scene = new Scene(new Pane(), 200, 200);

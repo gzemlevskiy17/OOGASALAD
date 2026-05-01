@@ -1,6 +1,10 @@
 package oogasalad.controller.core.api;
 
-/** Represents any terminal event from a screen or controller that requires navigation. */
+/**
+ * Represents any terminal event from a screen or controller that requires navigation.
+ *
+ * @author Paulina Vvedenskaya
+ */
 public enum Outcome {
   // Game results
   GAME_WON("WIN_SCREEN"),

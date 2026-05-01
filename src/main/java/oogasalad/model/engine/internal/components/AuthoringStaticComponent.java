@@ -7,6 +7,8 @@ import oogasalad.view.authoring.api.AuthoringPlaceable;
 /**
  * Lightweight authoring-time representation of a catalog static object such as a coin, bomb,
  * heart, or finish trigger. Gameplay loading resolves the same type id into its runtime effect.
+ *
+ * @author Paulina Vvedenskaya
  */
 public class AuthoringStaticComponent extends PassThroughComponent
     implements AuthoringPlaceable, TypedComponent {

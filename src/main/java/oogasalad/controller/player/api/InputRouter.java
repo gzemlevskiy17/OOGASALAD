@@ -2,7 +2,12 @@ package oogasalad.controller.player.api;
 
 import javafx.scene.input.KeyCode;
 
-/** Routes hardware input to abstract Actions. */
+/**
+ * Routes hardware input to abstract Actions.
+ *
+ * @author Paulina Vvedenskaya
+ * @author Iurii Beliaev
+ */
 public interface InputRouter {
   /** Registers a KeyCode-to-Action binding. */
   void bind(KeyCode key, Action action);

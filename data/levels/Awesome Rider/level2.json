@@ -1,0 +1,92 @@
+{
+  "gameMetadata": {
+    "levelName": "Untitled Level",
+    "gameType": "Awesome Rider",
+    "screenWidth": 3200.0,
+    "screenHeight": 1600.0,
+    "gravity": -9.8,
+    "drag": 0.01,
+    "backgroundImage": ""
+  },
+  "map": {
+    "knotLocations": [
+      {
+        "x": 10.0,
+        "y": 758.0
+      },
+      {
+        "x": 442.0,
+        "y": 709.0
+      },
+      {
+        "x": 655.0,
+        "y": 717.0
+      },
+      {
+        "x": 856.0,
+        "y": 716.0
+      },
+      {
+        "x": 1219.0,
+        "y": 715.0
+      },
+      {
+        "x": 1401.0,
+        "y": 715.0
+      },
+      {
+        "x": 1955.0,
+        "y": 722.0
+      },
+      {
+        "x": 2033.0,
+        "y": 746.0
+      }
+    ],
+    "blocks": [],
+    "objects": [
+      {
+        "type": "Star",
+        "position": {
+          "x": 130.0,
+          "y": 730.0
+        }
+      },
+      {
+        "type": "water",
+        "position": {
+          "x": 410.0,
+          "y": 710.0
+        }
+      },
+      {
+        "type": "water",
+        "position": {
+          "x": 550.0,
+          "y": 710.0
+        }
+      },
+      {
+        "type": "water",
+        "position": {
+          "x": 510.0,
+          "y": 690.0
+        }
+      }
+    ],
+    "terrainOptions": [
+      "Blue Glow"
+    ],
+    "spawnPoint": {
+      "x": 100.0,
+      "y": 100.0
+    }
+  },
+  "mainCharacter": {
+    "gridSize": 60.0,
+    "elementsAllowed": [],
+    "maxSelectable": 5,
+    "maxHP": 100.0,
+    "cameraFollows": "vehicle"
+  }
+}

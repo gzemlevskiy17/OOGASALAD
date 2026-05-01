@@ -16,9 +16,7 @@ import oogasalad.view.core.api.Sprite;
 import oogasalad.view.core.api.SpriteRegistry;
 
 /**
- * {@link SpriteRegistry} backed by the VehicleComponentPalette resource bundle, with an overlay
- * from {@link GameConfig} when available. Config-sourced entries take precedence over the bundle
- * so that custom games define their own sprites without touching properties files.
+ * SpriteRegistry combining VehicleComponentPalette bundle entries with optional GameConfig sprite overrides.
  *
  * @author Paulina Vvedenskaya
  */
@@ -30,17 +28,17 @@ public class PaletteSpriteRegistry implements SpriteRegistry {
   private final ResourceBundle bundle;
   private final Map<String, Sprite> configSprites = new HashMap<>();
 
+  /** Loads the default palette ResourceBundle from the classpath. */
   public PaletteSpriteRegistry() {
     this(ResourceBundle.getBundle(DEFAULT_BUNDLE));
   }
 
+  /** Uses an explicit bundle, useful for tests or alternate palettes. */
   public PaletteSpriteRegistry(ResourceBundle bundle) {
     this.bundle = bundle;
   }
 
-  /**
-   * Populates the sprite cache from a game catalog. Entries here override the properties bundle.
-   */
+  /** Merges sprite URLs from GameConfig into the override map, replacing prior registrations. */
   public void registerFromConfig(GameConfig config) {
     configSprites.clear();
     if (config == null) {
@@ -48,16 +46,17 @@ public class PaletteSpriteRegistry implements SpriteRegistry {
     }
     for (ComponentInfo ci : config.components()) {
       if (ci.spriteUrl() != null && !ci.spriteUrl().isBlank()) {
-        configSprites.put(ci.id(), new SingleSprite(ci.spriteUrl(), DEFAULT_SIZE, DEFAULT_SIZE));
+        configSprites.put(ci.id(), spriteFromConfig(ci.id(), ci.spriteUrl()));
       }
     }
     for (StaticComponentInfo si : config.staticComponents()) {
       if (si.spriteUrl() != null && !si.spriteUrl().isBlank()) {
-        configSprites.put(si.id(), new SingleSprite(si.spriteUrl(), DEFAULT_SIZE, DEFAULT_SIZE));
+        configSprites.put(si.id(), spriteFromConfig(si.id(), si.spriteUrl()));
       }
     }
   }
 
+  /** Dispatches GoalLine versus typed components to the correct palette or bundled sprite wiring. */
   @Override
   public Sprite resolve(Renderable renderable) {
     if (renderable instanceof GoalLineComponent gl) {
@@ -73,10 +72,7 @@ public class PaletteSpriteRegistry implements SpriteRegistry {
     throw new IllegalArgumentException("No sprite registered for renderable: " + renderable);
   }
 
-  /**
-   * Looks up a sprite by the component's display name. Checks the config-sourced cache first,
-   * then falls back to the properties bundle with case normalization.
-   */
+  /** Resolves by component type key with GameConfig overlays and bundle fallback including layered wheels. */
   public Sprite resolveByType(String componentType) {
     Sprite fromConfig = configSprites.get(componentType);
     if (fromConfig != null) {
@@ -92,6 +88,17 @@ public class PaletteSpriteRegistry implements SpriteRegistry {
       return new LayeredSprite(hub, wheel, width, height);
     }
     return new SingleSprite(require(key + ".sprite"), width, height);
+  }
+
+  private Sprite spriteFromConfig(String id, String spriteUrl) {
+    String key = normalizeKey(id);
+    String hub = readOrNull(key + ".hubSprite");
+    String wheel = readOrNull(key + ".wheelSprite");
+    if (hub != null && wheel != null) {
+      return new LayeredSprite(hub, wheel,
+          requireDouble(key + ".width"), requireDouble(key + ".height"));
+    }
+    return new SingleSprite(spriteUrl, DEFAULT_SIZE, DEFAULT_SIZE);
   }
 
   private String normalizeKey(String componentType) {

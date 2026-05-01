@@ -63,13 +63,11 @@ public class DynamicStaticSolver {
    */
   public void solve(DynamicComponent objectA, StaticComponent objectB,
       Collision collision, boolean isFirstIteration, boolean solveImpulse) {
-    // TODO: move this into the dispatcher. document the convention
     if (objectA == collision.getReferenceObject()) {
       collision.setPenetration(collision.getPenetration().multiply(-1));
     }
     this.referenceObject = objectB;
     this.incidentObject = objectA;
-    // TODO: a and b are no longer technically incident and reference
 
     if (solveImpulse) {
       resolveImpulseAtContacts(collision, isFirstIteration);
