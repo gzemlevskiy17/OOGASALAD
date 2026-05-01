@@ -3,14 +3,16 @@ package oogasalad.model.engine;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import oogasalad.model.engine.ConvexPolygon;
 import oogasalad.model.engine.api.PhysicsEnvironment;
 import oogasalad.model.engine.api.Vector;
-import oogasalad.model.engine.internal.components.DynamicComponent;
 import oogasalad.model.engine.internal.components.PigComponent;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests that the ForceIntegrator applies named external forces from DynamicComponent.
+ * Tests that per-step force application includes named external forces stored on
+ * oogasalad.model.engine.internal.components.DynamicComponent. The engine uses
+ * DynamicComponentUtilities (successor to the old ForceIntegrator hook).
  *
  * @author Paulina Vvedenskaya
  */
@@ -27,8 +29,7 @@ class ForceIntegratorExternalForceTest {
 
     pig.addExternalForce("jump", new Vector(0, 500));
 
-    ForceIntegrator integrator = new ForceIntegrator(world);
-    integrator.applyForces(List.of(pig));
+    DynamicComponentUtilities.applyForces(List.of(pig), world);
 
     Vector force = pig.getForce();
     assertEquals(0, force.x(), EPS, "No horizontal force expected.");
@@ -46,9 +47,8 @@ class ForceIntegratorExternalForceTest {
     pig.addExternalForce("jump", new Vector(0, 500));
     pig.removeExternalForce("jump");
 
-    ForceIntegrator integrator = new ForceIntegrator(world);
-    integrator.resetForces(List.of(pig));
-    integrator.applyForces(List.of(pig));
+    DynamicComponentUtilities.resetForces(List.of(pig));
+    DynamicComponentUtilities.applyForces(List.of(pig), world);
 
     Vector force = pig.getForce();
     assertEquals(0, force.x(), EPS);
