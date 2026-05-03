@@ -1,0 +1,119 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Long Descent with Final Ramp",
+    "gameType" : "badpiggies",
+    "screenWidth" : 3600.0,
+    "screenHeight" : 1600.0,
+    "gravity" : -9.8,
+    "drag" : 0.7
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 0.0,
+      "y" : 420.0
+    }, {
+      "x" : 120.0,
+      "y" : 420.0
+    }, {
+      "x" : 240.0,
+      "y" : 420.0
+    }, {
+      "x" : 400.0,
+      "y" : 540.0
+    }, {
+      "x" : 900.0,
+      "y" : 780.0
+    }, {
+      "x" : 1500.0,
+      "y" : 980.0
+    }, {
+      "x" : 2100.0,
+      "y" : 1200.0
+    }, {
+      "x" : 2700.0,
+      "y" : 1300.0
+    }, {
+      "x" : 3200.0,
+      "y" : 1370.0
+    }, {
+      "x" : 3400.0,
+      "y" : 1340.0
+    }, {
+      "x" : 3430.0,
+      "y" : 1290.0
+    }, {
+      "x" : 3475.0,
+      "y" : 1270.0
+    }, {
+      "x" : 3525.0,
+      "y" : 1290.0
+    }, {
+      "x" : 3550.0,
+      "y" : 1290.0
+    }, {
+      "x" : 3600.0,
+      "y" : 1290.0
+    } ],
+    "objects" : [ {
+      "type" : "Coin",
+      "position" : {
+        "x" : 900.0,
+        "y" : 700.0
+      }
+    }, {
+      "type" : "Rock",
+      "position" : {
+        "x" : 1150.0,
+        "y" : 950.0
+      }
+    }, {
+      "type" : "Bomb",
+      "position" : {
+        "x" : 1700.0,
+        "y" : 1100.0
+      }
+    }, {
+      "type" : "Coin",
+      "position" : {
+        "x" : 2050.0,
+        "y" : 1170.0
+      }
+    }, {
+      "type" : "Heart",
+      "position" : {
+        "x" : 2450.0,
+        "y" : 1230.0
+      }
+    }, {
+      "type" : "Rock",
+      "position" : {
+        "x" : 2900.0,
+        "y" : 1330.0
+      }
+    }, {
+      "type" : "XPBoost",
+      "position" : {
+        "x" : 3400.0,
+        "y" : 1300.0
+      }
+    }, {
+      "type" : "GoalLine",
+      "position" : {
+        "x" : 3550.0,
+        "y" : 1260.0
+      }
+    } ],
+    "terrainOptions" : [ "GrassHills", "DirtPath" ],
+    "spawnPoint" : {
+      "x" : 120.0,
+      "y" : 100.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 20.0,
+    "elementsAllowed" : [ "BigPig", "SmallPig", "Balloon", "Fan", "Engine", "Frame", "Sled", "Wood Wheel", "Metal Wheel" ],
+    "maxSelectable" : 12,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}

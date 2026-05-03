@@ -23,6 +23,17 @@ The JSON must match this structure:
   - maxHP: number
   - cameraFollows: string
 
+Coordinate system:
+- The game uses screen/world coordinates with origin at the top-left.
+- X increases to the right.
+- Y increases downward. Smaller y values are higher on screen; larger y values are lower on screen.
+- A downhill or descending ramp from left to right must have y values that increase as x increases.
+- An uphill climb or mountain ascent from left to right must have y values that decrease as x increases.
+- A valley should go down then back up: y increases into the valley, then decreases leaving it.
+- A hill or mountain should go up then back down: y decreases toward the peak, then increases after it.
+- Example descending terrain: [{ "x": 0, "y": 500 }, { "x": 1200, "y": 750 }, { "x": 2400, "y": 1000 }].
+- Example climbing terrain: [{ "x": 0, "y": 1000 }, { "x": 1200, "y": 750 }, { "x": 2400, "y": 500 }].
+
 Rules:
 - Set gameMetadata.gameType to exactly "badpiggies".
 - Set mainCharacter.cameraFollows to exactly "vehicle".
