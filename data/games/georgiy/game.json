@@ -1,0 +1,68 @@
+{
+  "gameId" : "georgiy",
+  "mainCharacterId" : "Barry",
+  "components" : [ {
+    "id" : "Frame",
+    "spriteUrl" : "data/assets/jetpack_joyride/blank_frame.png",
+    "mass" : 1.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "Barry",
+    "spriteUrl" : "data/assets/jetpack_joyride/jj_character.png",
+    "mass" : 0.5,
+    "buttons" : [ {
+      "name" : "Forward",
+      "direction" : {
+        "x" : 500.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "Jetpack",
+      "direction" : {
+        "x" : 0.0,
+        "y" : -2500.0
+      }
+    } ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "coin",
+    "spriteUrl" : "data/assets/jetpack_joyride/bp_coin.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "score",
+      "amount" : 1.0
+    }
+  }, {
+    "id" : "powerup",
+    "spriteUrl" : "data/assets/jetpack_joyride/jj_powerup.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "heal",
+      "amount" : 10.0
+    }
+  }, {
+    "id" : "finish",
+    "spriteUrl" : "data/assets/bp_goalLine.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "finish",
+      "amount" : 0.0
+    }
+  }, {
+    "id" : "obstacle",
+    "spriteUrl" : "data/assets/jj_obstacle.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 100.0
+    }
+  } ],
+  "terrainTypes" : [ {
+    "id" : "metal",
+    "spriteUrl" : null,
+    "visualColor" : "#4d4d4d",
+    "trackColor" : null,
+    "friction" : 0.0
+  } ],
+  "cheats" : [ ]
+}
