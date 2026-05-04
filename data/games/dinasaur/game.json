@@ -1,0 +1,75 @@
+{
+  "gameId" : "dinasaur",
+  "mainCharacterId" : "dino",
+  "components" : [ {
+    "id" : "Frame",
+    "spriteUrl" : "data/assets/vehicle/bp_frame.png",
+    "mass" : 2.0,
+    "buttons" : [ ]
+  }, {
+    "id" : "dino",
+    "spriteUrl" : "data/assets/dino.png",
+    "mass" : 10.0,
+    "buttons" : [ {
+      "name" : "right",
+      "direction" : {
+        "x" : 1200.0,
+        "y" : 0.0
+      }
+    }, {
+      "name" : "jump",
+      "direction" : {
+        "x" : 0.0,
+        "y" : -14000.0
+      }
+    } ]
+  } ],
+  "staticComponents" : [ {
+    "id" : "cactus",
+    "spriteUrl" : "data/assets/cactus.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 10000.0
+    }
+  }, {
+    "id" : "bird",
+    "spriteUrl" : "data/assets/bird.png",
+    "mass" : 10.0,
+    "onCollisionAction" : {
+      "type" : "damage",
+      "amount" : 10000.0
+    }
+  }, {
+    "id" : "Finish Line",
+    "spriteUrl" : "data/assets/bp_bigPig.png",
+    "mass" : 0.0,
+    "onCollisionAction" : {
+      "type" : "finish",
+      "amount" : 0.0
+    }
+  } ],
+  "terrainTypes" : [ {
+    "id" : "ground",
+    "spriteUrl" : null,
+    "visualColor" : "#000000",
+    "trackColor" : null,
+    "friction" : 0.0
+  } ],
+  "cheats" : [ {
+    "id" : "instant_win",
+    "name" : "Instant Win",
+    "enabled" : true,
+    "trigger" : {
+      "keys" : [ "X" ]
+    },
+    "effects" : [ {
+      "type" : "finishRun",
+      "target" : {
+        "kind" : "world",
+        "id" : ""
+      },
+      "parameters" : { }
+    } ]
+  } ]
+}

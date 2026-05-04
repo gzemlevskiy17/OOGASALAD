@@ -3,30 +3,28 @@
   <ID>JAVA</ID>
   <OriginalElement />
   <nodes>
-    <node x="107.5" y="486.0">oogasalad.view.core.api.Renderer</node>
+    <node x="-425.5475687103594" y="846.0">oogasalad.view.core.internal.GameMenuScreen</node>
+    <node x="449.5475687103594" y="786.0">oogasalad.view.player.internal.PlayerEntryAppScreen</node>
     <node x="-132.5" y="666.0">oogasalad.view.core.api.AbstractAppScreen</node>
-    <node x="-118.0" y="846.0">oogasalad.view.player.internal.LoseAppScreen</node>
-    <node x="31.5" y="606.0">oogasalad.view.core.internal.RendererImpl</node>
-    <node x="402.0" y="846.0">oogasalad.view.player.internal.GamePlayAppScreen</node>
-    <node x="-40.5" y="-14.0">oogasalad.view.core.api.CameraBehavior</node>
-    <node x="272.0" y="786.0">oogasalad.view.core.internal.GameMenuScreen</node>
-    <node x="105.5" y="846.0">oogasalad.view.player.internal.VehicleBuilderAppScreen</node>
-    <node x="-122.5" y="62.265542676501575">oogasalad.view.core.api.Camera</node>
-    <node x="-103.0" y="226.0">oogasalad.view.core.internal.CameraImpl</node>
-    <node x="-99.5" y="486.0">oogasalad.view.core.api.AppScreen</node>
-    <node x="11.0" y="346.0">oogasalad.view.core.internal.FollowPlayerCameraBehavior</node>
-    <node x="27.0" y="166.0">oogasalad.view.core.api.AbstractCameraBehavior</node>
-    <node x="6.0" y="786.0">oogasalad.view.player.internal.WinAppScreen</node>
-    <node x="536.5" y="786.0">oogasalad.view.player.internal.PlayerEntryAppScreen</node>
     <node x="-1.0" y="426.0">oogasalad.view.core.api.Renderable</node>
+    <node x="-41.0" y="-14.0">oogasalad.view.core.api.CameraBehavior</node>
+    <node x="2.0" y="834.4820295983087">oogasalad.view.player.internal.GamePlayAppScreen</node>
+    <node x="10.5" y="346.0">oogasalad.view.core.internal.FollowPlayerCameraBehavior</node>
+    <node x="-99.5" y="486.0">oogasalad.view.core.api.AppScreen</node>
+    <node x="107.5" y="486.0">oogasalad.view.core.api.Renderer</node>
+    <node x="-222.43974630021137" y="801.3572938689217">oogasalad.view.player.internal.WinAppScreen</node>
+    <node x="31.5" y="606.0">oogasalad.view.core.internal.RendererImpl</node>
+    <node x="-127.0" y="46.0">oogasalad.view.core.api.Camera</node>
+    <node x="26.5" y="166.0">oogasalad.view.core.api.AbstractCameraBehavior</node>
+    <node x="195.61522198731507" y="786.0">oogasalad.view.player.internal.LoseAppScreen</node>
+    <node x="-103.0" y="226.0">oogasalad.view.core.internal.CameraImpl</node>
+    <node x="291.5" y="846.0">oogasalad.view.player.internal.VehicleBuilderAppScreen</node>
   </nodes>
   <notes />
   <edges>
     <edge source="oogasalad.view.core.internal.CameraImpl" target="oogasalad.view.core.api.CameraBehavior" relationship="TO_ONE">
       <point x="35.5" y="-14.0" />
-      <point x="3.5" y="140.0" />
-      <point x="3.75" y="140.0" />
-      <point x="-44.25" y="14.0" />
+      <point x="-44.5" y="14.0" />
     </edge>
     <edge source="oogasalad.view.core.internal.RendererImpl" target="oogasalad.view.core.api.Renderable" relationship="TO_MANY">
       <point x="-38.25" y="-14.0" />
@@ -36,7 +34,7 @@
     </edge>
     <edge source="oogasalad.view.player.internal.VehicleBuilderAppScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
       <point x="0.0" y="-14.0" />
-      <point x="228.0" y="760.0" />
+      <point x="414.0" y="760.0" />
       <point x="-32.0" y="760.0" />
       <point x="0.0" y="14.0" />
     </edge>
@@ -48,30 +46,32 @@
     </edge>
     <edge source="oogasalad.view.player.internal.PlayerEntryAppScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
       <point x="0.0" y="-14.0" />
-      <point x="648.0" y="760.0" />
+      <point x="561.0475687103594" y="760.0" />
       <point x="-32.0" y="760.0" />
       <point x="0.0" y="14.0" />
     </edge>
     <edge source="oogasalad.view.core.api.AbstractCameraBehavior" target="oogasalad.view.core.api.CameraBehavior" relationship="REALIZATION">
       <point x="0.0" y="-14.0" />
       <point x="148.0" y="140.0" />
-      <point x="92.25" y="140.0" />
-      <point x="44.25" y="14.0" />
+      <point x="92.5" y="140.0" />
+      <point x="44.5" y="14.0" />
     </edge>
     <edge source="oogasalad.view.core.internal.GameMenuScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
       <point x="0.0" y="-14.0" />
-      <point x="368.0" y="760.0" />
-      <point x="-32.0" y="760.0" />
-      <point x="0.0" y="14.0" />
-    </edge>
-    <edge source="oogasalad.view.player.internal.WinAppScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
-      <point x="0.0" y="-14.0" />
-      <point x="88.0" y="760.0" />
-      <point x="-32.0" y="760.0" />
+      <point x="-329.5475687103594" y="770.0" />
+      <point x="-32.0" y="770.0" />
       <point x="0.0" y="14.0" />
     </edge>
     <edge source="oogasalad.view.core.internal.CameraImpl" target="oogasalad.view.core.api.Camera" relationship="REALIZATION">
       <point x="-35.5" y="-14.0" />
+      <point x="-67.5" y="200.0" />
+      <point x="-72.0" y="200.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="oogasalad.view.player.internal.WinAppScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="-140.43974630021137" y="760.0" />
+      <point x="-32.0" y="760.0" />
       <point x="0.0" y="14.0" />
     </edge>
     <edge source="oogasalad.view.core.api.AbstractAppScreen" target="oogasalad.view.core.api.AppScreen" relationship="REALIZATION">
@@ -82,18 +82,20 @@
       <point x="0.0" y="-14.0" />
       <point x="0.0" y="14.0" />
     </edge>
-    <edge source="oogasalad.view.player.internal.GamePlayAppScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
+    <edge source="oogasalad.view.player.internal.LoseAppScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
       <point x="0.0" y="-14.0" />
-      <point x="508.0" y="760.0" />
+      <point x="281.61522198731507" y="760.0" />
       <point x="-32.0" y="760.0" />
       <point x="0.0" y="14.0" />
     </edge>
-    <edge source="oogasalad.view.player.internal.LoseAppScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
+    <edge source="oogasalad.view.player.internal.GamePlayAppScreen" target="oogasalad.view.core.api.AbstractAppScreen" relationship="GENERALIZATION">
       <point x="0.0" y="-14.0" />
+      <point x="108.0" y="760.0" />
+      <point x="-32.0" y="760.0" />
       <point x="0.0" y="14.0" />
     </edge>
   </edges>
-  <settings layout="Hierarchic Compact" zoom="1.0451541850220265" showDependencies="true" x="323.5" y="440.0" />
+  <settings layout="Hierarchic Compact" zoom="0.5209251101321586" showDependencies="true" x="323.5" y="669.0" />
   <SelectedNodes />
   <Categories />
   <SCOPE>All</SCOPE>

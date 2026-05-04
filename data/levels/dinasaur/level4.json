@@ -1,0 +1,76 @@
+{
+  "gameMetadata" : {
+    "levelName" : "Untitled Level",
+    "gameType" : "dinasaur",
+    "screenWidth" : 3200.0,
+    "screenHeight" : 1600.0,
+    "gravity" : -9.8,
+    "drag" : 0.05,
+    "backgroundImage" : ""
+  },
+  "map" : {
+    "knotLocations" : [ {
+      "x" : 11.0,
+      "y" : 380.0
+    }, {
+      "x" : 3193.5,
+      "y" : 386.0
+    } ],
+    "blocks" : [ ],
+    "objects" : [ {
+      "type" : "cactus",
+      "position" : {
+        "x" : 650.0,
+        "y" : 350.0
+      }
+    }, {
+      "type" : "cactus",
+      "position" : {
+        "x" : 710.0,
+        "y" : 350.0
+      }
+    }, {
+      "type" : "cactus",
+      "position" : {
+        "x" : 1550.0,
+        "y" : 350.0
+      }
+    }, {
+      "type" : "bird",
+      "position" : {
+        "x" : 2070.0,
+        "y" : 150.0
+      }
+    }, {
+      "type" : "bird",
+      "position" : {
+        "x" : 2290.0,
+        "y" : 190.0
+      }
+    }, {
+      "type" : "bird",
+      "position" : {
+        "x" : 2670.0,
+        "y" : 150.0
+      }
+    }, {
+      "type" : "Finish Line",
+      "position" : {
+        "x" : 3170.0,
+        "y" : 370.0
+      }
+    } ],
+    "terrainOptions" : [ "ground" ],
+    "spawnPoint" : {
+      "x" : 100.0,
+      "y" : 100.0
+    }
+  },
+  "mainCharacter" : {
+    "gridSize" : 60.0,
+    "elementsAllowed" : [ ],
+    "maxSelectable" : 5,
+    "maxHP" : 100.0,
+    "cameraFollows" : "vehicle"
+  }
+}
