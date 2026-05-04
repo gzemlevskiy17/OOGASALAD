@@ -7,9 +7,17 @@
 
  * Georgiy Zemlevskiy: My responsibility was most of the physics engine: mostly collision handling and the component abstractions, although I worked on joints (which attach components to each other in different ways) as well. Smaller features include drag from the surrounding medium (air), and drive components.
 
-* Iurii Beliaev: I worked primarily on the physics engine, collision system, vehicle builder, and player-facing view infrastructure. Early in the project, I helped define the collision matrix and implemented collision solvers for different object pairings, including dynamic-dynamic, dynamic-static, dynamic-passthrough, and static-static interactions. I also worked on collision detection, convex polygon geometry, impulse resolution, restitution, friction, warm-starting, and test coverage for the engine.
-
-    I also implemented and refined gameplay-facing systems such as the player entry screen, vehicle builder screen, gameplay screen, renderer, camera behavior, and built-in vehicle catalog. Later in the project, I focused heavily on vehicle stability and integration bugs, including rigid attachment of main components, placement validation, default build rules, component containment rules, and test compilation fixes after large merges. I also contributed to logging, presentation-related documentation, and final view/API refactors.
+* Iurii Beliaev: My responsibilities throughout the Sprints included the following:
+  * Discussion and Agile Lead - I led the group meetings, encouraged participation and following Agile process, I encouraged engagement in the meetings and tried to make sure everybody knows what they are doing and what everybody doing. I also led the standup meetings
+  * Designer - I was extremely engaged in the architecture decision making and was the one who created the final version of the initial design based on our discussions. Then we discussed it in a team and the team agreed. I was responsible for the design of the initial APIs
+  * VIEW API Lead - I created the foundation for the entire View API and rigid structure (`Renderer`, `Renderable`, `Camera`, `CameraBehavior`, `AppScreen`, `AbstractAppScreen` logic. 
+  * Engine debugger - during the sprints 3 and 4 with the LLM Teammate I had to debug the engine and make it behave realistically
+  * Worked on engine - implemented some of the engine feature with the LLM Teammate to finish its integration and implementation
+  * Engine and Joints Integration - during the sprints 3 and 4 I fixed the integration between the Engine and Joints
+  * Merge specialist - I spent a very long time merging the work of other people together
+  * Debugger - during the last 2 sprints, I had to fix a lot of bugs to make our product demoable
+  * Worked on Controller and pulling everything together
+  * Overall generalist, implemented a good amount of features
 
 
  * Paulina Vvedenskaya: I worked across gameplay control, screen flow, authentication/accounts, vehicle building, data schema evolution, and late-stage refactoring. Early in the project, I implemented the screen manager, game controller loop, input routing, pause/restart actions, camera following, and navigation outcomes. I also built the login, account creation, profile, update profile, local authentication service, SQLite user repository, password hashing, and auth controller integration.
