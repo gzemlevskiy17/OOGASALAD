@@ -1,4 +1,4 @@
-# oogasalad
+# oogasalad - Final Project for Duke CompSci 308 - Advanced Software Design & Implementation
 ## Good Piggies
 ## Georgiy Zemlevskiy, Michael Li, Paulina Vvedenskaya, Iurii Beliaev, Mason Wu, Xuye Chen, Emilio Garcia
 
